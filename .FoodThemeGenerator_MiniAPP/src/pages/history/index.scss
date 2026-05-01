@@ -1,0 +1,374 @@
+/* ============================================================
+   历史记录页样式 - 食物主题生成器
+   使用全局 CSS 变量系统
+   ============================================================ */
+
+.history-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: calc(var(--spacing-lg) * 2);
+}
+
+/* ============================================================
+   顶部工具栏
+   ============================================================ */
+.history-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: var(--color-bg);
+  padding: var(--spacing-sm) var(--spacing-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.history-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.history-search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--spacing-base);
+  height: 72px;
+  gap: var(--spacing-xs);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-search-icon {
+  font-size: var(--font-size-md);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.history-search-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.history-search-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.history-search-clear {
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+  padding: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.history-filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.history-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-pill);
+  padding: 6px var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-sm);
+  min-height: 56px;
+}
+
+.history-filter-btn:active {
+  opacity: 0.7;
+}
+
+.history-filter-btn--active {
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.history-filter-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
+.history-filter-arrow {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.history-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-pill);
+  padding: 6px var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-left: auto;
+  box-shadow: var(--shadow-sm);
+  min-height: 56px;
+}
+
+.history-sort-btn:active {
+  opacity: 0.7;
+}
+
+.history-sort-icon {
+  font-size: var(--font-size-sm);
+}
+
+/* ============================================================
+   日期分组
+   ============================================================ */
+.history-date-group {
+  margin-top: var(--spacing-sm);
+}
+
+.history-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-base);
+}
+
+.history-date-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.history-date-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================================
+   记录卡片
+   ============================================================ */
+.history-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  margin: 0 var(--spacing-base) var(--spacing-sm);
+  overflow: hidden;
+  min-height: 140px;
+}
+
+.history-card:active {
+  opacity: 0.85;
+}
+
+.history-card-thumb {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+.history-card-thumb-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.history-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-base);
+  min-width: 0;
+  gap: 6px;
+}
+
+.history-card-top {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.history-card-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-card-calories {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-error);
+  white-space: nowrap;
+}
+
+.history-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.history-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-inverse);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  line-height: 1.4;
+}
+
+.history-theme-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  background: var(--color-bg);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  line-height: 1.4;
+}
+
+.history-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.history-card-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.history-card-location {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+/* ============================================================
+   加载 / 空状态
+   ============================================================ */
+.history-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-base);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.history-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-round);
+  animation: history-spin 0.8s linear infinite;
+  margin-bottom: var(--spacing-sm);
+}
+
+@keyframes history-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-base);
+  margin-top: var(--spacing-lg);
+}
+
+.history-empty-icon {
+  font-size: 80px;
+  margin-bottom: var(--spacing-base);
+}
+
+.history-empty-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.history-empty-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-base);
+}
+
+.history-empty-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-pill);
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-width: 240px;
+  min-height: 72px;
+  border: none;
+}
+
+.history-empty-btn:active {
+  opacity: 0.8;
+}
+
+/* ============================================================
+   底部加载更多
+   ============================================================ */
+.history-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-base);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.history-footer-line {
+  width: 48px;
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 var(--spacing-sm);
+}
+
+/* ============================================================
+   搜索无结果
+   ============================================================ */
+.history-no-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-base);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  gap: var(--spacing-xs);
+}
