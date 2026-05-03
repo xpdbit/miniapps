@@ -42,3 +42,7 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# 规划与部署配置
+Plan/
+deploy/
