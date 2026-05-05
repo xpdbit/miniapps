@@ -43,6 +43,10 @@ tmp/
 temp/
 *.tmp
 
+# 工具/临时目录
+.sisyphus/
+temp-tsc-test/
+
 # 规划与部署配置
 plan/
 deploy/
