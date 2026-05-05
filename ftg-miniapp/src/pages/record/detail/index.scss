@@ -1,0 +1,206 @@
+/* ============================================================
+   食物记录详情页样式
+   ============================================================ */
+
+.detail-page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: calc(var(--spacing-lg) * 2);
+}
+
+/* ============================================================
+   主题图区域
+   ============================================================ */
+.detail-hero {
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: var(--color-bg-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============================================================
+   信息区域
+   ============================================================ */
+.detail-info {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  margin-top: -var(--radius-md);
+  padding: var(--spacing-base);
+  position: relative;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-base);
+}
+
+.detail-food-name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  flex: 1;
+  margin-right: var(--spacing-sm);
+}
+
+.detail-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   详情行
+   ============================================================ */
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--spacing-sm) 0;
+}
+
+.detail-row + .detail-row {
+  border-top: 1px solid var(--color-divider);
+}
+
+.detail-row-label {
+  width: 80px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.detail-row-value {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.detail-calorie-value {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.detail-calorie-unit {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-left: 4px;
+}
+
+.detail-description-quote {
+  font-style: italic;
+  color: var(--color-text-secondary);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   时间戳
+   ============================================================ */
+.detail-timestamp {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-divider);
+}
+
+/* ============================================================
+   操作按钮
+   ============================================================ */
+.detail-actions {
+  padding: var(--spacing-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.detail-btn {
+  width: 100%;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-base);
+  border: none;
+  transition: opacity var(--transition-fast);
+}
+
+.detail-btn:active {
+  opacity: 0.8;
+}
+
+.detail-btn--primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.detail-btn--secondary {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-border);
+}
+
+.detail-btn--danger {
+  background-color: var(--color-bg);
+  color: var(--color-error);
+  border: 2px solid var(--color-error);
+}
+
+.detail-btn--loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ============================================================
+   加载 & 错误状态
+   ============================================================ */
+.detail-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.detail-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--spacing-base);
+}
+
+.detail-error-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-base);
+  text-align: center;
+}

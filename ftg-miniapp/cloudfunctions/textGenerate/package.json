@@ -1,0 +1,9 @@
+{
+  "name": "textGenerate",
+  "version": "1.0.0",
+  "description": "调用腾讯混元大模型生成食物描述文本",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}
