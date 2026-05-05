@@ -23,7 +23,7 @@ OpenCode 全局指令 - 中文模式
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-05-05
-**Commit:** f474200
+**Commit:** 6925235 (docs: 更新 AGENTS.md 时间戳和 commit)
 **Branch:** master
 
 ## OVERVIEW
