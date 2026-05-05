@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ftg-dashboard
+    ports:
+      - "8080:80"
+    environment:
+      # 构建时 Vite 使用 VITE_* 环境变量，需在 build args 中传递
+      # 或通过 .env.production 文件定义
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - ftg-network
+
+networks:
+  ftg-network:
+    name: ftg-network
+    driver: bridge
