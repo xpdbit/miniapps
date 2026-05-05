@@ -8,8 +8,16 @@ Taro 4.x 微信小程序 (React 18 + TypeScript + Sass)，AI 图片识别食材 
 ftg-miniapp/
 ├── src/
 │   ├── app.ts           # 小程序入口
-│   ├── pages/           # 页面组件 (home/camera/theme/result等)
+│   ├── pages/           # 页面组件 (home/camera/gallery/result/record/stats等)
 │   ├── components/      # 共享组件
+│   │   ├── AppButton/   # 通用按钮 (4变体+loading)
+│   │   ├── AppCard/     # 通用卡片
+│   │   ├── SectionHeader/ # 区域标题组件
+│   │   ├── EmptyState/  # 空状态组件
+│   │   ├── Skeleton/    # 骨架屏 (4类型)
+│   │   ├── Icon/        # SVG 图标系统 (18图标)
+│   │   ├── charts/      # Canvas 2D 图表 (Line/Pie/Bar/CalendarHeatmap)
+│   │   └── Loading.tsx  # 加载遮罩 (含type/zIndex)
 │   ├── hooks/           # 自定义 Hooks
 │   ├── services/        # 云函数调用/API 封装
 │   │   ├── db/          # 云数据库 DAL 层 (10个)
@@ -27,9 +35,11 @@ ftg-miniapp/
 | 任务 | 位置 | 说明 |
 |------|------|------|
 | 页面 | `src/pages/` | 12 个页面 (home/camera/gallery/result等) |
-| 组件 | `src/components/` | Loading 等共享组件 |
+| 共享组件库 | `src/components/` | AppButton/AppCard/SectionHeader/EmptyState/Icon(18SVG)/Skeleton(4类型)/Loading |
+| 图表组件 | `src/components/charts/` | Canvas 2D 原生图表 (Line/Pie/Bar/CalendarHeatmap) |
 | 主题画廊 | `src/pages/gallery/` | API 优先 + 本地回退 |
 | 主题 HTTP API | `src/services/themeApi.ts` | 对接 ftg-server 的 RESTful 主题接口 |
+| 全局样式 | `src/app.scss` | CSS 变量系统（颜色/字体/间距/阴影/z-index） |
 | 样式 | `src/` | Sass (.scss) 模块化样式 |
 
 ## CONVENTIONS
@@ -56,6 +66,11 @@ npm run format           # Prettier 格式化
 ```
 
 ## NOTES
+- **CSS 变量系统**: `app.scss` 定义了完整的颜色/字体/间距/阴影/z-index 变量
+- **图标系统**: Icon 组件使用 `<Image>` + data URI 渲染 SVG，支持 size/color prop，由 `@/components/Icon` 导入
+- **图表组件**: charts/ 下的 4 个图表使用原生 Canvas 2D，没有第三方图表依赖，类型在 `@/components/charts` 中定义
+- **共享组件**: 从 `@/components` barrel 统一导出（AppButton/AppCard/SectionHeader/EmptyState/Icon/Skeleton/Loading）
+- **页面动画**: 各页面已添加淡入/滑动动画，`app.scss` 包含全局 `prefers-reduced-motion` 支持
 - 云函数上传需通过微信开发者工具或 cloudbaserc.json 配置
 - AI 流水线: 前端触发 → `orchestrateAIPipeline` 编排 → 多函数并行处理 → 返回结果
 - 图片合成在前端完成 (Canvas 2D)，非服务端合成

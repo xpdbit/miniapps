@@ -1,10 +1,10 @@
 import { Form, Input, Button, Card, Typography, message, Checkbox } from 'antd'
-import useMobile from '@/hooks/useMobile'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { useAuthStore } from '@/stores/authStore'
 import { getRememberMe } from '@/utils/token'
+import styles from '@/styles/pages/login.module.scss'
 
 const { Title } = Typography
 
@@ -19,8 +19,6 @@ const Login = () => {
   const [searchParams] = useSearchParams()
   const login = useAuthStore((state) => state.login)
 
-  const isMobile = useMobile()
-
   const onFinish = async (values: LoginFormValues) => {
     try {
       await login(values.username, values.password, values.remember)
@@ -33,24 +31,9 @@ const Login = () => {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      }}
-    >
-      <Card
-        style={{
-          width: isMobile ? 'calc(100% - 32px)' : 400,
-          maxWidth: 400,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-          borderRadius: 12,
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+    <div className={styles.loginContainer}>
+      <Card className={styles.loginCard}>
+        <div className={styles.loginHeader}>
           <Title level={3} style={{ marginBottom: 4 }}>
             FTG 管理后台
           </Title>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, lazy, Suspense } from 'react'
-import { ConfigProvider, Spin, theme as antTheme } from 'antd'
+import { ConfigProvider, Skeleton, theme as antTheme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { useThemeStore } from '@/stores/themeStore'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -27,15 +27,8 @@ const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // ─── 全局加载态 ──────────────────────────────────────
 const PageLoading = () => (
-  <div
-    style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '60vh',
-    }}
-  >
-    <Spin size="large" />
+  <div style={{ padding: 24 }}>
+    <Skeleton active paragraph={{ rows: 4 }} />
   </div>
 )
 

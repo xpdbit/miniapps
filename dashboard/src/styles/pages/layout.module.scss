@@ -1,0 +1,48 @@
+// ============================================================
+// Layout 布局组件样式
+// ============================================================
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerDesktop {
+  padding: 0 16px;
+}
+
+.headerMobile {
+  padding: 0 12px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contentDesktop {
+  margin: 24px;
+  padding: 24px;
+  min-height: calc(100vh - 64px - 48px);
+}
+
+.contentMobile {
+  margin: 12px;
+  padding: 12px;
+  min-height: calc(100vh - 64px - 24px);
+  overflow: auto;
+}
+
+.sider {
+  z-index: 100;
+  height: 100vh;
+  overflow: auto;
+}

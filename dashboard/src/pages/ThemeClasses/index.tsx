@@ -22,13 +22,14 @@ import {
   DeleteOutlined,
   MinusCircleOutlined,
 } from '@ant-design/icons'
+import PageHeader from '@/components/PageHeader'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { themeClassesAPI } from '@/services/ftg-api'
 import type { ThemeClassItem } from '@/types'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import useMobile from '@/hooks/useMobile'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 // ───────────────────── 表单类型 ─────────────────────
@@ -297,29 +298,11 @@ const ThemeClasses = () => {
   return (
     <div>
       {/* 页面头部 */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
-        <Title level={2} style={{ margin: 0 }}>
-          Class 管理
-        </Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['themeClasses'] })}
-          >
-            刷新
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新建 Class
-          </Button>
-        </Space>
-      </div>
+      <PageHeader
+        title="Class 管理"
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['themeClasses'] })}
+        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新建 Class</Button>}
+      />
 
       {/* 加载态 */}
       {isLoading && <PageSkeleton type="table" />}

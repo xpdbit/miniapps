@@ -10,6 +10,16 @@
   height: 100vh;
   overflow: hidden;
   background-color: #000;
+  animation: slide-in-up 0.3s ease-out;
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* --- 相机预览 --- */
@@ -404,4 +414,13 @@
   font-size: 24px;
   color: rgba(255, 255, 255, 0.7);
   margin-top: 24px;
+}
+
+/* ============================================================
+   Reduced Motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .camera-page {
+    animation: none;
+  }
 }

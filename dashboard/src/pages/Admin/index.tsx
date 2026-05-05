@@ -17,7 +17,6 @@ import {
 } from 'antd'
 import {
   PlusOutlined,
-  ReloadOutlined,
   DeleteOutlined,
   SwapOutlined,
   UserOutlined,
@@ -25,11 +24,12 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { adminApi } from '@/services/adminApi'
+import PageHeader from '@/components/PageHeader'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import type { AdminRole } from '@/types'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 // ─── 角色中文标签 ──────────────────────────────────────────
 
@@ -350,32 +350,14 @@ const Admin = () => {
   return (
     <div>
       {/* ── 页面头部 ── */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
+      <PageHeader
+        title="管理员管理"
+        onRefresh={() => {
+          queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+          queryClient.invalidateQueries({ queryKey: ['admin-roles'] })
         }}
-      >
-        <Title level={2} style={{ margin: 0 }}>
-          管理员管理
-        </Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-              queryClient.invalidateQueries({ queryKey: ['admin-roles'] })
-            }}
-          >
-            刷新
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-            新增管理员
-          </Button>
-        </Space>
-      </div>
+        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>新增管理员</Button>}
+      />
 
       {/* ── 角色信息卡片 ── */}
       {roles && roles.length > 0 && (

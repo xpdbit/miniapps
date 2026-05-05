@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  Typography,
   Table,
   Button,
   Modal,
@@ -11,19 +10,20 @@ import {
   message,
   Space,
 } from 'antd'
-import useMobile from '@/hooks/useMobile'
-import { PlusOutlined, ReloadOutlined, LinkOutlined } from '@ant-design/icons'
+import { PlusOutlined, LinkOutlined } from '@ant-design/icons'
+import PageHeader from '@/components/PageHeader'
+import { useResponsiveWidth } from '@/hooks/useResponsiveWidth'
+import { MODAL_WIDTH } from '@/constants/layout'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { projectApi } from '@/services/projectApi'
 import type { Project } from '@/types'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
-
-const { Title } = Typography
 
 const Projects = () => {
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
-  const isMobile = useMobile()
+  const modalWidth = useResponsiveWidth(MODAL_WIDTH)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [testingId, setTestingId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -172,34 +172,28 @@ const Projects = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={2} style={{ margin: 0 }}>项目管理</Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['projects'] })}
-          >
-            刷新
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新增项目
-          </Button>
-        </Space>
-      </div>
-
-      <Table
-        dataSource={data}
-        columns={columns}
-        rowKey="id"
-        loading={isLoading}
-        scroll={{ x: 700 }}
-        pagination={{ pageSize: 10 }}
+      <PageHeader
+        title="项目管理"
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['projects'] })}
+        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增项目</Button>}
       />
+
+      {isLoading ? (
+        <PageSkeleton type="table" />
+      ) : (
+        <Table
+          dataSource={data}
+          columns={columns}
+          rowKey="id"
+          scroll={{ x: 700 }}
+          pagination={{ pageSize: 10 }}
+        />
+      )}
 
       <Modal
         title={editingProject ? '编辑项目' : '新增项目'}
         open={modalOpen}
-        width={isMobile ? '100%' : 520}
+        width={modalWidth}
         onOk={handleSubmit}
         onCancel={() => {
           setModalOpen(false)

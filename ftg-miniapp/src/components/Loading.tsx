@@ -1,5 +1,6 @@
 import { View, Text } from '@tarojs/components';
 import type { FC } from 'react';
+import Icon from '@/components/Icon/Icon';
 
 type LoadingType = 'fullscreen' | 'inline' | 'overlay';
 
@@ -64,7 +65,9 @@ const Loading: FC<LoadingProps> = ({
         <View className='loading-container'>
           <View className='loading-spinner'>
             <View className='spinner-ring' />
-            <View className='spinner-icon'>🍽️</View>
+            <View className='spinner-icon'>
+              <Icon name='food' size={32} color='#FF6B35' />
+            </View>
           </View>
           {text.length > 0 && (
             <Text className='loading-text'>{text}</Text>
@@ -83,7 +86,9 @@ const Loading: FC<LoadingProps> = ({
       <View className='loading-container'>
         <View className='loading-spinner'>
           <View className='spinner-ring' />
-          <View className='spinner-icon'>🍽️</View>
+          <View className='spinner-icon'>
+            <Icon name='food' size={32} color='#FF6B35' />
+          </View>
         </View>
         {text.length > 0 && (
           <Text className='loading-text'>{text}</Text>

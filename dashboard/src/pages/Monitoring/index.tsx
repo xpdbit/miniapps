@@ -10,19 +10,21 @@ import {
   Statistic,
   Drawer,
   Descriptions,
-  Skeleton,
   Empty,
   Tag,
   Spin,
 } from 'antd'
-import useMobile from '@/hooks/useMobile'
-import { ReloadOutlined, TeamOutlined } from '@ant-design/icons'
+import { TeamOutlined } from '@ant-design/icons'
+import PageHeader from '@/components/PageHeader'
+import { useResponsiveWidth } from '@/hooks/useResponsiveWidth'
+import { MODAL_WIDTH } from '@/constants/layout'
 import { Line, Gauge } from '@ant-design/charts'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
 import { monitorApi } from '@/services/monitorApi'
 import type { ProjectHealth, AlertRule } from '@/services/monitorApi'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 /** 自动刷新间隔 (30s) */
 const REFETCH_INTERVAL = 30_000
@@ -69,7 +71,7 @@ const Monitoring = () => {
 
   // --- 状态 ---
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
-  const isMobile = useMobile()
+  const drawerWidth = useResponsiveWidth(MODAL_WIDTH)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailProject, setDetailProject] = useState<ProjectHealth | null>(null)
 
@@ -192,17 +194,7 @@ const Monitoring = () => {
   // ============================================================
   const renderHealthCards = () => {
     if (healthLoading && projectsHealth.length === 0) {
-      return (
-        <Row gutter={[16, 16]}>
-          {[1, 2, 3].map((i) => (
-            <Col key={i} xs={24} sm={12} lg={8}>
-              <Card>
-                <Skeleton active paragraph={{ rows: 2 }} />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )
+      return <PageSkeleton type="dashboard" />
     }
 
     if (projectsHealth.length === 0 && !healthLoading) {
@@ -466,7 +458,7 @@ const Monitoring = () => {
         }
         open={drawerOpen}
         onClose={closeDrawer}
-        width={isMobile ? '100%' : 520}
+        width={drawerWidth}
       >
         {detailProject.services.length === 0 ? (
           <Empty description="暂无服务详情" />
@@ -516,31 +508,11 @@ const Monitoring = () => {
   return (
     <div style={{ padding: 24 }}>
       {/* 头部 */}
-      <Row
-        justify="space-between"
-        align="middle"
-        style={{ marginBottom: 24 }}
-      >
-        <Col>
-          <Title level={3} style={{ margin: 0 }}>
-            系统监控
-          </Title>
-        </Col>
-        <Col>
-          <SpaceBetween>
-            <Tag color="blue" style={{ marginRight: 8 }}>
-              30s 自动刷新
-            </Tag>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-            >
-              刷新
-            </Button>
-          </SpaceBetween>
-        </Col>
-      </Row>
+      <PageHeader
+        title="系统监控"
+        onRefresh={handleRefresh}
+        extra={<Tag color="blue">30s 自动刷新</Tag>}
+      />
 
       {/* 服务健康卡片 */}
       {renderHealthCards()}

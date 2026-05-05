@@ -4,6 +4,8 @@ import useMobile from '@/hooks/useMobile'
 import { SearchOutlined, ReloadOutlined, EyeOutlined, StopOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { usersAPI } from '@/services/ftg-api'
+import { PageSkeleton } from '@/components/PageSkeleton'
+import PageHeader from '@/components/PageHeader'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
@@ -246,45 +248,50 @@ const Users = () => {
 
   return (
     <div>
-      <Title level={2}>用户管理</Title>
+      <PageHeader title="用户管理" />
 
-      {/* Search Bar */}
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Space wrap>
-          <Input.Search
-            placeholder="搜索昵称/OpenID"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onSearch={handleSearch}
-            allowClear
-            style={{ width: 280 }}
-            enterButton={<SearchOutlined />}
+      {isLoading ? (
+        <PageSkeleton type="table" />
+      ) : (
+        <>
+          {/* Search Bar */}
+          <Card size="small" style={{ marginBottom: 16 }}>
+            <Space wrap>
+              <Input.Search
+                placeholder="搜索昵称/OpenID"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onSearch={handleSearch}
+                allowClear
+                style={{ width: 280 }}
+                enterButton={<SearchOutlined />}
+              />
+              <RangePicker value={dateRange} onChange={handleDateChange} />
+              <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                重置
+              </Button>
+            </Space>
+          </Card>
+
+          {/* Data Table */}
+          <Table<User>
+            columns={columns}
+            dataSource={data?.list ?? []}
+            rowKey="id"
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: data?.total ?? 0,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              pageSizeOptions: ['10', '20', '50', '100'],
+              showTotal: (total: number) => `共 ${total} 条`,
+            }}
+            onChange={(pag) => handleTableChange(pag)}
+            scroll={{ x: 960 }}
           />
-          <RangePicker value={dateRange} onChange={handleDateChange} />
-          <Button icon={<ReloadOutlined />} onClick={handleReset}>
-            重置
-          </Button>
-        </Space>
-      </Card>
-
-      {/* Data Table */}
-      <Table<User>
-        columns={columns}
-        dataSource={data?.list ?? []}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: data?.total ?? 0,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          showTotal: (total: number) => `共 ${total} 条`,
-        }}
-        onChange={(pag) => handleTableChange(pag)}
-        scroll={{ x: 960 }}
-      />
+        </>
+      )}
 
       {/* Detail Drawer */}
       <Drawer

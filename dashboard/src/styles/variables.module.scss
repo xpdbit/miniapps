@@ -1,0 +1,36 @@
+// ============================================================
+// Dashboard 设计令牌（SCSS 变量）
+// 统一管理间距、圆角、阴影等基础 token
+// ============================================================
+
+// --- 间距 ---
+$content-padding: 24px;
+$header-padding-desktop: 16px;
+$header-padding-mobile: 12px;
+$gutter-width: 16px;
+$card-margin-bottom: 24px;
+
+// --- 圆角 ---
+$border-radius-card: 12px;
+
+// --- 阴影 ---
+$shadow-card: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+// --- 背景 ---
+$bg-gradient-login: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+// --- 图表 ---
+$chart-height: 300px;
+
+// ============================================================
+// 导出给 JS 使用
+// ============================================================
+:export {
+  contentPadding: $content-padding;
+  headerPaddingDesktop: $header-padding-desktop;
+  headerPaddingMobile: $header-padding-mobile;
+  gutterWidth: $gutter-width;
+  cardMarginBottom: $card-margin-bottom;
+  borderRadiusCard: $border-radius-card;
+  chartHeight: $chart-height;
+}

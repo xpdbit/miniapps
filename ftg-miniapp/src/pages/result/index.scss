@@ -5,6 +5,18 @@
 .result-page {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--color-primary-bg) 0%, var(--color-bg) 100%);
+  animation: page-fade-in 0.35s ease;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .result-content {

@@ -21,22 +21,24 @@ import {
   Empty,
   Spin,
 } from 'antd'
-import useMobile from '@/hooks/useMobile'
 import {
   SearchOutlined,
-  ReloadOutlined,
   EyeOutlined,
   DeleteOutlined,
   UndoOutlined,
 } from '@ant-design/icons'
+import PageHeader from '@/components/PageHeader'
+import { useResponsiveWidth } from '@/hooks/useResponsiveWidth'
+import { DRAWER_WIDTH } from '@/constants/layout'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { recordsAPI, themesAPI } from '@/services/ftg-api'
 import type { FoodRecordListItem } from '@/services/ftg-api'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import type { PaginationProps } from 'antd'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { RangePicker } = DatePicker
 
 // ─── 食物类型映射 ────────────────────────────────
@@ -85,7 +87,7 @@ const FoodRecords = () => {
   // ── 详情抽屉 ──
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailId, setDetailId] = useState<number | null>(null)
-  const isMobile = useMobile()
+  const drawerWidth = useResponsiveWidth(DRAWER_WIDTH)
 
   // ── 查询参数 ──
   const queryParams = {
@@ -561,146 +563,135 @@ const FoodRecords = () => {
   return (
     <div>
       {/* 页面标题 & 操作 */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={2} style={{ margin: 0 }}>
-          食物记录
-        </Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['food-records'] })}
+      <PageHeader
+        title="食物记录"
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['food-records'] })}
+        extra={selectedRowKeys.length > 0 ? (
+          <Popconfirm
+            title="确认批量删除"
+            description={`确定要删除选中的 ${selectedRowKeys.length} 条记录吗？（软删除）`}
+            onConfirm={handleBatchDelete}
+            okText="删除"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
           >
-            刷新
-          </Button>
-          {selectedRowKeys.length > 0 && (
-            <Popconfirm
-              title="确认批量删除"
-              description={`确定要删除选中的 ${selectedRowKeys.length} 条记录吗？（软删除）`}
-              onConfirm={handleBatchDelete}
-              okText="删除"
-              cancelText="取消"
-              okButtonProps={{ danger: true }}
-            >
-              <Button danger icon={<DeleteOutlined />}>
-                批量删除 ({selectedRowKeys.length})
-              </Button>
-            </Popconfirm>
-          )}
-        </Space>
-      </div>
-
-      {/* 筛选栏 */}
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Row gutter={[12, 12]} align="middle">
-          <Col xs={24} sm={12} md={6} lg={5}>
-            <Input.Search
-              placeholder="搜索食物名称"
-              allowClear
-              value={foodName}
-              onChange={(e) => setFoodName(e.target.value)}
-              onSearch={handleSearch}
-              enterButton={<SearchOutlined />}
-            />
-          </Col>
-          <Col xs={12} sm={6} md={4} lg={3}>
-            <Select
-              placeholder="食物类型"
-              allowClear
-              style={{ width: '100%' }}
-              value={foodType}
-              onChange={(v) => {
-                setFoodType(v)
-                setPage(1)
-              }}
-              options={FOOD_TYPE_OPTIONS}
-            />
-          </Col>
-          <Col xs={12} sm={6} md={4} lg={3}>
-            <Select
-              placeholder="选择主题"
-              allowClear
-              showSearch
-              style={{ width: '100%' }}
-              value={themeId}
-              onChange={(v) => {
-                setThemeId(v)
-                setPage(1)
-              }}
-              filterOption={(input, option) =>
-                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
-              }
-              options={themes.map((t: { id: number; name: string }) => ({
-                value: t.id,
-                label: t.name,
-              }))}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={7} lg={6}>
-            <RangePicker
-              style={{ width: '100%' }}
-              value={
-                dateRange
-                  ? [dayjs(dateRange[0]), dayjs(dateRange[1])]
-                  : null
-              }
-              onChange={(dates) => {
-                if (dates && dates[0] && dates[1]) {
-                  setDateRange([dates[0].format('YYYY-MM-DD'), dates[1].format('YYYY-MM-DD')])
-                } else {
-                  setDateRange(null)
-                }
-                setPage(1)
-              }}
-              placeholder={['开始日期', '结束日期']}
-            />
-          </Col>
-          <Col xs={12} sm={6} md={3} lg={2}>
-            <Checkbox
-              checked={showDeleted}
-              onChange={(e) => {
-                setShowDeleted(e.target.checked)
-                setPage(1)
-              }}
-            >
-              显示已删除
-            </Checkbox>
-          </Col>
-          <Col>
-            <Button onClick={handleResetFilters}>重置</Button>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* 数据表格 */}
-      <Table<FoodRecordListItem>
-        rowKey="id"
-        columns={columns}
-        dataSource={listRes?.records ?? []}
-        loading={isLoading || isFetching}
-        scroll={{ x: 1200 }}
-        pagination={{
-          current: page,
-          pageSize,
-          total: listRes?.total ?? 0,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          showTotal: (total) => `共 ${total} 条记录`,
-          onChange: handlePaginationChange,
-        }}
-        rowSelection={{
-          type: 'checkbox',
-          selectedRowKeys,
-          onChange: (keys) => setSelectedRowKeys(keys as number[]),
-        }}
+            <Button danger icon={<DeleteOutlined />}>
+              批量删除 ({selectedRowKeys.length})
+            </Button>
+          </Popconfirm>
+        ) : undefined}
       />
+
+      {isLoading || isFetching ? (
+        <PageSkeleton type="table" />
+      ) : (
+        <>
+          {/* 筛选栏 */}
+          <Card size="small" style={{ marginBottom: 16 }}>
+            <Row gutter={[12, 12]} align="middle">
+              <Col xs={24} sm={12} md={6} lg={5}>
+                <Input.Search
+                  placeholder="搜索食物名称"
+                  allowClear
+                  value={foodName}
+                  onChange={(e) => setFoodName(e.target.value)}
+                  onSearch={handleSearch}
+                  enterButton={<SearchOutlined />}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4} lg={3}>
+                <Select
+                  placeholder="食物类型"
+                  allowClear
+                  style={{ width: '100%' }}
+                  value={foodType}
+                  onChange={(v) => {
+                    setFoodType(v)
+                    setPage(1)
+                  }}
+                  options={FOOD_TYPE_OPTIONS}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4} lg={3}>
+                <Select
+                  placeholder="选择主题"
+                  allowClear
+                  showSearch
+                  style={{ width: '100%' }}
+                  value={themeId}
+                  onChange={(v) => {
+                    setThemeId(v)
+                    setPage(1)
+                  }}
+                  filterOption={(input, option) =>
+                    (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={themes.map((t: { id: number; name: string }) => ({
+                    value: t.id,
+                    label: t.name,
+                  }))}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={7} lg={6}>
+                <RangePicker
+                  style={{ width: '100%' }}
+                  value={
+                    dateRange
+                      ? [dayjs(dateRange[0]), dayjs(dateRange[1])]
+                      : null
+                  }
+                  onChange={(dates) => {
+                    if (dates && dates[0] && dates[1]) {
+                      setDateRange([dates[0].format('YYYY-MM-DD'), dates[1].format('YYYY-MM-DD')])
+                    } else {
+                      setDateRange(null)
+                    }
+                    setPage(1)
+                  }}
+                  placeholder={['开始日期', '结束日期']}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={3} lg={2}>
+                <Checkbox
+                  checked={showDeleted}
+                  onChange={(e) => {
+                    setShowDeleted(e.target.checked)
+                    setPage(1)
+                  }}
+                >
+                  显示已删除
+                </Checkbox>
+              </Col>
+              <Col>
+                <Button onClick={handleResetFilters}>重置</Button>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* 数据表格 */}
+          <Table<FoodRecordListItem>
+            rowKey="id"
+            columns={columns}
+            dataSource={listRes?.records ?? []}
+            scroll={{ x: 1200 }}
+            pagination={{
+              current: page,
+              pageSize,
+              total: listRes?.total ?? 0,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              pageSizeOptions: ['10', '20', '50', '100'],
+              showTotal: (total) => `共 ${total} 条记录`,
+              onChange: handlePaginationChange,
+            }}
+            rowSelection={{
+              type: 'checkbox',
+              selectedRowKeys,
+              onChange: (keys) => setSelectedRowKeys(keys as number[]),
+            }}
+          />
+        </>
+      )}
 
       {/* 详情抽屉 */}
       <Drawer
@@ -710,7 +701,7 @@ const FoodRecords = () => {
             : '食物详情'
         }
         placement="right"
-        width={isMobile ? '100%' : 600}
+        width={drawerWidth}
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false)

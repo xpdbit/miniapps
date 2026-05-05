@@ -20,7 +20,6 @@ import {
   Collapse,
   Tooltip,
 } from 'antd'
-import useMobile from '@/hooks/useMobile'
 import {
   PlusOutlined,
   ReloadOutlined,
@@ -30,12 +29,15 @@ import {
   ArrowDownOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
+import PageHeader from '@/components/PageHeader'
+import { useResponsiveWidth } from '@/hooks/useResponsiveWidth'
+import { DRAWER_WIDTH_WIDE } from '@/constants/layout'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { themesAPI, themeClassesAPI, themeRenderAPI } from '@/services/ftg-api'
 import type { Theme, ThemeConfig, ThemeClassItem } from '@/types'
 import { PageSkeleton } from '@/components/PageSkeleton'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 // ───────────────────── 常量 ─────────────────────
@@ -94,7 +96,7 @@ const Themes = () => {
 
   // ── 状态 ──
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const isMobile = useMobile()
+  const drawerWidth = useResponsiveWidth(DRAWER_WIDTH_WIDE)
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -517,29 +519,11 @@ const Themes = () => {
   return (
     <div>
       {/* 页面头部 */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
-        <Title level={2} style={{ margin: 0 }}>
-          主题管理
-        </Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['themes'] })}
-          >
-            刷新
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新建主题
-          </Button>
-        </Space>
-      </div>
+      <PageHeader
+        title="主题管理"
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['themes'] })}
+        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新建主题</Button>}
+      />
 
       {/* 加载态 */}
       {isLoading && <PageSkeleton type="cards" />}
@@ -585,7 +569,7 @@ const Themes = () => {
         title={editingTheme ? '编辑主题' : '新建主题'}
         open={drawerOpen}
         onClose={handleDrawerClose}
-        width={isMobile ? '100%' : 680}
+        width={drawerWidth}
         extra={
           <Space>
             <Button onClick={handleDrawerClose}>取消</Button>

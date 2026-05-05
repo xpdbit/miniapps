@@ -3,7 +3,11 @@ import { View, Text, Image, Button, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import type { FoodRecord } from '@/types';
 import { FOOD_TYPE_EMOJIS, FOOD_TYPE_LABELS } from '@/constants';
+import { checkinDAL, foodRecordDAL } from '@/services/db';
 import Loading from '@/components/Loading';
+import EmptyState from '@/components/EmptyState/index';
+import Skeleton from '@/components/Skeleton/index';
+import Icon from '@/components/Icon/Icon';
 import './index.scss';
 
 /**
@@ -25,19 +29,24 @@ export default function HomePage() {
   const loadData = useCallback(async () => {
     setDataLoading(true);
     try {
-      // TODO: 接入真实数据服务 - 通过 checkinDAL / foodRecordDAL 加载
-      // const openid = await getOpenId();
-      // const streak = await checkinDAL.getCurrentStreak(openid);
-      // const todayCount = await checkinDAL.countToday(openid);
-      // const records = await foodRecordDAL.getByOpenId(openid, { page: 1, pageSize: 3 });
-      // setCheckedIn(todayCount > 0);
-      // setStreakCount(streak);
-      // setRecentRecords(records.list);
+      // 获取 openid
+      const { result } = await wx.cloud.callFunction({ name: 'getOpenId' });
+      const openid = (result as { openid: string }).openid;
 
-      // 暂用默认空状态，数据层接入后移除
-      setCheckedIn(false);
-      setStreakCount(0);
-      setRecentRecords([]);
+      // 今日打卡状态
+      const todayCount = await checkinDAL.countToday(openid);
+      setCheckedIn(todayCount > 0);
+
+      // 连续打卡天数
+      const streak = await checkinDAL.getCurrentStreak(openid);
+      setStreakCount(streak);
+
+      // 最近 3 条食物记录
+      const recent = await foodRecordDAL.getByOpenId(openid, {
+        page: 1,
+        pageSize: 3,
+      });
+      setRecentRecords(recent.list);
     } catch {
       // 静默失败，展示空状态
       setCheckedIn(false);
@@ -97,9 +106,9 @@ export default function HomePage() {
   const renderCheckinCard = (): React.ReactNode => (
     <View className='home-checkin-card'>
       <View className='checkin-left'>
-        <View className={`checkin-icon ${checkedIn ? 'checkin-icon--done' : ''}`}>
-          <Text>{checkedIn ? '✅' : '📅'}</Text>
-        </View>
+          <View className={`checkin-icon ${checkedIn ? 'checkin-icon--done' : ''}`}>
+            <Icon name={checkedIn ? 'checkin-done' : 'checkin'} size={40} color={checkedIn ? '#2EC4B6' : '#999999'} />
+          </View>
         <View className='checkin-text'>
           <Text className='checkin-status'>
             {checkedIn ? '今日已打卡' : '今日未打卡'}
@@ -113,7 +122,7 @@ export default function HomePage() {
       </View>
       {streakCount > 0 && (
         <View className='checkin-streak-badge'>
-          <Text className='streak-fire'>🔥</Text>
+          <Icon name='flame' size={36} color='#FF6B35' />
           <Text className='streak-count'>{streakCount}</Text>
         </View>
       )}
@@ -126,8 +135,8 @@ export default function HomePage() {
   const renderHeroCTA = (): React.ReactNode => (
     <View className='home-hero'>
       <Button className='home-hero-btn' onClick={handleTakePhoto}>
-        <Text className='hero-btn-icon'>📸</Text>
-        <Text className='hero-btn-text'>拍照记录</Text>
+          <Icon name='camera' size={64} color='#FFFFFF' />
+          <Text className='hero-btn-text'>拍照记录</Text>
         <Text className='hero-btn-sub'>拍照识别食物，AI 生成专属主题</Text>
       </Button>
     </View>
@@ -153,9 +162,10 @@ export default function HomePage() {
             <Text className='record-name'>
               {record.foodName}
             </Text>
-            <Text className='record-calories'>
-              🔥 {record.calories.total}
-            </Text>
+            <View className='record-calories'>
+              <Icon name='flame' size={20} color='#E63946' />
+              <Text> {record.calories.total}</Text>
+            </View>
           </View>
           <View className='record-bottom'>
             <Text className='record-type'>
@@ -183,15 +193,14 @@ export default function HomePage() {
       </View>
 
       {dataLoading ? (
-        <View className='home-state'>
-          <Text className='home-state-text'>加载中...</Text>
-        </View>
+        <Skeleton type='card' count={3} />
       ) : recentRecords.length === 0 ? (
-        <View className='home-state'>
-          <Text className='home-state-icon'>🍽️</Text>
-          <Text className='home-state-text'>还没有记录</Text>
-          <Text className='home-state-sub'>快去拍照记录你的美食吧</Text>
-        </View>
+        <EmptyState
+          icon={<Icon name='food' size={64} color='#CCCCCC' />}
+          title='还没有记录'
+          description='快去拍照记录你的美食吧'
+          action={{ label: '去拍照', onClick: handleTakePhoto }}
+        />
       ) : (
         <View className='home-record-list'>
           {recentRecords.map(renderRecordCard)}

@@ -36,11 +36,13 @@ import {
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { achievementApi } from '@/services/achievementApi'
+import PageHeader from '@/components/PageHeader'
 import type { Achievement, AchievementUpdateData, UnlockedUser } from '@/services/achievementApi'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 // ─── 条件类型映射 ──────────────────────────────────────────
@@ -352,36 +354,14 @@ const Achievements = () => {
   return (
     <div>
       {/* ── 页面头部 ── */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 20,
+      <PageHeader
+        title="成就管理"
+        onRefresh={() => {
+          queryClient.invalidateQueries({ queryKey: ['achievements'] })
+          queryClient.invalidateQueries({ queryKey: ['achievements-stats'] })
         }}
-      >
-        <Title level={2} style={{ margin: 0 }}>
-          成就管理
-        </Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['achievements'] })
-              queryClient.invalidateQueries({ queryKey: ['achievements-stats'] })
-            }}
-          >
-            刷新
-          </Button>
-          <Button
-            type="primary"
-            icon={<ThunderboltOutlined />}
-            onClick={handleOpenTrigger}
-          >
-            手动触发检测
-          </Button>
-        </Space>
-      </div>
+        extra={<Button type="primary" icon={<ThunderboltOutlined />} onClick={handleOpenTrigger}>手动触发检测</Button>}
+      />
 
       {/* ── 统计面板 ── */}
       {statsError && !statsLoading && (
@@ -571,22 +551,25 @@ const Achievements = () => {
           />
         )}
 
-        <Table<Achievement>
-          rowKey="id"
-          columns={columns}
-          dataSource={achievementsRes ?? []}
-          loading={achievementsLoading}
-          scroll={{ x: 1000 }}
-          pagination={false}
-          locale={{
-            emptyText: (
-              <Empty
-                description="暂无成就数据"
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            ),
-          }}
-        />
+        {achievementsLoading ? (
+          <PageSkeleton type="table" rows={3} />
+        ) : (
+          <Table<Achievement>
+            rowKey="id"
+            columns={columns}
+            dataSource={achievementsRes ?? []}
+            scroll={{ x: 1000 }}
+            pagination={false}
+            locale={{
+              emptyText: (
+                <Empty
+                  description="暂无成就数据"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              ),
+            }}
+          />
+        )}
       </Card>
 
       {/* ── 编辑成就弹窗 ── */}

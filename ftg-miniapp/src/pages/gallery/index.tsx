@@ -11,6 +11,9 @@ import Taro from '@tarojs/taro';
 import { THEME_TEMPLATES } from '@/constants/themeDefaults';
 import { fetchThemes } from '@/services/themeApi';
 import type { Theme as ServerTheme } from '@/types/theme';
+import EmptyState from '@/components/EmptyState/index';
+import Skeleton from '@/components/Skeleton/index';
+import Icon from '@/components/Icon/Icon';
 import './index.scss';
 
 // ============================================================
@@ -236,10 +239,7 @@ export default function GalleryPage() {
   if (loading) {
     return (
       <View className='gallery-page'>
-        <View className='gallery-loading'>
-          <View className='gallery-loading-spinner' />
-          <Text className='gallery-loading-text'>加载主题中...</Text>
-        </View>
+        <Skeleton type='grid' count={6} />
       </View>
     );
   }
@@ -248,11 +248,11 @@ export default function GalleryPage() {
   if (themes.length === 0) {
     return (
       <View className='gallery-page'>
-        <View className='gallery-empty'>
-          <Text className='gallery-empty-icon'>🎨</Text>
-          <Text className='gallery-empty-title'>暂无可用主题</Text>
-          <Text className='gallery-empty-desc'>主题数据加载失败，请稍后重试</Text>
-        </View>
+        <EmptyState
+          icon='🎨'
+          title='暂无可用主题'
+          description='主题数据加载失败，请稍后重试'
+        />
       </View>
     );
   }
@@ -406,7 +406,7 @@ export default function GalleryPage() {
               className='gallery-modal-close'
               onClick={handleCloseDetail}
             >
-              <Text className='gallery-modal-close-icon'>✕</Text>
+              <Icon name='close' size={20} color='#FFFFFF' />
             </View>
           </View>
         </View>
@@ -422,27 +422,26 @@ export default function GalleryPage() {
             <Text className='gallery-preview-title'>
               {selectedTheme.name} - 预览效果
             </Text>
-            <View className='gallery-preview-image-wrap'>
-              <View className='gallery-preview-simulate'>
-                {/* 模拟主题合成效果 */}
-                <View
-                  className='gallery-preview-simulate-bg'
-                  style={{
-                    background:
-                      'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)',
-                  }}
-                />
-                <View className='gallery-preview-simulate-frame'>
-                  <View className='gallery-preview-simulate-food'>
-                    <Text className='gallery-preview-simulate-emoji'>🍽️</Text>
-                  </View>
-                  <Text className='gallery-preview-simulate-name'>
-                    美食照片
-                  </Text>
-                  <Text className='gallery-preview-simulate-desc'>
-                    {selectedTheme.name} 主题效果展示
-                  </Text>
-                </View>
+            <View className='gallery-preview-card'>
+              <View
+                className='gallery-preview-card-header'
+                style={{
+                  background:
+                    'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                }}
+              >
+                <Icon name='food' size={80} color='rgba(255,255,255,0.5)' />
+              </View>
+              <View className='gallery-preview-card-info'>
+                <Text className='gallery-preview-card-title'>
+                  {selectedTheme.name}
+                </Text>
+                <Text className='gallery-preview-card-desc'>
+                  {selectedTheme.description}
+                </Text>
+                <Text className='gallery-preview-card-sub'>
+                  使用此主题合成效果展示
+                </Text>
               </View>
             </View>
             <Text className='gallery-preview-hint'>

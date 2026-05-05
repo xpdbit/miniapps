@@ -2,7 +2,7 @@ import { Card, Col, Row, Skeleton, Space } from 'antd'
 
 export type SkeletonType = 'table' | 'cards' | 'detail' | 'dashboard'
 
-interface PageSkeletonProps {
+export interface PageSkeletonProps {
   type: SkeletonType
   rows?: number
 }

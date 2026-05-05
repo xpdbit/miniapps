@@ -12,6 +12,8 @@ import type {
   ServiceStatusInfo,
   HunyuanKeyInfo,
 } from '@/services/apiKeyService';
+import Skeleton from '@/components/Skeleton/index';
+import Icon from '@/components/Icon/Icon';
 import './index.scss';
 
 /**
@@ -206,16 +208,14 @@ export default function SettingsPage() {
         <Text className='settings-section-title'>AI 服务状态</Text>
         <View className='settings-card'>
           {loading ? (
-            <View className='settings-loading'>
-              <Text>加载中...</Text>
-            </View>
+            <Skeleton type='list' count={2} />
           ) : (
             <>
               {/* PP-ShiTuV2 食物识别 */}
               <View className='settings-card-item'>
                 <View className='settings-item-left'>
                   <View className='settings-item-icon settings-item-icon--green'>
-                    <Text>🍽️</Text>
+                    <Icon name='food' size={20} color='#666666' />
                   </View>
                   <View className='status-text'>
                     <Text className='status-label'>PP-ShiTuV2 食物识别</Text>
@@ -237,7 +237,7 @@ export default function SettingsPage() {
               <View className='settings-card-item'>
                 <View className='settings-item-left'>
                   <View className='settings-item-icon settings-item-icon--orange'>
-                    <Text>🤖</Text>
+                    <Icon name='robot' size={20} color='#666666' />
                   </View>
                   <View className='status-text'>
                     <Text className='status-label'>混元AI 文本生成</Text>

@@ -11,13 +11,14 @@ React 19 统一管理后台 (Vite + Ant Design)，集中管理所有个人小程
 ```
 dashboard/
 ├── src/
-│   ├── components/      # UI 组件
-│   ├── pages/           # 页面组件
-│   ├── hooks/           # 自定义 Hooks
+│   ├── components/      # UI 组件（PageHeader/PageSkeleton/ThemeToggle/ProjectSwitcher/ProtectedRoute/Layout/Sidebar）
+│   ├── pages/           # 页面组件（15个页面，含 ThemeClasses 管理页面）
+│   ├── hooks/           # 自定义 Hooks（useMobile/useResponsiveWidth）
 │   ├── services/        # API 调用层
-│   ├── layouts/         # 布局组件
+│   ├── stores/          # Zustand 状态管理（authStore/themeStore/projectStore）
+│   ├── constants/       # 常量（routes/permissions/layout）
 │   ├── utils/           # 工具函数
-│   ├── styles/          # 全局样式
+│   ├── styles/          # CSS Modules 样式（pages/等子目录）
 │   └── main.tsx         # SPA 入口
 ├── server/
 │   ├── server.ts        # Admin API 入口 (3001端口)
@@ -35,7 +36,9 @@ dashboard/
 | 前端页面 | `src/pages/` | 15 个页面 (含 ThemeClasses 管理页面) |
 | 共享组件 | `src/components/` | 可复用 UI 组件 |
 | API 调用 | `src/services/` | 对 Server/Admin API 的请求封装 |
-| 自定义 Hook | `src/hooks/` | 状态逻辑复用 |
+| 自定义 Hook | `src/hooks/` | 状态逻辑复用（useMobile/useResponsiveWidth）|
+| 状态管理 | `src/stores/` | Zustand stores（authStore/themeStore/projectStore）|
+| 常量配置 | `src/constants/` | 路由/权限/布局响应式宽度常量 |
 | Prisma Schema | `prisma/schema.prisma` | 管理后台专用数据模型 |
 
 ## CONVENTIONS (与项目根不同的规则)
@@ -61,6 +64,9 @@ npm run db:migrate    # Prisma 数据库迁移
 ```
 
 ## NOTES
+- **Dashboard 双进程**: Vite 前端(5173) + Express Admin API(3001) 独立运行
+- **Dashboard 暗色模式**: 通过 `themeStore` (Zustand) 控制，localStorage 持久化，ConfigProvider darkAlgorithm
+- **Dashboard UI 组件体系**: PageHeader (通用头部) + PageSkeleton (4种骨架屏) + 响应式宽度常量
 - Prisma 版本 v6.19，与 Server(v5.22) 不同版本但共享同一数据库
 - Admin API (`server/server.ts`) 需单独启动，非 Vite 管理
 - Docker 部署时前端打包为 nginx 静态文件，Admin API 合并到 Server 容器

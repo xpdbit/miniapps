@@ -39,9 +39,10 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 ├── cloud-functions/               # 空目录，实际云函数在 MiniApp 内
 ├── deploy/                        # Docker/Nginx 部署配置
 ├── docs/                          # 项目文档 (架构/API/数据库/开发)
-└── plan/                          # 项目规划文档
-    ├── tasks/                     # 各项目任务计划
-    └── humans/                    # 人工指令记录
+├── plan/                          # 项目规划文档
+│   ├── tasks/                     # 各项目任务计划
+│   └── humans/                    # 人工指令记录
+└── .sisyphus/                     # Sisyphus Agent 工作目录
 ```
 
 ## 架构说明
@@ -61,6 +62,11 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 | 模板渲染引擎 | `ftg-server/src/services/theme-render.service.ts` | Markup 模板 + CSS Class 渲染 |
 | Class 系统 | `ftg-server/src/services/theme-class.service.ts` | CSS 属性白名单 + CRUD |
 | AI 识别服务 | `ftg-server/src/services/` | PP-ShiTuV2 食物识别 |
+| Dashboard 主题 | `dashboard/src/components/ThemeToggle/` | 暗色模式切换 |
+| Dashboard 骨架屏 | `dashboard/src/components/PageSkeleton/` | 统一加载态（4种类型）|
+| Dashboard PageHeader | `dashboard/src/components/PageHeader/` | 通用页面头部组件 |
+| MiniApp 组件库 | `ftg-miniapp/src/components/` | AppButton/AppCard/SectionHeader/EmptyState/Icon/Skeleton |
+| MiniApp 图表 | `ftg-miniapp/src/components/charts/` | LineChart/PieChart/BarChart/CalendarHeatmap |
 | CI/CD | `ftg-server/.github/workflows/` | GitHub Actions (仅 Server) |
 | 项目文档 | `docs/` | ARCHITECTURE / API / DATABASE / DEVELOPMENT |
 
@@ -92,6 +98,8 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 - ❌ `getUserStats` 云函数返回硬编码零值
 - ❌ 存在无必要的 `eslint-disable` 注释
 - ❌ `cloud-functions/` 根目录为空，云函数实际在 MiniApp 子目录下
+- ❌ Dashboard 内联样式过多 — 已迁移 Login/Dashboard/Layout 为 CSS Modules，其余页面待迁移
+- ❌ MiniApp 跨任务并行执行可能产生导入冲突 — 注意 chart types/utils 需从 `@/components/charts` 导入
 
 ## COMMANDS
 ```bash
@@ -119,6 +127,11 @@ bash deploy/scripts/verify.sh   # 部署后健康检查
 
 ## NOTES
 - **Dashboard 双进程**: Vite 前端(5173) + Express Admin API(3001) 独立运行
+- **Dashboard 暗色模式**: 通过 `themeStore` (Zustand) 控制，localStorage 持久化，ConfigProvider darkAlgorithm
+- **Dashboard UI 组件体系**: PageHeader (通用头部) + PageSkeleton (4种骨架屏) + 响应式宽度常量
+- **MiniApp 共享组件库**: AppButton (4变体) + AppCard + SectionHeader + EmptyState + Icon (18个SVG) + Skeleton (4类型)
+- **MiniApp 图表**: 原生 Canvas 2D 图表组件 (LineChart/PieChart/BarChart/CalendarHeatmap)
+- **MiniApp CSS 变量系统**: `app.scss` 定义了完整的颜色/字体/间距/阴影/z-index 变量
 - **多项目扩展**: 新增小程序项目时，根目录添加 `项目名-miniapp` + `项目名-server`，dashboard 自动管理
 - **API 代理**: Dashboard `/api` 在开发时代理到 Server `localhost:3000`
 - **生产架构**: Nginx(80/443) → Dashboard SPA / API(/api/v1/) / 识别(/recognition/*)

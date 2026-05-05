@@ -4,7 +4,6 @@ import {
   Col,
   Empty,
   Row,
-  Skeleton,
   Spin,
   Statistic,
   Typography,
@@ -17,8 +16,10 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import { Column, Line, Pie } from '@ant-design/charts'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import { dashboardApi } from '@/services/dashboardApi'
 import type { DistributionItem, TrendItem } from '@/services/dashboardApi'
+import styles from '@/styles/pages/dashboard.module.scss'
 
 const { Title } = Typography
 
@@ -38,14 +39,7 @@ interface StatCardItem {
 
 /** 空数据占位图 */
 const ChartEmptyState = () => (
-  <div
-    style={{
-      height: CHART_HEIGHT,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
+  <div className={styles.chartEmpty}>
     <Empty description="暂无数据" />
   </div>
 )
@@ -132,117 +126,115 @@ const Dashboard = () => {
   ]
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={3} style={{ marginBottom: 24 }}>
+    <div className={styles.container}>
+      <Title level={3} className={styles.title}>
         仪表盘
       </Title>
 
-      {/* ===== 统计卡片行 ===== */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {statCards.map((item) => (
-          <Col key={item.title} xs={12} sm={8} lg={6}>
-            <Card>
-              {statsLoading ? (
-                <Skeleton
-                  active
-                  paragraph={{ rows: 1 }}
-                  title={{ width: '50%' }}
-                />
-              ) : (
-                <Statistic
-                  title={item.title}
-                  value={item.value ?? 0}
-                  prefix={item.icon}
-                  valueStyle={item.valueStyle}
-                />
-              )}
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      {statsLoading ? (
+        <PageSkeleton type="dashboard" />
+      ) : (
+        <>
+          {/* ===== 统计卡片行 ===== */}
+          <Row gutter={[16, 16]} className={styles.rowMargin}>
+            {statCards.map((item) => (
+              <Col key={item.title} xs={12} sm={8} lg={6}>
+                <Card>
+                  <Statistic
+                    title={item.title}
+                    value={item.value ?? 0}
+                    prefix={item.icon}
+                    valueStyle={item.valueStyle}
+                  />
+                </Card>
+              </Col>
+            ))}
+          </Row>
 
-      {/* ===== 图表第一行：折线图 + 柱状图 ===== */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={12}>
-          <Card title="近30天识别量趋势">
-            <Spin spinning={trendLoading}>
-              {!Array.isArray(recognitionTrend) || recognitionTrend.length === 0 ? (
-                <ChartEmptyState />
-              ) : (
-                <Line
-                  data={recognitionTrend as TrendItem[]}
-                  xField="date"
-                  yField="value"
-                  shape="smooth"
-                  height={CHART_HEIGHT}
-                  autoFit
-                  point={{ size: 3, shape: 'circle' }}
-                />
-              )}
-            </Spin>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card title="近30天新用户趋势">
-            <Spin spinning={userTrendLoading}>
-              {!Array.isArray(userTrend) || userTrend.length === 0 ? (
-                <ChartEmptyState />
-              ) : (
-                <Column
-                  data={userTrend as TrendItem[]}
-                  xField="date"
-                  yField="value"
-                  height={CHART_HEIGHT}
-                  autoFit
-                  style={{ radius: [4, 4, 0, 0] }}
-                />
-              )}
-            </Spin>
-          </Card>
-        </Col>
-      </Row>
+          {/* ===== 图表第一行：折线图 + 柱状图 ===== */}
+          <Row gutter={[16, 16]} className={styles.rowMargin}>
+            <Col xs={24} lg={12}>
+              <Card title="近30天识别量趋势">
+                <Spin spinning={trendLoading}>
+                  {!Array.isArray(recognitionTrend) || recognitionTrend.length === 0 ? (
+                    <ChartEmptyState />
+                  ) : (
+                    <Line
+                      data={recognitionTrend as TrendItem[]}
+                      xField="date"
+                      yField="value"
+                      shape="smooth"
+                      height={CHART_HEIGHT}
+                      autoFit
+                      point={{ size: 3, shape: 'circle' }}
+                    />
+                  )}
+                </Spin>
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card title="近30天新用户趋势">
+                <Spin spinning={userTrendLoading}>
+                  {!Array.isArray(userTrend) || userTrend.length === 0 ? (
+                    <ChartEmptyState />
+                  ) : (
+                    <Column
+                      data={userTrend as TrendItem[]}
+                      xField="date"
+                      yField="value"
+                      height={CHART_HEIGHT}
+                      autoFit
+                      style={{ radius: [4, 4, 0, 0] }}
+                    />
+                  )}
+                </Spin>
+              </Card>
+            </Col>
+          </Row>
 
-      {/* ===== 图表第二行：饼图 + 饼图 ===== */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card title="食物类型分布">
-            <Spin spinning={foodTypeLoading}>
-              {!Array.isArray(foodTypeDist) || foodTypeDist.length === 0 ? (
-                <ChartEmptyState />
-              ) : (
-                <Pie
-                  data={foodTypeDist as DistributionItem[]}
-                  angleField="value"
-                  colorField="type"
-                  height={CHART_HEIGHT}
-                  autoFit
-                  label={{ text: 'type', style: { fontWeight: 'bold' } }}
-                  legend={{ color: { position: 'bottom' } }}
-                />
-              )}
-            </Spin>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card title="主题使用分布">
-            <Spin spinning={themeUsageLoading}>
-              {!Array.isArray(themeUsageDist) || themeUsageDist.length === 0 ? (
-                <ChartEmptyState />
-              ) : (
-                <Pie
-                  data={themeUsageDist as DistributionItem[]}
-                  angleField="value"
-                  colorField="type"
-                  height={CHART_HEIGHT}
-                  autoFit
-                  label={{ text: 'type', style: { fontWeight: 'bold' } }}
-                  legend={{ color: { position: 'bottom' } }}
-                />
-              )}
-            </Spin>
-          </Card>
-        </Col>
-      </Row>
+          {/* ===== 图表第二行：饼图 + 饼图 ===== */}
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card title="食物类型分布">
+                <Spin spinning={foodTypeLoading}>
+                  {!Array.isArray(foodTypeDist) || foodTypeDist.length === 0 ? (
+                    <ChartEmptyState />
+                  ) : (
+                    <Pie
+                      data={foodTypeDist as DistributionItem[]}
+                      angleField="value"
+                      colorField="type"
+                      height={CHART_HEIGHT}
+                      autoFit
+                      label={{ text: 'type', style: { fontWeight: 'bold' } }}
+                      legend={{ color: { position: 'bottom' } }}
+                    />
+                  )}
+                </Spin>
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card title="主题使用分布">
+                <Spin spinning={themeUsageLoading}>
+                  {!Array.isArray(themeUsageDist) || themeUsageDist.length === 0 ? (
+                    <ChartEmptyState />
+                  ) : (
+                    <Pie
+                      data={themeUsageDist as DistributionItem[]}
+                      angleField="value"
+                      colorField="type"
+                      height={CHART_HEIGHT}
+                      autoFit
+                      label={{ text: 'type', style: { fontWeight: 'bold' } }}
+                      legend={{ color: { position: 'bottom' } }}
+                    />
+                  )}
+                </Spin>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
     </div>
   )
 }

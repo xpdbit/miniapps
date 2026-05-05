@@ -16,15 +16,16 @@ import {
 import useMobile from '@/hooks/useMobile'
 import {
   PlusOutlined,
-  ReloadOutlined,
   KeyOutlined,
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { keysApi } from '@/services/keysApi'
+import PageHeader from '@/components/PageHeader'
 import type { ApiKey, CreateKeyRequest, ApiKeyStatus } from '@/services/keysApi'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 // ─── 服务名称选项 ──────────────────────────────────────────
 const SERVICE_OPTIONS = [
@@ -213,42 +214,27 @@ const ApiKeys = () => {
   return (
     <div>
       {/* ── 页面头部 ── */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Title level={2} style={{ margin: 0 }}>
-          API 密钥管理
-        </Title>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['api-keys'] })}
-          >
-            刷新
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenAdd}>
-            新增密钥
-          </Button>
-        </Space>
-      </div>
+      <PageHeader
+        title="API 密钥管理"
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['api-keys'] })}
+        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleOpenAdd}>新增密钥</Button>}
+      />
 
       {/* ── 密钥列表 ── */}
-      <Table
-        dataSource={keys}
-        columns={columns}
-        rowKey="id"
-        loading={isLoading}
-        scroll={{ x: 800 }}
-        pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 条` }}
-        locale={{
-          emptyText: '暂无 API 密钥数据',
-        }}
-      />
+      {isLoading ? (
+        <PageSkeleton type="table" />
+      ) : (
+        <Table
+          dataSource={keys}
+          columns={columns}
+          rowKey="id"
+          scroll={{ x: 800 }}
+          pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 条` }}
+          locale={{
+            emptyText: '暂无 API 密钥数据',
+          }}
+        />
+      )}
 
       {/* ── 新增密钥弹窗 ── */}
       <Modal

@@ -4,6 +4,9 @@ import Taro from '@tarojs/taro';
 import type { FoodType, CalorieInfo } from '@/types';
 import { FOOD_TYPE_LABELS, FOOD_TYPE_EMOJIS } from '@/constants';
 import Loading from '@/components/Loading';
+import EmptyState from '@/components/EmptyState/index';
+import Skeleton from '@/components/Skeleton/index';
+import Icon from '@/components/Icon/Icon';
 import './index.scss';
 
 /**
@@ -237,16 +240,14 @@ export default function ResultPage() {
       <View className='result-content'>
         {/* ==================== 顶部标题 ==================== */}
       <View className='result-header'>
-        <Text className='result-header-icon'>✨</Text>
+        <Icon name='sparkle' size={40} color='#FFB703' />
         <Text className='result-header-title'>主题生成完成</Text>
       </View>
 
       {/* ==================== 主题合成图 ==================== */}
       <View className='result-image-section'>
-        {!imageLoaded && (
-          <View className='result-image-placeholder'>
-            <Loading visible text='图片加载中...' />
-          </View>
+        {!imageLoaded && themeImageUrl.length > 0 && (
+          <Skeleton type='image' />
         )}
         {themeImageUrl.length > 0 && (
           <Image
@@ -258,10 +259,11 @@ export default function ResultPage() {
           />
         )}
         {!themeImageUrl.length && (
-          <View className='result-image-placeholder'>
-            <Text className='placeholder-icon'>🖼️</Text>
-            <Text className='placeholder-text'>暂无合成图片</Text>
-          </View>
+          <EmptyState
+            icon='🖼️'
+            title='暂无合成图片'
+            description='拍照识别食物后，这里将展示 AI 生成的专属主题图片'
+          />
         )}
       </View>
 
@@ -276,13 +278,15 @@ export default function ResultPage() {
         {/* 热量概览 */}
         <View className='result-calorie-row'>
           {calories !== null ? (
-            <Text className='result-calorie-text'>
-              🔥 约 {calories.total} 千卡
-            </Text>
+            <View className='result-calorie-text'>
+              <Icon name='flame' size={28} color='#E63946' />
+              <Text> 约 {calories.total} 千卡</Text>
+            </View>
           ) : (
-            <Text className='result-calorie-text result-calorie-text--unknown'>
-              🔥 热量信息暂未获取
-            </Text>
+            <View className='result-calorie-text result-calorie-text--unknown'>
+              <Icon name='flame' size={28} color='#999999' />
+              <Text> 热量信息暂未获取</Text>
+            </View>
           )}
         </View>
 
@@ -310,28 +314,42 @@ export default function ResultPage() {
           loading={saving}
           disabled={saving}
         >
-          {saving ? '保存中...' : '📝 保存记录'}
+          {saving ? '保存中...' : (
+            <View style={{ display: 'flex', alignItems: 'center', gap: '8rpx' }}>
+              <Icon name='save' size={28} color='#FFFFFF' />
+              <Text>保存记录</Text>
+            </View>
+          )}
         </Button>
 
         <Button
           className='result-btn result-btn--secondary'
           onClick={handleRetake}
         >
-          📸 重新拍摄
+          <View style={{ display: 'flex', alignItems: 'center', gap: '8rpx' }}>
+            <Icon name='camera' size={28} color='#666666' />
+            <Text>重新拍摄</Text>
+          </View>
         </Button>
 
         <Button
           className='result-btn result-btn--secondary'
           onClick={handleShare}
         >
-          🔗 分享
+          <View style={{ display: 'flex', alignItems: 'center', gap: '8rpx' }}>
+            <Icon name='share' size={28} color='#666666' />
+            <Text>分享</Text>
+          </View>
         </Button>
 
         <Button
           className='result-btn result-btn--ghost'
           onClick={handleViewHistory}
         >
-          📋 查看历史
+          <View style={{ display: 'flex', alignItems: 'center', gap: '8rpx' }}>
+            <Icon name='chart' size={28} color='#999999' />
+            <Text>查看历史</Text>
+          </View>
         </Button>
         </View>
       </View>

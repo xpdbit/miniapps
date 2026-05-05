@@ -1,0 +1,22 @@
+// ============================================================
+// Dashboard 仪表盘页面样式
+// ============================================================
+
+.container {
+  padding: 24px;
+}
+
+.title {
+  margin-bottom: 24px;
+}
+
+.rowMargin {
+  margin-bottom: 24px;
+}
+
+.chartEmpty {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

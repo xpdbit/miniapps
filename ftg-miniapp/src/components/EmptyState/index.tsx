@@ -1,10 +1,10 @@
 import { View, Text } from '@tarojs/components';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import AppButton from '../AppButton/AppButton';
 import './index.scss';
 
 interface EmptyStateProps {
-  icon?: string;
+  icon?: ReactNode;
   title: string;
   description?: string;
   action?: { label: string; onClick: () => void };
@@ -22,7 +22,9 @@ const EmptyState: FC<EmptyStateProps> = ({
 
   return (
     <View className={classNames}>
-      {icon && <Text className='empty-state__icon'>{icon}</Text>}
+      {icon !== undefined && icon !== null && (
+        <View className='empty-state__icon'>{icon}</View>
+      )}
       <Text className='empty-state__title'>{title}</Text>
       {description && (
         <Text className='empty-state__description'>{description}</Text>

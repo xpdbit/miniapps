@@ -15,11 +15,12 @@ import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { auditApi } from '@/services/auditApi'
 import dayjs from 'dayjs'
+import PageHeader from '@/components/PageHeader'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import type { AuditLogItem, AuditLogQueryParams } from '@/services/auditApi'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { RangePicker } = DatePicker
 
 // --- Action type mappings ---
@@ -220,12 +221,10 @@ const AuditLogs = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={2} style={{ margin: 0 }}>审计日志</Title>
-        <Button icon={<DownloadOutlined />} onClick={handleExport}>
-          导出 CSV
-        </Button>
-      </div>
+      <PageHeader
+        title="审计日志"
+        extra={<Button icon={<DownloadOutlined />} onClick={handleExport}>导出 CSV</Button>}
+      />
 
       {/* Filters */}
       <Card size="small" style={{ marginBottom: 16 }}>

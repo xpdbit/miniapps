@@ -14,6 +14,7 @@ import ProjectSwitcher from '@/components/ProjectSwitcher'
 import Sidebar from './Sidebar'
 import ThemeToggle from '@/components/ThemeToggle'
 import { useThemeStore } from '@/stores/themeStore'
+import styles from '@/styles/pages/layout.module.scss'
 
 const { Header, Sider, Content } = AntLayout
 
@@ -71,11 +72,9 @@ const Layout = () => {
           setCollapsed(true)
         }
       }}
+      className={styles.sider}
       style={{
         position: isMobile ? 'fixed' : 'relative',
-        zIndex: 100,
-        height: '100vh',
-        overflow: 'auto',
       }}
     >
       <div
@@ -115,13 +114,8 @@ const Layout = () => {
           {renderMobileNav()}
           <AntLayout>
             <Header
-              style={{
-                padding: '0 12px',
-                background: colorBgContainer,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
+              className={`${styles.header} ${styles.headerMobile}`}
+              style={{ background: colorBgContainer }}
             >
               <Button
                 type="text"
@@ -129,7 +123,7 @@ const Layout = () => {
                 onClick={toggleMobileDrawer}
               />
               <ProjectSwitcher />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div className={styles.headerRight}>
                 <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
                 <Button
                   type="text"
@@ -140,13 +134,10 @@ const Layout = () => {
               </div>
             </Header>
             <Content
+              className={styles.contentMobile}
               style={{
-                margin: 12,
-                padding: 12,
                 background: colorBgContainer,
                 borderRadius: borderRadiusLG,
-                minHeight: 'calc(100vh - 64px - 24px)',
-                overflow: 'auto',
               }}
             >
               <Outlet />
@@ -158,15 +149,10 @@ const Layout = () => {
           {renderDesktopSider()}
           <AntLayout>
             <Header
-              style={{
-                padding: '0 16px',
-                background: colorBgContainer,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
+              className={`${styles.header} ${styles.headerDesktop}`}
+              style={{ background: colorBgContainer }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className={styles.headerLeft}>
                 <Button
                   type="text"
                   icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -174,7 +160,7 @@ const Layout = () => {
                 />
                 <ProjectSwitcher />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div className={styles.headerRight}>
                 <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
                 <Button type="text" icon={<LogoutOutlined />} danger onClick={handleLogout}>
                   退出登录
@@ -182,12 +168,10 @@ const Layout = () => {
               </div>
             </Header>
             <Content
+              className={styles.contentDesktop}
               style={{
-                margin: 24,
-                padding: 24,
                 background: colorBgContainer,
                 borderRadius: borderRadiusLG,
-                minHeight: 'calc(100vh - 64px - 48px)',
               }}
             >
               <Outlet />
