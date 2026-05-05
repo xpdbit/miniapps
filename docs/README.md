@@ -28,7 +28,7 @@
 ## 📁 项目结构
 
 ```
-FoodThemeGenerator/
+.miniapps/
 ├── ftg-miniapp/                   # 微信小程序主项目 (Taro + React)
 │   ├── src/pages/                 # 12 个页面
 │   ├── src/services/              # 云函数 + HTTP API 服务

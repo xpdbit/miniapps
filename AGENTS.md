@@ -23,7 +23,7 @@ OpenCode 全局指令 - 中文模式
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-05-05
-**Commit:** 6925235 (docs: 更新 AGENTS.md 时间戳和 commit)
+**Commit:** bd73315 (重命名项目结构并移除旧版 .FoodThemeGenerator_MiniAPP)
 **Branch:** master
 
 ## OVERVIEW
@@ -33,7 +33,7 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 
 ## STRUCTURE
 ```
-FoodThemeGenerator/
+.miniapps/
 ├── ftg-miniapp/                   # Taro 4.x 微信小程序 (React 18 + Sass)
 ├── ftg-server/                    # Express 后端 API (Prisma ORM)
 ├── dashboard/                     # 统一管理后台 (一管多，管理所有小程序项目)
@@ -55,7 +55,7 @@ FoodThemeGenerator/
 | 任务 | 位置 | 说明 |
 |------|------|------|
 | 小程序页面/组件 | `ftg-miniapp/src/` | Taro + React，含 pages/components/hooks |
-| 后端 API 路由 | `ftg-server/src/routes/` | 15 个路由模块 (新增 theme-classes/theme-render)RESTful |
+| 后端 API 路由 | `ftg-server/src/routes/` | 13 个路由模块 (含 theme-classes/theme-render)RESTful |
 | 管理后台界面 | `dashboard/src/` | React + Vite + Ant Design，含 ThemeClasses |
 | 数据库 Schema | `ftg-server/prisma/schema.prisma` | Prisma ORM 主 Schema (10表: User/FoodRecord/etc) |
 | 部署配置 | `deploy/docker-compose.yml` | Docker 统一编排 (MySQL/Redis/AI/Server/Admin/Nginx) |

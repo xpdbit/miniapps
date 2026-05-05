@@ -70,7 +70,7 @@ router.use('/api/v1/api-keys', apikeyRoutes);
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'FoodThemeGenerator API',
+    title: 'FTG API',
     version: '1.0.0',
     description: '食物主题生成器后端 API 文档',
   },
