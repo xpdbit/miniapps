@@ -1,0 +1,260 @@
+// ============================================================
+// FTG_Server Prisma Schema
+// 8 MySQL 数据表定义
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 枚举
+// ============================================================
+
+/// 食物分类枚举
+enum FoodType {
+  grain      @map("grain")
+  vegetable  @map("vegetable")
+  fruit      @map("fruit")
+  meat       @map("meat")
+  seafood    @map("seafood")
+  dairy      @map("dairy")
+  nut        @map("nut")
+  snack      @map("snack")
+  beverage   @map("beverage")
+  seasoning  @map("seasoning")
+  dish       @map("dish")
+  other      @map("other")
+}
+
+/// AI 流水线状态枚举
+enum PipelineStatus {
+  pending      @map("pending")
+  recognizing  @map("recognizing")
+  recognized   @map("recognized")
+  generating   @map("generating")
+  composing    @map("composing")
+  completed    @map("completed")
+  failed       @map("failed")
+}
+
+// ============================================================
+// 1. 用户表 (users)
+// ============================================================
+model User {
+  id        Int      @id @default(autoincrement())
+  openid    String   @unique @map("openid")
+  nickname  String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  foodRecords      FoodRecord[]
+  checkins         Checkin[]
+  userAchievements UserAchievement[]
+  apiKeys          ApiKey[]
+  pipelines        PipelineRecord[]
+
+  @@map("users")
+}
+
+// ============================================================
+// 2. 食物记录表 (food_records)
+// ============================================================
+model FoodRecord {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @map("user_id")
+  imageUrl        String?   @map("image_url")
+  themeImageUrl   String?   @map("theme_image_url")
+  foodName        String    @map("food_name")
+  foodType        FoodType  @map("food_type")
+  caloriesTotal   Float?    @map("calories_total")
+  caloriesPer100g Float?    @map("calories_per100g")
+  protein         Float?
+  fat             Float?
+  carbs           Float?
+  aiDescShort     String?   @map("ai_desc_short")
+  aiDescGameStyle String?   @map("ai_desc_game_style")
+  aiDescDetail    String?   @map("ai_desc_detail")
+  gameDescription String?   @map("game_description")
+  latitude        Float?
+  longitude       Float?
+  locationName    String?   @map("location_name")
+  ipLocation      String?   @map("ip_location")
+  themeId         String?   @map("theme_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  isDeleted       Boolean   @default(false) @map("is_deleted")
+  deletedAt       DateTime? @map("deleted_at")
+  isPublic        Boolean   @default(true) @map("is_public")
+
+  user    User     @relation(fields: [userId], references: [id])
+  checkin Checkin?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("food_records")
+}
+
+// ============================================================
+// 3. 打卡记录表 (checkins)
+// ============================================================
+model Checkin {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  foodRecordId Int      @unique @map("food_record_id")
+  locationName String?  @map("location_name")
+  latitude     Float?
+  longitude    Float?
+  checkinDate  DateTime @map("checkin_date") @db.Date
+  streakCount  Int      @default(0) @map("streak_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id])
+  foodRecord FoodRecord @relation(fields: [foodRecordId], references: [id])
+
+  @@index([userId, checkinDate(sort: Desc)])
+  @@map("checkins")
+}
+
+// ============================================================
+// 4. 成就定义表 (achievements)
+// ============================================================
+model Achievement {
+  id             Int      @id @default(autoincrement())
+  achievementId  String   @unique @map("achievement_id")
+  name           String
+  description    String
+  iconUrl        String?  @map("icon_url")
+  conditionType  String   @map("condition_type")
+  conditionValue Int      @map("condition_value")
+  conditionParam String?  @map("condition_param")
+  themeId        String?  @map("theme_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+// ============================================================
+// 5. 用户成就关联表 (user_achievements)
+// ============================================================
+model UserAchievement {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  achievementId String   @map("achievement_id")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+  progress      Int      @default(0)
+  isUnlocked    Boolean  @default(false) @map("is_unlocked")
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [achievementId])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ============================================================
+// 6. 主题定义表 (themes)
+// ============================================================
+model Theme {
+  id              Int      @id @default(autoincrement())
+  themeId         String   @unique @map("theme_id")
+  projectId       String   @default("ftg") @map("project_id")
+  name            String
+  description     String?
+  shortName       String?  @unique @map("short_name")
+  gameName        String   @map("game_name")
+  configJson      Json?    @map("config_json")
+  templateMarkup  String?  @map("template_markup")
+  cssClasses      Json?    @default("[]") @map("css_classes")
+  previewImageUrl String?  @map("preview_image_url")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  usageCount      Int      @default(0) @map("usage_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, isActive])
+  @@index([shortName])
+  @@map("themes")
+}
+
+// ============================================================
+// 9. CSS Class 定义表 (theme_classes)
+// ============================================================
+model ThemeClass {
+  id            Int      @id @default(autoincrement())
+  classId       String   @unique @map("class_id")
+  projectId     String   @default("ftg") @map("project_id")
+  name          String
+  cssProperties Json     @map("css_properties")
+  category      String   @default("official") @map("category")
+  description   String?
+  creatorId     Int?     @map("creator_id")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, category])
+  @@map("theme_classes")
+}
+
+// ============================================================
+// 10. 主题使用日志表 (theme_usage_logs)
+// ============================================================
+model ThemeUsageLog {
+  id        Int      @id @default(autoincrement())
+  themeId   String   @map("theme_id")
+  recordId  String   @map("record_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([themeId, recordId])
+  @@index([themeId, createdAt(sort: Desc)])
+  @@map("theme_usage_logs")
+}
+
+// ============================================================
+// 7. API 密钥表 (api_keys)
+// ============================================================
+model ApiKey {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  serviceName  String    @map("service_name")
+  encryptedKey String    @map("encrypted_key")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, serviceName])
+  @@map("api_keys")
+}
+
+// ============================================================
+// 8. AI 流水线状态表 (pipeline_statuses)
+// ============================================================
+model PipelineRecord {
+  id         Int             @id @default(autoincrement())
+  userId     Int             @map("user_id")
+  pipelineId String          @unique @map("pipeline_id")
+  status     PipelineStatus  @default(pending)
+  progress   Int             @default(0)
+  imageUrl   String?         @map("image_url")
+  themeId    String?         @map("theme_id")
+  resultJson Json?           @map("result_json")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([pipelineId])
+  @@map("pipeline_statuses")
+}

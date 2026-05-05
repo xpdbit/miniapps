@@ -1,0 +1,10 @@
+import { useAuthStore } from '@/stores/authStore'
+
+export const useAuth = () => {
+  const token = useAuthStore((state) => state.token)
+  const user = useAuthStore((state) => state.user)
+  const login = useAuthStore((state) => state.login)
+  const logout = useAuthStore((state) => state.logout)
+
+  return { token, user, login, logout }
+}

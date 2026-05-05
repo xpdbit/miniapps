@@ -1,9 +1,0 @@
-{
-  "name": "orchestrateAIPipeline",
-  "version": "1.0.0",
-  "description": "AI 流水线编排 — 协调食物识别、文本生成和主题合成流程",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "latest"
-  }
-}

@@ -55,13 +55,13 @@ FoodThemeGenerator/
 | 任务 | 位置 | 说明 |
 |------|------|------|
 | 小程序页面/组件 | `ftg-miniapp/src/` | Taro + React，含 pages/components/hooks |
-| 后端 API 路由 | `ftg-server/src/routes/` | 12 个路由模块，RESTful |
-| 管理后台界面 | `dashboard/src/` | React + Vite + Ant Design |
-| 数据库 Schema | `ftg-server/prisma/schema.prisma` | Prisma ORM 主 Schema |
+| 后端 API 路由 | `ftg-server/src/routes/` | 15 个路由模块 (新增 theme-classes/theme-render)RESTful |
+| 管理后台界面 | `dashboard/src/` | React + Vite + Ant Design，含 ThemeClasses |
+| 数据库 Schema | `ftg-server/prisma/schema.prisma` | Prisma ORM 主 Schema (10表: User/FoodRecord/etc) |
 | 部署配置 | `deploy/docker-compose.yml` | Docker 统一编排 (MySQL/Redis/AI/Server/Admin/Nginx) |
-| 云函数 | `ftg-miniapp/cloudfunctions/` | 14 个云函数 (AI 流水线/OCR/合成等) |
+| 模板渲染引擎 | `ftg-server/src/services/theme-render.service.ts` | Markup 模板 + CSS Class 渲染 |
+| Class 系统 | `ftg-server/src/services/theme-class.service.ts` | CSS 属性白名单 + CRUD |
 | AI 识别服务 | `ftg-server/src/services/` | PP-ShiTuV2 食物识别 |
-| 图片合成 | `ftg-miniapp/src/` | 前端 Canvas 2D 合成 |
 | CI/CD | `ftg-server/.github/workflows/` | GitHub Actions (仅 Server) |
 | 项目文档 | `docs/` | ARCHITECTURE / API / DATABASE / DEVELOPMENT |
 
@@ -116,7 +116,6 @@ bash deploy/scripts/verify.sh   # 部署后健康检查
 
 ## NOTES
 - **Dashboard 双进程**: Vite 前端(5173) + Express Admin API(3001) 独立运行
-- **`.FoodThemeGenerator_MiniAPP/`** 为旧版副本，忽略
 - **多项目扩展**: 新增小程序项目时，根目录添加 `项目名-miniapp` + `项目名-server`，dashboard 自动管理
 - **API 代理**: Dashboard `/api` 在开发时代理到 Server `localhost:3000`
 - **生产架构**: Nginx(80/443) → Dashboard SPA / API(/api/v1/) / 识别(/recognition/*)

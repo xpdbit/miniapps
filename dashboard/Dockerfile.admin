@@ -1,0 +1,56 @@
+# =============================================================================
+# Dashboard Admin API Dockerfile
+# 构建并运行 Dashboard 的管理员认证 API（Express + Prisma）
+# =============================================================================
+# 使用方式：docker compose build admin
+# =============================================================================
+
+# ---- Build Stage ----
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 限制 Node.js 内存（2c/2g 小实例 OOM 防护）
+ENV NODE_OPTIONS="--max-old-space-size=256"
+
+# 安装依赖（优化 npm 参数，减少内存占用）
+COPY package.json package-lock.json ./
+RUN npm ci --prefer-offline --no-audit --no-fund --loglevel=error
+
+# 生成 Prisma 客户端
+COPY prisma/ ./prisma/
+RUN npx prisma generate --no-hints
+
+# 编译 TypeScript
+COPY tsconfig.json ./
+COPY server/ ./server/
+COPY src/types/ ./src/types/
+# 限制 TypeScript 编译内存 + 跳过库检查
+RUN NODE_OPTIONS="--max-old-space-size=384" npx tsc server/server.ts --outDir dist --esModuleInterop --module commonjs --target es2020 --skipLibCheck --resolveJsonModule
+
+# ---- Production Stage ----
+FROM node:20-slim
+
+WORKDIR /app
+
+# 安装运行时依赖（libssl 用于 Prisma）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制构建产物
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+# 移除 "type": "module" 以支持 CommonJS require()（tsc 编译输出为 CommonJS）
+RUN node -e "const p=require('./package.json'); delete p.type; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2))"
+COPY --from=builder /app/prisma ./prisma
+# 为 Debian (production stage) 重新生成 Prisma 客户端（builder 是 Alpine）
+RUN npx prisma generate
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3001/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+
+CMD ["node", "dist/server.js"]

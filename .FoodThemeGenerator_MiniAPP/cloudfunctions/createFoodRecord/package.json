@@ -1,9 +1,0 @@
-{
-  "name": "createFoodRecord",
-  "version": "1.0.0",
-  "description": "创建食物记录（带事务）",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "latest"
-  }
-}

@@ -1,0 +1,14 @@
+export const ROUTES = {
+  LOGIN: '/login',
+  DASHBOARD: '/dashboard',
+  USERS: '/users',
+  FOOD_RECORDS: '/food-records',
+  THEMES: '/themes',
+  THEME_CLASSES: '/theme-classes',
+  ACHIEVEMENTS: '/achievements',
+  API_KEYS: '/api-keys',
+  MONITORING: '/monitoring',
+  ADMIN: '/admin',
+  AUDIT_LOGS: '/audit-logs',
+  PROJECTS: '/projects',
+} as const

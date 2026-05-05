@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  super_admin
+  admin
+  viewer
+}
+
+enum AdminStatus {
+  active
+  disabled
+}
+
+enum ProjectStatus {
+  active
+  inactive
+}
+
+model AdminUser {
+  id           Int         @id @default(autoincrement())
+  username     String      @unique
+  passwordHash String      @map("password_hash")
+  role         AdminRole   @default(admin)
+  status       AdminStatus @default(active)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  auditLogs AuditLog[]
+
+  @@map("admin_users")
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  name        String
+  apiBaseUrl  String        @map("api_base_url")
+  description String?
+  status      ProjectStatus @default(active)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("projects")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int      @map("admin_id")
+  action     String
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin AdminUser @relation(fields: [adminId], references: [id])
+
+  @@map("audit_logs")
+}

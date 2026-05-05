@@ -1,9 +1,0 @@
-{
-  "name": "checkAchievement",
-  "version": "1.0.0",
-  "description": "检查并解锁成就",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "latest"
-  }
-}
