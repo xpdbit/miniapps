@@ -13,7 +13,6 @@ import {
   Popconfirm,
   message,
   Empty,
-  Spin,
   Alert,
 } from 'antd'
 import {
@@ -26,6 +25,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { themeClassesAPI } from '@/services/ftg-api'
 import type { ThemeClassItem } from '@/types'
+import { PageSkeleton } from '@/components/PageSkeleton'
 import useMobile from '@/hooks/useMobile'
 
 const { Title, Text } = Typography
@@ -322,14 +322,7 @@ const ThemeClasses = () => {
       </div>
 
       {/* 加载态 */}
-      {isLoading && (
-        <div style={{ textAlign: 'center', padding: 80 }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
-            <Text type="secondary">加载 Class 列表中…</Text>
-          </div>
-        </div>
-      )}
+      {isLoading && <PageSkeleton type="table" />}
 
       {/* 错误态 */}
       {isError && !isLoading && (

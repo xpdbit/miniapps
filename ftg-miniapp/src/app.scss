@@ -279,3 +279,41 @@ page {
   color: var(--color-text-secondary);
   text-align: center;
 }
+
+/* ============================================================
+   Loading Inline (无遮罩，纯行内)
+   ============================================================ */
+.loading-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-base);
+}
+
+.loading-inline__spinner {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-inline__text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   Loading Overlay (父容器遮罩)
+   ============================================================ */
+.loading-overlay--parent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}

@@ -1,0 +1,31 @@
+/* ============================================================
+  SectionHeader - 区域标题组件
+  使用全局 CSS 变量系统
+  ============================================================ */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.section-header__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.section-header__action {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+
+  &:active {
+    opacity: 0.7;
+  }
+}

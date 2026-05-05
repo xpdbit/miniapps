@@ -12,6 +12,8 @@ import { useAuthStore } from '@/stores/authStore'
 import useMobile from '@/hooks/useMobile'
 import ProjectSwitcher from '@/components/ProjectSwitcher'
 import Sidebar from './Sidebar'
+import ThemeToggle from '@/components/ThemeToggle'
+import { useThemeStore } from '@/stores/themeStore'
 
 const { Header, Sider, Content } = AntLayout
 
@@ -22,6 +24,7 @@ const Layout = () => {
   const logout = useAuthStore((state) => state.logout)
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken()
   const isMobile = useMobile(1024) // lg breakpoint
+  const { isDark, toggleTheme } = useThemeStore()
 
   const handleLogout = () => {
     Modal.confirm({
@@ -126,12 +129,15 @@ const Layout = () => {
                 onClick={toggleMobileDrawer}
               />
               <ProjectSwitcher />
-              <Button
-                type="text"
-                icon={<LogoutOutlined />}
-                danger
-                onClick={handleLogout}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+                <Button
+                  type="text"
+                  icon={<LogoutOutlined />}
+                  danger
+                  onClick={handleLogout}
+                />
+              </div>
             </Header>
             <Content
               style={{
@@ -168,9 +174,12 @@ const Layout = () => {
                 />
                 <ProjectSwitcher />
               </div>
-              <Button type="text" icon={<LogoutOutlined />} danger onClick={handleLogout}>
-                退出登录
-              </Button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+                <Button type="text" icon={<LogoutOutlined />} danger onClick={handleLogout}>
+                  退出登录
+                </Button>
+              </div>
             </Header>
             <Content
               style={{

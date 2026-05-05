@@ -15,7 +15,6 @@ import {
   Popconfirm,
   message,
   Empty,
-  Spin,
   Alert,
   Divider,
   Collapse,
@@ -34,6 +33,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { themesAPI, themeClassesAPI, themeRenderAPI } from '@/services/ftg-api'
 import type { Theme, ThemeConfig, ThemeClassItem } from '@/types'
+import { PageSkeleton } from '@/components/PageSkeleton'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -542,14 +542,7 @@ const Themes = () => {
       </div>
 
       {/* 加载态 */}
-      {isLoading && (
-        <div style={{ textAlign: 'center', padding: 80 }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
-            <Text type="secondary">加载主题中…</Text>
-          </div>
-        </div>
-      )}
+      {isLoading && <PageSkeleton type="cards" />}
 
       {/* 错误态 */}
       {isError && !isLoading && (

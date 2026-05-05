@@ -23,7 +23,6 @@ OpenCode 全局指令 - 中文模式
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-05-05
-**Commit:** bd73315 (重命名项目结构并移除旧版 .FoodThemeGenerator_MiniAPP)
 **Branch:** master
 
 ## OVERVIEW
@@ -72,6 +71,10 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 | `App` (Server) | 入口 | `ftg-server/src/app.ts` | 后端 Express 服务 |
 | `main` (Dashboard) | 入口 | `dashboard/src/main.tsx` | 管理后台 SPA 入口 |
 | `server` (Dashboard API) | 入口 | `dashboard/server/server.ts` | Admin 独立 API (3001端口) |
+| `ProtectedRoute` (Dashboard) | 组件 | `dashboard/src/components/ProtectedRoute/` | 路由守卫（登录+权限双检查） |
+| `authStore` (Dashboard) | 状态 | `dashboard/src/stores/authStore.ts` | Zustand 认证状态管理 |
+| `admin-auth` (Dashboard API) | 中间件 | `dashboard/server/admin-auth.ts` | JWT 认证 + RBAC 权限中间件 |
+| `token` (Dashboard) | 工具 | `dashboard/src/utils/token.ts` | Token 持久化（localStorage/sessionStorage） |
 | `orchestrateAIPipeline` | 云函数 | `cloud-functions/orchestrateAIPipeline/` | AI 流水线编排 |
 | `themeCompose` | 云函数 | `cloud-functions/themeCompose/` | 主题图片合成 |
 
@@ -120,3 +123,4 @@ bash deploy/scripts/verify.sh   # 部署后健康检查
 - **API 代理**: Dashboard `/api` 在开发时代理到 Server `localhost:3000`
 - **生产架构**: Nginx(80/443) → Dashboard SPA / API(/api/v1/) / 识别(/recognition/*)
 - **识别服务**: PP-ShiTuV2 独立容器，通过 HTTP API 调用
+- **Dashboard Auth 初始化**: `authStore` 初始化时 `isAuthenticated` 同步设为 `!!getToken()`，`user` 为 `null`。`restoreSession()` 异步调用 `/admin/me` 获取用户信息。`ProtectedRoute` 订阅 `initialized` 标志，仅在 `restoreSession` 完成后才进行权限判断，避免竞态条件导致 403。
