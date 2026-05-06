@@ -59,7 +59,7 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 | 任务 | 位置 | 说明 |
 |------|------|------|
 | 小程序页面/组件 | `ftg-miniapp/src/` | Taro + React，含 pages/components/hooks |
-| 后端 API 路由 | `ftg-server/src/routes/` | 13 个路由模块 (含 theme-classes/theme-render)RESTful |
+| 后端 API 路由 | `ftg-server/src/routes/` | 15 个路由模块 (含 theme-classes/theme-render)RESTful |
 | 管理后台界面 | `dashboard/src/` | React + Vite + Ant Design，含 ThemeClasses |
 | 数据库 Schema | `ftg-server/prisma/schema.prisma` | Prisma ORM 主 Schema (10表: User/FoodRecord/etc) |
 | 部署配置 | `deploy/docker-compose.yml` | Docker 统一编排 (MySQL/Redis/AI/Server/Admin/Nginx) |

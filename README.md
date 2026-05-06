@@ -12,10 +12,9 @@
 | **后端 API** | Express + TypeScript + Prisma ORM |
 | **管理后台** | React 19 + Vite + Ant Design |
 | **数据库** | MySQL 8.0 + Redis 7 |
-| **食物识别** | PP-ShiTuV2 (PaddleClas) |
+| **食物识别** | PP-ShiTuV2 (PaddleClas) 独立容器 |
 | **AI 文本** | 通义千问 (DashScope) |
 | **主题渲染** | Markup 模板 + CSS Class 系统 |
-| **食物识别** | PP-ShiTuV2 (PaddleClas) 容器 |
 | **部署** | Docker Compose + Nginx (ECS) |
 
 ## 核心功能
