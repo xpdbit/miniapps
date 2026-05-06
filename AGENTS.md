@@ -38,7 +38,11 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 ├── dashboard/                     # 统一管理后台 (一管多，管理所有小程序项目)
 ├── cloud-functions/               # 空目录，实际云函数在 MiniApp 内
 ├── deploy/                        # Docker/Nginx 部署配置
-├── docs/                          # 项目文档 (架构/API/数据库/开发)
+├── docs/                          # 项目文档 (按项目分类存档)
+│   ├── ftg-miniapp/               # 小程序文档 (API/数据库/开发)
+│   ├── ftg-server/                # 后端文档
+│   ├── dashboard/                 # 管理后台文档
+│   └── deploy/                    # 部署文档
 ├── plan/                          # 项目规划文档
 │   ├── tasks/                     # 各项目任务计划
 │   └── humans/                    # 人工指令记录
@@ -72,7 +76,7 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 | MiniApp 组件库 | `ftg-miniapp/src/components/` | AppButton/AppCard/SectionHeader/EmptyState/Icon/Skeleton |
 | MiniApp 图表 | `ftg-miniapp/src/components/charts/` | LineChart/PieChart/BarChart/CalendarHeatmap |
 | CI/CD | `ftg-server/.github/workflows/` | GitHub Actions (仅 Server) |
-| 项目文档 | `docs/` | ARCHITECTURE / API / DATABASE / DEVELOPMENT |
+| 项目文档 | `docs/` | 按项目分类 (ftg-miniapp/ ftg-server/ dashboard/ deploy/ ARCHITECTURE) |
 
 ## CODE MAP
 | 符号 | 类型 | 位置 | 角色 |
