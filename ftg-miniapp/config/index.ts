@@ -24,11 +24,15 @@ const baseConfig = {
   defineConstants: {
     'process.env.TARO_ENV': JSON.stringify('weapp'),
     'process.env.CLOUDBASE_ENV_ID': JSON.stringify(process.env.CLOUDBASE_ENV_ID || ''),
-    'process.env.TARO_APP_API_BASE': JSON.stringify(process.env.TARO_APP_API_BASE || 'http://localhost:3000/api/v1'),
+    'process.env.TARO_APP_API_BASE': JSON.stringify(process.env.TARO_APP_API_BASE || 'https://47.94.108.150/api/v1'),
+    'process.env.TARO_APP_MOCK_AUTH': JSON.stringify(process.env.TARO_APP_MOCK_AUTH || 'false'),
     'process.env.QQ_MAP_KEY': JSON.stringify(process.env.QQ_MAP_KEY || 'YOUR_QQ_MAP_KEY_HERE'),
   },
   copy: {
-    patterns: [],
+    patterns: [
+      // 复制 tabBar 图标到构建输出（app.json 中引用的路径）
+      { from: 'src/assets/icons/', to: 'assets/icons/' },
+    ],
     options: {},
   },
   framework: 'react',

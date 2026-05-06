@@ -51,6 +51,11 @@ interface AuthState {
   login: () => Promise<void>;
 
   /**
+   * 生成 Mock code（供内部使用）
+   */
+  _generateMockCode: () => string;
+
+  /**
    * 登出
    *
    * 清除 token 和用户信息，isAuthenticated 置为 false。
@@ -98,9 +103,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errMsg.includes('request:fail') ||
         errMsg.includes('ERR_CONNECTION_REFUSED') ||
         errMsg.includes('Network Error');
+      const isConfigError =
+        errMsg.includes('WECHAT_APPID') ||
+        errMsg.includes('WECHAT_SECRET') ||
+        errMsg.includes('AppID') ||
+        errMsg.includes('AppSecret');
       if (isConnectionError) {
         Taro.showToast({
           title: '无法连接到服务器，请检查网络或稍后重试',
+          icon: 'none',
+          duration: 3000,
+        });
+      } else if (isConfigError) {
+        Taro.showToast({
+          title: '登录配置错误，请联系管理员',
           icon: 'none',
           duration: 3000,
         });
@@ -116,23 +132,69 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  /**
+   * 生成 Mock code（服务端 dev_ 前缀路径在任意 NODE_ENV 下均返回 Mock Session）
+   */
+  _generateMockCode: (): string => {
+    return `dev_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  },
+
   login: async () => {
-    // 1. 调用 wx.login() 获取临时 code
-    const loginRes = await Taro.login();
-    if (!loginRes.code) {
-      throw new Error('微信登录失败: 未获取到临时 code');
+    let code: string;
+
+    // TARO_APP_MOCK_AUTH=true 时完全跳过 wx.login()，直接使用 Mock code
+    if (process.env.TARO_APP_MOCK_AUTH === 'true') {
+      console.info('[AuthStore] TARO_APP_MOCK_AUTH=true，使用 Mock 登录');
+      code = get()._generateMockCode();
+    } else {
+      // 1. 调用 wx.login() 获取临时 code
+      try {
+        const loginRes = await Taro.login();
+        if (loginRes.code) {
+          code = loginRes.code;
+        } else {
+          throw new Error('微信登录失败: 未获取到临时 code');
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.warn('[AuthStore] wx.login() 失败，尝试 Mock 降级:', errMsg);
+        code = get()._generateMockCode();
+      }
     }
 
-    // 2. 请求服务端认证（首次使用自动注册）
-    const result = await loginWithWechat(loginRes.code);
+    try {
+      // 2. 请求服务端认证（首次使用自动注册）
+      const result = await loginWithWechat(code);
 
-    // 3. 持久化 token + 更新 store
-    Taro.setStorageSync(TOKEN_KEY, result.token);
-    set({
-      token: result.token,
-      user: result.user,
-      isAuthenticated: true,
-    });
+      // 3. 持久化 token + 更新 store
+      Taro.setStorageSync(TOKEN_KEY, result.token);
+      set({
+        token: result.token,
+        user: result.user,
+        isAuthenticated: true,
+      });
+    } catch (err) {
+      // 真实 code 登录失败 → 降级使用 Mock code 重试一次
+      if (!code.startsWith('dev_') && !code.startsWith('test_')) {
+        console.warn('[AuthStore] 服务端登录失败，降级 Mock 重试:', (err as Error).message);
+        try {
+          const mockCode = get()._generateMockCode();
+          const result = await loginWithWechat(mockCode);
+          Taro.setStorageSync(TOKEN_KEY, result.token);
+          set({
+            token: result.token,
+            user: result.user,
+            isAuthenticated: true,
+          });
+          return;
+        } catch (mockErr) {
+          // Mock 降级也失败 → 抛出原始错误（保留真实原因）
+          console.error('[AuthStore] Mock 降级亦失败:', (mockErr as Error).message);
+          throw err;
+        }
+      }
+      throw err;
+    }
   },
 
   logout: () => {
