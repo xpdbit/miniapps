@@ -1,5 +1,9 @@
 # 开发指南
 
+> ⚠️ **旧架构文档** — 本文档部分内容基于项目早期的 CloudBase 云函数架构。
+> 当前开发环境以 ftg-server（Express REST API）和 Taro 小程序为主。
+> 如有冲突，以根目录 AGENTS.md 和具体项目代码为准。
+
 ## 环境搭建
 
 ### 前置要求
@@ -8,7 +12,7 @@
 - **npm** >= 9
 - **微信开发者工具** [下载](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
 - **微信小程序 AppID**（需注册微信公众平台）
-- **CloudBase 环境**（在微信开发者工具中开通）
+- **后端服务**：ftg-server（`cd ftg-server && npm install && npm run dev`）
 
 ### 项目初始化
 

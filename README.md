@@ -13,7 +13,22 @@
 | **管理后台** | React 19 + Vite + Ant Design |
 | **数据库** | MySQL 8.0 + Redis 7 |
 | **食物识别** | PP-ShiTuV2 (PaddleClas) |
-| **部署** | Docker Compose + Nginx |
+| **AI 文本** | 通义千问 (DashScope) |
+| **主题渲染** | Markup 模板 + CSS Class 系统 |
+| **食物识别** | PP-ShiTuV2 (PaddleClas) 容器 |
+| **部署** | Docker Compose + Nginx (ECS) |
+
+## 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| **食物识别** | PP-ShiTuV2 AI 识别 → 返回食物名称、类别、热量 |
+| **主题模板** | Markup 模板 + CSS Class 系统渲染食物卡片 |
+| **位置打卡** | 记录美食打卡位置，GPS + IP 定位 |
+| **成就系统** | 基于打卡次数、记录数等条件的成就解锁 |
+| **统计面板** | 饮食数据可视化、打卡统计 |
+| **管理后台** | 统一管理用户/食物记录/主题/Class/密钥 |
+| **部署** | Docker Compose + Nginx 一键部署到 ECS |
 
 ## 项目结构
 

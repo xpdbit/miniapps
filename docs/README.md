@@ -7,9 +7,10 @@
 ```
 docs/
 ├── ftg-miniapp/          # 微信小程序 (Taro + React)
-│   ├── API.md            # 云函数 API 参考
-│   ├── DATABASE.md       # 数据库设计 (CloudBase)
-│   └── DEVELOPMENT.md    # 开发指南与规范
+│   ├── README.md         # 项目概述
+│   ├── API.md            # 云函数 API 参考（旧架构）
+│   ├── DATABASE.md       # 数据库设计（旧架构）
+│   └── DEVELOPMENT.md    # 开发指南
 ├── ftg-server/           # Express 后端 API
 │   └── README.md         # 项目说明
 ├── dashboard/            # 统一管理后台
@@ -25,7 +26,7 @@ docs/
 
 | 项目 | 文档位置 | 主要内容 |
 |------|----------|----------|
-| **小程序 (ftg-miniapp)** | [ftg-miniapp/](./ftg-miniapp/) | API 参考、数据库设计、开发指南 |
+| **小程序 (ftg-miniapp)** | [ftg-miniapp/](./ftg-miniapp/) | 项目概述、API 参考、数据库、开发指南 |
 | **后端 (ftg-server)** | [ftg-server/](./ftg-server/) | 项目说明 |
 | **管理后台 (dashboard)** | [dashboard/](./dashboard/) | 项目说明 |
 | **部署 (deploy)** | [deploy/](./deploy/) | 部署说明 |

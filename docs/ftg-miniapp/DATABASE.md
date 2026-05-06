@@ -1,5 +1,9 @@
 # 数据库设计
 
+> ⚠️ **旧架构文档** — 本文档描述的是项目早期的 CloudBase NoSQL 数据库。
+> 当前架构已迁移至 MySQL 8.0 + Prisma ORM，Schema 定义在 `ftg-server/prisma/schema.prisma`。
+> 本文档保留供参考，不反映当前数据库结构。
+
 基于 **微信云开发 CloudBase 云数据库**，使用 NoSQL 文档型存储。
 
 ## 集合总览

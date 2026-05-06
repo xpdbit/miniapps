@@ -31,4 +31,5 @@ ftg-server/src/
 
 ## 接口文档
 
-详见 [ftg-miniapp API](../ftg-miniapp/API.md)（小程序端调用后端 API 的参考）。
+Express REST API 路由定义详见 `ftg-server/src/routes/`（15 个路由模块）。
+小程序前端通过 `ftg-miniapp/src/services/httpClient.ts`（JWT 自动携带）调用后端 API。
