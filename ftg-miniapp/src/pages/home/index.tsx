@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, Button, ScrollView } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import type { FoodRecord } from '@/types';
 import { FOOD_TYPE_EMOJIS, FOOD_TYPE_LABELS } from '@/constants';
 import { checkinDAL, foodRecordDAL } from '@/services/db';
@@ -15,6 +15,11 @@ import './index.scss';
  * 展示今日打卡状态、拍照入口、最近食物记录
  */
 export default function HomePage() {
+  // 页面显示时通知自定义底部栏切换选中状态
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabChange', 0);
+  });
+
   // ============================================================
   // State
   // ============================================================

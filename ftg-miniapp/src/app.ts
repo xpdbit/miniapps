@@ -5,6 +5,7 @@
 
 import { PropsWithChildren } from 'react';
 import Taro, { useLaunch } from '@tarojs/taro';
+import { useAuthStore } from '@/stores/authStore';
 import './app.scss';
 
 /**
@@ -88,6 +89,9 @@ function App({ children }: PropsWithChildren<object>) {
   useLaunch(() => {
     initCloudBase();
     setupGlobalErrorHandler();
+
+    // 自动认证：检查已有 token → 有效则恢复会话 → 否则 wx.login() 自动注册登录
+    useAuthStore.getState().initialize();
   });
 
   return children;

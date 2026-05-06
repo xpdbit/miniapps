@@ -12,7 +12,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5173,
     proxy: {
-      // Admin API 代理 — 优先匹配 /api/admin，转发到 Dashboard Admin API (3001)
+      // ─── ！重要：代理规则按定义顺序匹配 ───
+      // 更具体的规则必须放在前面，否则会被通用规则抢匹配
+      // ─────────────────────────────────────────
+
+      // Admin API 代理 — 必须放在 /api 之前
+      // 匹配 /api/admin/*，转发到 Dashboard Admin API (3001)
       '/api/admin': {
         target: 'http://localhost:3001',
         changeOrigin: true,
@@ -23,6 +28,7 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
       },
       // 主 API 代理 — /api/* 转发到 ftg-server (3000)
+      // 必须放在 /api/admin 和 /dashboard 之后
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

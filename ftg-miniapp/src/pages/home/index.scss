@@ -21,7 +21,7 @@
 }
 
 .home-content {
-  padding: 0 var(--spacing-base) var(--spacing-lg);
+  padding: 0 var(--spacing-base) calc(var(--spacing-lg) + 120rpx);
 }
 
 /* ============================================================

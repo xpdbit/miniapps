@@ -6,6 +6,7 @@
   min-height: 100vh;
   background-color: var(--color-bg);
   padding: var(--spacing-base);
+  padding-bottom: calc(var(--spacing-base) + 120rpx);
   animation: page-fade-in 0.35s ease;
 }
 
@@ -28,7 +29,7 @@
 }
 
 .settings-section-title {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
@@ -91,13 +92,13 @@
 }
 
 .status-label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-medium);
 }
 
 .status-sub {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
 }
 
@@ -111,13 +112,13 @@
 }
 
 .key-label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-medium);
 }
 
 .key-tag {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   padding: 4px 12px;
   border-radius: var(--radius-pill);
   background-color: var(--color-primary-bg);
@@ -131,7 +132,7 @@
 }
 
 .key-masked {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
   font-family: monospace;
   letter-spacing: 1px;
@@ -151,7 +152,7 @@
   border: 2px solid var(--color-border);
   border-radius: var(--radius-base);
   padding: 0 var(--spacing-sm);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text-primary);
   box-sizing: border-box;
   transition: border-color var(--transition-fast);
@@ -182,7 +183,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   border-radius: var(--radius-base);
   border: none;
@@ -288,7 +289,7 @@
 }
 
 .settings-item-title {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-medium);
 }

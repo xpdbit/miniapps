@@ -56,6 +56,36 @@ export interface UserStats {
   totalCalories: number;
 }
 
+/** 服务端认证用户 (来自 Prisma User model) */
+export interface AuthUser {
+  /** 用户 ID (MySQL autoincrement) */
+  id: number;
+  /** 微信 openid */
+  openid: string;
+  /** 昵称 */
+  nickname: string | null;
+  /** 头像 URL */
+  avatarUrl: string | null;
+  /** 注册时间 */
+  createdAt: string;
+  /** 更新时间 */
+  updatedAt: string;
+}
+
+/** POST /auth/login 响应数据 */
+export interface LoginResponse {
+  /** JWT 令牌 */
+  token: string;
+  /** 用户信息 */
+  user: AuthUser;
+}
+
+/** GET /auth/me 响应数据 */
+export interface MeResponse {
+  /** 用户信息 */
+  user: AuthUser;
+}
+
 /** 用户设置 */
 export interface UserSettings {
   /** 默认主题ID */

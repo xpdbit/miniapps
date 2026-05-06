@@ -14,42 +14,63 @@ import type {
   ThemeUsageStats,
 } from '@/types/theme';
 
-/** 服务端 API 基础 URL（需配置域名白名单） */
-const API_BASE = process.env.TARO_APP_API_BASE || 'http://localhost:3000/api/v1';
+import { API_BASE, REQUEST_TIMEOUT } from '@/services/httpClient';
 
-/** 通用请求头 */
-function getHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  return headers;
+/** PError 超时判断 — 兼容 Taro 不同版本的 error 格式 */
+function isTimeoutError(err: unknown): boolean {
+  const msg =
+    err instanceof Error
+      ? err.message
+      : typeof err === 'object' && err !== null
+        ? String(err)
+        : '';
+  return (
+    msg.includes('timeout') ||
+    msg.includes('超时') ||
+    msg.includes('Timeout') ||
+    msg.includes('ETIMEDOUT')
+  );
+}
+
+/**
+ * 通用的 Taro.request 包装，统一处理超时等错误
+ */
+async function taroRequest<T>(
+  url: string,
+  method: 'GET' | 'POST',
+  data?: Record<string, unknown>,
+): Promise<T> {
+  try {
+    const res = await Taro.request({
+      url,
+      method,
+      header: {
+        'Content-Type': 'application/json',
+      },
+      data,
+      timeout: REQUEST_TIMEOUT,
+    });
+    return res.data as T;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      throw new Error(`请求超时（${REQUEST_TIMEOUT / 1000}秒）: ${method} ${url}`);
+    }
+    throw err;
+  }
 }
 
 /**
  * 通用 GET 请求
  */
 async function get<T>(path: string): Promise<T> {
-  const res = await Taro.request({
-    url: `${API_BASE}${path}`,
-    method: 'GET',
-    header: getHeaders(),
-    timeout: 10000,
-  });
-  return res.data as T;
+  return taroRequest<T>(`${API_BASE}${path}`, 'GET');
 }
 
 /**
  * 通用 POST 请求
  */
 async function post<T>(path: string, data: Record<string, unknown>): Promise<T> {
-  const res = await Taro.request({
-    url: `${API_BASE}${path}`,
-    method: 'POST',
-    header: getHeaders(),
-    data,
-    timeout: 10000,
-  });
-  return res.data as T;
+  return taroRequest<T>(`${API_BASE}${path}`, 'POST', data);
 }
 
 // ============================================================

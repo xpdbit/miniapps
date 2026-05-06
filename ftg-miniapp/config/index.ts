@@ -1,7 +1,11 @@
-import { defineConfig, type UserConfigExport } from '@tarojs/cli';
+import { defineConfig } from '@tarojs/cli';
 import path from 'path';
 
-const config: UserConfigExport = {
+import devConfig from './dev';
+import prodConfig from './prod';
+
+// ─── 基础配置（开发/生产共享部分） ────────────────────────
+const baseConfig = {
   projectName: 'food-theme-generator',
   date: '2026-05-01',
   designWidth: 750,
@@ -18,7 +22,10 @@ const config: UserConfigExport = {
     '@tarojs/plugin-html',
   ],
   defineConstants: {
+    'process.env.TARO_ENV': JSON.stringify('weapp'),
     'process.env.CLOUDBASE_ENV_ID': JSON.stringify(process.env.CLOUDBASE_ENV_ID || ''),
+    'process.env.TARO_APP_API_BASE': JSON.stringify(process.env.TARO_APP_API_BASE || 'http://localhost:3000/api/v1'),
+    'process.env.QQ_MAP_KEY': JSON.stringify(process.env.QQ_MAP_KEY || 'YOUR_QQ_MAP_KEY_HERE'),
   },
   copy: {
     patterns: [],
@@ -50,7 +57,8 @@ const config: UserConfigExport = {
         .set('@components', path.resolve(__dirname, '..', 'src/components'))
         .set('@services', path.resolve(__dirname, '..', 'src/services'))
         .set('@types', path.resolve(__dirname, '..', 'src/types'))
-        .set('@constants', path.resolve(__dirname, '..', 'src/constants'));
+        .set('@constants', path.resolve(__dirname, '..', 'src/constants'))
+        .set('@stores', path.resolve(__dirname, '..', 'src/stores'));
     },
   },
   h5: {
@@ -72,4 +80,9 @@ const config: UserConfigExport = {
   },
 };
 
-export default defineConfig(config);
+export default defineConfig((merge, { mode }) => {
+  // mode === 'production' 时（npm run build:weapp:prod），合并 prod.ts
+  // 否则（npm run dev:weapp），合并 dev.ts
+  const envConfig = mode === 'production' ? prodConfig : devConfig;
+  return merge({}, baseConfig, envConfig);
+});

@@ -236,6 +236,9 @@ export function clearCache(themeId?: string): void {
 // 内部辅助
 // ============================================================
 
+/** 远程模板下载超时 (ms) */
+const REMOTE_TEMPLATE_TIMEOUT = 15000;
+
 /**
  * 从云存储加载远程模板配置
  *
@@ -248,9 +251,29 @@ export function clearCache(themeId?: string): void {
 async function loadRemoteConfig(themeId: string): Promise<ThemeDrawConfig> {
   const cloudPath = `theme-templates/${themeId}.json`;
 
-  const res = await Taro.cloud.downloadFile({
-    fileID: cloudPath,
-  });
+  // 带超时的云存储下载
+  const res = await Promise.race([
+    new Promise<{ tempFilePath: string }>((resolve, reject) => {
+      Taro.cloud.downloadFile({
+        fileID: cloudPath,
+        success: (downloadRes) => {
+          resolve({ tempFilePath: downloadRes.tempFilePath });
+        },
+        fail: (err) => {
+          reject(new Error(`模板文件下载失败: ${err.errMsg}`));
+        },
+      });
+    }),
+    new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(
+          new Error(
+            `模板文件下载超时（${REMOTE_TEMPLATE_TIMEOUT / 1000}秒）: ${cloudPath}`,
+          ),
+        );
+      }, REMOTE_TEMPLATE_TIMEOUT);
+    }),
+  ]);
 
   if (!res.tempFilePath) {
     throw new Error('云存储文件下载结果为空');

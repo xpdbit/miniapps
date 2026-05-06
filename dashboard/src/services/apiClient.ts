@@ -44,11 +44,7 @@ apiClient.interceptors.response.use(
           // 注意：不调用 removeToken()
           // apiClient 的 token 是 admin token，由 adminApiClient 管理其生命周期
           // 主 Server（3000）返回 401 是因为 admin token 无法通过其认证中间件验证
-          // 清除 admin token 会导致用户意外登出
-          message.error(data?.message || '登录已过期，请重新登录')
-          if (window.location.pathname !== '/login') {
-            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
-          }
+          // 所以这里不应该弹窗或跳转登录页，静默忽略即可
           break
         case 403:
           message.error('没有操作权限')

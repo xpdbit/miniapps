@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, Input, Button } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import {
   getKeyStatus,
   saveApiKey,
@@ -21,6 +21,11 @@ import './index.scss';
  * 包含 AI 服务状态、混元AI 配置、关于信息
  */
 export default function SettingsPage() {
+  // 页面显示时通知自定义底部栏切换选中状态
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabChange', 1);
+  });
+
   // ============================================================
   // State
   // ============================================================

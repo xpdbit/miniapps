@@ -5,7 +5,7 @@
 .profile-page {
   min-height: 100vh;
   background-color: var(--color-bg);
-  padding-bottom: var(--spacing-base);
+  padding-bottom: calc(var(--spacing-base) + 120rpx);
 }
 
 /* ============================================================
@@ -51,7 +51,7 @@
 }
 
 .profile-wechat-name {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -84,7 +84,7 @@
 }
 
 .profile-stat-label {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
   line-height: 1.3;
 }
@@ -163,13 +163,13 @@
 }
 
 .profile-menu-title {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
 }
 
 .profile-menu-sub {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
 }
 
@@ -212,13 +212,13 @@
 }
 
 .profile-about-desc {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   line-height: 1.6;
   margin-bottom: var(--spacing-sm);
 }
 
 .profile-about-version {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
 }

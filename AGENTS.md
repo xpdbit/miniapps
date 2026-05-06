@@ -22,7 +22,7 @@ OpenCode 全局指令 - 中文模式
 
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-05-05
+**Generated:** 2026-05-06
 **Branch:** master
 
 ## OVERVIEW
@@ -33,7 +33,7 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 ## STRUCTURE
 ```
 .miniapps/
-├── ftg-miniapp/                   # Taro 4.x 微信小程序 (React 18 + Sass)
+├── ftg-miniapp/                   # Taro 4.x 微信小程序 (React 18 + Sass + Zustand)
 ├── ftg-server/                    # Express 后端 API (Prisma ORM)
 ├── dashboard/                     # 统一管理后台 (一管多，管理所有小程序项目)
 ├── cloud-functions/               # 空目录，实际云函数在 MiniApp 内
@@ -62,6 +62,10 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 | 模板渲染引擎 | `ftg-server/src/services/theme-render.service.ts` | Markup 模板 + CSS Class 渲染 |
 | Class 系统 | `ftg-server/src/services/theme-class.service.ts` | CSS 属性白名单 + CRUD |
 | AI 识别服务 | `ftg-server/src/services/` | PP-ShiTuV2 食物识别 |
+| MiniApp 状态管理 | `ftg-miniapp/src/stores/` | Zustand 认证状态 (authStore) |
+| MiniApp HTTP 客户端 | `ftg-miniapp/src/services/httpClient.ts` | 统一 HTTP 封装 (JWT 自动携带) |
+| MiniApp 认证服务 | `ftg-miniapp/src/services/authService.ts` | 微信登录 + Token 验证封装 |
+| MiniApp 自定义 tabBar | `ftg-miniapp/src/custom-tab-bar/` | 自定义底部栏 (替代原生 tabBar) |
 | Dashboard 主题 | `dashboard/src/components/ThemeToggle/` | 暗色模式切换 |
 | Dashboard 骨架屏 | `dashboard/src/components/PageSkeleton/` | 统一加载态（4种类型）|
 | Dashboard PageHeader | `dashboard/src/components/PageHeader/` | 通用页面头部组件 |
@@ -83,6 +87,10 @@ Monorepo，3 个独立 TypeScript 项目 + 云函数。
 | `token` (Dashboard) | 工具 | `dashboard/src/utils/token.ts` | Token 持久化（localStorage/sessionStorage） |
 | `orchestrateAIPipeline` | 云函数 | `cloud-functions/orchestrateAIPipeline/` | AI 流水线编排 |
 | `themeCompose` | 云函数 | `cloud-functions/themeCompose/` | 主题图片合成 |
+| `useAuthStore` (MiniApp) | 状态 | `ftg-miniapp/src/stores/authStore.ts` | Zustand 认证状态 (token/user/初始化) |
+| `httpClient` (MiniApp) | 服务 | `ftg-miniapp/src/services/httpClient.ts` | 统一 HTTP 客户端 (JWT) |
+| `authService` (MiniApp) | 服务 | `ftg-miniapp/src/services/authService.ts` | 微信登录/自动注册/Token 验证 |
+| `CustomTabBar` (MiniApp) | 组件 | `ftg-miniapp/src/custom-tab-bar/` | 自定义底部栏 (事件驱动高亮) |
 
 ## CONVENTIONS
 - **TypeScript strict** 全项目强制 (`no-explicit-any: error`)
@@ -133,6 +141,9 @@ bash deploy/scripts/verify.sh   # 部署后健康检查
 - **MiniApp 图表**: 原生 Canvas 2D 图表组件 (LineChart/PieChart/BarChart/CalendarHeatmap)
 - **MiniApp CSS 变量系统**: `app.scss` 定义了完整的颜色/字体/间距/阴影/z-index 变量
 - **多项目扩展**: 新增小程序项目时，根目录添加 `项目名-miniapp` + `项目名-server`，dashboard 自动管理
+- **MiniApp 认证流程**: wx.login() → POST /auth/login → JWT token → 本地持久化 → 自动校验(initialize)
+- **MiniApp 自定义 tabBar**: CustomTabBar 组件使用 Taro eventCenter 监听 tabChange 事件驱动高亮，替代原生 tabBar
+- **MiniApp HTTP 客户端**: HttpClient 类封装 Taro.request，支持超时检测和网络连接错误中文提示
 - **API 代理**: Dashboard `/api` 在开发时代理到 Server `localhost:3000`
 - **生产架构**: Nginx(80/443) → Dashboard SPA / API(/api/v1/) / 识别(/recognition/*)
 - **识别服务**: PP-ShiTuV2 独立容器，通过 HTTP API 调用

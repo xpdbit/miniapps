@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import { getUserProfile, getUserStats } from '@/services/userService';
 import type { UserProfile, UserStats } from '@/types/user';
 import { FoodType } from '@/types/food';
@@ -12,6 +12,11 @@ import './index.scss';
  * 展示用户信息卡片、统计数据、功能入口列表
  */
 export default function ProfilePage() {
+  // 页面显示时通知自定义底部栏切换选中状态
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabChange', 2);
+  });
+
   // ============================================================
   // State
   // ============================================================

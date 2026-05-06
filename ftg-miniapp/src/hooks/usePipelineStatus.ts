@@ -120,6 +120,9 @@ export interface UsePipelineStatusResult {
 /** 轮询间隔 (ms) */
 const POLL_INTERVAL = 2000;
 
+/** 最大轮询时长 (ms) — 超过此时间视为超时 */
+const MAX_POLLING_DURATION = 120000; // 2 分钟
+
 /** 管道云函数名称 */
 const CLOUD_FUNCTION_NAME = 'orchestrateAIPipeline';
 
@@ -171,6 +174,9 @@ export function usePipelineStatus(
   // 用 ref 存储当前定时器 ID
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // 记录轮询开始时间（用于超时判断）
+  const pollingStartRef = useRef<number>(0);
+
   /**
    * 单次轮询请求
    */
@@ -178,6 +184,23 @@ export function usePipelineStatus(
     const currentPipelineId = pipelineIdRef.current;
 
     if (!currentPipelineId) {
+      return;
+    }
+
+    // 检查是否超时
+    const elapsed = Date.now() - pollingStartRef.current;
+    if (elapsed > MAX_POLLING_DURATION) {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setState((prev) => ({
+        ...prev,
+        status: 'failed',
+        error: 'AI 处理超时，请稍后重试',
+        isFailed: true,
+        isLoading: false,
+      }));
       return;
     }
 
@@ -253,6 +276,9 @@ export function usePipelineStatus(
       setState((prev) => ({ ...prev, isLoading: false }));
       return;
     }
+
+    // 记录轮询开始时间
+    pollingStartRef.current = Date.now();
 
     // 立即执行一次
     poll();

@@ -141,7 +141,7 @@
   left: 0;
   width: 100vw;
   text-align: center;
-  font-size: 28px;
+  font-size: var(--font-size-base);
   color: rgba(255, 255, 255, 0.85);
   z-index: calc(var(--z-overlay) + 1);
   letter-spacing: 2px;
@@ -186,7 +186,7 @@
 }
 
 .toolbar-btn-label {
-  font-size: 22px;
+  font-size: var(--font-size-sm);
   color: rgba(255, 255, 255, 0.8);
   text-align: center;
 }
@@ -322,7 +322,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
   pointer-events: auto;
 }
@@ -388,7 +388,7 @@
 }
 
 .uploading-text {
-  font-size: 32px;
+  font-size: var(--font-size-md);
   color: var(--color-white);
   font-weight: var(--font-weight-medium);
   margin-bottom: 48px;
@@ -411,7 +411,7 @@
 }
 
 .progress-label {
-  font-size: 24px;
+  font-size: var(--font-size-sm);
   color: rgba(255, 255, 255, 0.7);
   margin-top: 24px;
 }

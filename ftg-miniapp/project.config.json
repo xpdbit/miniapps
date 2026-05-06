@@ -4,7 +4,7 @@
   "description": "食物主题生成器 - 微信小程序",
   "appid": "wx304f234695e196d1",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": true,
     "enhance": true,
     "postcss": true,

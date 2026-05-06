@@ -38,7 +38,8 @@
       "@components/*": ["./src/components/*"],
       "@services/*": ["./src/services/*"],
       "@types/*": ["./src/types/*"],
-      "@constants/*": ["./src/constants/*"]
+      "@constants/*": ["./src/constants/*"],
+      "@stores/*": ["./src/stores/*"]
     },
 
     /* 其他 */

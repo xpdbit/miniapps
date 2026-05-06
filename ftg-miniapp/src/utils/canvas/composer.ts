@@ -410,6 +410,12 @@ export async function composeThemeImage(request: ComposeRequest): Promise<Compos
 // 图片加载
 // ============================================================
 
+/** 云文件下载超时 (ms) */
+const CLOUD_DOWNLOAD_TIMEOUT = 30000;
+
+/** 图片 onload 超时 (ms) — 下载完成后等待图片解码的最长时间 */
+const IMAGE_LOAD_TIMEOUT = 20000;
+
 /**
  * 从云存储加载图片到 Canvas Image 对象
  *
@@ -428,20 +434,54 @@ export function loadImageFromCloud(
     const maxRetries = 1;
 
     function doDownload(): void {
-      Taro.cloud.downloadFile({
-        fileID,
-        success: (downloadRes) => {
-          const tempPath = downloadRes.tempFilePath;
-          if (!tempPath) {
-            reject(new ComposeError('图片下载结果为空'));
-            return;
+      // 创建一个带超时的下载 Promise
+      const downloadPromise = new Promise<{ tempFilePath: string }>(
+        (resolveDownload, rejectDownload) => {
+          Taro.cloud.downloadFile({
+            fileID,
+            success: (downloadRes) => {
+              resolveDownload({
+                tempFilePath: downloadRes.tempFilePath,
+              });
+            },
+            fail: (err) => {
+              rejectDownload(
+                new ComposeError(`云文件下载失败: ${err.errMsg}`),
+              );
+            },
+          });
+        },
+      );
+
+      // 下载超时包装
+      const downloadTimeout = new Promise<never>((_, rejectTimeout) => {
+        setTimeout(() => {
+          rejectTimeout(
+            new ComposeError(
+              `云文件下载超时（${CLOUD_DOWNLOAD_TIMEOUT / 1000}秒）: ${fileID}`,
+            ),
+          );
+        }, CLOUD_DOWNLOAD_TIMEOUT);
+      });
+
+      // 竞争：下载阶段
+      Promise.race([downloadPromise, downloadTimeout])
+        .then(({ tempFilePath }) => {
+          if (!tempFilePath) {
+            throw new ComposeError('图片下载结果为空');
           }
 
           const img = canvas.createImage();
+          let imageSettled = false;
+
           img.onload = (): void => {
+            if (imageSettled) return;
+            imageSettled = true;
             resolve(img);
           };
           img.onerror = (): void => {
+            if (imageSettled) return;
+            imageSettled = true;
             if (retryCount < maxRetries) {
               retryCount++;
               setTimeout(doDownload, 500);
@@ -449,12 +489,32 @@ export function loadImageFromCloud(
               reject(new ComposeError(`图片加载失败（已重试）: ${fileID}`));
             }
           };
-          img.src = tempPath;
-        },
-        fail: (err) => {
-          reject(new ComposeError(`云文件下载失败: ${err.errMsg}`));
-        },
-      });
+          img.src = tempFilePath;
+
+          // 图片解码超时（防止损坏图片导致 onload/onerror 永不触发）
+          setTimeout(() => {
+            if (imageSettled) return;
+            imageSettled = true;
+            if (retryCount < maxRetries) {
+              retryCount++;
+              setTimeout(doDownload, 500);
+            } else {
+              reject(
+                new ComposeError(
+                  `图片解码超时（${IMAGE_LOAD_TIMEOUT / 1000}秒）: ${fileID}`,
+                ),
+              );
+            }
+          }, IMAGE_LOAD_TIMEOUT);
+        })
+        .catch((err) => {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(doDownload, 500);
+          } else {
+            reject(err);
+          }
+        });
     }
 
     doDownload();

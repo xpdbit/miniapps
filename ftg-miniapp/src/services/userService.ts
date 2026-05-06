@@ -1,17 +1,18 @@
 /**
  * ============================================================
  * 用户服务层
- * 封装 CloudBase 免登录用户数据获取
+ * 封装 CloudBase 免登录用户数据获取 + HTTP API 备选路径
  * ============================================================
  *
- * 使用 CloudBase 天然无密码认证，通过 getOpenId 云函数获取 openid，
- * 再通过 userDAL 自动创建/获取用户档案。
+ * - CloudBase 路径：通过 getOpenId 云函数获取 openid，再通过 userDAL 自动创建/获取
+ * - HTTP API 路径：通过 ftg-server REST API 获取用户档案（项目迁移方向）
  */
 
 import { CLOUD_FUNCTIONS } from '@/constants/apiEndpoints';
+import { httpClient } from '@/services/httpClient';
 import { userDAL } from '@/services/db';
 import type { ApiResponse } from '@/types/api';
-import type { UserProfile, UserStats } from '@/types/user';
+import type { AuthUser, MeResponse, UserProfile, UserStats } from '@/types/user';
 
 // ============================================================
 // 模块级 openid 缓存，避免重复调用云函数
@@ -113,6 +114,32 @@ export async function getUserProfile(): Promise<UserProfile> {
 export async function getUserStats(): Promise<UserStats | null> {
   const openid = await getOpenId();
   return fetchUserStats(openid);
+}
+
+/**
+ * 通过 HTTP API 获取用户档案（备选路径）
+ *
+ * 作为 CloudBase 的替代方案，通过 ftg-server REST API 获取用户信息。
+ * 当 CloudBase 不可用时，可切换到此方案。
+ * 统计数据字段将在后续通过单独接口获取。
+ *
+ * @param token - JWT 令牌
+ * @returns 用户公开资料
+ */
+export async function getUserProfileViaHttp(token: string): Promise<UserProfile> {
+  const res = await httpClient.get<ApiResponse<MeResponse>>('/auth/me', token);
+  if (!res.success) {
+    throw new Error(res.errMsg);
+  }
+  const authUser: AuthUser = res.data.user;
+
+  return {
+    nickname: authUser.nickname ?? '美食探索者',
+    avatarUrl: authUser.avatarUrl ?? '',
+    totalRecords: 0,
+    unlockedAchievements: 0,
+    maxStreak: 0,
+  };
 }
 
 /**

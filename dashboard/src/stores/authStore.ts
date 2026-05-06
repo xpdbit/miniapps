@@ -51,8 +51,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const user = await authApi.getMe()
       set({ token, user, isAuthenticated: true, initialized: true })
-    } catch {
+    } catch (error) {
       // Token expired or invalid — clear session
+      console.error('[Auth] restoreSession 失败:', error)
       removeToken()
       set({ token: null, user: null, isAuthenticated: false, initialized: true })
     }

@@ -244,8 +244,18 @@ export default function RecordPage() {
         });
       }, 500);
     } catch (error) {
-      const message =
+      let message =
         error instanceof Error ? error.message : '保存失败，请重试';
+
+      // 区分超时错误，给出更友好的提示
+      if (
+        error instanceof Error &&
+        (error.message?.includes('timeout') ||
+          error.message?.includes('超时'))
+      ) {
+        message = '保存超时，请稍后重试';
+      }
+
       Taro.showToast({
         title: message,
         icon: 'none',

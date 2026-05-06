@@ -19,8 +19,12 @@ ftg-miniapp/
 │   │   ├── charts/      # Canvas 2D 图表 (Line/Pie/Bar/CalendarHeatmap)
 │   │   └── Loading.tsx  # 加载遮罩 (含type/zIndex)
 │   ├── hooks/           # 自定义 Hooks
+│   ├── stores/          # Zustand 状态管理 (authStore)
+│   ├── custom-tab-bar/  # 自定义底部栏 (替代原生 tabBar)
 │   ├── services/        # 云函数调用/API 封装
 │   │   ├── db/          # 云数据库 DAL 层 (10个)
+│   │   ├── httpClient.ts # 统一 HTTP 客户端 (JWT 自动携带)
+│   │   ├── authService.ts # 微信登录 + Token 验证封装
 │   │   └── themeApi.ts  # 主题 HTTP API 服务
 │   ├── types/           # TypeScript 类型定义
 │   ├── constants/       # 常量定义
@@ -39,6 +43,10 @@ ftg-miniapp/
 | 图表组件 | `src/components/charts/` | Canvas 2D 原生图表 (Line/Pie/Bar/CalendarHeatmap) |
 | 主题画廊 | `src/pages/gallery/` | API 优先 + 本地回退 |
 | 主题 HTTP API | `src/services/themeApi.ts` | 对接 ftg-server 的 RESTful 主题接口 |
+| 认证 HTTP 服务 | `src/services/authService.ts` | 微信登录 + Token 验证封装 |
+| HTTP 客户端 | `src/services/httpClient.ts` | 统一 HTTP 封装 (JWT 自动携带) |
+| 认证状态管理 | `src/stores/authStore.ts` | Zustand 认证状态 (token/user/初始化) |
+| 自定义 tabBar | `src/custom-tab-bar/` | 自定义底部栏 (事件驱动高亮) |
 | 全局样式 | `src/app.scss` | CSS 变量系统（颜色/字体/间距/阴影/z-index） |
 | 样式 | `src/` | Sass (.scss) 模块化样式 |
 
@@ -74,4 +82,7 @@ npm run format           # Prettier 格式化
 - 云函数上传需通过微信开发者工具或 cloudbaserc.json 配置
 - AI 流水线: 前端触发 → `orchestrateAIPipeline` 编排 → 多函数并行处理 → 返回结果
 - 图片合成在前端完成 (Canvas 2D)，非服务端合成
+- **认证流程**: wx.login() → POST /auth/login → JWT token → Taro Storage 持久化 → 自动校验(initialize)
+- **自定义 tabBar**: CustomTabBar 组件使用 Taro eventCenter 监听 tabChange 事件驱动高亮，替代原生 tabBar
+- **HTTP 客户端**: HttpClient 类封装 Taro.request，支持超时检测和网络连接错误中文提示
 - `.FoodThemeGenerator_MiniAPP/` 为旧版，勿修改

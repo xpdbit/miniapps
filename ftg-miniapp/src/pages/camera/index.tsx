@@ -7,6 +7,7 @@ import {
   Image,
   Text,
 } from '@tarojs/components';
+import { processImage, UPLOAD_PRESET } from '@/utils/image/processor';
 import './index.scss';
 
 /* ==================== 类型定义 ==================== */
@@ -183,32 +184,72 @@ export default function CameraPage() {
 
   /* ---------- 上传 ---------- */
 
+  /** 最大上传重试次数 */
+  const MAX_UPLOAD_RETRIES = 2;
+
+  /**
+   * 压缩图片 + 上传到云存储（含重试）
+   */
+  const uploadWithCompression = useCallback(
+    async (filePath: string): Promise<string> => {
+      // Step 1: 使用 UPLOAD_PRESET 压缩图片（缩小到 2048px + 85% 品质）
+      const compressed = await processImage(filePath, UPLOAD_PRESET);
+
+      // Step 2: 上传到云存储（含重试）
+      const cloudPath = `food-images/${Date.now()}.jpg`;
+      let lastError: unknown;
+
+      for (let attempt = 0; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
+        try {
+          const result = await wx.cloud.uploadFile({
+            cloudPath,
+            filePath: compressed.filePath,
+          });
+          return result.fileID;
+        } catch (err) {
+          lastError = err;
+          // 非最后尝试时等待一秒后重试
+          if (attempt < MAX_UPLOAD_RETRIES) {
+            await new Promise((r) => setTimeout(r, 1000));
+            console.warn(
+              `[CameraPage] 上传重试 ${attempt + 1}/${MAX_UPLOAD_RETRIES}`,
+            );
+          }
+        }
+      }
+
+      throw lastError;
+    },
+    [],
+  );
+
   const handleUsePhoto = useCallback(async () => {
     setPageState('uploading');
     startProgressSimulation();
 
     try {
-      const cloudPath = `food-images/${Date.now()}.jpg`;
-      const result = await wx.cloud.uploadFile({
-        cloudPath,
-        filePath: tempFilePath,
-      });
+      const fileID = await uploadWithCompression(tempFilePath);
 
       clearProgressSimulation();
       setUploadProgress(100);
 
       await Taro.navigateTo({
-        url: `/pages/result/index?fileId=${result.fileID}`,
+        url: `/pages/result/index?fileId=${fileID}`,
       });
-    } catch {
+    } catch (err) {
       clearProgressSimulation();
+
+      const isTimeout =
+        err instanceof Error &&
+        (err.message?.includes('timeout') || err.message?.includes('超时'));
+
       Taro.showToast({
-        title: '上传失败，请重试',
+        title: isTimeout ? '上传超时，请检查网络后重试' : '上传失败，请重试',
         icon: 'none',
       });
       setPageState('preview');
     }
-  }, [tempFilePath, startProgressSimulation, clearProgressSimulation]);
+  }, [tempFilePath, startProgressSimulation, clearProgressSimulation, uploadWithCompression]);
 
   /* ---------- 相机错误 ---------- */
 
