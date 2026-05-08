@@ -240,8 +240,13 @@ export default function CameraPage() {
         throw new Error(resData.errMsg || `识别失败 (HTTP ${httpStatus})`);
       }
 
+      // Step 3: 将压缩后的临时文件保存到持久化存储
+      // 临时路径（如 http://tmp/xxx.jpg）在页面跳转后可能失效或被视为 HTTP URL
+      const fs = Taro.getFileSystemManager();
+      const savedPath = fs.saveFileSync(compressed.filePath);
+
       return {
-        imagePath: compressed.filePath,
+        imagePath: savedPath,
         foodName: resData.data.foodName,
         foodType: resData.data.foodType,
         calories: resData.data.calories ? JSON.stringify(resData.data.calories) : '',
