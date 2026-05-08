@@ -120,10 +120,8 @@ page {
   box-sizing: border-box;
 }
 
-/* === 全局重置 === */
-*,
-*::before,
-*::after {
+/* === 全局重置（WXSS 不支持 ::before / ::after，仅对 * 设置） === */
+* {
   box-sizing: inherit;
 }
 
