@@ -11,6 +11,7 @@
   "scripts": {
     "build:weapp": "taro build --type weapp",
     "build:weapp:prod": "taro build --type weapp --mode production",
+    "predev": "node -e \"fs.rmSync('dist',{recursive:true,force:true});console.log('cleaned dist')\"",
     "dev:weapp": "npm run build:weapp -- --watch",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,scss,css}'",

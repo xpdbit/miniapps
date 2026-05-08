@@ -348,9 +348,8 @@ page {
    全局 Reduced Motion 支持
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  * {
+    /* WXSS 不支持 ::before / ::after 伪类，仅对 * 设置动画重置 */
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
