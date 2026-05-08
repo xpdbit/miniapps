@@ -203,7 +203,14 @@ export default function CameraPage() {
       calories: string;
     }> => {
       // Step 1: 使用 UPLOAD_PRESET 压缩图片（缩小到 512px + 85% 品质）
-      const compressed = await processImage(filePath, UPLOAD_PRESET);
+      // 注意：processImage 内部调用 getImageInfo，某些环境中可能失败
+      let compressed: { filePath: string };
+      try {
+        compressed = await processImage(filePath, UPLOAD_PRESET);
+      } catch (imgErr) {
+        console.warn('[CameraPage] 图片压缩/获取信息失败，降级使用原图:', imgErr);
+        compressed = { filePath };
+      }
 
       // Step 2: 通过 Taro.uploadFile 上传到识别接口（multipart/form-data）
       const token = useAuthStore.getState().token;
