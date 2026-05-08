@@ -1,0 +1,12 @@
+{
+  "timeout": 30,
+  "memorySize": 512,
+  "envVariables": {},
+  "triggers": [
+    {
+      "name": "http",
+      "type": "http",
+      "config": "{\"path\": \"/generateShareCard\", \"method\": \"POST\"}"
+    }
+  ]
+}

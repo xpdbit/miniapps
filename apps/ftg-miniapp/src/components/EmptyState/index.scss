@@ -1,0 +1,40 @@
+/* ============================================================
+  EmptyState - 空状态占位组件
+  使用全局 CSS 变量系统
+  ============================================================ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-base);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-state__icon {
+  font-size: var(--text-display);
+  line-height: 1;
+  margin-bottom: var(--spacing-sm);
+}
+
+.empty-state__title {
+  font-size: var(--text-emphasis);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.empty-state__description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin-bottom: var(--spacing-base);
+  line-height: var(--line-height-normal);
+}
+
+.empty-state__action {
+  min-width: 200rpx;
+}

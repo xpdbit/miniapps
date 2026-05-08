@@ -1,0 +1,75 @@
+@import '../../app.scss';
+
+.favorites-page {
+  height: 100vh;
+  background-color: var(--bg-color, #F5F5F5);
+}
+
+.favorites-list {
+  padding: 16px;
+}
+
+.favorites-card {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.favorites-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background-color: #F0F0F0;
+}
+
+.favorites-info {
+  flex: 1;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.favorites-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333333;
+  line-height: 1.4;
+}
+
+.favorites-type {
+  font-size: 13px;
+  color: #666666;
+}
+
+.favorites-time {
+  font-size: 12px;
+  color: #999999;
+}
+
+.favorites-unfav-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.favorites-unfav-btn--active {
+  background-color: rgba(255, 107, 53, 0.1);
+}
+
+.favorites-loading-more {
+  text-align: center;
+  padding: 20px;
+  color: #999999;
+  font-size: 14px;
+}

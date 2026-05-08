@@ -1,0 +1,12 @@
+{
+  "timeout": 3,
+  "memorySize": 256,
+  "envVariables": {},
+  "triggers": [
+    {
+      "name": "foodRecordDbTrigger",
+      "type": "database",
+      "config": "{\"collection\": \"food_records\", \"event\": \"afterWrite\"}"
+    }
+  ]
+}

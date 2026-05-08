@@ -1,0 +1,9 @@
+{
+  "name": "generateShareCard",
+  "version": "1.0.0",
+  "description": "生成分享卡片图片",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}
