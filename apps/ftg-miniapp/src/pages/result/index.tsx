@@ -58,22 +58,31 @@ export default function ResultPage() {
   // ============================================================
   useEffect(() => {
     const instance = Taro.getCurrentInstance();
-    const params = (instance.router?.params ?? {}) as ResultRouteParams;
+    const rawParams = (instance.router?.params ?? {}) as Record<string, string>;
 
-    setThemeImageUrl(params.themeImageUrl ?? '');
-    // originImageUrl 暂时保留在路由参数中，后续可用于图片预览
-    setFoodName(params.foodName ?? '未知食物');
+    // Taro 路由参数是 URL 编码的，需手动解码
+    const decode = (v: string | undefined): string | undefined =>
+      v !== undefined ? decodeURIComponent(v) : undefined;
+
+    const params = rawParams as ResultRouteParams;
+    const themeImageUrl = decode(params.themeImageUrl) ?? '';
+    const foodName = decode(params.foodName) ?? '未知食物';
+
+    setThemeImageUrl(themeImageUrl);
+    setFoodName(foodName);
     setGameDescription(
-      params.gameDescription ?? '获得了一份美味的食物！',
+      decode(params.gameDescription) ?? '获得了一份美味的食物！',
     );
 
-    if (params.foodType !== undefined && params.foodType.length > 0) {
-      setFoodType(params.foodType as FoodType);
+    const foodType = decode(params.foodType);
+    if (foodType !== undefined && foodType.length > 0) {
+      setFoodType(foodType as FoodType);
     }
 
-    if (params.calories !== undefined && params.calories.length > 0) {
+    const caloriesRaw = decode(params.calories);
+    if (caloriesRaw !== undefined && caloriesRaw.length > 0) {
       try {
-        const parsed = JSON.parse(params.calories) as CalorieInfo;
+        const parsed = JSON.parse(caloriesRaw) as CalorieInfo;
         setCalories(parsed);
       } catch {
         setCalories(null);
@@ -236,7 +245,7 @@ export default function ResultPage() {
   }
 
   return (
-    <ScrollView className='result-page' scrollY enhanced showScrollbar={false}>
+    <ScrollView className='result-page' scrollY showScrollbar={false}>
       <View className='result-content'>
         {/* ==================== 顶部标题 ==================== */}
       <View className='result-header'>

@@ -242,11 +242,16 @@ export default function CameraPage() {
 
       // Step 3: 将压缩后的临时文件保存到持久化存储
       // 临时路径（如 http://tmp/xxx.jpg）在页面跳转后可能失效或被视为 HTTP URL
-      const fs = Taro.getFileSystemManager();
-      const savedPath = fs.saveFileSync(compressed.filePath);
+      let imagePath = compressed.filePath;
+      try {
+        const fs = Taro.getFileSystemManager();
+        imagePath = fs.saveFileSync(compressed.filePath);
+      } catch (e) {
+        console.warn('[CameraPage] 保存图片到持久化存储失败，使用临时路径:', e);
+      }
 
       return {
-        imagePath: savedPath,
+        imagePath,
         foodName: resData.data.foodName,
         foodType: resData.data.foodType,
         calories: resData.data.calories ? JSON.stringify(resData.data.calories) : '',
