@@ -8,6 +8,8 @@ import {
   Text,
 } from '@tarojs/components';
 import { processImage, UPLOAD_PRESET } from '@/utils/image/processor';
+import { API_BASE } from '@/services/httpClient';
+import { useAuthStore } from '@/stores/authStore';
 import './index.scss';
 
 /* ==================== 类型定义 ==================== */
@@ -182,43 +184,68 @@ export default function CameraPage() {
     }, 250);
   }, [clearProgressSimulation]);
 
-  /* ---------- 上传 ---------- */
-
-  /** 最大上传重试次数 */
-  const MAX_UPLOAD_RETRIES = 2;
+  /* ---------- 上传 & 识别 ---------- */
 
   /**
-   * 压缩图片 + 上传到云存储（含重试）
+   * 压缩图片 + 上传到食物识别服务（multipart/form-data）
+   *
+   * 使用 Taro.uploadFile 发送 multipart 请求到 /api/v1/recognize（服务器已有），
+   * 返回识别结果（食物名称、类型、热量等）。
+   *
+   * 注意：Taro.uploadFile 封装 wx.uploadFile，可上传到任意 HTTPS 服务器，
+   * 不依赖微信云开发环境。原 wx.cloud.uploadFile 方案已废弃。
    */
   const uploadWithCompression = useCallback(
-    async (filePath: string): Promise<string> => {
-      // Step 1: 使用 UPLOAD_PRESET 压缩图片（缩小到 2048px + 85% 品质）
+    async (filePath: string): Promise<{
+      imagePath: string;
+      foodName: string;
+      foodType: string;
+      calories: string;
+    }> => {
+      // Step 1: 使用 UPLOAD_PRESET 压缩图片（缩小到 512px + 85% 品质）
       const compressed = await processImage(filePath, UPLOAD_PRESET);
 
-      // Step 2: 上传到云存储（含重试）
-      const cloudPath = `food-images/${Date.now()}.jpg`;
-      let lastError: unknown;
+      // Step 2: 通过 Taro.uploadFile 上传到识别接口（multipart/form-data）
+      const token = useAuthStore.getState().token;
+      const recognizeUrl = `${API_BASE}/recognize`;
 
-      for (let attempt = 0; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
-        try {
-          const result = await wx.cloud.uploadFile({
-            cloudPath,
-            filePath: compressed.filePath,
-          });
-          return result.fileID;
-        } catch (err) {
-          lastError = err;
-          // 非最后尝试时等待一秒后重试
-          if (attempt < MAX_UPLOAD_RETRIES) {
-            await new Promise((r) => setTimeout(r, 1000));
-            console.warn(
-              `[CameraPage] 上传重试 ${attempt + 1}/${MAX_UPLOAD_RETRIES}`,
-            );
-          }
-        }
+      const res = await Taro.uploadFile({
+        url: recognizeUrl,
+        filePath: compressed.filePath,
+        name: 'image', // 对应服务端 multer upload.single('image')
+        header: token ? { Authorization: `Bearer ${token}` } : {},
+        timeout: 60000,
+      });
+
+      // Taro.uploadFile 返回的 res.data 是 string，需手动 JSON.parse
+      const resData = JSON.parse(res.data) as {
+        success: boolean;
+        errCode: number;
+        errMsg?: string;
+        data?: {
+          foodName: string;
+          confidence: number;
+          foodType: string;
+          calories?: {
+            caloriesTotal: number;
+            protein: number;
+            fat: number;
+            carbs: number;
+          };
+        };
+      };
+
+      if (!resData.success || !resData.data) {
+        const httpStatus = res.statusCode ?? '?';
+        throw new Error(resData.errMsg || `识别失败 (HTTP ${httpStatus})`);
       }
 
-      throw lastError;
+      return {
+        imagePath: compressed.filePath,
+        foodName: resData.data.foodName,
+        foodType: resData.data.foodType,
+        calories: resData.data.calories ? JSON.stringify(resData.data.calories) : '',
+      };
     },
     [],
   );
@@ -228,23 +255,31 @@ export default function CameraPage() {
     startProgressSimulation();
 
     try {
-      const fileID = await uploadWithCompression(tempFilePath);
+      const result = await uploadWithCompression(tempFilePath);
 
       clearProgressSimulation();
       setUploadProgress(100);
 
-      await Taro.navigateTo({
-        url: `/pages/result/index?fileId=${fileID}`,
-      });
+      // 构建路由参数：压缩图片路径 + 食物识别结果
+      let resultUrl = `/pages/result/index?themeImageUrl=${encodeURIComponent(result.imagePath)}`;
+      resultUrl += `&foodName=${encodeURIComponent(result.foodName)}`;
+      resultUrl += `&foodType=${encodeURIComponent(result.foodType)}`;
+      if (result.calories) {
+        resultUrl += `&calories=${encodeURIComponent(result.calories)}`;
+      }
+
+      await Taro.navigateTo({ url: resultUrl });
     } catch (err) {
       clearProgressSimulation();
+
+      console.error('[CameraPage] 上传失败详情:', err);
 
       const isTimeout =
         err instanceof Error &&
         (err.message?.includes('timeout') || err.message?.includes('超时'));
 
       Taro.showToast({
-        title: isTimeout ? '上传超时，请检查网络后重试' : '上传失败，请重试',
+        title: isTimeout ? '识别超时，请检查网络后重试' : '识别失败，请重试',
         icon: 'none',
       });
       setPageState('preview');
