@@ -70,8 +70,8 @@ export const CANVAS_SIZE = {
 export const IMAGE_LIMITS = {
   /** 最大上传图片尺寸 (bytes) */
   maxFileSize: 10 * 1024 * 1024,
-  /** 最大宽度 */
-  maxWidth: 2048,
-  /** 最大高度 */
-  maxHeight: 2048,
+  /** 最大宽度（Canvas 处理上限；实际输出尺寸由 preset.maxDimension 控制） */
+  maxWidth: 10000,
+  /** 最大高度（Canvas 处理上限；实际输出尺寸由 preset.maxDimension 控制） */
+  maxHeight: 10000,
 };

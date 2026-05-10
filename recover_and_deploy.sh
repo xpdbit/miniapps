@@ -1,13 +1,13 @@
 #!/bin/bash
 # =============================================================================
-# FTG 服务器恢复 + 部署脚本
+# mnapp.top 服务器恢复 + 部署脚本
 # 用于服务器 Docker 容器全部停止后的恢复操作
-# 使用方式：ssh root@47.94.108.150 "bash -s" < recover_and_deploy.sh
+# 使用方式：ssh root@mnapp.top "bash -s" < recover_and_deploy.sh
 # =============================================================================
 set -e
 
 echo "=========================================="
-echo " FTG 服务器恢复与部署"
+echo " mnapp.top 服务器恢复与部署"
 echo "=========================================="
 
 # ─── Step 1: 检查 Docker 状态 ───────────────────────────────────────
@@ -20,11 +20,14 @@ if ! docker info &>/dev/null; then
 fi
 echo "Docker 运行正常"
 
-# ─── Step 2: 启动所有容器（不重建，使用现有镜像，快速恢复） ────
+# ─── Step 2: 启动所有容器（重建 nginx 镜像以应用配置修复） ────
 echo ""
-echo "[2/5] 启动 Docker 容器（使用现有镜像，快速恢复）..."
+echo "[2/5] 启动 Docker 容器..."
 cd /opt/ftg/deploy
-# 先用现有镜像快速启动（不重建，避免 tsc 编译失败阻隔）
+# 重建 nginx 镜像以应用 entrypoint.sh + nginx.conf 修复
+# 其他服务用现有镜像快速启动（避免 tsc 编译失败阻隔）
+docker compose --env-file .env up -d --build nginx 2>&1 | tail -10
+# 启动其他服务（使用现有镜像）
 docker compose --env-file .env up -d 2>&1 | tail -10
 
 # ─── Step 3: 等待 MySQL 就绪 ───────────────────────────────────────
@@ -69,6 +72,10 @@ curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost/ 2>/dev/null && ech
 
 echo ""
 echo "=========================================="
-echo " 恢复完成! 访问 https://47.94.108.150/"
+echo " 恢复完成!"
+echo "=========================================="
+echo " Dashboard:  https://mnapp.top/"
+echo " API:        https://mnapp.top/api/ftl/api/v1/"
+echo " Game1:      https://game1.mnapp.top/"
 echo " 默认管理员: admin / Admin123!"
 echo "=========================================="

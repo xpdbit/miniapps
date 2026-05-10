@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "type-check": "tsc --noEmit",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:generate": "prisma generate --schema=../prisma/schema.prisma && node -e \"require('fs').cpSync(require('path').resolve('../node_modules/.prisma/client'), require('path').resolve('node_modules/.prisma/client'), { recursive: true, force: true })\"",
+    "db:push": "prisma db push --schema=../prisma/schema.prisma",
+    "db:seed": "prisma db seed --schema=../prisma/schema.prisma"
   },
   "prisma": {
     "seed": "node prisma/seed.cjs"
@@ -30,7 +30,7 @@
     "dayjs": "^1.11.13",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.22.3",
+
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",

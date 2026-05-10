@@ -9,8 +9,9 @@
  */
 
 import { CLOUD_FUNCTIONS } from '@/constants/apiEndpoints';
-import { httpClient } from '@/services/httpClient';
+import { httpClient, API_BASE } from '@/services/httpClient';
 import { userDAL } from '@/services/db';
+import Taro from '@tarojs/taro';
 import type { ApiResponse } from '@/types/api';
 import type { AuthUser, MeResponse, UserProfile, UserStats } from '@/types/user';
 
@@ -88,7 +89,7 @@ export async function getUserProfile(): Promise<UserProfile> {
 
   // 查找或创建用户（首次使用自动创建）
   const user = await userDAL.findOrCreate(openid, {
-    nickname: '美食探索者',
+    nickname: '',
   });
 
   // 获取详细统计（失败时降级使用 userDoc 基础值）
@@ -134,7 +135,7 @@ export async function getUserProfileViaHttp(token: string): Promise<UserProfile>
   const authUser: AuthUser = res.data.user;
 
   return {
-    nickname: authUser.nickname ?? '美食探索者',
+    nickname: authUser.nickname ?? '',
     avatarUrl: authUser.avatarUrl ?? '',
     totalRecords: 0,
     unlockedAchievements: 0,
@@ -174,13 +175,15 @@ interface StatsResponseData {
  * 调用 GET /api/v1/users/me/stats，依赖 JWT 认证。
  *
  * @param token - JWT 令牌
+ * @param timeout - 可选的自定义超时（毫秒），覆盖 httpClient 默认值
  * @returns 用户统计信息
  */
-export async function fetchUserStatsHttp(token: string): Promise<UserStats | null> {
+export async function fetchUserStatsHttp(token: string, timeout?: number): Promise<UserStats | null> {
   try {
     const res = await httpClient.get<ApiResponse<StatsResponseData>>(
       '/users/me/stats',
       token,
+      timeout,
     );
     if (!res.success) {
       console.warn('[userService] /users/me/stats 返回失败:', res.errMsg);
@@ -208,6 +211,132 @@ export async function updateUserProfileHttp(
   const res = await httpClient.patch<ApiResponse<{ user: AuthUser }>>(
     '/auth/me',
     data,
+    token,
+  );
+  if (!res.success) {
+    throw new Error(res.errMsg);
+  }
+}
+
+// ============================================================
+// 头像上传 API
+// ============================================================
+
+/**
+ * 超时/网络错误重试配置
+ * 缓解微信基础库 3.15.x WAServiceMainContext timeout Bug
+ */
+const UPLOAD_MAX_RETRIES = 1;
+const UPLOAD_RETRY_DELAY = 1500;
+
+/**
+ * 判断上传错误是否为超时类错误
+ *
+ * 注意：不包含 request:fail 检测 —— request:fail 涵盖 SSL 证书错误、
+ * 连接被拒绝、DNS 解析失败等多种非超时故障，不应当作超时来重试。
+ * 与 httpClient.ts 的 isTimeoutError 保持一致。
+ */
+function isUploadTimeoutError(err: unknown): boolean {
+  const msg =
+    err instanceof Error
+      ? err.message
+      : typeof err === 'object' && err !== null
+        ? String(err)
+        : '';
+  return (
+    msg.includes('timeout') ||
+    msg.includes('超时') ||
+    msg.includes('Timeout') ||
+    msg.includes('ETIMEDOUT')
+  );
+}
+
+/**
+ * 上传用户头像图片
+ *
+ * 调用 POST /api/v1/auth/avatar (multipart/form-data)，
+ * 服务端保存文件并更新用户 avatarUrl。
+ *
+ * @param token - JWT 令牌
+ * @param filePath - 微信临时文件路径（来自 chooseAvatar 的回调）
+ * @param timeout - 可选的自定义超时（毫秒），默认 30000
+ * @returns 服务端返回的永久头像 URL
+ */
+export async function uploadAvatar(token: string, filePath: string, timeout = 30000): Promise<string> {
+  const maxAttempts = 1 + UPLOAD_MAX_RETRIES;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const uploadRes = await Taro.uploadFile({
+        url: `${API_BASE}/auth/avatar`,
+        filePath,
+        name: 'avatar',
+        header: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout,
+      });
+
+      const data = JSON.parse(uploadRes.data) as ApiResponse<{ avatarUrl: string }>;
+      if (!data.success) {
+        throw new Error(data.errMsg);
+      }
+      return data.data.avatarUrl;
+    } catch (err) {
+      lastError = err;
+
+      // 仅对超时类错误重试
+      const shouldRetry = attempt < maxAttempts - 1 && isUploadTimeoutError(err);
+
+      if (shouldRetry) {
+        console.warn(
+          `[uploadAvatar] 头像上传超时，${UPLOAD_RETRY_DELAY}ms 后重试 (${attempt + 1}/${UPLOAD_MAX_RETRIES})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, UPLOAD_RETRY_DELAY));
+        continue;
+      }
+
+      // 最后一次尝试失败或非超时错误 → 抛出友好错误
+      break;
+    }
+  }
+
+  // 错误分类
+  if (isUploadTimeoutError(lastError)) {
+    throw new Error(`头像上传超时（${timeout / 1000}秒），请检查网络后重试`);
+  }
+  // 非超时错误直接丢原始错误（保留堆栈，便于定位根因）
+  throw lastError;
+}
+
+// ============================================================
+// 微信加密数据解密（button open-type="getUserInfo" 回调处理）
+// ============================================================
+
+/**
+ * 解密微信用户加密数据并保存头像/昵称
+ *
+ * 流程：前端获取 encryptedData + iv → 调用 wx.login() 获取临时 code →
+ * 发送到服务端 → 服务端用 code 换 session_key → AES 解密 → 保存昵称和头像 CDN URL
+ *
+ * @param token - JWT 令牌
+ * @param params - 微信加密数据
+ * @returns 更新后的用户信息
+ */
+export async function decryptWechatUserInfo(
+  token: string,
+  params: { encryptedData: string; iv: string },
+): Promise<void> {
+  // 获取最新微信登录态（用于服务端换取 session_key 解密）
+  const loginRes = await Taro.login({ timeout: 10000 });
+  if (!loginRes.code) {
+    throw new Error('获取微信登录状态失败');
+  }
+
+  const res = await httpClient.post<ApiResponse<unknown>>(
+    '/auth/decrypt-user-info',
+    { code: loginRes.code, encryptedData: params.encryptedData, iv: params.iv },
     token,
   );
   if (!res.success) {

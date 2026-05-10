@@ -639,7 +639,7 @@ export default function GalleryPage() {
     <View className='gallery-page'>
       {renderSubTabs()}
 
-      <ScrollView className='gallery-content' scrollY enhanced showScrollbar={false}>
+      <ScrollView className='gallery-content' scrollY showScrollbar={false}>
         {activeSubTab === 'history' && renderHistory()}
         {activeSubTab === 'favorites' && renderFavorites()}
         {activeSubTab === 'themes' && renderThemes()}

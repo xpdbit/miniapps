@@ -110,7 +110,15 @@ export default function CameraPage() {
 
     try {
       const filePath = await handleTakePhoto();
-      setTempFilePath(filePath);
+      // 立即将临时文件持久化存储，避免后续 getImageInfo 等 API 读取失败
+      let savedPath = filePath;
+      try {
+        const fs = Taro.getFileSystemManager();
+        savedPath = fs.saveFileSync(filePath);
+      } catch (e) {
+        console.warn('[CameraPage] 持久化拍照临时文件失败，使用原路径:', e);
+      }
+      setTempFilePath(savedPath);
       setPageState('preview');
     } catch {
       Taro.showToast({
@@ -135,7 +143,15 @@ export default function CameraPage() {
       if (filePath === undefined || filePath.length === 0) {
         return;
       }
-      setTempFilePath(filePath);
+      // 立即将临时文件持久化存储，避免后续 getImageInfo 等 API 读取失败
+      let savedPath = filePath;
+      try {
+        const fs = Taro.getFileSystemManager();
+        savedPath = fs.saveFileSync(filePath);
+      } catch (e) {
+        console.warn('[CameraPage] 持久化相册临时文件失败，使用原路径:', e);
+      }
+      setTempFilePath(savedPath);
       setPageState('preview');
     } catch {
       // 用户取消选择
@@ -186,14 +202,121 @@ export default function CameraPage() {
 
   /* ---------- 上传 & 识别 ---------- */
 
+  /** 上传请求最大重试次数 */
+  const MAX_UPLOAD_RETRIES = 1;
+  /** 上传重试间隔（毫秒） */
+  const UPLOAD_RETRY_DELAY = 1500;
+
+  /**
+   * 带重试的 Taro.uploadFile 封装
+   * 仅对超时类错误重试，其他错误直接抛出
+   */
+  async function uploadFileWithRetry(
+    params: Parameters<typeof Taro.uploadFile>[0],
+    maxRetries: number = MAX_UPLOAD_RETRIES,
+  ): Promise<Taro.uploadFile.SuccessCallbackResult> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await Taro.uploadFile(params);
+      } catch (err) {
+        lastError = err;
+        const errStr =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'object' && err !== null
+              ? JSON.stringify(err)
+              : String(err);
+
+        const isTimeout =
+          errStr.includes('timeout') ||
+          errStr.includes('超时') ||
+          errStr.includes('Timeout');
+
+        if (isTimeout && attempt < maxRetries) {
+          console.warn(
+            `[CameraPage] 上传超时，${UPLOAD_RETRY_DELAY}ms 后重试 (${attempt + 1}/${maxRetries})`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, UPLOAD_RETRY_DELAY));
+          continue;
+        }
+
+        break;
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * 分类上传错误，返回中文描述
+   */
+  function classifyUploadError(err: unknown): string {
+    const errStr =
+      err instanceof Error
+        ? err.message
+        : typeof err === 'object' && err !== null
+          ? JSON.stringify(err)
+          : String(err);
+
+    // 域名白名单错误（真机/体验版常见）
+    if (
+      errStr.includes('不在以下') ||
+      errStr.includes('domain list') ||
+      errStr.includes('合法域名') ||
+      errStr.includes('not in list')
+    ) {
+      return '服务器域名未在微信后台配置，请在「开发管理 → 服务器域名」中添加 uploadFile 白名单';
+    }
+
+    // SSL 证书错误（自签名证书被微信拒绝）
+    if (
+      errStr.includes('ERR_CERT') ||
+      errStr.includes('SSL') ||
+      errStr.includes('certificate') ||
+      errStr.includes('cert')
+    ) {
+      return '服务器 SSL 证书无效，请更换为有效的 CA 签名证书';
+    }
+
+    // 连接被拒绝（服务器未启动）
+    if (errStr.includes('ERR_CONNECTION_REFUSED') || errStr.includes('Connection refused')) {
+      return '无法连接到服务器，请确认服务已启动';
+    }
+
+    // DNS 解析失败
+    if (errStr.includes('ERR_NAME_NOT_RESOLVED') || errStr.includes('name not resolved')) {
+      return '服务器域名解析失败，请检查网络连接';
+    }
+
+    // request:fail 系列错误（网络不可达 / 域名不在白名单的通用错误）
+    if (
+      errStr.includes('request:fail') ||
+      errStr.includes('Network Error') ||
+      errStr.includes('NSURLErrorDomain') ||
+      errStr.includes('net::ERR_FAILED')
+    ) {
+      return '网络不可用，请检查网络连接或服务器域名白名单配置';
+    }
+
+    // 超时
+    if (errStr.includes('timeout') || errStr.includes('超时') || errStr.includes('Timeout')) {
+      return '上传超时，请检查网络后重试';
+    }
+
+    return '上传失败，请重试';
+  }
+
   /**
    * 压缩图片 + 上传到食物识别服务（multipart/form-data）
    *
    * 使用 Taro.uploadFile 发送 multipart 请求到 /api/v1/recognize（服务器已有），
    * 返回识别结果（食物名称、类型、热量等）。
    *
-   * 注意：Taro.uploadFile 封装 wx.uploadFile，可上传到任意 HTTPS 服务器，
-   * 不依赖微信云开发环境。原 wx.cloud.uploadFile 方案已废弃。
+   * 注意：Taro.uploadFile 封装 wx.uploadFile。真机调试时微信会校验：
+   * 1. uploadFile 合法域名白名单（需在 mp.weixin.qq.com 配置）
+   * 2. SSL 证书有效性（需 CA 签名证书，自签名被拒绝）
    */
   const uploadWithCompression = useCallback(
     async (filePath: string): Promise<{
@@ -212,11 +335,11 @@ export default function CameraPage() {
         compressed = { filePath };
       }
 
-      // Step 2: 通过 Taro.uploadFile 上传到识别接口（multipart/form-data）
+      // Step 2: 通过 Taro.uploadFile 上传到识别接口（multipart/form-data），带重试
       const token = useAuthStore.getState().token;
       const recognizeUrl = `${API_BASE}/recognize`;
 
-      const res = await Taro.uploadFile({
+      const res = await uploadFileWithRetry({
         url: recognizeUrl,
         filePath: compressed.filePath,
         name: 'image', // 对应服务端 multer upload.single('image')
@@ -291,13 +414,12 @@ export default function CameraPage() {
 
       console.error('[CameraPage] 上传失败详情:', err);
 
-      const isTimeout =
-        err instanceof Error &&
-        (err.message?.includes('timeout') || err.message?.includes('超时'));
+      const errorTitle = classifyUploadError(err);
 
       Taro.showToast({
-        title: isTimeout ? '识别超时，请检查网络后重试' : '识别失败，请重试',
+        title: errorTitle,
         icon: 'none',
+        duration: 3000,
       });
       setPageState('preview');
     }

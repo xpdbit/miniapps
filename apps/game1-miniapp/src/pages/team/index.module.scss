@@ -1,0 +1,520 @@
+﻿/* ============================================================
+   队伍页 — 长方卡片化设计 + 增强版
+   ============================================================ */
+
+.team-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--tab-bar-height) - env(safe-area-inset-bottom));
+  padding: var(--spacing-base);
+  padding-bottom: 0;
+  background: var(--color-bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+/* === 页面标题 === */
+.team-header {
+  padding: var(--spacing-base) 0 var(--spacing-md);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.team-header-title {
+  font-size: var(--text-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.team-header-sub {
+  font-size: var(--text-body);
+  color: var(--color-text-tertiary);
+}
+
+/* === 队伍列表 === */
+.team-list {
+  flex: 1;
+  min-height: 0;
+}
+
+/* === 长方角色卡片 === */
+.member-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-base);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-base);
+  margin-bottom: var(--spacing-sm);
+  transition: all var(--duration-fast) var(--easing-out);
+
+  &:active {
+    background: var(--color-bg-hover);
+    transform: scale(0.98);
+  }
+
+  /* === 非激活状态 === */
+  &--inactive {
+    opacity: 0.6;
+    background: var(--color-bg-surface);
+  }
+
+  /* === 空位样式 === */
+  &--empty {
+    border: 1.5px dashed var(--color-border-light);
+    background: transparent;
+
+    &:active {
+      background: transparent;
+      transform: none;
+    }
+  }
+}
+
+/* === 角色头像 === */
+.member-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-base);
+  background: var(--color-primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+
+  &--empty {
+    background: var(--color-bg-hover);
+    opacity: 0.5;
+  }
+}
+
+.member-avatar-text {
+  font-size: 28px;
+}
+
+/* === 头像非激活徽章 === */
+.member-avatar-inactive-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-round);
+  background: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-avatar-inactive-text {
+  font-size: 10px;
+  color: #fff;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* === 职业标签 === */
+.member-job-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-bg);
+  margin-left: var(--spacing-xs);
+}
+
+.member-job-badge-icon {
+  font-size: 12px;
+}
+
+.member-job-badge-name {
+  font-size: var(--text-caption);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* === 角色信息 === */
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.member-name-job-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.member-name {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.member-level {
+  font-size: var(--text-auxiliary);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* === 血条（细线） === */
+.member-hp-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--color-bg-hover);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.member-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-success), #8fb882);
+  border-radius: 2px;
+  transition: width 0.5s var(--easing-out);
+}
+
+.member-hp-text {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  margin-bottom: 6px;
+}
+
+/* === 属性行 === */
+.member-stats-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.member-stat {
+  font-size: var(--text-auxiliary);
+  color: var(--color-text-secondary);
+}
+
+/* === 空位文字 === */
+.member-empty-text {
+  display: block;
+  font-size: var(--text-body);
+  color: var(--color-text-tertiary);
+  margin-bottom: 2px;
+}
+
+.member-empty-hint {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--color-text-placeholder);
+}
+
+/* === 底部添加按钮 === */
+.team-footer {
+  padding: var(--spacing-base) 0;
+  display: flex;
+  justify-content: center;
+}
+
+.add-member-btn {
+  width: 100%;
+  padding: var(--spacing-base);
+  border-radius: var(--radius-base);
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--easing-out);
+
+  &:active {
+    background: var(--color-primary-dark);
+    transform: scale(0.98);
+  }
+
+  &--disabled {
+    background: var(--color-bg-hover);
+    opacity: 0.7;
+
+    &:active {
+      background: var(--color-bg-hover);
+      transform: none;
+    }
+  }
+}
+
+.add-member-btn-text {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: #fff;
+}
+
+.add-member-btn--disabled .add-member-btn-text {
+  color: var(--color-text-tertiary);
+}
+
+/* ============================================================
+   详情弹窗
+   ============================================================ */
+
+/* === 遮罩层 === */
+.member-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--duration-fast) var(--easing-out);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* === 详情卡片 === */
+.member-detail-card {
+  width: 90%;
+  max-width: 600px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-base);
+  box-shadow: var(--shadow-md);
+  animation: slideUp var(--duration-normal) var(--easing-out);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* === 详情头部 === */
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-base);
+  margin-bottom: var(--spacing-base);
+}
+
+.detail-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detail-avatar-text {
+  font-size: 36px;
+}
+
+.detail-title {
+  flex: 1;
+}
+
+.detail-name {
+  display: block;
+  font-size: var(--text-subheading);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.detail-level {
+  display: block;
+  font-size: var(--text-body);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.detail-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-round);
+  background: var(--color-bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:active {
+    background: var(--color-border);
+  }
+}
+
+.detail-close-btn-text {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* === 职业行 === */
+.detail-job-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-base);
+}
+
+.detail-job-badge {
+  background: var(--color-primary-bg);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.change-job-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary);
+  background: transparent;
+
+  &:active {
+    background: var(--color-primary-bg);
+  }
+}
+
+.change-job-btn-text {
+  font-size: var(--text-caption);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* === 职业选择网格 === */
+.job-select-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-base);
+}
+
+.job-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  transition: all var(--duration-fast) var(--easing-out);
+
+  &:active {
+    background: var(--color-bg-hover);
+    transform: scale(0.95);
+  }
+
+  &--selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+  }
+}
+
+.job-option-icon {
+  font-size: 24px;
+}
+
+.job-option-name {
+  font-size: var(--text-caption);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* === 属性列表 === */
+.detail-stats {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-base);
+}
+
+.detail-stat-row {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+.detail-stat-row + .detail-stat-row {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.detail-stat-label {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.detail-stat-divider {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 0 var(--spacing-sm);
+}
+
+.detail-stat-value {
+  font-size: var(--text-body);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+  min-width: 100px;
+}
+
+/* === 编队按钮 === */
+.toggle-active-btn {
+  width: 100%;
+  padding: var(--spacing-base);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--easing-out);
+
+  &:active {
+    background: var(--color-bg-hover);
+    transform: scale(0.98);
+  }
+
+  &--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+
+    .toggle-active-btn-text {
+      color: #fff;
+    }
+
+    &:active {
+      background: var(--color-primary-dark);
+    }
+  }
+}
+
+.toggle-active-btn-text {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}

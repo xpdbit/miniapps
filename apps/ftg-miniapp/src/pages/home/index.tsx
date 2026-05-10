@@ -221,7 +221,7 @@ export default function HomePage() {
   // 主渲染
   // ============================================================
   return (
-    <ScrollView className='home-page' scrollY enhanced showScrollbar={false}>
+    <ScrollView className='home-page' scrollY showScrollbar={false}>
       <View className='home-content'>
         {dataLoading ? (
           <Loading visible text='加载中...' />

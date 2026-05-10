@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum CardStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  BANNED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  openid        String   @unique
+  nickname      String?
+  avatar        String?
+  dailyQuota    Int      @default(20)
+  usedQuota     Int      @default(0)
+  quotaDate     DateTime @default(now())
+  role          UserRole @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  characters   CharacterCard[]
+  personas     Persona[]
+  chats        ChatSession[]
+  apiKeys      ApiKey[]
+  likes        CharacterCardLike[]
+  favs         CharacterCardFav[]
+}
+
+model CharacterCard {
+  id             String     @id @default(cuid())
+  name           String
+  avatar         String?
+  description    String
+  personality    String?
+  firstMsg       String
+  exampleDialogs Json?
+  scenario       String?
+  lore           String?
+  systemPrompt   String?
+  nsfw           Boolean    @default(false)
+  creatorId      String
+  tags           Json
+  isPublic       Boolean    @default(false)
+  status         CardStatus @default(DRAFT)
+  chatCount      Int        @default(0)
+  likeCount      Int        @default(0)
+  favCount       Int        @default(0)
+  viewCount      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  creator User              @relation(fields: [creatorId], references: [id])
+  likes   CharacterCardLike[]
+  favs    CharacterCardFav[]
+  chats   ChatSession[]
+}
+
+model CharacterCardLike {
+  id        String   @id @default(cuid())
+  cardId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  card CharacterCard @relation(fields: [cardId], references: [id])
+  user User         @relation(fields: [userId], references: [id])
+
+  @@unique([cardId, userId])
+}
+
+model CharacterCardFav {
+  id        String   @id @default(cuid())
+  cardId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  card CharacterCard @relation(fields: [cardId], references: [id])
+  user User         @relation(fields: [userId], references: [id])
+
+  @@unique([cardId, userId])
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  avatar      String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ChatSession {
+  id           String   @id @default(cuid())
+  userId       String
+  characterId  String
+  personaId    String?
+  title        String?
+  modelKey     String?
+  temperature  Float?
+  messageCount Int      @default(0)
+  tokenCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id])
+  character CharacterCard @relation(fields: [characterId], references: [id])
+  messages ChatMessage[]
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String
+  content   String
+  tokens    Int?
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id])
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String
+  keyValue  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ModerationLog {
+  id          String   @id @default(cuid())
+  targetType  String
+  targetId    String
+  action      String
+  reason      String?
+  operatorId  String?
+  createdAt   DateTime @default(now())
+}

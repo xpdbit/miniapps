@@ -1,7 +1,7 @@
 # GAME1 — 挂机放置游戏 · 微信小程序版
 
 > **源项目**: Unity 6 挂机放置游戏
-> **转换文档**: [docs/game-game1-miniapp/README.md](../docs/game-game1-miniapp/README.md)
+> **转换文档**: [docs/apps/game1-miniapp/README.md](../docs/apps/game1-miniapp/README.md)
 
 ## 状态
 
@@ -9,7 +9,7 @@
 
 ## 快速链接
 
-- 📖 [完整重构方案](../docs/game-game1-miniapp/README.md) — 系统架构、模块映射、开发里程碑
+- 📖 [完整重构方案](../docs/apps/game1-miniapp/README.md) — 系统架构、模块映射、开发里程碑
 - 🎮 [Unity 源项目](../../../UnityProgram/Game1) — 当前 Unity 版本代码
 - 🛠️ [mp-automator](../../cloud-functions/README.md) — 小程序自动化测试工具
 

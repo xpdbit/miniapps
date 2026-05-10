@@ -2,7 +2,7 @@
 # Dashboard Admin API Dockerfile
 # 构建并运行 Dashboard 的管理员认证 API（Express + Prisma）
 # =============================================================================
-# 使用方式：docker compose build admin
+# Build context: .miniapps/ 根目录（用于共享 prisma/）
 # =============================================================================
 
 # ---- Build Stage ----
@@ -14,17 +14,19 @@ WORKDIR /app
 ENV NODE_OPTIONS="--max-old-space-size=256"
 
 # 安装依赖（优化 npm 参数，减少内存占用）
-COPY package.json package-lock.json ./
+COPY dashboard/package.json dashboard/package-lock.json ./
 RUN npm ci --prefer-offline --no-audit --no-fund --loglevel=error
 
-# 生成 Prisma 客户端
+# 生成 Prisma 客户端（使用统一 schema）
 COPY prisma/ ./prisma/
+# 复制种子脚本（用于 prisma db seed）
+COPY dashboard/prisma/seed.cjs ./prisma/seed.cjs
 RUN npx prisma generate --no-hints
 
 # 编译 TypeScript
-COPY tsconfig.json ./
-COPY server/ ./server/
-COPY src/types/ ./src/types/
+COPY dashboard/tsconfig.json ./
+COPY dashboard/server/ ./server/
+COPY dashboard/src/types/ ./src/types/
 # 限制 TypeScript 编译内存 + 跳过库检查
 RUN NODE_OPTIONS="--max-old-space-size=384" npx tsc server/server.ts --outDir dist --esModuleInterop --module commonjs --target es2020 --skipLibCheck --resolveJsonModule
 

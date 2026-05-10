@@ -1,0 +1,431 @@
+/* ============================================================
+   旅行页面
+   暖色旅途主题 · 金色/棕色系
+   ============================================================ */
+
+.travel-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--tab-bar-height) - env(safe-area-inset-bottom));
+  padding: var(--spacing-sm);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-primary) 0%,
+    #f0e8d8 50%,
+    #e8dcc8 100%
+  );
+}
+
+/* ============================================================
+   顶部状态栏
+   ============================================================ */
+
+.status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-base);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-bottom: var(--spacing-sm);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+  transition: all var(--duration-normal);
+
+  &--active {
+    background: var(--color-success);
+    animation: softPulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(122, 158, 107, 0.5);
+  }
+
+  &--done {
+    background: var(--color-primary);
+  }
+}
+
+.status-label {
+  font-size: var(--text-auxiliary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.route-name {
+  font-size: var(--text-caption);
+  color: var(--color-text-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================================
+   资源栏
+   ============================================================ */
+
+.resource-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.resource-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-base);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.resource-icon {
+  font-size: var(--text-emphasis);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.resource-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.resource-track {
+  height: 5px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.resource-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s var(--easing-out);
+
+  &--stamina {
+    background: linear-gradient(90deg, #f0c27a, #e8a84b);
+  }
+
+  &--food {
+    background: linear-gradient(90deg, #8fb882, #6b9e5a);
+  }
+
+  &--morale {
+    background: linear-gradient(90deg, #b08fc8, #8f6fac);
+  }
+}
+
+.resource-value {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   里程信息
+   ============================================================ */
+
+.mileage-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.mileage-label {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.mileage-value {
+  font-size: var(--text-auxiliary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mileage-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--color-border);
+  margin: 0 4px;
+}
+
+/* ============================================================
+   进度条区域（旅行中可见）
+   ============================================================ */
+
+.progress-section {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-base);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.pause-hint {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ============================================================
+   旅行日志
+   ============================================================ */
+
+.log-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: var(--spacing-sm);
+}
+
+.section-title {
+  display: block;
+  font-size: var(--text-auxiliary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+}
+
+.log-scroll {
+  flex: 1;
+  max-height: 300px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.log-entry {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+
+  &--info {
+    background: transparent;
+  }
+
+  &--event {
+    background: var(--color-primary-bg);
+  }
+
+  &--reward {
+    background: var(--color-warning-bg);
+  }
+
+  &--warning {
+    background: var(--color-error-bg);
+  }
+}
+
+.log-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.log-anchor {
+  height: 1px;
+}
+
+/* ============================================================
+   操作按钮
+   ============================================================ */
+
+.action-bar {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  transition: all var(--duration-fast) var(--easing-out);
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &--primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(196, 146, 58, 0.3);
+  }
+
+  &--danger {
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
+  }
+}
+
+.action-btn-text {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+
+  .action-btn--primary & {
+    color: var(--color-text-inverse);
+  }
+
+  .action-btn--danger & {
+    color: var(--color-error);
+  }
+}
+
+/* ============================================================
+   路线选择列表（对话框内）
+   ============================================================ */
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.route-card {
+  padding: var(--spacing-sm) var(--spacing-base);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border-light);
+  transition: all var(--duration-fast) var(--easing-out);
+
+  &:active:not(&--locked) {
+    background: var(--color-bg-hover);
+    border-color: var(--color-primary-light);
+  }
+
+  &--locked {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+}
+
+.route-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.route-card-name {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.route-card-lock {
+  font-size: var(--text-caption);
+  color: var(--color-error);
+  font-weight: var(--font-weight-medium);
+  padding: 2px 8px;
+  background: var(--color-error-bg);
+  border-radius: var(--radius-round);
+}
+
+.route-card-desc {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.route-card-rewards {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.route-card-reward {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================================
+   奖励摘要（对话框内）
+   ============================================================ */
+
+.rewards-summary {
+  padding: var(--spacing-xs) 0;
+}
+
+.rewards-title {
+  display: block;
+  font-size: var(--text-auxiliary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.rewards-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-divider);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.rewards-label {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.rewards-value {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+}
+
+/* ============================================================
+   动画
+   ============================================================ */
+
+@keyframes softPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}

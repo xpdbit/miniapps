@@ -1,0 +1,238 @@
+{
+  "cards": [
+    {
+      "id": "card_n_traveler",
+      "name": "旅行者",
+      "rarity": "N",
+      "description": "四处漂泊的旅人，见多识广，适应力强",
+      "baseStats": { "maxHp": 10, "attack": 3, "defense": 2, "speed": 2 },
+      "skillBonus": "merchant_gift",
+      "drawWeight": 30
+    },
+    {
+      "id": "card_n_merchant",
+      "name": "商人",
+      "rarity": "N",
+      "description": "精明的行商，总能在交易中赚取更多利润",
+      "baseStats": { "maxHp": 5, "attack": 2, "defense": 1, "speed": 3 },
+      "skillBonus": "merchant_gift",
+      "drawWeight": 30
+    },
+    {
+      "id": "card_n_guard",
+      "name": "卫兵",
+      "rarity": "N",
+      "description": "受过基础训练的城防守卫，擅长防御",
+      "baseStats": { "maxHp": 20, "attack": 4, "defense": 4, "speed": 1 },
+      "skillBonus": "tough_skin",
+      "drawWeight": 30
+    },
+    {
+      "id": "card_n_farmer",
+      "name": "农夫",
+      "rarity": "N",
+      "description": "勤劳朴实的庄稼人，身体结实有耐力",
+      "baseStats": { "maxHp": 15, "attack": 2, "defense": 3, "speed": 1 },
+      "skillBonus": "vitality_boost",
+      "drawWeight": 30
+    },
+    {
+      "id": "card_n_scholar",
+      "name": "学者",
+      "rarity": "N",
+      "description": "饱读诗书的求知者，学识渊博",
+      "baseStats": { "maxHp": 5, "attack": 1, "defense": 1, "speed": 2 },
+      "skillBonus": "scholar_wisdom",
+      "drawWeight": 30
+    },
+    {
+      "id": "card_r_knight",
+      "name": "骑士",
+      "rarity": "R",
+      "description": "受过正规训练的骑士，攻守兼备",
+      "baseStats": { "maxHp": 30, "attack": 8, "defense": 7, "speed": 3 },
+      "skillBonus": "shield_wall",
+      "drawWeight": 20
+    },
+    {
+      "id": "card_r_archer",
+      "name": "弓箭手",
+      "rarity": "R",
+      "description": "百步穿杨的神射手，精准致命",
+      "baseStats": { "maxHp": 15, "attack": 10, "defense": 3, "speed": 5 },
+      "skillBonus": "precision",
+      "drawWeight": 20
+    },
+    {
+      "id": "card_r_priest",
+      "name": "牧师",
+      "rarity": "R",
+      "description": "虔诚的神职人员，拥有治愈之力",
+      "baseStats": { "maxHp": 20, "attack": 4, "defense": 4, "speed": 3 },
+      "skillBonus": "heal",
+      "drawWeight": 20
+    },
+    {
+      "id": "card_r_alchemist",
+      "name": "炼金术师",
+      "rarity": "R",
+      "description": "钻研物质转化的奇人，擅长制作药剂",
+      "baseStats": { "maxHp": 12, "attack": 6, "defense": 2, "speed": 4 },
+      "skillBonus": "scholar_wisdom",
+      "drawWeight": 20
+    },
+    {
+      "id": "card_r_hunter",
+      "name": "猎人",
+      "rarity": "R",
+      "description": "常年出没于荒野的追踪大师",
+      "baseStats": { "maxHp": 22, "attack": 9, "defense": 5, "speed": 6 },
+      "skillBonus": "quick_foot",
+      "drawWeight": 20
+    },
+    {
+      "id": "card_sr_paladin",
+      "name": "圣骑士",
+      "rarity": "SR",
+      "description": "神圣誓言守护者，兼具坚盾与圣光之力",
+      "baseStats": { "maxHp": 50, "attack": 14, "defense": 12, "speed": 4 },
+      "skillBonus": "shield_wall",
+      "drawWeight": 12
+    },
+    {
+      "id": "card_sr_assassin",
+      "name": "刺客",
+      "rarity": "SR",
+      "description": "暗影中的处刑人，一击必杀",
+      "baseStats": { "maxHp": 25, "attack": 18, "defense": 4, "speed": 10 },
+      "skillBonus": "precision",
+      "drawWeight": 12
+    },
+    {
+      "id": "card_sr_mage",
+      "name": "魔法师",
+      "rarity": "SR",
+      "description": "掌握元素奥秘的施法者，破坏力惊人",
+      "baseStats": { "maxHp": 20, "attack": 16, "defense": 3, "speed": 5 },
+      "skillBonus": "power_strike",
+      "drawWeight": 12
+    },
+    {
+      "id": "card_sr_druid",
+      "name": "德鲁伊",
+      "rarity": "SR",
+      "description": "与自然共鸣的守护者，能调用森林之力",
+      "baseStats": { "maxHp": 40, "attack": 10, "defense": 8, "speed": 6 },
+      "skillBonus": "heal",
+      "drawWeight": 12
+    },
+    {
+      "id": "card_sr_bard",
+      "name": "吟游诗人",
+      "rarity": "SR",
+      "description": "用歌声和音乐鼓舞人心的艺术家",
+      "baseStats": { "maxHp": 28, "attack": 8, "defense": 5, "speed": 8 },
+      "skillBonus": "merchant_gift",
+      "drawWeight": 12
+    },
+    {
+      "id": "card_ssr_dragon_knight",
+      "name": "龙骑士",
+      "rarity": "SSR",
+      "description": "驾驭巨龙的空战王者，拥有毁天灭地之力",
+      "baseStats": { "maxHp": 80, "attack": 25, "defense": 20, "speed": 8 },
+      "skillBonus": "berserk",
+      "drawWeight": 6
+    },
+    {
+      "id": "card_ssr_shadow_blade",
+      "name": "暗影之刃",
+      "rarity": "SSR",
+      "description": "来自影界的双刀使者，出手如电防不胜防",
+      "baseStats": { "maxHp": 40, "attack": 28, "defense": 8, "speed": 15 },
+      "skillBonus": "precision",
+      "drawWeight": 6
+    },
+    {
+      "id": "card_ssr_archmage",
+      "name": "大法师",
+      "rarity": "SSR",
+      "description": "已触及魔法本源的最高阶施法者",
+      "baseStats": { "maxHp": 35, "attack": 30, "defense": 6, "speed": 8 },
+      "skillBonus": "power_strike",
+      "drawWeight": 6
+    },
+    {
+      "id": "card_ssr_celestial",
+      "name": "天人",
+      "rarity": "SSR",
+      "description": "超脱凡俗的上界生灵，身蕴天地之力",
+      "baseStats": { "maxHp": 60, "attack": 22, "defense": 18, "speed": 12 },
+      "skillBonus": "vitality_boost",
+      "drawWeight": 6
+    },
+    {
+      "id": "card_ssr_war_chief",
+      "name": "战酋",
+      "rarity": "SSR",
+      "description": "身经百战的部落领袖，威震四方",
+      "baseStats": { "maxHp": 90, "attack": 20, "defense": 15, "speed": 7 },
+      "skillBonus": "tough_skin",
+      "drawWeight": 6
+    },
+    {
+      "id": "card_ur_phoenix_lord",
+      "name": "凤凰领主",
+      "rarity": "UR",
+      "description": "沐浴涅槃之火的不死鸟，浴火重生",
+      "baseStats": { "maxHp": 100, "attack": 35, "defense": 20, "speed": 14 },
+      "skillBonus": "vitality_boost",
+      "drawWeight": 2
+    },
+    {
+      "id": "card_ur_void_walker",
+      "name": "虚空行者",
+      "rarity": "UR",
+      "description": "行走于次元裂隙的异界来客，掌握了空间之力",
+      "baseStats": { "maxHp": 55, "attack": 40, "defense": 12, "speed": 20 },
+      "skillBonus": "quick_foot",
+      "drawWeight": 2
+    },
+    {
+      "id": "card_ur_titan_guardian",
+      "name": "泰坦卫士",
+      "rarity": "UR",
+      "description": "拥有泰坦血脉的远古守护者，坚不可摧",
+      "baseStats": { "maxHp": 150, "attack": 25, "defense": 35, "speed": 5 },
+      "skillBonus": "tough_skin",
+      "drawWeight": 2
+    },
+    {
+      "id": "card_gr_creator",
+      "name": "创世者",
+      "rarity": "GR",
+      "description": "世界之源的化身，掌控创造与毁灭的终极之力",
+      "baseStats": { "maxHp": 200, "attack": 50, "defense": 30, "speed": 18 },
+      "skillBonus": "berserk",
+      "drawWeight": 1
+    },
+    {
+      "id": "card_gr_world_destroyer",
+      "name": "灭世者",
+      "rarity": "GR",
+      "description": "终末的化身，所到之处万物归墟",
+      "baseStats": { "maxHp": 180, "attack": 55, "defense": 25, "speed": 22 },
+      "skillBonus": "power_strike",
+      "drawWeight": 1
+    },
+    {
+      "id": "card_gr_eternal_one",
+      "name": "永恒者",
+      "rarity": "GR",
+      "description": "超越时间的存在，过去未来尽在掌中",
+      "baseStats": { "maxHp": 160, "attack": 45, "defense": 40, "speed": 25 },
+      "skillBonus": "shield_wall",
+      "drawWeight": 1
+    }
+  ]
+}

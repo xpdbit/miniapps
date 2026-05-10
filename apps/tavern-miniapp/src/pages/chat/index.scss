@@ -1,0 +1,255 @@
+.page-chat {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+
+  &-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+
+    &-title {
+      font-size: var(--font-lg);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    &-icon {
+      font-size: var(--font-xl);
+      padding: 4px;
+    }
+  }
+
+  // Character card selector
+  &-selector {
+    height: 180px;
+    padding: var(--spacing-md) 0;
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+
+    &-scroll {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      white-space: nowrap;
+      height: 140px;
+      padding: 0 var(--spacing-md);
+    }
+  }
+
+  // Character card
+  &-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 140px;
+    height: 130px;
+    margin-right: var(--spacing-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-lg);
+    border: 3px solid transparent;
+    transition: border-color 0.2s ease;
+    flex-shrink: 0;
+
+    &--active {
+      border-color: var(--color-primary);
+    }
+
+    &--create {
+      background: var(--color-bg-input);
+      border: 2px dashed var(--color-border);
+    }
+
+    &-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--spacing-xs);
+      overflow: hidden;
+
+      &-text {
+        font-size: var(--font-xl);
+        font-weight: 600;
+        color: white;
+      }
+
+      &-img {
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+      }
+
+      &--plus {
+        background: var(--color-bg-input);
+        border: 2px dashed var(--color-primary);
+      }
+
+      &-plus {
+        font-size: 48px;
+        color: var(--color-primary);
+        font-weight: 300;
+        line-height: 1;
+      }
+    }
+
+    &-name {
+      font-size: var(--font-sm);
+      color: var(--color-text);
+      text-align: center;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // Messages area
+  &-messages {
+    flex: 1;
+    padding: var(--spacing-md);
+    overflow-y: auto;
+  }
+
+  // Empty state when no character selected
+  &-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 160px;
+
+    &-title {
+      font-size: var(--font-lg);
+      color: var(--color-text);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    &-desc {
+      font-size: var(--font-sm);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  // Welcome message when character selected but no messages
+  &-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+
+    &-name {
+      font-size: var(--font-lg);
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    &-msg {
+      font-size: var(--font-md);
+      color: var(--color-text-secondary);
+      text-align: center;
+      line-height: 1.6;
+      font-style: italic;
+    }
+  }
+
+  // Input area
+  &-input-area {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-card);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  &-input {
+    flex: 1;
+    height: 40px;
+    background: var(--color-bg-input);
+    border-radius: var(--radius-md);
+    padding: 0 var(--spacing-md);
+    font-size: var(--font-sm);
+    color: var(--color-text);
+    margin-right: var(--spacing-sm);
+  }
+
+  &-send-btn {
+    width: 70px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    background: var(--color-primary) !important;
+    color: white !important;
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+  }
+
+  // Overlay for session list
+  &-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+  }
+
+  &-sessions {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 70%;
+    height: 100%;
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    z-index: 101;
+
+    &-title {
+      font-size: var(--font-lg);
+      font-weight: 600;
+      display: block;
+      margin-bottom: var(--spacing-lg);
+      padding-top: var(--spacing-xl);
+    }
+
+    &-item {
+      padding: var(--spacing-md);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    &-name {
+      font-size: var(--font-md);
+      color: var(--color-text);
+      display: block;
+    }
+
+    &-preview {
+      font-size: var(--font-xs);
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-empty {
+      color: var(--color-text-secondary);
+      font-size: var(--font-sm);
+    }
+  }
+}

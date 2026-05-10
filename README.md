@@ -33,13 +33,16 @@
 
 ```
 .miniapps/
-├── ftg-miniapp/          # 微信小程序 (Taro + React)
-├── ftg-server/           # Express 后端 API
+├── apps/
+│   ├── ftg-miniapp/      # 微信小程序 (Taro + React)
+│   └── game1-miniapp/    # Game1 挂机放置游戏
+├── servers/
+│   └── ftg-server/       # Express 后端 API
 ├── dashboard/            # 统一管理后台
 ├── deploy/               # 部署配置 (Docker/Nginx)
 ├── docs/                 # 项目文档
-│   ├── ftg-miniapp/      # 小程序文档
-│   ├── ftg-server/       # 后端文档
+│   ├── apps/ftg-miniapp/ # 小程序文档
+│   ├── servers/ftg-server/ # 后端文档
 │   ├── dashboard/        # 管理后台文档
 │   └── deploy/           # 部署文档
 ├── plan/                 # 规划文档
@@ -52,7 +55,7 @@
 ### 后端
 
 ```bash
-cd ftg-server
+cd servers/ftg-server
 npm install
 npm run dev
 ```
@@ -68,7 +71,7 @@ npm run dev
 ### 小程序
 
 ```bash
-cd ftg-miniapp
+cd apps/ftg-miniapp
 npm install
 npm run dev:weapp
 ```

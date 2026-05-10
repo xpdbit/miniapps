@@ -1,0 +1,574 @@
+﻿/* ============================================================
+   技能页面样式
+   ============================================================ */
+
+.skill-page {
+  padding: var(--spacing-base);
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+  padding-bottom: calc(var(--spacing-base) + var(--tab-bar-height) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+}
+
+/* === 页面标题 === */
+.page-title {
+  display: block;
+  font-size: var(--text-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  padding: var(--spacing-sm) 0 var(--spacing-base);
+}
+
+/* === Tab 切换 === */
+.skill-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-base);
+  padding: 6px;
+}
+
+.skill-tab {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-base);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.skill-tab--active {
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.skill-tab__text {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.skill-tab--active .skill-tab__text {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* === 装备计数 === */
+.equip-count {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-sm);
+}
+
+.equip-count__text {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+/* === 技能列表 === */
+.skill-list {
+  flex: 1;
+  height: calc(100vh - 200px);
+}
+
+/* === 技能区块 === */
+.skill-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.skill-section__title {
+  display: block;
+  font-size: var(--text-auxiliary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+  padding-left: var(--spacing-xs);
+}
+
+.skill-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* === 技能卡片 === */
+.skill-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-base);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-base);
+  border-left: 4px solid var(--rarity-color, var(--rarity-common));
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.skill-card:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.skill-card--locked {
+  opacity: 0.6;
+  filter: grayscale(0.4);
+}
+
+.skill-card--equipped {
+  border-left-width: 4px;
+}
+
+/* 锁定遮罩 */
+.skill-locked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(245, 240, 232, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+.skill-lock-icon {
+  font-size: var(--text-emphasis);
+}
+
+.skill-lock-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+/* 卡片左侧图标区 */
+.skill-card__icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  font-size: 48px;
+}
+
+.skill-card__icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.skill-badge--equipped {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  padding: 2px 8px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-round);
+  white-space: nowrap;
+}
+
+/* 卡片中间信息区 */
+.skill-card__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.skill-card__name {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 2px 8px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--rarity-color, var(--rarity-common));
+  border-radius: var(--radius-round);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--rarity-color, var(--color-text-secondary));
+}
+
+.skill-card__tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.skill-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-round);
+  font-size: 16px;
+  font-weight: var(--font-weight-normal);
+  color: var(--tag-color, var(--color-text-secondary));
+  border: 1px solid var(--tag-color, var(--color-border));
+}
+
+.skill-tag--rarity {
+  font-size: 14px;
+}
+
+/* 冷却条 */
+.skill-cooldown {
+  position: relative;
+  height: 20px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-round);
+  overflow: hidden;
+}
+
+.skill-cooldown__bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  background: var(--color-info);
+  opacity: 0.3;
+  transition: width var(--duration-normal) var(--easing-out);
+}
+
+.skill-cooldown__text {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 20px;
+  padding-left: var(--spacing-xs);
+}
+
+.skill-card__desc {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 卡片右侧操作 */
+.skill-card__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.skill-card__action--equipped {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+}
+
+.skill-action-btn {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-inverse);
+}
+
+.skill-card__action--equipped .skill-action-btn {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   技能详情浮层
+   ============================================================ */
+
+.skill-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 50, 40, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  padding: var(--spacing-base);
+}
+
+.skill-detail-card {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border-top: 4px solid var(--rarity-color, var(--rarity-common));
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 关闭按钮 */
+.skill-detail__close {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-round);
+}
+
+.skill-detail__close:active {
+  opacity: 0.7;
+}
+
+.skill-detail__close-text {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 头部：图标 + 名称 */
+.skill-detail__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-base);
+  padding: var(--spacing-base);
+  background: var(--color-bg-surface);
+}
+
+.skill-detail__icon {
+  font-size: 80px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.skill-detail__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-detail__name {
+  display: block;
+  font-size: var(--text-heading);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.skill-detail__tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* 等级 */
+.skill-detail__level {
+  padding: var(--spacing-sm) var(--spacing-base);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.skill-detail__level-text {
+  font-size: var(--text-auxiliary);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 属性信息 */
+.skill-detail__attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-base);
+}
+
+.skill-detail__attr {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.skill-detail__attr-label {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.skill-detail__attr-value {
+  font-size: var(--text-body);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 分割线 */
+.skill-detail__divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 0 var(--spacing-base);
+}
+
+/* 描述 */
+.skill-detail__desc-wrap {
+  padding: var(--spacing-base);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.skill-detail__desc-label {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.skill-detail__desc {
+  display: block;
+  font-size: var(--text-body);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* 操作按钮 */
+.skill-detail__actions {
+  padding: var(--spacing-base);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.skill-detail__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-base);
+  border-radius: var(--radius-base);
+  background: var(--color-primary);
+}
+
+.skill-detail__btn--unequip {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+}
+
+.skill-detail__btn:active {
+  opacity: 0.8;
+}
+
+.skill-detail__btn-text {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-inverse);
+}
+
+.skill-detail__btn--unequip .skill-detail__btn-text {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   装备确认弹窗
+   ============================================================ */
+
+.skill-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 50, 40, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--spacing-base);
+}
+
+.skill-confirm-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-base);
+}
+
+.skill-confirm__title {
+  display: block;
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.skill-confirm__msg {
+  display: block;
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--spacing-base);
+  line-height: var(--line-height-relaxed);
+}
+
+.skill-confirm__btns {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.skill-confirm__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-base);
+  border-radius: var(--radius-base);
+}
+
+.skill-confirm__btn:active {
+  opacity: 0.8;
+}
+
+.skill-confirm__btn--cancel {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+}
+
+.skill-confirm__btn--ok {
+  background: var(--color-primary);
+}
+
+.skill-confirm__btn-text {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+}
+
+.skill-confirm__btn--cancel .skill-confirm__btn-text {
+  color: var(--color-text-secondary);
+}
+
+.skill-confirm__btn--ok .skill-confirm__btn-text {
+  color: var(--color-text-inverse);
+}
+

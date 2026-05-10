@@ -1,0 +1,814 @@
+﻿// ============================================================
+// 卡牌页面样式
+// ============================================================
+
+// 页面布局
+.card-page {
+  padding: var(--spacing-base);
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+  padding-bottom: calc(var(--spacing-base) + var(--tab-bar-height) + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+// 页面头部
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-base);
+}
+
+.page-title {
+  font-size: var(--text-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+// 宝石显示
+.gems-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--color-bg-card);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-round);
+  box-shadow: var(--shadow-sm);
+}
+
+.gems-icon {
+  font-size: var(--text-body);
+}
+
+.gems-count {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+}
+
+// ============================================================
+// 收集进度
+// ============================================================
+.collection-section {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.collection-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.collection-label {
+  font-size: var(--text-auxiliary);
+  color: var(--color-text-secondary);
+}
+
+.collection-count {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+}
+
+.progress-bar {
+  height: 12px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-round);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+  border-radius: var(--radius-round);
+  transition: width 0.5s var(--easing-out);
+}
+
+// ============================================================
+// 稀有度图例
+// ============================================================
+.rarity-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.rarity-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rarity-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.rarity-label {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+// ============================================================
+// 稀有度统计
+// ============================================================
+.rarity-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.rarity-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-round);
+  background: var(--color-bg-surface);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+}
+
+.rarity-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rarity-stat-label {
+  color: var(--color-text-secondary);
+}
+
+.rarity-stat-count {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+// ============================================================
+// 抽奖按钮
+// ============================================================
+.pull-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.pull-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-base);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--duration-fast) var(--easing-out), box-shadow var(--duration-fast) var(--easing-out), opacity var(--duration-fast);
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &--disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(0.6);
+  }
+
+  &--pulling {
+    animation: softPulse 1s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+.pull-btn--10 {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-primary));
+
+  .pull-btn-cost {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.pull-btn-text {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.pull-btn-cost {
+  font-size: var(--text-auxiliary);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+// ============================================================
+// 保底计数器
+// ============================================================
+.pity-counters {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: center;
+  margin-bottom: var(--spacing-base);
+}
+
+.pity-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-round);
+  box-shadow: var(--shadow-sm);
+}
+
+.pity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+
+  &--sr { background: var(--rarity-rare); }
+  &--ssr { background: var(--rarity-epic); }
+  &--ur { background: var(--rarity-legendary); }
+}
+
+.pity-label {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.pity-value {
+  font-size: var(--text-caption);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+// ============================================================
+// 卡牌网格
+// ============================================================
+.card-grid {
+  width: 100%;
+  height: calc(100vh - 540px);
+  margin-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+}
+
+.card-grid-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-base);
+}
+
+// ============================================================
+// 卡牌项
+// ============================================================
+.card-item {
+  width: calc((100% - var(--spacing-sm) * 2) / 3);
+  aspect-ratio: 1;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) var(--easing-out);
+  position: relative;
+  overflow: hidden;
+
+  &--owned {
+    border: 3px solid transparent;
+
+    &.rarity-border--n { border-color: var(--rarity-common); }
+    &.rarity-border--r { border-color: var(--rarity-uncommon); }
+    &.rarity-border--sr { border-color: var(--rarity-rare); }
+    &.rarity-border--ssr { border-color: var(--rarity-epic); }
+    &.rarity-border--ur {
+      border-color: var(--rarity-legendary);
+      box-shadow: 0 0 12px rgba(196, 146, 58, 0.3), var(--shadow-sm);
+
+      // UR 金色流光
+      &::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(
+          transparent,
+          rgba(196, 146, 58, 0.08),
+          transparent 30%,
+          rgba(196, 146, 58, 0.12),
+          transparent 60%,
+          rgba(196, 146, 58, 0.06),
+          transparent
+        );
+        animation: goldShimmer 3s linear infinite;
+        pointer-events: none;
+      }
+    }
+    &.rarity-border--gr {
+      border: 3px solid transparent;
+      background:
+        linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
+        linear-gradient(135deg, #ff6b6b, #c4923a, #7a9e6b, #6b8fac, #a67d9e) border-box;
+
+      // GR 彩虹流光
+      &::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(
+          transparent,
+          rgba(255, 107, 107, 0.1),
+          transparent 20%,
+          rgba(196, 146, 58, 0.1),
+          transparent 40%,
+          rgba(122, 158, 107, 0.1),
+          transparent 60%,
+          rgba(107, 143, 172, 0.1),
+          transparent 80%,
+          rgba(166, 125, 158, 0.1),
+          transparent
+        );
+        animation: goldShimmer 2s linear infinite;
+        pointer-events: none;
+      }
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  &--locked {
+    background: var(--color-bg-surface);
+    border: 2px dashed var(--color-border);
+
+    .card-name--locked {
+      font-size: var(--text-caption);
+      color: var(--color-text-tertiary);
+    }
+  }
+}
+
+// 卡牌稀有度角标
+.card-rarity-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-round);
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  line-height: 1.4;
+  z-index: 2;
+}
+
+.card-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.card-name {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+// 卡牌属性小字
+.card-stats {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.card-stat {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+
+  &--atk { color: var(--color-error); }
+  &--def { color: var(--color-info); }
+  &--hp { color: var(--color-success); }
+}
+
+.card-quantity {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  box-shadow: var(--shadow-sm);
+  z-index: 2;
+}
+
+// 卡背面
+.card-back {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-bg-surface),
+    var(--color-bg-surface) 8px,
+    var(--color-bg-hover) 8px,
+    var(--color-bg-hover) 16px
+  );
+  border-radius: var(--radius-base);
+}
+
+.card-back-icon {
+  font-size: 48px;
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-bold);
+}
+
+// ============================================================
+// 卡牌详情弹窗
+// ============================================================
+.card-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: fadeIn var(--duration-fast) var(--easing-out);
+}
+
+.card-detail-card {
+  width: 90%;
+  max-width: 400px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-base);
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn var(--duration-normal) var(--easing-out);
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.rarity-badge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-round);
+}
+
+.rarity-badge-text {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+}
+
+.detail-close {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-surface);
+  border-radius: 50%;
+}
+
+.detail-close-text {
+  font-size: var(--text-emphasis);
+  color: var(--color-text-secondary);
+}
+
+.detail-art {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.detail-art-emoji {
+  font-size: 120px;
+}
+
+.detail-name {
+  font-size: var(--text-heading);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.detail-description {
+  font-size: var(--text-auxiliary);
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-base);
+}
+
+.detail-stats {
+  display: flex;
+  justify-content: space-around;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-bold);
+
+  &--atk { color: var(--color-error); }
+  &--def { color: var(--color-info); }
+  &--hp { color: var(--color-success); }
+}
+
+.detail-quantity {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.detail-quantity-label {
+  font-size: var(--text-auxiliary);
+  color: var(--color-text-secondary);
+}
+
+.detail-quantity-value {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+}
+
+// ============================================================
+// 抽奖结果弹窗
+// ============================================================
+.pull-result-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-modal);
+  animation: fadeIn var(--duration-fast) var(--easing-out);
+}
+
+.pull-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-base);
+  background: var(--color-bg-card);
+}
+
+.pull-result-title {
+  font-size: var(--text-subheading);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.pull-result-close {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-surface);
+  border-radius: 50%;
+}
+
+.pull-result-close-text {
+  font-size: var(--text-emphasis);
+  color: var(--color-text-secondary);
+}
+
+.pull-result-grid {
+  flex: 1;
+  padding: var(--spacing-base);
+}
+
+.pull-result-grid-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-start;
+}
+
+.pull-result-card {
+  width: calc((100% - var(--spacing-sm) * 4) / 5);
+  aspect-ratio: 0.75;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  animation: cardReveal var(--duration-normal) var(--easing-out) forwards;
+  opacity: 0;
+  transform: scale(0.5);
+  position: relative;
+  overflow: hidden;
+
+  &.rarity-border--n { border: 3px solid var(--rarity-common); }
+  &.rarity-border--r { border: 3px solid var(--rarity-uncommon); }
+  &.rarity-border--sr { border: 3px solid var(--rarity-rare); }
+  &.rarity-border--ssr { border: 3px solid var(--rarity-epic); }
+  &.rarity-border--ur {
+    border: 3px solid var(--rarity-legendary);
+    box-shadow: 0 0 16px rgba(196, 146, 58, 0.4);
+  }
+  &.rarity-border--gr {
+    border: 3px solid transparent;
+    background:
+      linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
+      linear-gradient(135deg, #ff6b6b, #c4923a, #7a9e6b, #6b8fac, #a67d9e) border-box;
+  }
+}
+
+.pull-result-card--sr { animation-delay: 0s; }
+.pull-result-card--r { animation-delay: 0.05s; }
+.pull-result-card--n { animation-delay: 0.1s; }
+
+.pull-result-icon {
+  font-size: 36px;
+  margin-bottom: 4px;
+}
+
+.pull-result-name {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.pull-result-rarity {
+  position: absolute;
+  bottom: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-round);
+}
+
+.pull-result-rarity-text {
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+}
+
+.pull-result-footer {
+  padding: var(--spacing-base);
+  background: var(--color-bg-card);
+}
+
+.pull-result-btn {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.pull-result-btn-text {
+  font-size: var(--text-emphasis);
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+}
+
+// ============================================================
+// 抽卡动画占位 — 翻牌前画面
+// ============================================================
+.pull-animation-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+}
+
+.pull-animation-spinner {
+  font-size: 80px;
+  animation: pullSpin 0.8s ease-in-out infinite;
+}
+
+.pull-animation-text {
+  font-size: var(--text-lg);
+  color: var(--color-text-inverse);
+  margin-top: var(--spacing-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+// ============================================================
+// 动画
+// ============================================================
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cardReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotateZ(-10deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotateZ(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateZ(0deg);
+  }
+}
+
+@keyframes goldShimmer {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pullSpin {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(5deg); }
+  75% { transform: scale(0.9) rotate(-5deg); }
+}

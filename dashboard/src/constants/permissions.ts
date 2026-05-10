@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   ACHIEVEMENTS: 'achievements',
   KEYS: 'keys',
   MONITORING: 'monitoring',
+  TAVERN: 'tavern',
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
@@ -27,6 +28,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.ACHIEVEMENTS,
     PERMISSIONS.KEYS,
     PERMISSIONS.MONITORING,
+    PERMISSIONS.TAVERN,
   ],
   viewer: [PERMISSIONS.DASHBOARD, PERMISSIONS.MONITORING],
 }
@@ -49,4 +51,5 @@ export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
   '/achievements': PERMISSIONS.ACHIEVEMENTS,
   '/api-keys': PERMISSIONS.KEYS,
   '/monitoring': PERMISSIONS.MONITORING,
+  '/tavern': PERMISSIONS.TAVERN,
 }

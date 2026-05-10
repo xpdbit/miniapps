@@ -1,9 +1,0 @@
-{
-  "name": "foodRecognize",
-  "version": "1.0.0",
-  "description": "调用 PP-ShiTuV2 进行食物识别",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "latest"
-  }
-}

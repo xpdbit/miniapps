@@ -11,6 +11,7 @@ import {
   MonitorOutlined,
   SettingOutlined,
   AuditOutlined,
+  CommentOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
@@ -27,6 +28,7 @@ interface MenuItemConfig {
 
 const menuItems: MenuItemConfig[] = [
   { key: ROUTES.DASHBOARD, icon: <DashboardOutlined />, label: '仪表盘', permission: PERMISSIONS.DASHBOARD },
+  { key: ROUTES.TAVERN, icon: <CommentOutlined />, label: 'AI 酒馆', permission: PERMISSIONS.TAVERN },
   { key: ROUTES.USERS, icon: <UserOutlined />, label: '用户管理', permission: PERMISSIONS.USERS },
   { key: ROUTES.FOOD_RECORDS, icon: <FileTextOutlined />, label: '食物记录', permission: PERMISSIONS.RECORDS },
   { key: ROUTES.THEMES, icon: <SkinOutlined />, label: '主题管理', permission: PERMISSIONS.THEMES },

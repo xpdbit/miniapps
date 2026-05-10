@@ -1,0 +1,246 @@
+{
+  "events": [
+    {
+      "id": "Core.Event.AbandonedShrine",
+      "title": "废弃神庙",
+      "description": "你在密林深处发现了一座被藤蔓覆盖的废弃神庙。石门上刻着古老的符文，微微散发着蓝色的光芒。",
+      "choices": [
+        {
+          "label": "虔诚祈祷",
+          "outcome": "你跪在神像前诚心祈祷，一道温暖的光芒笼罩全身，伤势尽数痊愈。",
+          "effects": { "hpRestore": 100, "expBonus": 50 }
+        },
+        {
+          "label": "搜索祭坛",
+          "outcome": "你在祭坛暗格中发现了一袋金币和一颗闪闪发光的魔法水晶。",
+          "effects": { "goldReward": 200, "itemReward": "Core.Item.MagicCrystal" }
+        },
+        {
+          "label": "默默离开",
+          "outcome": "你感觉这座神庙不宜久留，悄悄退出了这里。",
+          "effects": {}
+        }
+      ],
+      "weight": 10,
+      "minLevel": 1
+    },
+    {
+      "id": "Core.Event.BanditAmbush",
+      "title": "山贼伏击",
+      "description": "山路两侧突然杀出一伙山贼，为首的光头大汉狞笑着挡住了你的去路。",
+      "choices": [
+        {
+          "label": "迎战",
+          "outcome": "你拔出武器与山贼展开激战，最终将他们击退，缴获了不少战利品。",
+          "effects": { "combatDifficulty": "normal", "goldReward": 150, "expReward": 100, "itemReward": "Core.Item.IronOre" }
+        },
+        {
+          "label": "巧言交涉",
+          "outcome": "你展现出不俗的口才和气势，山贼头目觉得你不好惹，悻悻离去。",
+          "effects": { "expReward": 50, "statRequirement": { "wisdom": 15 } }
+        },
+        {
+          "label": "撒腿就跑",
+          "outcome": "你果断转身逃跑，虽然有些狼狈，但保住了性命和小命。",
+          "effects": { "hpCost": 10 }
+        }
+      ],
+      "weight": 15,
+      "minLevel": 3
+    },
+    {
+      "id": "Core.Event.MerchantCaravan",
+      "title": "商队相遇",
+      "description": "一支满载货物的商队从远处缓缓驶来，领头的老商人热情地向你打招呼。",
+      "choices": [
+        {
+          "label": "交易买卖",
+          "outcome": "商队带来了许多稀罕货品，你用金币换到了心仪已久的物品。",
+          "effects": { "goldCost": 300, "itemReward": "Core.Item.HealthPotion", "itemReward2": "Core.Item.ManaElixir" }
+        },
+        {
+          "label": "护送商队",
+          "outcome": "你主动提出护送商队一段路程，途中击退了几波野兽，商人感激地付了报酬。",
+          "effects": { "goldReward": 250, "expReward": 120 }
+        },
+        {
+          "label": "挥手告别",
+          "outcome": "你与商队告别，继续自己的旅程。",
+          "effects": {}
+        }
+      ],
+      "weight": 12,
+      "minLevel": 2
+    },
+    {
+      "id": "Core.Event.RiverCrossing",
+      "title": "横渡河流",
+      "description": "一条湍急的河流拦住了你的去路，河水浑浊不见底，对岸隐约可见继续前行的道路。",
+      "choices": [
+        {
+          "label": "涉水而过",
+          "outcome": "你小心翼翼地在河水中前行，虽然被冲得东倒西歪，但总算安全到达对岸。",
+          "effects": { "hpCost": 20, "expReward": 30 }
+        },
+        {
+          "label": "搭建木桥",
+          "outcome": "你砍倒附近的大树，花费了一些时间搭起了一座简易木桥。",
+          "effects": { "expReward": 60, "timeCost": 30 }
+        },
+        {
+          "label": "沿河绕路",
+          "outcome": "你沿着河岸向上游走去，找到了一处水流平缓的浅滩。",
+          "effects": { "mileageCost": 5 }
+        }
+      ],
+      "weight": 14,
+      "minLevel": 1
+    },
+    {
+      "id": "Core.Event.MysteriousCave",
+      "title": "神秘洞穴",
+      "description": "山壁上有一个不显眼的洞穴入口，洞口弥漫着淡淡的紫色雾气，隐约能听到洞内传来奇怪的回声。",
+      "choices": [
+        {
+          "label": "深入探索",
+          "outcome": "你在洞穴深处发现了一座天然水晶矿脉，收获了大量魔法水晶！",
+          "effects": { "expReward": 200, "itemReward": "Core.Item.MagicCrystal", "itemRewardCount": 3 }
+        },
+        {
+          "label": "在洞口观望",
+          "outcome": "你在洞口捡到几块散落的水晶碎片，也算不虚此行。",
+          "effects": { "itemReward": "Core.Item.MagicCrystal" }
+        },
+        {
+          "label": "回避危险",
+          "outcome": "直觉告诉你这个洞穴不简单，你决定不去冒险。",
+          "effects": {}
+        }
+      ],
+      "weight": 8,
+      "minLevel": 8,
+      "statRequirement": { "attack": 20 }
+    },
+    {
+      "id": "Core.Event.WanderingScholar",
+      "title": "流浪学者",
+      "description": "路边有个白发苍苍的老学者坐在石头上，面前摊着一本厚重的古书，正蹙眉沉思着什么。",
+      "choices": [
+        {
+          "label": "虚心请教",
+          "outcome": "学者见你好学，便传授了你一些珍贵的知识，你感觉受益匪浅。",
+          "effects": { "expReward": 300 }
+        },
+        {
+          "label": "慷慨赠礼",
+          "outcome": "你将身上带的干粮和金币送给学者，学者感动之余，将一件宝物赠予了你。",
+          "effects": { "goldCost": 100, "itemReward": "Core.Item.RingOfPower" }
+        },
+        {
+          "label": "不打扰",
+          "outcome": "你不愿打扰学者的思考，安静地从旁边走过。",
+          "effects": {}
+        }
+      ],
+      "weight": 10,
+      "minLevel": 5,
+      "statRequirement": { "wisdom": 10 }
+    },
+    {
+      "id": "Core.Event.FoodShortage",
+      "title": "食物短缺",
+      "description": "你发现随身携带的干粮已经所剩无几，前方还有很长一段路程要赶。",
+      "choices": [
+        {
+          "label": "节约度日",
+          "outcome": "你决定缩减每餐的分量，虽然有些难熬，但能坚持到下一个城镇。",
+          "effects": { "hpCost": 15, "goldReward": 20 }
+        },
+        {
+          "label": "野外狩猎",
+          "outcome": "你在林中成功猎到几只野兔，不仅填饱了肚子，多余的皮毛还能卖点钱。",
+          "effects": { "expReward": 80, "goldReward": 50 }
+        },
+        {
+          "label": "购买补给",
+          "outcome": "正好遇到一个路过的货郎，你花高价买了一批补给。",
+          "effects": { "goldCost": 150 }
+        }
+      ],
+      "weight": 16,
+      "minLevel": 1
+    },
+    {
+      "id": "Core.Event.TreasureMap",
+      "title": "神秘藏宝图",
+      "description": "一个衣衫褴褛的人神秘兮兮地凑过来，掏出一张泛黄的羊皮纸，说是一张藏宝图。",
+      "choices": [
+        {
+          "label": "高价买下",
+          "outcome": "你花重金买下藏宝图，根据图上的标记真的找到了一处宝藏！",
+          "effects": { "goldCost": 500, "goldReward": 2000, "itemReward": "Core.Item.SteelBlade" }
+        },
+        {
+          "label": "低价还价",
+          "outcome": "你凭借三寸不烂之舌把价格压到了最低，那人无奈成交。",
+          "effects": { "goldCost": 100, "expReward": 50, "statRequirement": { "wisdom": 12 } }
+        },
+        {
+          "label": "一笑置之",
+          "outcome": "你一眼就看出这是骗局，头也不回地走开了。",
+          "effects": { "expReward": 20 }
+        }
+      ],
+      "weight": 6,
+      "minLevel": 10
+    },
+    {
+      "id": "Core.Event.HealingSpring",
+      "title": "治愈泉水",
+      "description": "一片宁静的林间空地上，一泓清泉正汩汩冒出，泉水散发着淡淡的金色光芒和草药香气。",
+      "choices": [
+        {
+          "label": "饮用泉水",
+          "outcome": "甘甜的泉水入喉，你感到全身的疲惫一扫而空，伤势也完全恢复了。",
+          "effects": { "hpRestore": 999, "expReward": 30 }
+        },
+        {
+          "label": "装瓶带走",
+          "outcome": "你用随身携带的水瓶装满了泉水，这可是上好的治疗药剂。",
+          "effects": { "itemReward": "Core.Item.HealthPotion", "itemRewardCount": 3 }
+        },
+        {
+          "label": "继续上路",
+          "outcome": "你欣赏了一会儿美景，稍作休息后继续赶路。",
+          "effects": { "hpRestore": 20 }
+        }
+      ],
+      "weight": 10,
+      "minLevel": 1
+    },
+    {
+      "id": "Core.Event.HelplessTraveler",
+      "title": "落难旅人",
+      "description": "路边倒着一个浑身是伤的旅人，他的行李散落一地，看到你后吃力地抬起手求救。",
+      "choices": [
+        {
+          "label": "出手相助",
+          "outcome": "你用携带的药草和绷带为旅人包扎伤口，旅人恢复后千恩万谢，把祖传的宝物送给了你。",
+          "effects": { "itemReward": "Core.Item.AmuletOfWisdom", "expReward": 150 }
+        },
+        {
+          "label": "视而不见",
+          "outcome": "你犹豫了一下，最终还是选择了离开——在这乱世，多一事不如少一事。",
+          "effects": {}
+        },
+        {
+          "label": "趁火打劫",
+          "outcome": "你翻遍了旅人的行李，拿走了值钱的东西后扬长而去。",
+          "effects": { "goldReward": 300, "expReward": -50 }
+        }
+      ],
+      "weight": 12,
+      "minLevel": 2
+    }
+  ]
+}

@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files first for layer caching
-COPY ftg-server/package.json ftg-server/package-lock.json ./
+COPY servers/ftg-server/package.json servers/ftg-server/package-lock.json ./
 
 # Install ALL dependencies (including devDependencies)
 RUN npm ci
@@ -16,8 +16,8 @@ COPY prisma/ ./prisma/
 RUN npx prisma generate
 
 # Copy source code
-COPY ftg-server/tsconfig.json ./
-COPY ftg-server/src/ ./src/
+COPY servers/ftg-server/tsconfig.json ./
+COPY servers/ftg-server/src/ ./src/
 
 # Build TypeScript to JavaScript
 RUN npm run build
@@ -49,6 +49,10 @@ EXPOSE 3000
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
     CMD node -e "require('http').get('http://localhost:3000/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+
+# Create uploads directory for avatar storage (must be before USER appuser)
+# appuser needs write permission to save uploaded avatars
+RUN mkdir -p /app/uploads/avatars && chown -R appuser:appuser /app/uploads
 
 # Switch to non-root user
 USER appuser

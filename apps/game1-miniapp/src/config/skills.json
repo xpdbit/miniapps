@@ -1,0 +1,160 @@
+{
+  "skills": [
+    {
+      "id": "basic_attack",
+      "name": "普通攻击",
+      "type": "active",
+      "description": "对敌方单体造成 100% 攻击力的伤害",
+      "effects": {
+        "damageMultiplier": 1.0,
+        "targetType": "single",
+        "hitRate": 0.95
+      },
+      "cooldown": 0,
+      "energyCost": 0,
+      "unlockLevel": 1,
+      "icon": "sword"
+    },
+    {
+      "id": "defend",
+      "name": "防御",
+      "type": "active",
+      "description": "进入防御姿态，本回合受到的伤害减少 50%",
+      "effects": {
+        "damageReduction": 0.5,
+        "durationTicks": 1,
+        "targetType": "self"
+      },
+      "cooldown": 0,
+      "energyCost": 5,
+      "unlockLevel": 1,
+      "icon": "shield"
+    },
+    {
+      "id": "power_strike",
+      "name": "强力打击",
+      "type": "active",
+      "description": "蓄力一击，对敌方单体造成 150% 攻击力的伤害",
+      "effects": {
+        "damageMultiplier": 1.5,
+        "targetType": "single",
+        "hitRate": 0.85
+      },
+      "cooldown": 3,
+      "energyCost": 10,
+      "unlockLevel": 5,
+      "icon": "power"
+    },
+    {
+      "id": "heal",
+      "name": "治愈",
+      "type": "active",
+      "description": "恢复自身 30% 最大生命值",
+      "effects": {
+        "healPercent": 0.3,
+        "targetType": "self"
+      },
+      "cooldown": 5,
+      "energyCost": 15,
+      "unlockLevel": 10,
+      "icon": "heart"
+    },
+    {
+      "id": "berserk",
+      "name": "狂暴",
+      "type": "active",
+      "description": "进入狂暴状态，攻击力提升 200%，但受到的伤害增加 20%，持续 3 回合",
+      "effects": {
+        "damageMultiplier": 2.0,
+        "incomingDamageMultiplier": 1.2,
+        "durationTicks": 3,
+        "targetType": "self"
+      },
+      "cooldown": 8,
+      "energyCost": 25,
+      "unlockLevel": 20,
+      "icon": "rage"
+    },
+    {
+      "id": "shield_wall",
+      "name": "盾墙",
+      "type": "active",
+      "description": "竖起盾墙，全体队友防御力提升 30%，持续 3 回合",
+      "effects": {
+        "defenseBuff": 0.3,
+        "durationTicks": 3,
+        "targetType": "party"
+      },
+      "cooldown": 6,
+      "energyCost": 20,
+      "unlockLevel": 15,
+      "icon": "wall"
+    },
+    {
+      "id": "precision",
+      "name": "精准",
+      "type": "passive",
+      "description": "暴击率永久提升 10%",
+      "effects": {
+        "critRateBonus": 0.1
+      },
+      "unlockLevel": 3,
+      "icon": "target"
+    },
+    {
+      "id": "tough_skin",
+      "name": "硬皮",
+      "type": "passive",
+      "description": "防御力永久提升 15%",
+      "effects": {
+        "defenseBonus": 0.15
+      },
+      "unlockLevel": 8,
+      "icon": "hide"
+    },
+    {
+      "id": "vitality_boost",
+      "name": "活力焕发",
+      "type": "passive",
+      "description": "最大生命值永久提升 20%",
+      "effects": {
+        "maxHpBonus": 0.2
+      },
+      "unlockLevel": 12,
+      "icon": "vitality"
+    },
+    {
+      "id": "quick_foot",
+      "name": "疾步",
+      "type": "passive",
+      "description": "速度永久提升 15%",
+      "effects": {
+        "speedBonus": 0.15
+      },
+      "unlockLevel": 6,
+      "icon": "foot"
+    },
+    {
+      "id": "merchant_gift",
+      "name": "商贾天赋",
+      "type": "passive",
+      "description": "金币获取量永久提升 20%",
+      "effects": {
+        "goldBonus": 0.2
+      },
+      "unlockLevel": 10,
+      "icon": "coin"
+    },
+    {
+      "id": "scholar_wisdom",
+      "name": "学者智慧",
+      "type": "passive",
+      "description": "经验获取量永久提升 15%",
+      "effects": {
+        "expBonus": 0.15
+      },
+      "unlockLevel": 10,
+      "icon": "book"
+    }
+  ]
+}

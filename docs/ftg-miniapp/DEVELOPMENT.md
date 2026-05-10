@@ -1,7 +1,7 @@
 # 开发指南
 
 > ⚠️ **旧架构文档** — 本文档部分内容基于项目早期的 CloudBase 云函数架构。
-> 当前开发环境以 ftg-server（Express REST API）和 Taro 小程序为主。
+> 当前开发环境以 servers/ftg-server（Express REST API）和 Taro 小程序为主。
 > 如有冲突，以根目录 AGENTS.md 和具体项目代码为准。
 
 ## 环境搭建
@@ -12,12 +12,12 @@
 - **npm** >= 9
 - **微信开发者工具** [下载](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
 - **微信小程序 AppID**（需注册微信公众平台）
-- **后端服务**：ftg-server（`cd ftg-server && npm install && npm run dev`）
+- **后端服务**：servers/ftg-server（`cd servers/ftg-server && npm install && npm run dev`）
 
 ### 项目初始化
 
 ```bash
-cd ftg-miniapp
+cd apps/ftg-miniapp
 npm install
 cp .env.dev .env
 ```
@@ -42,7 +42,7 @@ npm run dev:weapp
 此命令启动 Taro 开发服务器，监听文件变化自动重新编译到 `dist/` 目录。
 
 在微信开发者工具中：
-1. 打开项目 → 选择 `ftg-miniapp` 目录
+1. 打开项目 → 选择 `apps/ftg-miniapp` 目录
 2. 设置 → 勾选「不校验合法域名」用于本地调试
 3. 点击「编译」查看效果
 

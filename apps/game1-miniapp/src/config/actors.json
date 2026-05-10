@@ -1,0 +1,21 @@
+{
+  "Core.Actor.Player": {
+    "actorId": "Core.Actor.Player",
+    "name": "旅行者",
+    "race": "human",
+    "baseStats": {
+      "maxHp": 100,
+      "attack": 10,
+      "defense": 5,
+      "speed": 10
+    },
+    "growthStats": {
+      "hpPerLevel": 20,
+      "attackPerLevel": 3,
+      "defensePerLevel": 2,
+      "speedPerLevel": 1
+    },
+    "skills": ["basic_attack", "defend"],
+    "description": "普通的旅行者，蕴藏着无限潜力"
+  }
+}

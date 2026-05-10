@@ -47,7 +47,7 @@ export class UserDAL extends BaseDAL<UserDoc> {
 
     const now = nowISO();
     const newUser: CreateUserInput = {
-      nickname: defaultData?.nickname ?? '微信用户',
+      nickname: defaultData?.nickname ?? '',
       avatarUrl: defaultData?.avatarUrl ?? '',
       createdAt: defaultData?.createdAt ?? now,
       totalRecords: 0,

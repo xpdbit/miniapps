@@ -1,9 +1,0 @@
-{
-  "name": "themeCompose",
-  "version": "1.0.0",
-  "description": "服务端 Canvas 图片合成",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "latest"
-  }
-}

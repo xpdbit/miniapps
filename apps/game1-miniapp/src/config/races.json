@@ -1,0 +1,77 @@
+{
+  "human": {
+    "id": "human",
+    "name": "人类",
+    "description": "适应力最强的种族，能力均衡，没有明显短板",
+    "statModifiers": {
+      "maxHp": 0,
+      "attack": 0,
+      "defense": 0,
+      "speed": 0,
+      "wisdom": 0,
+      "luck": 0
+    },
+    "startingSkills": ["basic_attack", "defend"],
+    "bonusDescription": "无修正 - 能力均衡"
+  },
+  "elf": {
+    "id": "elf",
+    "name": "精灵",
+    "description": "优雅敏捷的森林种族，身手矫健但体质较弱",
+    "statModifiers": {
+      "maxHp": -10,
+      "attack": 0,
+      "defense": -5,
+      "speed": 15,
+      "wisdom": 10,
+      "luck": 5
+    },
+    "startingSkills": ["basic_attack", "quick_foot"],
+    "bonusDescription": "速度 +15%，智慧 +10%，生命 -10%，防御 -5%"
+  },
+  "dwarf": {
+    "id": "dwarf",
+    "name": "矮人",
+    "description": "坚韧的岩石之子，拥有惊人的耐力和力量",
+    "statModifiers": {
+      "maxHp": 20,
+      "attack": 5,
+      "defense": 15,
+      "speed": -10,
+      "wisdom": 0,
+      "luck": 0
+    },
+    "startingSkills": ["basic_attack", "tough_skin"],
+    "bonusDescription": "生命 +20%，防御 +15%，攻击 +5%，速度 -10%"
+  },
+  "orc": {
+    "id": "orc",
+    "name": "兽人",
+    "description": "来自北方的战斗民族，天生神力但头脑简单",
+    "statModifiers": {
+      "maxHp": 15,
+      "attack": 20,
+      "defense": 5,
+      "speed": 0,
+      "wisdom": -10,
+      "luck": -5
+    },
+    "startingSkills": ["basic_attack", "power_strike"],
+    "bonusDescription": "攻击 +20%，生命 +15%，防御 +5%，智慧 -10%，幸运 -5%"
+  },
+  "halfling": {
+    "id": "halfling",
+    "name": "半身人",
+    "description": "小巧灵活的幸运儿，总能在绝境中逢凶化吉",
+    "statModifiers": {
+      "maxHp": -5,
+      "attack": -10,
+      "defense": -5,
+      "speed": 10,
+      "wisdom": 5,
+      "luck": 20
+    },
+    "startingSkills": ["basic_attack", "precision"],
+    "bonusDescription": "幸运 +20%，速度 +10%，智慧 +5%，攻击 -10%，防御 -5%，生命 -5%"
+  }
+}

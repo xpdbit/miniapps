@@ -13,6 +13,8 @@
     "build:weapp:prod": "taro build --type weapp --mode production",
     "predev": "node -e \"fs.rmSync('dist',{recursive:true,force:true});console.log('cleaned dist')\"",
     "dev:weapp": "npm run build:weapp -- --watch",
+    "dev:weapp:remote": "set TARO_APP_API_BASE=http://47.94.108.150/api/v1 && npm run build:weapp -- --watch",
+    "dev:weapp:https": "set TARO_APP_API_BASE=https://mnapp.top/api/ftl/api/v1 && npm run build:weapp -- --watch",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,scss,css}'",
     "type-check": "tsc --noEmit"

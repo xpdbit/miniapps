@@ -479,7 +479,6 @@ export default function HistoryPage() {
     <ScrollView
       className='history-page'
       scrollY
-      enhanced
       showScrollbar={false}
       onScrollToLower={handleScrollToLower}
       onScrollToUpper={handleRefresh}

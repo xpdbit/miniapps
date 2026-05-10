@@ -11,4 +11,5 @@ export const ROUTES = {
   ADMIN: '/admin',
   AUDIT_LOGS: '/audit-logs',
   PROJECTS: '/projects',
+  TAVERN: '/tavern',
 } as const

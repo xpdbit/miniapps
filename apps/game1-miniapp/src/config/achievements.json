@@ -1,0 +1,246 @@
+{
+  "achievements": [
+    {
+      "id": "first_travel",
+      "name": "初次旅行",
+      "description": "完成第一次旅行",
+      "condition": {
+        "type": "travel_count",
+        "target": 1
+      },
+      "rewards": {
+        "gold": 100,
+        "exp": 50
+      },
+      "icon": "compass",
+      "sortOrder": 1
+    },
+    {
+      "id": "mileage_100",
+      "name": "百里之行",
+      "description": "累积旅行里程达到 100 公里",
+      "condition": {
+        "type": "total_mileage",
+        "target": 100
+      },
+      "rewards": {
+        "gold": 500,
+        "exp": 200,
+        "gems": 10
+      },
+      "icon": "road",
+      "sortOrder": 2
+    },
+    {
+      "id": "mileage_1000",
+      "name": "千里跋涉",
+      "description": "累积旅行里程达到 1000 公里",
+      "condition": {
+        "type": "total_mileage",
+        "target": 1000
+      },
+      "rewards": {
+        "gold": 3000,
+        "exp": 1000,
+        "gems": 50
+      },
+      "icon": "mountain",
+      "sortOrder": 3
+    },
+    {
+      "id": "gold_1000",
+      "name": "小有积蓄",
+      "description": "累积获得 1000 金币",
+      "condition": {
+        "type": "total_gold_earned",
+        "target": 1000
+      },
+      "rewards": {
+        "exp": 100
+      },
+      "icon": "coin",
+      "sortOrder": 4
+    },
+    {
+      "id": "gold_10000",
+      "name": "万贯家财",
+      "description": "累积获得 10000 金币",
+      "condition": {
+        "type": "total_gold_earned",
+        "target": 10000
+      },
+      "rewards": {
+        "exp": 500,
+        "gems": 30
+      },
+      "icon": "treasure",
+      "sortOrder": 5
+    },
+    {
+      "id": "level_10",
+      "name": "初出茅庐",
+      "description": "达到 10 级",
+      "condition": {
+        "type": "player_level",
+        "target": 10
+      },
+      "rewards": {
+        "gold": 300,
+        "gems": 20
+      },
+      "icon": "star",
+      "sortOrder": 6
+    },
+    {
+      "id": "level_50",
+      "name": "身经百战",
+      "description": "达到 50 级",
+      "condition": {
+        "type": "player_level",
+        "target": 50
+      },
+      "rewards": {
+        "gold": 2000,
+        "gems": 100
+      },
+      "icon": "crown",
+      "sortOrder": 7
+    },
+    {
+      "id": "level_100",
+      "name": "登峰造极",
+      "description": "达到 100 级",
+      "condition": {
+        "type": "player_level",
+        "target": 100
+      },
+      "rewards": {
+        "gold": 8000,
+        "gems": 300,
+        "prestigePoints": 5
+      },
+      "icon": "legend",
+      "sortOrder": 8
+    },
+    {
+      "id": "combat_10",
+      "name": "初战告捷",
+      "description": "战斗胜利 10 次",
+      "condition": {
+        "type": "combat_wins",
+        "target": 10
+      },
+      "rewards": {
+        "gold": 200,
+        "exp": 150
+      },
+      "icon": "trophy",
+      "sortOrder": 9
+    },
+    {
+      "id": "combat_100",
+      "name": "百战勇士",
+      "description": "战斗胜利 100 次",
+      "condition": {
+        "type": "combat_wins",
+        "target": 100
+      },
+      "rewards": {
+        "gold": 3000,
+        "exp": 1500,
+        "gems": 50
+      },
+      "icon": "warrior",
+      "sortOrder": 10
+    },
+    {
+      "id": "prestige_1",
+      "name": "初次轮回",
+      "description": "完成第一次轮回转生",
+      "condition": {
+        "type": "prestige_count",
+        "target": 1
+      },
+      "rewards": {
+        "gems": 100
+      },
+      "icon": "phoenix",
+      "sortOrder": 11
+    },
+    {
+      "id": "prestige_5",
+      "name": "轮回大师",
+      "description": "完成 5 次轮回转生",
+      "condition": {
+        "type": "prestige_count",
+        "target": 5
+      },
+      "rewards": {
+        "gems": 500,
+        "prestigePoints": 10
+      },
+      "icon": "infinity",
+      "sortOrder": 12
+    },
+    {
+      "id": "collector_10",
+      "name": "收藏入门",
+      "description": "收集 10 种不同的物品",
+      "condition": {
+        "type": "unique_items",
+        "target": 10
+      },
+      "rewards": {
+        "gold": 500,
+        "exp": 300
+      },
+      "icon": "chest",
+      "sortOrder": 13
+    },
+    {
+      "id": "collector_50",
+      "name": "博物学家",
+      "description": "收集 50 种不同的物品",
+      "condition": {
+        "type": "unique_items",
+        "target": 50
+      },
+      "rewards": {
+        "gold": 5000,
+        "exp": 2000,
+        "gems": 100
+      },
+      "icon": "collection",
+      "sortOrder": 14
+    },
+    {
+      "id": "card_5",
+      "name": "卡牌新手",
+      "description": "收集 5 张不同的卡牌",
+      "condition": {
+        "type": "unique_cards",
+        "target": 5
+      },
+      "rewards": {
+        "gems": 50
+      },
+      "icon": "cards",
+      "sortOrder": 15
+    },
+    {
+      "id": "card_20",
+      "name": "卡牌大师",
+      "description": "收集 20 张不同的卡牌",
+      "condition": {
+        "type": "unique_cards",
+        "target": 20
+      },
+      "rewards": {
+        "gems": 300,
+        "prestigePoints": 3
+      },
+      "icon": "cards",
+      "sortOrder": 16
+    }
+  ]
+}

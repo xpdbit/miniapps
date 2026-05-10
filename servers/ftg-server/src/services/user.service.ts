@@ -215,6 +215,18 @@ export async function updateUserProfile(
   });
 }
 
+/**
+ * 将旧版头像 URL（https://xxx/uploads/avatars/...）转为新版 API 路径 URL
+ */
+function transformAvatarUrl(avatarUrl: string | null): string {
+  if (!avatarUrl) return '';
+  const match = avatarUrl.match(/^(https?:\/\/[^/]+)\/uploads\/avatars\/([\w.-]+)$/);
+  if (match && match[1] && match[2]) {
+    return `${match[1]}/api/v1/auth/avatar/view/${match[2]}`;
+  }
+  return avatarUrl;
+}
+
 /** Get user public profile */
 export async function getUserProfile(userId: number) {
   const [user, totalRecords, achievements, maxCheckin] = await Promise.all([
@@ -228,7 +240,7 @@ export async function getUserProfile(userId: number) {
 
   return {
     nickname: user.nickname || '',
-    avatarUrl: user.avatarUrl || '',
+    avatarUrl: transformAvatarUrl(user.avatarUrl),
     totalRecords,
     unlockedAchievements: achievements,
     maxStreak: maxCheckin?.streakCount || 0,

@@ -8,6 +8,56 @@ import Taro, { useLaunch } from '@tarojs/taro';
 import { useAuthStore } from '@/stores/authStore';
 import './app.scss';
 
+/** 网络弱信号检测 — 微信基础库 3.15.x 存在 WAServiceMainContext generic timeout Bug */
+function setupNetworkMonitor(): void {
+  if (process.env.TARO_ENV === 'weapp' && typeof wx !== 'undefined') {
+    try {
+      // onNetworkWeakChange 基础库 >= 2.21.0，非标准 Taro 类型定义
+      const ext = wx as unknown as {
+        onNetworkWeakChange?: (callback: (res: { weakNet: boolean }) => void) => void;
+      };
+      ext.onNetworkWeakChange?.((res) => {
+        if (res.weakNet) {
+          console.warn('[NetworkMonitor] 检测到弱网环境，可能导致请求超时');
+        }
+      });
+      console.info('[NetworkMonitor] 弱网监听已开启');
+    } catch (error) {
+      console.warn('[NetworkMonitor] 弱网监听注册失败:', error);
+    }
+  }
+}
+
+/** 全局未捕获 Promise rejection 处理 — 微信基础库 3.15.x timeout bug 会以 Promise rejection 形式抛出 */
+function setupUnhandledRejectionHandler(): void {
+  if (process.env.TARO_ENV === 'weapp' && typeof wx !== 'undefined') {
+    try {
+      // onUnhandledRejection 基础库 >= 2.10.0，非标准 Taro 类型定义
+      const ext = wx as unknown as {
+        onUnhandledRejection?: (callback: (res: { reason: unknown; promise: Promise<unknown> }) => void) => void;
+      };
+      ext.onUnhandledRejection?.((res) => {
+        const reason = res.reason;
+        if (reason instanceof Error) {
+          // 基础库 3.15.x WAServiceMainContext timeout 为 generic Error('timeout')
+          if (reason.message?.includes('timeout')) {
+            console.warn('[GlobalError] 基础库超时（可能为 3.15.x known bug），已自动恢复:', reason.message);
+            return;
+          }
+          // API 请求超时（httpClient 已处理并转换为中文错误）
+          if (reason.message?.includes('请求超时') || reason.message?.includes('无法连接到服务器')) {
+            console.error('[GlobalError] 网络请求异常:', reason.message);
+            return;
+          }
+        }
+        console.error('[GlobalError] 未处理的 Promise 拒绝:', reason);
+      });
+    } catch (error) {
+      // 环境不支持时静默
+    }
+  }
+}
+
 /**
  * 微信云开发 CloudBase 初始化
  * 使用 CloudBase 天然免登录机制
@@ -89,6 +139,8 @@ function App({ children }: PropsWithChildren<object>) {
   useLaunch(() => {
     initCloudBase();
     setupGlobalErrorHandler();
+    setupUnhandledRejectionHandler();
+    setupNetworkMonitor();
 
     // 自动认证：检查已有 token → 有效则恢复会话 → 否则 wx.login() 自动注册登录
     useAuthStore.getState().initialize();

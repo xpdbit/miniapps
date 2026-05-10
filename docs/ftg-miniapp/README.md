@@ -1,4 +1,4 @@
-# ftg-miniapp — 微信小程序
+# apps/ftg-miniapp — 微信小程序
 
 **食物主题生成器 (FTG)** 的小程序前端，基于 Taro 4.x + React 18。
 

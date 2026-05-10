@@ -1,5 +1,5 @@
 {
-  "miniprogramRoot": "dist/",
+  "miniprogramRoot": "./dist",
   "projectname": "food-theme-generator",
   "description": "食物主题生成器 - 微信小程序",
   "appid": "wx304f234695e196d1",
@@ -46,8 +46,8 @@
   },
   "compileType": "miniprogram",
   "condition": {},
-  "libVersion": "3.15.2",
-  "srcMiniprogramRoot": "dist/",
+  "libVersion": "3.15.0",
+  "srcMiniprogramRoot": "./dist",
   "packOptions": {
     "ignore": [
       {

@@ -83,7 +83,6 @@ export default function FavoritesPage() {
     <ScrollView
       className='favorites-page'
       scrollY
-      enhanced
       showScrollbar={false}
       onScrollToLower={handleLoadMore}
     >

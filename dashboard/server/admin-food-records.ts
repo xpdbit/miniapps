@@ -1,124 +1,106 @@
 // 食物记录管理路由 — /api/admin/food-records/*
 // 查询 food_theme_generator 数据库，提供后台管理 CRUD
 import { Router, type Request, type Response } from 'express'
-import { pool } from './db'
+import type { Prisma, FoodType } from '@prisma/client'
+import prisma from './prisma'
 
 const router = Router()
 
 // GET /api/admin/food-records — 分页列表
 router.get('/', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
     const page = Math.max(1, parseInt(req.query.page as string || '1'))
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string || '20')))
     const offset = (page - 1) * pageSize
 
-    const conditions: string[] = []
-    const params: unknown[] = []
+    const where: Prisma.FoodRecordWhereInput = {}
 
     if (req.query.foodName) {
-      conditions.push('fr.food_name LIKE ?')
-      params.push(`%${req.query.foodName}%`)
+      where.foodName = { contains: req.query.foodName as string }
     }
     if (req.query.foodType) {
-      conditions.push('fr.food_type = ?')
-      params.push(req.query.foodType)
+      where.foodType = req.query.foodType as FoodType
     }
     if (req.query.themeId) {
-      conditions.push('fr.theme_id = ?')
-      params.push(req.query.themeId)
+      where.themeId = req.query.themeId as string
     }
+
+    const createdAtFilter: Prisma.DateTimeFilter = {}
     if (req.query.startDate) {
-      conditions.push('fr.created_at >= ?')
-      params.push(req.query.startDate)
+      createdAtFilter.gte = new Date(req.query.startDate as string)
     }
     if (req.query.endDate) {
-      conditions.push('fr.created_at <= ?')
-      params.push(`${req.query.endDate}T23:59:59`)
+      createdAtFilter.lte = new Date(`${req.query.endDate as string}T23:59:59`)
+    }
+    if (Object.keys(createdAtFilter).length > 0) {
+      where.createdAt = createdAtFilter
     }
 
     // 默认不显示已删除记录
     if (req.query.showDeleted !== 'true') {
-      conditions.push('fr.is_deleted = 0')
+      where.isDeleted = false
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const [records, total] = await Promise.all([
+      prisma.foodRecord.findMany({
+        where,
+        include: { user: { select: { openid: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: pageSize,
+      }),
+      prisma.foodRecord.count({ where }),
+    ])
 
-    const [countRows] = await conn.execute(
-      `SELECT COUNT(*) as total FROM food_records fr ${where}`,
-      params as any[],
-    )
-    const total = (countRows as Array<{ total: number }>)[0]?.total ?? 0
-
-    const [rows] = await conn.execute(
-      `SELECT 
-        fr.id,
-        fr.food_name AS foodName,
-        fr.food_type AS foodType,
-        fr.image_url AS thumbnailUrl,
-        fr.theme_id AS themeId,
-        NULL AS themeName,
-        u.openid AS userOpenId,
-        fr.calories_total AS calories,
-        fr.created_at AS createdAt,
-        fr.deleted_at AS deletedAt
-      FROM food_records fr
-      LEFT JOIN users u ON u.id = fr.user_id
-      ${where}
-      ORDER BY fr.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [...params as any[], String(pageSize), String(offset)],
-    )
+    const mapped = records.map((r) => ({
+      id: r.id,
+      foodName: r.foodName,
+      foodType: r.foodType,
+      thumbnailUrl: r.imageUrl,
+      themeId: r.themeId,
+      themeName: null,
+      userOpenId: r.user.openid,
+      calories: r.caloriesTotal,
+      createdAt: r.createdAt,
+      deletedAt: r.deletedAt,
+    }))
 
     res.json({
       success: true,
-      data: { records: rows as Record<string, unknown>[], total, page, pageSize },
+      data: { records: mapped, total, page, pageSize },
     })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // GET /api/admin/food-records/:id — 详情
 router.get('/:id', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
     const id = parseInt(req.params.id as string)
-    const [rows] = await conn.execute(
-      `SELECT 
-        fr.id,
-        fr.food_name AS foodName,
-        fr.food_type AS foodType,
-        fr.image_url AS thumbnailUrl,
-        fr.image_url AS originalImageUrl,
-        fr.theme_image_url AS themeImageUrl,
-        fr.theme_id AS themeId,
-        NULL AS themeName,
-        u.openid AS userOpenId,
-        fr.calories_total AS calories,
-        fr.ai_desc_short AS aiDescShort,
-        fr.ai_desc_game_style AS aiDescGameStyle,
-        fr.ai_desc_detail AS aiDescDetail,
-        fr.protein,
-        fr.fat,
-        fr.carbs,
-        fr.latitude,
-        fr.longitude,
-        fr.location_name AS locationName,
-        fr.created_at AS createdAt,
-        fr.deleted_at AS deletedAt
-      FROM food_records fr
-      LEFT JOIN users u ON u.id = fr.user_id
-      WHERE fr.id = ?`,
-      [id],
-    )
+    const record = await prisma.foodRecord.findUnique({
+      where: { id },
+      include: { user: { select: { openid: true } } },
+    })
 
-    const record = (rows as Array<Record<string, unknown>>)[0]
     if (!record) {
       res.status(404).json({ success: false, message: '记录不存在' })
       return
+    }
+
+    const result: Record<string, unknown> = {
+      id: record.id,
+      foodName: record.foodName,
+      foodType: record.foodType,
+      thumbnailUrl: record.imageUrl,
+      originalImageUrl: record.imageUrl,
+      themeImageUrl: record.themeImageUrl,
+      themeId: record.themeId,
+      themeName: null,
+      userOpenId: record.user.openid,
+      calories: record.caloriesTotal,
+      createdAt: record.createdAt,
+      deletedAt: record.deletedAt,
     }
 
     const aiDescription = {
@@ -137,81 +119,58 @@ router.get('/:id', async (req: Request, res: Response) => {
       locationName: record.locationName || '',
     }
 
-    // 删除辅助字段
-    delete record.aiDescShort
-    delete record.aiDescGameStyle
-    delete record.aiDescDetail
-    delete record.protein
-    delete record.fat
-    delete record.carbs
-    delete record.latitude
-    delete record.longitude
-    delete record.locationName
-
     res.json({
       success: true,
-      data: { record: { ...record, aiDescription, nutrition, location } },
+      data: { record: { ...result, aiDescription, nutrition, location } },
     })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // DELETE /api/admin/food-records/:id — 软删除
 router.delete('/:id', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
     const id = parseInt(req.params.id as string)
-    await conn.execute(
-      'UPDATE food_records SET is_deleted = 1, deleted_at = NOW() WHERE id = ?',
-      [id],
-    )
+    await prisma.foodRecord.update({
+      where: { id },
+      data: { isDeleted: true, deletedAt: new Date() },
+    })
     res.json({ success: true })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // POST /api/admin/food-records/:id/restore — 恢复软删除
 router.post('/:id/restore', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
     const id = parseInt(req.params.id as string)
-    await conn.execute(
-      'UPDATE food_records SET is_deleted = 0, deleted_at = NULL WHERE id = ?',
-      [id],
-    )
+    await prisma.foodRecord.update({
+      where: { id },
+      data: { isDeleted: false, deletedAt: null },
+    })
     res.json({ success: true })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // POST /api/admin/food-records/batch-delete — 批量软删除
 router.post('/batch-delete', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
     const { ids } = req.body as { ids: number[] }
     if (!Array.isArray(ids) || ids.length === 0) {
       res.status(400).json({ success: false, message: '请提供要删除的记录ID' })
       return
     }
-    const placeholders = ids.map(() => '?').join(',')
-    await conn.execute(
-      `UPDATE food_records SET is_deleted = 1, deleted_at = NOW() WHERE id IN (${placeholders})`,
-      ids,
-    )
+    await prisma.foodRecord.updateMany({
+      where: { id: { in: ids } },
+      data: { isDeleted: true, deletedAt: new Date() },
+    })
     res.json({ success: true })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 

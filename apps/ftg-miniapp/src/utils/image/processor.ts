@@ -130,7 +130,7 @@ export const THUMBNAIL_PRESET: ProcessingPreset = {
 export const UPLOAD_PRESET: ProcessingPreset = {
   name: 'upload',
   maxSize: 1 * 1024 * 1024,
-  maxDimension: 2048,
+  maxDimension: 512,
   format: 'jpg',
   quality: 0.85,
   correctOrientation: true,
@@ -450,7 +450,23 @@ export class ProcessingPipeline {
    */
   async execute(filePath: string): Promise<ProcessResult> {
     const originalSize = getFileSize(filePath);
-    const imageInfo = await Taro.getImageInfo({ src: filePath });
+
+    // 尝试获取图片信息，失败时直接返回原始文件（不抛异常）
+    let imageInfo: Taro.getImageInfo.SuccessCallbackResult;
+    try {
+      imageInfo = await Taro.getImageInfo({ src: filePath });
+    } catch (err) {
+      console.warn('[ImageProcessor] 获取图片信息失败，跳过管线处理，使用原始文件:', err);
+      return {
+        filePath,
+        originalSize,
+        compressedSize: originalSize,
+        width: 0,
+        height: 0,
+        format: 'unknown',
+        orientation: 0,
+      };
+    }
 
     let currentFilePath = filePath;
     let currentSize = originalSize;
@@ -493,6 +509,11 @@ export class ProcessingPipeline {
     this.emitProgress('resize', 40);
 
     if (this.preset.maxDimension !== undefined) {
+      if (currentWidth > this.preset.maxDimension || currentHeight > this.preset.maxDimension) {
+        console.info(
+          `[ImageProcessor] 图片尺寸 ${currentWidth}x${currentHeight} 超出目标 ${this.preset.maxDimension}px，即将缩放`,
+        );
+      }
       try {
         currentFilePath = await resizeImage(currentFilePath, {
           maxDimension: this.preset.maxDimension,
@@ -590,9 +611,8 @@ export class ProcessingPipeline {
       return '图片尺寸无效';
     }
 
-    if (imageInfo.width > IMAGE_LIMITS.maxWidth || imageInfo.height > IMAGE_LIMITS.maxHeight) {
-      return `图片尺寸 (${imageInfo.width}x${imageInfo.height}) 超过系统限制 (${IMAGE_LIMITS.maxWidth}x${IMAGE_LIMITS.maxHeight})`;
-    }
+    // 注意：不在此处做尺寸上限校验 — resize 步骤会自动处理超大图片
+    // 若图片尺寸超出 Canvas 处理能力，resize 步骤的 try/catch 会捕获异常并继续
 
     return null;
   }

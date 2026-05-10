@@ -102,7 +102,9 @@ export async function wechatLogin(code: string) {
   // 1. Exchange code for openid
   const session = await getWechatSession(code);
 
-  // 2. Upsert user
+    // 2. Upsert user（首次创建时 nickname 和 avatarUrl 留空，
+    //    由前端通过 <OpenData> 组件展示微信真实昵称/头像。
+    //    用户主动编辑后才通过 PATCH /auth/me 或 POST /auth/avatar 持久化。）
   const user = await prisma.user.upsert({
     where: { openid: session.openid },
     update: {
@@ -110,18 +112,50 @@ export async function wechatLogin(code: string) {
     },
     create: {
       openid: session.openid,
+      nickname: null,
     },
   });
 
   // 3. Sign JWT
   const token = signToken({ openid: session.openid, userId: user.id });
 
-  return { token, user };
+  return { token, user: withTransformedAvatar(user) };
+}
+
+/**
+ * 将旧版头像 URL（https://xxx/uploads/avatars/...）转为新版 API 路径 URL
+ * 避免微信小程序 ERR_BLOCKED_BY_RESPONSE 问题
+ * 新版格式: https://xxx/api/v1/auth/avatar/view/filename
+ */
+function transformAvatarUrl(avatarUrl: string | null): string | null {
+  if (!avatarUrl) return null;
+  const match = avatarUrl.match(/^(https?:\/\/[^/]+)\/uploads\/avatars\/([\w.-]+)$/);
+  if (match && match[1] && match[2]) {
+    return `${match[1]}/api/v1/auth/avatar/view/${match[2]}`;
+  }
+  // 已经是新版 URL 或其他格式，原样返回
+  return avatarUrl;
+}
+
+/** 封装用户返回数据时自动转换 avatarUrl */
+function withTransformedAvatar<T extends { avatarUrl: string | null }>(user: T): T {
+  if (user.avatarUrl) {
+    return { ...user, avatarUrl: transformAvatarUrl(user.avatarUrl) ?? '' };
+  }
+  return user;
 }
 
 /**
  * Get user by ID
  */
 export async function getUserById(userId: number) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  return user ? withTransformedAvatar(user) : null;
+}
+
+/**
+ * Get user by ID (raw, no transformation)
+ */
+export async function getUserByIdRaw(userId: number) {
   return prisma.user.findUnique({ where: { id: userId } });
 }

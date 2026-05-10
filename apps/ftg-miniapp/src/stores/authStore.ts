@@ -75,9 +75,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const storedToken = Taro.getStorageSync<string | null>(TOKEN_KEY);
 
       if (storedToken) {
-        // 有存储的 token → 验证有效性
+        // 有存储的 token → 验证有效性（使用 httpClient 原生超时 8 秒）
         try {
-          const user = await fetchCurrentUser(storedToken);
+          const user = await fetchCurrentUser(storedToken, 8000);
           set({
             token: storedToken,
             user,
@@ -86,20 +86,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           });
           return;
         } catch {
-          // token 无效或过期 → 清除后重新登录
+          // token 无效/过期/超时 → 清除后重新登录
           Taro.removeStorageSync(TOKEN_KEY);
         }
       }
 
       // 无 token 或 token 失效 → 自动微信登录 + 注册
+      // login() 内部各步骤有独立超时（Taro.login 10秒、服务端登录 15秒）
       await get().login();
     } catch (error) {
       console.error('[AuthStore] 初始化失败:', error);
       // 用户可见的错误提示
       const errMsg = error instanceof Error ? error.message : String(error);
-      // httpClient 已转换错误为中文，需同时检查中英文关键词
+      // httpClient 已转换错误为中文并包含详细诊断，直接显示给用户
       const isConnectionError =
         errMsg.includes('无法连接到服务器') ||
+        errMsg.includes('SSL 证书验证失败') ||
+        errMsg.includes('DNS 解析失败') ||
+        errMsg.includes('服务器连接被拒绝') ||
+        errMsg.includes('请求超时') ||
         errMsg.includes('request:fail') ||
         errMsg.includes('ERR_CONNECTION_REFUSED') ||
         errMsg.includes('Network Error');
@@ -109,8 +114,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errMsg.includes('AppID') ||
         errMsg.includes('AppSecret');
       if (isConnectionError) {
+        // 直接显示 httpClient 的详细诊断信息（连接拒绝/DNS/SSL/超时等）
         Taro.showToast({
-          title: '无法连接到服务器，请检查网络或稍后重试',
+          title: errMsg.length > 30 ? errMsg.substring(0, 28) + '…' : errMsg,
           icon: 'none',
           duration: 3000,
         });
@@ -121,11 +127,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           duration: 3000,
         });
       } else {
-        Taro.showToast({
-          title: '登录失败，请重试',
-          icon: 'none',
-          duration: 2000,
-        });
+        // 静默失败 — 不阻塞用户浏览，页面通过 OpenData 展示微信原生昵称/头像
+        console.warn('[AuthStore] 登录失败，用户在未登录状态下使用');
       }
     } finally {
       set({ initialized: true });
@@ -147,9 +150,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.info('[AuthStore] TARO_APP_MOCK_AUTH=true，使用 Mock 登录');
       code = get()._generateMockCode();
     } else {
-      // 1. 调用 wx.login() 获取临时 code
+      // 1. 调用 wx.login() 获取临时 code（10秒超时，防止微信基础库卡住）
       try {
-        const loginRes = await Taro.login();
+        const loginRes = await Taro.login({ timeout: 10000 });
         if (loginRes.code) {
           code = loginRes.code;
         } else {
@@ -163,8 +166,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
-      // 2. 请求服务端认证（首次使用自动注册）
-      const result = await loginWithWechat(code);
+      // 2. 请求服务端认证（首次使用自动注册，httpClient 原生超时 15 秒）
+      const result = await loginWithWechat(code, 15000);
 
       // 3. 持久化 token + 更新 store
       Taro.setStorageSync(TOKEN_KEY, result.token);

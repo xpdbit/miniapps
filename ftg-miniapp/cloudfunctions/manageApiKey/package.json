@@ -1,9 +1,0 @@
-{
-  "name": "manageApiKey",
-  "version": "1.0.0",
-  "description": "加密/存储/验证 API Keys",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "latest"
-  }
-}

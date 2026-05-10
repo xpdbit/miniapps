@@ -1,78 +1,86 @@
 // 成就管理路由 — /api/admin/achievements/*
 import { Router, type Request, type Response } from 'express'
-import { pool } from './db'
+import prisma from './prisma'
 
 const router = Router()
 
 // GET /api/admin/achievements — 列表
 router.get('/', async (_req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
-    const [rows] = await conn.execute(
-      `SELECT 
-        achievement_id AS id,
-        name,
-        description,
-        icon_url AS icon,
-        condition_type AS conditionType,
-        condition_value AS conditionValue,
-        theme_id AS themeId,
-        NULL AS themeName,
-        1 AS isPreset,
-        0 AS sortOrder,
-        created_at AS createdAt
-      FROM achievements
-      ORDER BY created_at DESC`,
-    )
-    res.json({ success: true, data: { achievements: rows as Record<string, unknown>[] } })
+    const achievements = await prisma.achievement.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
+    const rows = achievements.map((r) => ({
+      id: r.achievementId,
+      name: r.name,
+      description: r.description,
+      icon: r.iconUrl,
+      conditionType: r.conditionType,
+      conditionValue: r.conditionValue,
+      themeId: r.themeId,
+      themeName: null,
+      isPreset: 1,
+      sortOrder: 0,
+      createdAt: r.createdAt,
+    }))
+    res.json({ success: true, data: { achievements: rows } })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // GET /api/admin/achievements/stats — 统计面板
 router.get('/stats', async (_req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
-    const [totalResult] = await conn.execute(
-      'SELECT COUNT(*) as totalUsers FROM users',
-    )
-    const totalUsers = (totalResult as Array<{ totalUsers: number }>)[0]?.totalUsers ?? 0
-    const [unlockedResult] = await conn.execute(
-      'SELECT COUNT(DISTINCT user_id) as unlockedUsersCount FROM user_achievements WHERE is_unlocked = 1',
-    )
-    const unlockedUsersCount = (unlockedResult as Array<{ unlockedUsersCount: number }>)[0]?.unlockedUsersCount ?? 0
+    const totalUsers = await prisma.user.count()
 
-    const [achievementRates] = await conn.execute(
-      `SELECT 
-        a.achievement_id AS achievementId,
-        a.name AS achievementName,
-        COUNT(ua.id) AS unlockedCount,
-        (SELECT COUNT(*) FROM users) AS totalCount,
-        ROUND(COUNT(ua.id) * 100.0 / GREATEST((SELECT COUNT(*) FROM users), 1), 1) AS rate
-      FROM achievements a
-      LEFT JOIN user_achievements ua ON ua.achievement_id = a.achievement_id AND ua.is_unlocked = 1
-      GROUP BY a.id, a.achievement_id, a.name
-      ORDER BY a.id`,
-    )
+    const unlockedUsers = await prisma.userAchievement.findMany({
+      where: { isUnlocked: true },
+      distinct: ['userId'],
+      select: { userId: true },
+    })
+    const unlockedUsersCount = unlockedUsers.length
 
-    const [recentUnlocks] = await conn.execute(
-      `SELECT 
-        ua.id,
-        ua.achievement_id AS achievementId,
-        a.name AS achievementName,
-        u.openid AS userOpenId,
-        u.nickname AS userName,
-        ua.unlocked_at AS unlockedAt
-      FROM user_achievements ua
-      LEFT JOIN achievements a ON a.achievement_id = ua.achievement_id
-      LEFT JOIN users u ON u.id = ua.user_id
-      WHERE ua.is_unlocked = 1
-      ORDER BY ua.unlocked_at DESC
-      LIMIT 20`,
-    )
+    const achievementRates = await prisma.achievement.findMany({
+      include: {
+        _count: {
+          select: {
+            userAchievements: { where: { isUnlocked: true } },
+          },
+        },
+      },
+    })
+    const rates = achievementRates.map((a) => {
+      const unlockedCount = a._count.userAchievements
+      const rate = totalUsers > 0
+        ? Math.round(unlockedCount * 1000 / totalUsers) / 10
+        : 0
+      return {
+        achievementId: a.achievementId,
+        achievementName: a.name,
+        unlockedCount,
+        totalCount: totalUsers,
+        rate,
+      }
+    })
+
+    const recentUnlocks = await prisma.userAchievement.findMany({
+      where: { isUnlocked: true },
+      include: {
+        achievement: { select: { name: true } },
+        user: { select: { openid: true, nickname: true } },
+      },
+      orderBy: { unlockedAt: 'desc' },
+      take: 20,
+    })
+    const unlocks = recentUnlocks.map((ua) => ({
+      id: ua.id,
+      achievementId: ua.achievementId,
+      achievementName: ua.achievement.name,
+      userOpenId: ua.user.openid,
+      userName: ua.user.nickname,
+      unlockedAt: ua.unlockedAt,
+    }))
 
     const overallUnlockRate = totalUsers > 0
       ? Math.round(unlockedUsersCount * 10000 / totalUsers) / 100
@@ -84,22 +92,19 @@ router.get('/stats', async (_req: Request, res: Response) => {
         totalUsers,
         unlockedUsersCount,
         overallUnlockRate,
-        achievementRates: achievementRates as Record<string, unknown>[],
-        recentUnlocks: recentUnlocks as Record<string, unknown>[],
+        achievementRates: rates,
+        recentUnlocks: unlocks,
       },
     })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // PUT /api/admin/achievements/:id — 更新配置
 router.put('/:id', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
-    const achievementId = req.params.id
+    const achievementId = req.params.id as string
     const { icon, description, conditionValue, themeId } = req.body as {
       icon?: string
       description?: string
@@ -107,72 +112,67 @@ router.put('/:id', async (req: Request, res: Response) => {
       themeId?: number | null
     }
 
-    const updates: string[] = []
-    const params: unknown[] = []
+    const data: {
+      iconUrl?: string
+      description?: string
+      conditionValue?: number
+      themeId?: string | null
+    } = {}
 
     if (icon !== undefined) {
-      updates.push('icon_url = ?')
-      params.push(icon)
+      data.iconUrl = icon
     }
     if (description !== undefined) {
-      updates.push('description = ?')
-      params.push(description)
+      data.description = description
     }
     if (conditionValue !== undefined) {
-      updates.push('condition_value = ?')
-      params.push(conditionValue)
+      data.conditionValue = conditionValue
     }
     if (themeId !== undefined) {
-      updates.push('theme_id = ?')
-      params.push(themeId)
+      data.themeId = themeId !== null ? String(themeId) : null
     }
 
-    if (updates.length === 0) {
+    if (Object.keys(data).length === 0) {
       res.status(400).json({ success: false, message: '没有提供更新字段' })
       return
     }
 
-    params.push(achievementId)
-    await conn.execute(
-      `UPDATE achievements SET ${updates.join(', ')} WHERE achievement_id = ?`,
-      params as any[],
-    )
+    await prisma.achievement.update({
+      where: { achievementId },
+      data,
+    })
 
     res.json({ success: true })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // GET /api/admin/achievements/:id/users — 已解锁用户列表
 router.get('/:id/users', async (req: Request, res: Response) => {
-  const conn = await pool.getConnection()
   try {
-    const achievementId = req.params.id
-    const [rows] = await conn.execute(
-      `SELECT 
-        ua.id,
-        u.openid AS userOpenId,
-        u.nickname AS userName,
-        ua.unlocked_at AS unlockedAt
-      FROM user_achievements ua
-      LEFT JOIN users u ON u.id = ua.user_id
-      WHERE ua.achievement_id = ? AND ua.is_unlocked = 1
-      ORDER BY ua.unlocked_at DESC`,
-      [achievementId],
-    )
-    res.json({ success: true, data: { users: rows as Record<string, unknown>[] } })
+    const achievementId = req.params.id as string
+    const records = await prisma.userAchievement.findMany({
+      where: { achievementId, isUnlocked: true },
+      include: {
+        user: { select: { openid: true, nickname: true } },
+      },
+      orderBy: { unlockedAt: 'desc' },
+    })
+    const rows = records.map((ua) => ({
+      id: ua.id,
+      userOpenId: ua.user.openid,
+      userName: ua.user.nickname,
+      unlockedAt: ua.unlockedAt,
+    }))
+    res.json({ success: true, data: { users: rows } })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })
-  } finally {
-    conn.release()
   }
 })
 
 // POST /api/admin/achievements/trigger — 手动触发成就检测
-router.post('/trigger', async (req: Request, res: Response) => {
+router.post('/trigger', async (_req: Request, res: Response) => {
   try {
     // 占位实现 — 实际成就检测逻辑由云函数或定时任务执行
     // 这里仅返回成功确认，未来可集成 achievement 服务

@@ -22,12 +22,16 @@ interface MeResponseData {
  * 服务端自动 upsert 用户（首次使用自动注册）。
  *
  * @param code - wx.login() 返回的临时 code
+ * @param timeout - 可选的自定义超时（毫秒），覆盖 httpClient 默认值
  * @returns JWT token + 用户信息
  */
-export async function loginWithWechat(code: string): Promise<LoginResponse> {
-  const res = await httpClient.post<ApiResponse<LoginResponse>>('/auth/login', {
-    code,
-  });
+export async function loginWithWechat(code: string, timeout?: number): Promise<LoginResponse> {
+  const res = await httpClient.post<ApiResponse<LoginResponse>>(
+    '/auth/login',
+    { code },
+    undefined,
+    timeout,
+  );
   if (!res.success) {
     throw new Error(res.errMsg);
   }
@@ -40,12 +44,14 @@ export async function loginWithWechat(code: string): Promise<LoginResponse> {
  * 使用有效的 JWT token 调用 GET /api/v1/auth/me。
  *
  * @param token - JWT 令牌
+ * @param timeout - 可选的自定义超时（毫秒），覆盖 httpClient 默认值
  * @returns 用户信息
  */
-export async function fetchCurrentUser(token: string): Promise<AuthUser> {
+export async function fetchCurrentUser(token: string, timeout?: number): Promise<AuthUser> {
   const res = await httpClient.get<ApiResponse<MeResponseData>>(
     '/auth/me',
     token,
+    timeout,
   );
   if (!res.success) {
     throw new Error(res.errMsg);

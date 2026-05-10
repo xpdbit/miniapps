@@ -1,0 +1,164 @@
+{
+  "trees": [
+    {
+      "id": "tree_ancient_ruins",
+      "name": "远古遗迹",
+      "description": "在广袤的大陆上散落着无数远古文明的遗迹，每一次探索都是一场冒险",
+      "startEvent": "Core.Event.AbandonedShrine",
+      "branches": [
+        {
+          "fromChoice": "虔诚祈祷",
+          "nextEvent": "Core.Event.HealingSpring",
+          "condition": {}
+        },
+        {
+          "fromChoice": "搜索祭坛",
+          "nextEvent": "Core.Event.MysteriousCave",
+          "condition": {
+            "hasItem": "Core.Item.MagicCrystal"
+          }
+        }
+      ],
+      "minLevel": 1,
+      "maxLevel": 50
+    },
+    {
+      "id": "tree_road_dangers",
+      "name": "旅途凶险",
+      "description": "漫长的旅途中总会遇到各式各样的危险与挑战",
+      "startEvent": "Core.Event.BanditAmbush",
+      "branches": [
+        {
+          "fromChoice": "迎战",
+          "nextEvent": "Core.Event.TreasureMap",
+          "condition": {
+            "combatWins": 5
+          }
+        },
+        {
+          "fromChoice": "巧言交涉",
+          "nextEvent": "Core.Event.WanderingScholar",
+          "condition": {}
+        },
+        {
+          "fromChoice": "撒腿就跑",
+          "nextEvent": "Core.Event.FoodShortage",
+          "condition": {}
+        }
+      ],
+      "minLevel": 3,
+      "maxLevel": 100
+    },
+    {
+      "id": "tree_merchant_roads",
+      "name": "商旅之路",
+      "description": "沿着商道前行，你会遇到形形色色的行商与旅人",
+      "startEvent": "Core.Event.MerchantCaravan",
+      "branches": [
+        {
+          "fromChoice": "交易买卖",
+          "nextEvent": "Core.Event.TreasureMap",
+          "condition": {
+            "goldSpent": 300
+          }
+        },
+        {
+          "fromChoice": "护送商队",
+          "nextEvent": "Core.Event.BanditAmbush",
+          "condition": {}
+        }
+      ],
+      "minLevel": 2,
+      "maxLevel": 80
+    },
+    {
+      "id": "tree_nature_blessing",
+      "name": "自然恩赐",
+      "description": "大自然既慷慨又残酷，旅途中的际遇全凭天意",
+      "startEvent": "Core.Event.HealingSpring",
+      "branches": [
+        {
+          "fromChoice": "饮用泉水",
+          "nextEvent": "Core.Event.FoodShortage",
+          "condition": {}
+        },
+        {
+          "fromChoice": "装瓶带走",
+          "nextEvent": "Core.Event.HelplessTraveler",
+          "condition": {
+            "hasItem": "Core.Item.HealthPotion"
+          }
+        }
+      ],
+      "minLevel": 1,
+      "maxLevel": 60
+    },
+    {
+      "id": "tree_karma_choice",
+      "name": "善恶抉择",
+      "description": "每一次选择都在塑造你的命运，善有善报恶有恶报",
+      "startEvent": "Core.Event.HelplessTraveler",
+      "branches": [
+        {
+          "fromChoice": "出手相助",
+          "nextEvent": "Core.Event.WanderingScholar",
+          "condition": {}
+        },
+        {
+          "fromChoice": "趁火打劫",
+          "nextEvent": "Core.Event.BanditAmbush",
+          "condition": {}
+        },
+        {
+          "fromChoice": "视而不见",
+          "nextEvent": "Core.Event.MerchantCaravan",
+          "condition": {}
+        }
+      ],
+      "minLevel": 2,
+      "maxLevel": 100
+    },
+    {
+      "id": "tree_wisdom_path",
+      "name": "智慧之路",
+      "description": "知识就是力量，智慧的种子终将长成参天大树",
+      "startEvent": "Core.Event.WanderingScholar",
+      "branches": [
+        {
+          "fromChoice": "虚心请教",
+          "nextEvent": "Core.Event.MysteriousCave",
+          "condition": {
+            "playerLevel": 10
+          }
+        },
+        {
+          "fromChoice": "慷慨赠礼",
+          "nextEvent": "Core.Event.AbandonedShrine",
+          "condition": {}
+        }
+      ],
+      "minLevel": 5,
+      "maxLevel": 100
+    },
+    {
+      "id": "tree_hidden_wealth",
+      "name": "隐秘财宝",
+      "description": "财富总是伴随风险，追寻宝藏的道路上从不缺少挑战",
+      "startEvent": "Core.Event.TreasureMap",
+      "branches": [
+        {
+          "fromChoice": "高价买下",
+          "nextEvent": "Core.Event.MysteriousCave",
+          "condition": {}
+        },
+        {
+          "fromChoice": "低价还价",
+          "nextEvent": "Core.Event.MerchantCaravan",
+          "condition": {}
+        }
+      ],
+      "minLevel": 10,
+      "maxLevel": 100
+    }
+  ]
+}

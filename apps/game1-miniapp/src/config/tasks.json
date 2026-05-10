@@ -1,0 +1,164 @@
+{
+  "daily": [
+    {
+      "id": "daily_travel_10min",
+      "name": "行者无疆",
+      "description": "今日旅行累计达到 10 分钟",
+      "condition": {
+        "type": "daily_travel_time",
+        "target": 600
+      },
+      "rewards": {
+        "gold": 200,
+        "exp": 100
+      },
+      "refreshType": "daily",
+      "sortOrder": 1
+    },
+    {
+      "id": "daily_combat_3",
+      "name": "勇者试炼",
+      "description": "今日战斗胜利 3 次",
+      "condition": {
+        "type": "daily_combat_wins",
+        "target": 3
+      },
+      "rewards": {
+        "gold": 300,
+        "exp": 200
+      },
+      "refreshType": "daily",
+      "sortOrder": 2
+    },
+    {
+      "id": "daily_collect_50gold",
+      "name": "日进斗金",
+      "description": "今日累计获得 50 金币",
+      "condition": {
+        "type": "daily_gold_earned",
+        "target": 50
+      },
+      "rewards": {
+        "exp": 80
+      },
+      "refreshType": "daily",
+      "sortOrder": 3
+    },
+    {
+      "id": "daily_use_skill_5",
+      "name": "技能练习",
+      "description": "今日释放技能 5 次",
+      "condition": {
+        "type": "daily_skill_uses",
+        "target": 5
+      },
+      "rewards": {
+        "gold": 150,
+        "exp": 150
+      },
+      "refreshType": "daily",
+      "sortOrder": 4
+    },
+    {
+      "id": "daily_collect_herb",
+      "name": "采集能手",
+      "description": "今日采集治愈草 5 次",
+      "condition": {
+        "type": "daily_item_collect",
+        "itemId": "Core.Item.HealingHerb",
+        "target": 5
+      },
+      "rewards": {
+        "gold": 100,
+        "exp": 50,
+        "itemReward": "Core.Item.HealthPotion"
+      },
+      "refreshType": "daily",
+      "sortOrder": 5
+    }
+  ],
+  "weekly": [
+    {
+      "id": "weekly_travel_100km",
+      "name": "长途跋涉",
+      "description": "本周累计旅行 100 公里",
+      "condition": {
+        "type": "weekly_mileage",
+        "target": 100
+      },
+      "rewards": {
+        "gold": 2000,
+        "exp": 1000,
+        "gems": 50
+      },
+      "refreshType": "weekly",
+      "sortOrder": 1
+    },
+    {
+      "id": "weekly_combat_20",
+      "name": "百战历练",
+      "description": "本周战斗胜利 20 次",
+      "condition": {
+        "type": "weekly_combat_wins",
+        "target": 20
+      },
+      "rewards": {
+        "gold": 3000,
+        "exp": 2000,
+        "itemReward": "Core.Item.IronSword"
+      },
+      "refreshType": "weekly",
+      "sortOrder": 2
+    },
+    {
+      "id": "weekly_collect_1000gold",
+      "name": "金库积累",
+      "description": "本周累计获得 1000 金币",
+      "condition": {
+        "type": "weekly_gold_earned",
+        "target": 1000
+      },
+      "rewards": {
+        "gold": 1500,
+        "exp": 500,
+        "gems": 30
+      },
+      "refreshType": "weekly",
+      "sortOrder": 3
+    },
+    {
+      "id": "weekly_defeat_3bosses",
+      "name": "狩猎首领",
+      "description": "本周击败 3 个首领敌人",
+      "condition": {
+        "type": "weekly_boss_kills",
+        "target": 3
+      },
+      "rewards": {
+        "gold": 5000,
+        "exp": 3000,
+        "gems": 100,
+        "itemReward": "Core.Item.SteelBlade"
+      },
+      "refreshType": "weekly",
+      "sortOrder": 4
+    },
+    {
+      "id": "weekly_open_5chests",
+      "name": "宝藏猎人",
+      "description": "本周开启 5 个宝箱",
+      "condition": {
+        "type": "weekly_chests_opened",
+        "target": 5
+      },
+      "rewards": {
+        "gold": 2000,
+        "exp": 1500,
+        "itemReward": "Core.Item.MagicCrystal",
+        "itemRewardCount": 3
+      },
+      "refreshType": "weekly",
+      "sortOrder": 5
+    }
+  ]
+}

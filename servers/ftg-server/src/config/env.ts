@@ -86,5 +86,5 @@ export const env: EnvConfig = {
 
   ENCRYPTION_KEY: getEnvVar('ENCRYPTION_KEY'),
 
-  CORS_ORIGINS: getEnvVar('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,http://47.94.108.150'),
+  CORS_ORIGINS: getEnvVar('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,https://mnapp.top,https://ftl.mnapp.top'),
 };

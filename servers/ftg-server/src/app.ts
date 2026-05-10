@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import cors, { type CorsOptions } from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import { env } from './config/env';
 import logger from './utils/logger';
 import routes from './routes/index';
@@ -8,6 +9,10 @@ import { globalRateLimiter, recognitionRateLimiter, aiGenerationRateLimiter } fr
 import { requestLogger } from './middleware/request-logger';
 
 const app: Express = express();
+
+// Trust the first proxy (Nginx) — required for correct req.protocol,
+// req.ip, and X-Forwarded-* headers behind reverse proxy
+app.set('trust proxy', 1);
 
 // ---------------------------------------------------------------------------
 // Security headers (helmet)
@@ -63,6 +68,10 @@ app.use(
 
     // DNS 预取控制
     dnsPrefetchControl: { allow: false },
+
+    // 跨域资源策略：允许微信小程序跨域加载头像图片
+    // 默认 same-origin 会阻止微信小程序 WebView 加载 /uploads/ 下的资源
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 );
 
@@ -103,10 +112,10 @@ app.use(cors(corsOptions));
 
 // ---------------------------------------------------------------------------
 // Body parsing
-// JSON 限制 1MB，URL-encoded 也限制 1MB
+// JSON 限制 5MB（base64 编码图片上传），URL-encoded 也限制 1MB
 // 图片上传由 multer 在路由层单独处理（限制 10MB）
 // ---------------------------------------------------------------------------
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ---------------------------------------------------------------------------
@@ -131,6 +140,14 @@ app.use(requestLogger);
 // Routes
 // ---------------------------------------------------------------------------
 app.use('/', routes);
+
+// ---------------------------------------------------------------------------
+// Static files — 头像上传目录
+// ---------------------------------------------------------------------------
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), {
+  maxAge: '7d',
+  etag: true,
+}));
 
 // ---------------------------------------------------------------------------
 // 404 handler

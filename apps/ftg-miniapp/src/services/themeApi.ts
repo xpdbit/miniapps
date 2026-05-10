@@ -16,6 +16,11 @@ import type {
 
 import { API_BASE, REQUEST_TIMEOUT } from '@/services/httpClient';
 
+/** 超时/网络错误自动重试次数（缓解微信基础库 3.15.x WAServiceMainContext timeout Bug） */
+const MAX_RETRIES = 1;
+/** 重试间隔（毫秒） */
+const RETRY_DELAY = 1000;
+
 /** PError 超时判断 — 兼容 Taro 不同版本的 error 格式 */
 function isTimeoutError(err: unknown): boolean {
   const msg =
@@ -33,30 +38,46 @@ function isTimeoutError(err: unknown): boolean {
 }
 
 /**
- * 通用的 Taro.request 包装，统一处理超时等错误
+ * 通用的 Taro.request 包装，统一处理超时等错误，含 1 次重试
  */
 async function taroRequest<T>(
   url: string,
   method: 'GET' | 'POST',
   data?: Record<string, unknown>,
 ): Promise<T> {
-  try {
-    const res = await Taro.request({
-      url,
-      method,
-      header: {
-        'Content-Type': 'application/json',
-      },
-      data,
-      timeout: REQUEST_TIMEOUT,
-    });
-    return res.data as T;
-  } catch (err) {
-    if (isTimeoutError(err)) {
-      throw new Error(`请求超时（${REQUEST_TIMEOUT / 1000}秒）: ${method} ${url}`);
+  const maxAttempts = 1 + MAX_RETRIES;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await Taro.request({
+        url,
+        method,
+        header: {
+          'Content-Type': 'application/json',
+        },
+        data,
+        timeout: REQUEST_TIMEOUT,
+      });
+      return res.data as T;
+    } catch (err) {
+      lastError = err;
+
+      if (attempt < maxAttempts - 1 && isTimeoutError(err)) {
+        console.warn(
+          `[ThemeApi] ${method} ${url} 超时，${RETRY_DELAY}ms 后重试 (${attempt + 1}/${MAX_RETRIES})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+        continue;
+      }
+      break;
     }
-    throw err;
   }
+
+  if (isTimeoutError(lastError)) {
+    throw new Error(`请求超时（${REQUEST_TIMEOUT / 1000}秒）: ${method} ${url}`);
+  }
+  throw lastError;
 }
 
 /**

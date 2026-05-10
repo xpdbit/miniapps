@@ -1,0 +1,36 @@
+export default defineAppConfig({
+  pages: [
+    'pages/home/index',
+    'pages/dashboard/index',
+    'pages/travel/index',
+    'pages/combat/index',
+    'pages/team/index',
+    'pages/inventory/index',
+    'pages/skill/index',
+    'pages/card/index',
+    'pages/achievement/index',
+    'pages/prestige/index',
+    'pages/event/index',
+    'pages/pet/index',
+  ],
+  window: {
+    backgroundTextStyle: 'light',
+    navigationBarBackgroundColor: '#f5f0e8',
+    navigationBarTitleText: '旅途',
+    navigationBarTextStyle: 'black',
+    backgroundColor: '#f5f0e8',
+  },
+  tabBar: {
+    custom: true,
+    color: '#b5a898',
+    selectedColor: '#c4923a',
+    backgroundColor: '#faf8f5',
+    borderStyle: 'white',
+    list: [
+      { pagePath: 'pages/home/index', text: '旅途' },
+      { pagePath: 'pages/dashboard/index', text: '信息' },
+      { pagePath: 'pages/team/index', text: '队伍' },
+      { pagePath: 'pages/inventory/index', text: '库存' },
+    ],
+  },
+});

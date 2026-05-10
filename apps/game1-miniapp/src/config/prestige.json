@@ -1,0 +1,172 @@
+{
+  "perks": [
+    {
+      "id": "permanent_atk_1",
+      "name": "攻击强化 I",
+      "description": "攻击力永久提升 5%",
+      "cost": 10,
+      "effect": {
+        "type": "attack_multiplier",
+        "value": 0.05,
+        "maxStack": 10
+      },
+      "icon": "sword",
+      "prerequisites": [],
+      "sortOrder": 1
+    },
+    {
+      "id": "permanent_def_1",
+      "name": "防御强化 I",
+      "description": "防御力永久提升 5%",
+      "cost": 10,
+      "effect": {
+        "type": "defense_multiplier",
+        "value": 0.05,
+        "maxStack": 10
+      },
+      "icon": "shield",
+      "prerequisites": [],
+      "sortOrder": 2
+    },
+    {
+      "id": "permanent_hp_1",
+      "name": "生命强化 I",
+      "description": "最大生命值永久提升 10%",
+      "cost": 15,
+      "effect": {
+        "type": "hp_multiplier",
+        "value": 0.1,
+        "maxStack": 10
+      },
+      "icon": "heart",
+      "prerequisites": [],
+      "sortOrder": 3
+    },
+    {
+      "id": "permanent_gold_1",
+      "name": "财富祝福 I",
+      "description": "金币收益永久提升 10%",
+      "cost": 20,
+      "effect": {
+        "type": "gold_multiplier",
+        "value": 0.1,
+        "maxStack": 10
+      },
+      "icon": "coin",
+      "prerequisites": [],
+      "sortOrder": 4
+    },
+    {
+      "id": "permanent_exp_1",
+      "name": "经验祝福 I",
+      "description": "经验收益永久提升 10%",
+      "cost": 20,
+      "effect": {
+        "type": "exp_multiplier",
+        "value": 0.1,
+        "maxStack": 10
+      },
+      "icon": "book",
+      "prerequisites": [],
+      "sortOrder": 5
+    },
+    {
+      "id": "permanent_speed_1",
+      "name": "疾风祝福 I",
+      "description": "旅行速度永久提升 10%",
+      "cost": 15,
+      "effect": {
+        "type": "speed_multiplier",
+        "value": 0.1,
+        "maxStack": 10
+      },
+      "icon": "wind",
+      "prerequisites": [],
+      "sortOrder": 6
+    },
+    {
+      "id": "permanent_crit_1",
+      "name": "致命直觉 I",
+      "description": "暴击率永久提升 5%",
+      "cost": 25,
+      "effect": {
+        "type": "crit_rate_multiplier",
+        "value": 0.05,
+        "maxStack": 5
+      },
+      "icon": "target",
+      "prerequisites": [],
+      "sortOrder": 7
+    },
+    {
+      "id": "permanent_atk_2",
+      "name": "攻击强化 II",
+      "description": "攻击力永久提升 10%（需攻击强化 I 满级）",
+      "cost": 25,
+      "effect": {
+        "type": "attack_multiplier",
+        "value": 0.1,
+        "maxStack": 5
+      },
+      "icon": "sword",
+      "prerequisites": ["permanent_atk_1"],
+      "sortOrder": 8
+    },
+    {
+      "id": "permanent_def_2",
+      "name": "防御强化 II",
+      "description": "防御力永久提升 10%（需防御强化 I 满级）",
+      "cost": 25,
+      "effect": {
+        "type": "defense_multiplier",
+        "value": 0.1,
+        "maxStack": 5
+      },
+      "icon": "shield",
+      "prerequisites": ["permanent_def_1"],
+      "sortOrder": 9
+    },
+    {
+      "id": "permanent_hp_2",
+      "name": "生命强化 II",
+      "description": "最大生命值永久提升 20%（需生命强化 I 满级）",
+      "cost": 35,
+      "effect": {
+        "type": "hp_multiplier",
+        "value": 0.2,
+        "maxStack": 5
+      },
+      "icon": "heart",
+      "prerequisites": ["permanent_hp_1"],
+      "sortOrder": 10
+    },
+    {
+      "id": "permanent_start_gold",
+      "name": "启动资金",
+      "description": "轮回后初始获得 500 金币",
+      "cost": 30,
+      "effect": {
+        "type": "starting_gold",
+        "value": 500,
+        "maxStack": 1
+      },
+      "icon": "treasure",
+      "prerequisites": ["permanent_gold_1"],
+      "sortOrder": 11
+    },
+    {
+      "id": "permanent_extra_skill",
+      "name": "天赋异禀",
+      "description": "额外获得一个被动技能栏位",
+      "cost": 50,
+      "effect": {
+        "type": "extra_passive_slot",
+        "value": 1,
+        "maxStack": 3
+      },
+      "icon": "star",
+      "prerequisites": ["permanent_exp_1"],
+      "sortOrder": 12
+    }
+  ]
+}

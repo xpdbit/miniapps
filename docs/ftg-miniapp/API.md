@@ -1,8 +1,8 @@
 # 云函数 API 参考
 
 > ⚠️ **旧架构文档** — 本文档描述的是项目早期的 CloudBase 云函数架构。
-> 当前架构已迁移至 Express REST API（ftg-server），云函数仅存部分遗留功能。
-> 如需了解当前 API，请参考 `ftg-server/src/routes/`。
+> 当前架构已迁移至 Express REST API（servers/ftg-server），云函数仅存部分遗留功能。
+> 如需了解当前 API，请参考 `servers/ftg-server/src/routes/`。
 
 所有云函数通过 `wx.cloud.callFunction({ name, data })` 调用。
 

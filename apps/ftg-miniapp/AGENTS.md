@@ -1,11 +1,11 @@
-# ftg-miniapp — 微信小程序
+# apps/ftg-miniapp — 微信小程序
 
 ## OVERVIEW
 Taro 4.x 微信小程序 (React 18 + TypeScript + Sass)，AI 图片识别食材 → Canvas 合成主题图片。
 
 ## STRUCTURE
 ```
-ftg-miniapp/
+apps/ftg-miniapp/
 ├── src/
 │   ├── app.ts           # 小程序入口
 │   ├── pages/           # 页面组件 (home/camera/gallery/result/record/stats等)
@@ -29,7 +29,7 @@ ftg-miniapp/
 │   ├── types/           # TypeScript 类型定义
 │   ├── constants/       # 常量定义
 │   └── utils/           # 工具函数 (Canvas/图片/定位/分享)
-├── cloudfunctions/      # 云函数 (ftg-server 的 REST API 正在替代中)
+├── cloudfunctions/      # 云函数 (servers/ftg-server 的 REST API 正在替代中)
 ├── config/              # Taro 构建配置
 ├── project.config.json  # 微信开发者工具配置
 └── tsconfig.json        # TypeScript 配置
@@ -42,7 +42,7 @@ ftg-miniapp/
 | 共享组件库 | `src/components/` | AppButton/AppCard/SectionHeader/EmptyState/Icon(18SVG)/Skeleton(4类型)/Loading |
 | 图表组件 | `src/components/charts/` | Canvas 2D 原生图表 (Line/Pie/Bar/CalendarHeatmap) |
 | 主题画廊 | `src/pages/gallery/` | API 优先 + 本地回退 |
-| 主题 HTTP API | `src/services/themeApi.ts` | 对接 ftg-server 的 RESTful 主题接口 |
+| 主题 HTTP API | `src/services/themeApi.ts` | 对接 servers/ftg-server 的 RESTful 主题接口 |
 | 认证 HTTP 服务 | `src/services/authService.ts` | 微信登录 + Token 验证封装 |
 | HTTP 客户端 | `src/services/httpClient.ts` | 统一 HTTP 封装 (JWT 自动携带) |
 | 认证状态管理 | `src/stores/authStore.ts` | Zustand 认证状态 (token/user/初始化) |

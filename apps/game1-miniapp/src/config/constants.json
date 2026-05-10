@@ -1,0 +1,49 @@
+{
+  "game": {
+    "name": "Game1 挂机之旅",
+    "version": "1.0.0",
+    "tickInterval": 100,
+    "maxOfflineSeconds": 28800,
+    "saveDebounceMs": 2000
+  },
+  "player": {
+    "maxLevel": 999,
+    "baseExpToLevel": 100,
+    "expGrowthRate": 1.15,
+    "initialGold": 0,
+    "initialGems": 0
+  },
+  "combat": {
+    "baseHitRate": 0.9,
+    "baseCritRate": 0.05,
+    "baseCritDamage": 1.5,
+    "expRewardMultiplier": 1.0,
+    "goldRewardMultiplier": 1.0
+  },
+  "travel": {
+    "baseSpeed": 1.0,
+    "mileagePerSecond": 0.1,
+    "eventChance": 0.1,
+    "restStopInterval": 300
+  },
+  "prestige": {
+    "minLevelRequired": 100,
+    "pointsPerLevelAbove": 0.1,
+    "totalLevelsMultiplier": 0.5
+  },
+  "idle": {
+    "goldPerSecond": 0.5,
+    "expPerSecond": 0.1,
+    "mileagePerSecond": 0.05
+  },
+  "inventory": {
+    "maxStackSize": 999,
+    "initialSlots": 20,
+    "maxSlots": 100,
+    "maxWeight": 50
+  },
+  "team": {
+    "maxMembers": 4,
+    "maxSlots": 8
+  }
+}
