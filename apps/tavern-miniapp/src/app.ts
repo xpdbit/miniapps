@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { useAuthStore } from '@/stores/authStore'
 import './app.scss'
 
 interface AppProps {
@@ -6,13 +7,22 @@ interface AppProps {
 }
 
 class App extends Component<AppProps> {
-  componentDidMount() {}
+  componentDidMount() {
+    void useAuthStore.getState().restoreSession()
+  }
 
-  componentDidShow() {}
+  componentDidShow() {
+    // 小程序切前台时刷新配额
+    if (useAuthStore.getState().isLoggedIn) {
+      void useAuthStore.getState().refreshQuota()
+    }
+  }
 
   componentDidHide() {}
 
-  componentDidCatchError() {}
+  componentDidCatchError(err: string) {
+    console.error('[tavern] App error:', err)
+  }
 
   render() {
     return this.props.children

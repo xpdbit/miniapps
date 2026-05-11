@@ -10,7 +10,7 @@ interface AchievementDefinition {
   condition: string;
 }
 
-const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
+export const ACHIEVEMENT_DEFINITIONS: Record<string, AchievementDefinition> = {
   mileage_100: {
     id: 'mileage_100',
     title: '百里挑一',

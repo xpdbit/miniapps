@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { NotFoundError } from '../utils/errors';
 import { getActivePlayerStats } from './event.service';
+import { ACHIEVEMENT_DEFINITIONS } from './achievement.service';
 
 const prisma = new PrismaClient();
 
@@ -128,5 +129,34 @@ export async function softDeletePlayer(playerId: number) {
       nickname: true,
       isDeleted: true,
     },
+  });
+}
+
+/**
+ * 获取成就统计（各成就解锁人数 + 解锁率）
+ */
+export async function getAchievementStats() {
+  const [unlockCounts, totalPlayers] = await Promise.all([
+    prisma.game1Achievement.groupBy({
+      by: ['achievementId'],
+      _count: { playerId: true },
+      where: { progress: { gte: 1.0 } },
+    }),
+    prisma.game1Player.count({ where: { isDeleted: false } }),
+  ]);
+
+  const unlockMap = new Map(unlockCounts.map((u) => [u.achievementId, u._count.playerId]));
+
+  return Object.values(ACHIEVEMENT_DEFINITIONS).map((def) => {
+    const unlockedCount = unlockMap.get(def.id) ?? 0;
+    return {
+      achievementId: def.id,
+      title: def.title,
+      description: def.description,
+      condition: def.condition,
+      unlockedCount,
+      totalPlayers,
+      unlockRate: totalPlayers > 0 ? unlockedCount / totalPlayers : 0,
+    };
   });
 }

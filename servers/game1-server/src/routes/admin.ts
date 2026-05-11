@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAdmin } from '../middleware/auth';
 import { sendSuccess, sendError, ErrorCodes } from '../utils/response';
 import * as adminService from '../services/admin.service';
+import * as pvpService from '../services/pvp.service';
 
 const router = Router();
 
@@ -60,6 +61,32 @@ router.delete('/admin/players/:id', async (req, res) => {
       appErr.message || '删除玩家失败',
       appErr.statusCode || 500,
     );
+  }
+});
+
+/**
+ * GET /admin/achievements - 成就统计（各成就解锁人数 + 解锁率）
+ */
+router.get('/admin/achievements', async (_req, res) => {
+  try {
+    const stats = await adminService.getAchievementStats();
+    sendSuccess(res, stats);
+  } catch {
+    sendError(res, ErrorCodes.INTERNAL_ERROR, '获取成就统计失败', 500);
+  }
+});
+
+/**
+ * GET /admin/pvp/leaderboard - PVP 排行榜
+ */
+router.get('/admin/pvp/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 200);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const leaderboard = await pvpService.getLeaderboard(limit, offset);
+    sendSuccess(res, leaderboard);
+  } catch {
+    sendError(res, ErrorCodes.INTERNAL_ERROR, '获取排行榜失败', 500);
   }
 });
 

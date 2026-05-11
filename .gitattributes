@@ -1,0 +1,34 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Specific binary extensions that should remain as-is
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.ttf binary
+
+# Batch files should use CRLF
+*.bat text eol=crlf
+
+# Shell scripts should use LF
+*.sh text eol=lf
+
+# Markdown and text files
+*.md text diff=markdown
+*.json text
+*.yml text
+*.yaml text
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.scss text
+*.css text
+*.html text
+*.env text
+*.gitignore text
