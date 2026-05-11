@@ -13,13 +13,13 @@
 │  │              Admin API (port 3001)                        │  │
 │  └─────────────────────────┬────────────────────────────────┘  │
 └────────────────────────────┼───────────────────────────────────┘
-                             │
+                      │
      ┌───────────────────────┼───────────────────────┐
      ▼                       ▼                       ▼
 ┌────────────┐      ┌────────────┐         ┌──────────────┐
 │ FTG MiniApp│      │Game1 MiniApp│        │ AI-Tavern    │
-│ (ftg-miniapp)│     │(game1-miniapp)│       │ (暂无小程序)  │
-│ Taro + React│      │ Taro+React │         │              │
+│(ftg-miniapp)│     │(game1-miniapp)│       │(tavern-miniapp)│
+│ Taro+React  │      │ Taro+React  │         │ Taro+React   │
 └──────┬─────┘      └──────┬─────┘         └──────┬───────┘
        │                   │                       │
        ▼                   ▼                       ▼
@@ -31,7 +31,7 @@
 └────────────┘      └────────────┘         └──────────────┘
 ```
 
-**当前状态**：3 个子项目并进。FTG 已成熟部署至 ECS；Game1（小程序前端 + Express 后端）开发中；AI-Tavern（仅后端 API）开发中。dashboard 管理后台统一管理所有项目。
+**当前状态**：3 个子项目并进。FTG 已成熟部署至 ECS；Game1（小程序前端 + Express 后端）开发中；AI-Tavern（小程序前端 + 后端 API）开发中。dashboard 管理后台统一管理所有项目。
 
 ## 当前架构（FTG 子系统 — REST API）
 
@@ -86,7 +86,7 @@
 
 ## 技术架构分层
 
-### 前端层 (MiniAPP)
+### 前端层 (MiniAPP) — 以 FTG 为例
 
 | 层级 | 目录 | 职责 |
 |------|------|------|
@@ -98,11 +98,13 @@
 | **类型层** | `src/types/` | TypeScript 类型定义 |
 | **常量层** | `src/constants/` | 全局常量、配置数据 |
 
+> **各 MiniApp 差异**: FTG 13 页面 + 共享组件库；Game1 12 页面 + 18 引擎模块；Tavern 7 页面 + SSE hook + 角色组件
+
 ### 后端层 (REST API)
 
 | 层级 | 位置 | 职责 |
 |------|------|------|
-| **API 路由** | `servers/ftg-server/src/routes/` | 16 个路由模块 (RESTful) |
+| **API 路由** | `servers/ftg-server/src/routes/` | 16 个路由模块 (含 auth/users/recognize/themes/theme-classes/theme-render 等) |
 | **服务层** | `servers/ftg-server/src/services/` | 业务逻辑 (theme-render/class/recognition) |
 | **中间件** | `servers/ftg-server/src/middleware/` | JWT 认证、RBAC 权限 |
 | **ORM** | Prisma (MySQL 8.0) | 数据库访问 (14 表) |
@@ -163,7 +165,7 @@ Check cached JWT token in storage
                   Store token locally, set user state
 ```
 
-## 路由与导航
+## 路由与导航 (FTG MiniApp)
 
 ### TabBar 导航（3个 Tab）
 
@@ -190,6 +192,7 @@ Check cached JWT token in storage
 | `pages/checkin/index` | 打卡页 | ❌ |
 | `pages/gallery/index` | 美食图鉴 | ❌ |
 | `pages/privacy/index` | 隐私政策 | ❌ |
+| `pages/favorites/index` | 收藏记录 | ❌ |
 
 ## 权限声明
 
@@ -271,3 +274,124 @@ T1(Prisma Schema扩展) — 新增 ThemeClass/ThemeUsageLog 表 + Theme 字段
 ```
 
 所有 7 个实现任务已完成并部署至 ECS。
+
+## Game1 子系统 — 挂机放置游戏
+
+### 架构
+
+```
+Game1 MiniApp (game1-miniapp, Taro 4 + React 18)
+  │
+  ├── engine/          # 纯 TS 游戏逻辑引擎 (18 子模块)
+  │   ├── core/        # GameLoop/EventBus/SaveManager/TimeManager
+  │   ├── combat/      # CombatEngine/StateMachine/DamageCalculator
+  │   ├── travel/      # TravelEngine/MileageManager/RouteEvent
+  │   ├── team/        # TeamEngine/JobSystem 队伍管理
+  │   ├── inventory/   # InventoryEngine/EquipmentSystem/DropEngine
+  │   ├── skill/       # SkillEngine/SkillData 技能系统
+  │   ├── card/        # CardEngine 卡牌系统
+  │   ├── event/       # EventChainEngine/EventTreeEngine/PendingEventEngine
+  │   ├── achievement/ # AchievementEngine/TaskEngine 成就任务
+  │   ├── prestige/    # PrestigeEngine 轮回系统
+  │   ├── idle/        # IdleRewardEngine 离线收益
+  │   ├── pet/         # PetEngine 宠物系统
+  │   ├── map/         # RegionGenerator 地图生成
+  │   ├── race/        # RaceEngine 种族系统
+  │   ├── actor/       # PlayerActor/ActorTemplate 角色系统
+  │   └── activity/    # ActivityEngine 活动系统
+  │
+  ├── config/          # 13 个 JSON 配置文件驱动所有游戏数据
+  ├── stores/          # Zustand 状态管理 (12 stores)
+  ├── pages/           # 12 个页面
+  └── services/        # HTTP 客户端 + GameSyncManager
+         │
+         ▼
+Game1 Server (game1-server, Express + TypeScript)
+  │
+  ├── routes/          # 10 路由模块 (auth/players/save/pvp/achievements/config/social/admin)
+  ├── services/        # 10 个服务 (auth/player/save/pvp/achievement/config/admin/share/event/message)
+  └── Prisma           # 7 张表 (players/cloud_saves/pvp_matches/pvp_rankings/achievements/share_logs/configs)
+         │
+         ▼
+Dashboard Game1 管理 (通过 game1-proxy 代理到 game1-server)
+  │
+  ├── pages/           # Game1Players/Game1Config/Game1Achievements/Game1Pvp
+  └── services/        # dashboard/src/services/game1/
+```
+
+### 核心数据流
+
+```
+MiniApp 本地游戏 (玩家操作)
+   │
+   ▼
+GameEngine 处理逻辑 (纯 TS，离线友好)
+   │
+   ├── auto-save → GameSyncManager → PUT /save/:playerId → MySQL 云端存档
+   ├── PVP result → POST /pvp/result → ELO 计算 → 排行榜
+   └── achievement → POST /achievements/check → 解锁条件判断
+```
+
+### 关键特性
+
+- **离线挂机**: IdleRewardEngine 计算离线收益，重连时一次性发放
+- **云端存档**: JSON 格式 + 版本号 + MD5 checksum，1MB 上限
+- **PVP 对战**: ELO 评分系统 (K=32)，5 个段位 (Bronze→Silver→Gold→Platinum→Diamond)
+- **成就系统**: 11 个内置成就（里程/等级/PVP/轮回/登录）
+- **数据驱动**: 13 个 JSON 配置文件覆盖所有游戏数值
+
+## AI-Tavern 子系统 — 角色聊天
+
+### 架构
+
+```
+Tavern MiniApp (tavern-miniapp, Taro 4 + React 18)
+  │
+  ├── pages/           # 7 页面 (market/chat/character/creator/persona/profile/settings)
+  ├── components/      # CharacterCard/ChatBubble/ModelSelector/Skeleton
+  ├── stores/          # authStore/chatStore/characterStore
+  ├── services/        # httpClient/characterService/marketService/personaService
+  └── hooks/           # useSSE (SSE 流式聊天 EventSource 封装)
+         │
+         ▼
+Tavern Server (tavern-server, Express + TypeScript)
+  │
+  ├── routes/          # 10 路由模块 (auth/characters/chat/personas/keys/market/admin/builtin/export)
+  ├── services/        # 10 个服务 (ai-proxy/character/context/export/key/market/moderation/persona/prompt-builder/social)
+  └── Prisma           # 8 张表 (User/CharacterCard/ChatSession/ChatMessage/Persona/ApiKey/ModerationLog/关联表)
+         │
+         ▼
+Dashboard Tavern 管理 (通过 tavern-proxy 代理到 tavern-server)
+  │
+  ├── pages/           # Tavern (角色审核/密钥审计)
+  └── services/        # dashboard/src/services/tavern/
+```
+
+### 核心数据流 - SSE 流式聊天
+
+```
+用户发送消息
+   │
+   ▼
+POST /chat/send → tavern-server → ai-proxy.service
+   │                       ├── DashScope (通义千问)
+   │                       ├── OpenAI
+   │                       ├── DeepSeek
+   │                       └── OpenRouter
+   │
+   ▼
+SSE EventSource 流式返回 (useSSE hook)
+   │
+   ├── 逐 token 追加到 ChatBubble
+   ├── 断线自动重连 (EventSource 重连)
+   └── 消息历史持久化 (ChatSession/ChatMessage)
+```
+
+### 关键特性
+
+- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter 无缝切换
+- **角色卡市场**: 发布/审核/收藏/点赞/标签搜索完整链路
+- **API Key 加密**: 用户级 AES-256-GCM 加密存储
+- **Prompt 构建**: 系统提示 + 角色定义 + 示例对话 + 历史消息 + 当前消息
+- **内容审核**: 敏感词过滤 + 人工审核双机制
+- **每日限额**: 用户每日 20 次免费聊天配额

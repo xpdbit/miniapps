@@ -65,16 +65,21 @@ servers/ftg-server/src/
 | 服务 | 文件 | 职责 |
 |------|------|------|
 | Auth | `services/auth.service.ts` | JWT 生成/验证 + 微信 code 交换 |
+| User | `services/user.service.ts` | 用户管理 + 排行榜 |
 | Food Record | `services/food-record.service.ts` | 食物记录 CRUD + 分页 |
 | Checkin | `services/checkin.service.ts` | 打卡 + 连续天数计算 |
-| Stats | `services/stats.service.ts` | 数据聚合查询 |
 | Achievement | `services/achievement.service.ts` | 成就解锁条件判断 |
 | Theme | `services/theme.service.ts` | 主题 CRUD + 使用统计 |
 | Theme Class | `services/theme-class.service.ts` | CSS Class CRUD + 白名单校验 |
 | Theme Render | `services/theme-render.service.ts` | Markup 模板 → HTML/CSS 渲染 |
-| Theme Usage | `services/theme-usage.service.ts` | 使用日志 + 短 URL 生成 |
 | Recognition | `services/recognition.service.ts` | PP-ShiTuV2 HTTP 客户端 (支持 mock 模式) |
-| Upload | `services/upload.service.ts` | 文件存储管理 |
+| Pipeline | `services/pipeline.service.ts` | AI 识别流水线编排 |
+| Text Generation | `services/textgen.service.ts` | DashScope AI 文本生成 |
+| Upload | `services/food-record.service.ts` | 文件上传处理 (路由层 upload.ts 实际处理) |
+| Share | `services/share.service.ts` | 分享卡片生成 |
+| Favorite | `services/favorite.service.ts` | 收藏记录管理 |
+| ApiKey | `services/apikey.service.ts` | API 密钥管理 |
+| Location | `services/location.service.ts` | IP 定位服务 |
 
 ## 中间件
 

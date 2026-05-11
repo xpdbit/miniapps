@@ -1,0 +1,159 @@
+# ============================================================
+# 项目健康检查与代码质量改进 — Proposed Tasks
+# 生成时间: 2026-05-11
+# 基于全仓库6维并行探索分析
+# ============================================================
+
+# ── P0: 代码质量风险 ──
+- id: 1
+  description: "【FTG-MiniApp】修复 app.ts 中 4 处空 catch 块（行 55/94/117/131），添加错误日志或上下文日志"
+  status: proposed
+  priority: P0
+
+- id: 2
+  description: "【FTG-MiniApp】修复 result/index.tsx handleSave 的 TODO 实现——当前是假保存（行 108），需对接真实云函数或 API"
+  status: proposed
+  priority: P0
+
+- id: 3
+  description: "【FTG-MiniApp】清理 authStore.ts 中的 TARO_APP_MOCK_AUTH mock 降级代码（生产环境不可用）"
+  status: proposed
+  priority: P0
+
+- id: 4
+  description: "【安全】清理 .sisyphus/aliyun-mysql-clear*.js 中的硬编码阿里云 AK ID/SECRET，迁移到环境变量"
+  status: proposed
+  priority: P0
+
+- id: 5
+  description: "【Tavern-Server】添加 ESLint 配置（.eslintrc.json），统一全仓库代码规范"
+  status: proposed
+  priority: P0
+
+- id: 6
+  description: "【Dashboard】添加 ESLint 配置（eslint.config.*），当前完全缺失"
+  status: proposed
+  priority: P0
+
+# ── P1: 重要改进 ──
+- id: 7
+  description: "【全仓库】替换 `as any` 类型断言为具体类型——gallery/index.tsx、DropEngine.ts、chat/index.tsx、user.service.ts、export.service.ts 等共 ~10 处"
+  status: proposed
+  priority: P1
+
+- id: 8
+  description: "【Game1-MiniApp】将 console.log 替换为可开关的日志框架——app.tsx（3处）、AchievementEngine、SaveManager、PendingEventEngine、ItemRegistry、GameSyncManager"
+  status: proposed
+  priority: P1
+
+- id: 9
+  description: "【FTG-Server】添加 Zod 路由层参数校验中间件（当前全无校验，直接 `req.body`），参考 game1-server 的 validate.ts 模式"
+  status: proposed
+  priority: P1
+
+- id: 10
+  description: "【FTG-MiniApp】修复 errorBoundary.tsx 空 catch 块（行 46-48），添加错误日志"
+  status: proposed
+  priority: P1
+
+- id: 11
+  description: "【Game1-Server】修复 players.ts catch 块缺失 logger 调用（当前仅 sendError 无日志）"
+  status: proposed
+  priority: P1
+
+- id: 12
+  description: "【Tavern-Server】添加服务器超时配置（keepAliveTimeout/headersTimeout/timeout），对齐 ftg-server 和 game1-server"
+  status: proposed
+  priority: P1
+
+- id: 13
+  description: "【Tavern-Server】添加 TypeScript 路径别名 `@/*` → `./src/*`"
+  status: proposed
+  priority: P1
+
+- id: 14
+  description: "【全仓库】统一 Prisma 版本——当前分化：ftg-server/dashboard v6.19、game1-server v5.22、tavern-server v5.10"
+  status: proposed
+  priority: P1
+
+# ── P2: 代码可维护性 ──
+- id: 15
+  description: "【全仓库】拆分超大文件（>500行）：Achievements/index.tsx(851行)、travel/index.tsx(766行)、Themes/index.tsx(726行)、canvas/composer.ts(718行) 等共 ~14 个文件"
+  status: proposed
+  priority: P2
+
+- id: 16
+  description: "【FTG-Server】修复 auth.service.ts 中乱码注释（行 126/128），清理编码错误"
+  status: proposed
+  priority: P2
+
+- id: 17
+  description: "【Game1-MiniApp】配置 Vitest 测试框架——当前有 vitest.config.ts 但无任何测试文件"
+  status: proposed
+  priority: P2
+
+- id: 18
+  description: "【FTG-Server/Game1-Server】补充缺失的健康检查端点（ftg-server 无 /health，tavern-server 无 /health）"
+  status: proposed
+  priority: P2
+
+- id: 19
+  description: "【Dashboard】重构 PageSkeleton 组件——将纯内联样式（85行 `style={}`）迁移为 CSS Modules"
+  status: proposed
+  priority: P2
+
+- id: 20
+  description: "【FTG-Server】将 ESLint no-console 从 warn 升级为 error，清理残留 console 语句"
+  status: proposed
+  priority: P2
+
+- id: 21
+  description: "【文档】清理 `docs/` 中标记为废弃的旧架构文档（ftg-miniapp API.md 和 DATABASE.md），添加 tavern-miniapp 文档入口"
+  status: proposed
+  priority: P2
+
+- id: 22
+  description: "【全仓库】将各项目的 TODO/FIXME 注释转化为 Issue/任务追踪——当前散落在源码中无统一管理"
+  status: proposed
+  priority: P2
+
+# ── P3: 长期改进 ──
+- id: 23
+  description: "【CI/CD】为 ftg-miniapp、tavern-miniapp、dashboard 添加 GitHub Actions CI（lint + type-check + build）"
+  status: proposed
+  priority: P3
+
+- id: 24
+  description: "【Monorepo】评估是否引入 monorepo workspace 工具（pnpm workspace / Turborepo）管理 8 个独立项目"
+  status: proposed
+  priority: P3
+
+- id: 25
+  description: "【Dashboard】审计所有 pages 组件的 CSS Modules 迁移进度，制定统一迁移计划"
+  status: proposed
+  priority: P3
+
+- id: 26
+  description: "【全仓库】统一 API 响应格式——tavern-server 用 `{code, message, data}`，其他项目格式不一"
+  status: proposed
+  priority: P3
+
+- id: 27
+  description: "【Game1-Server】升级 Prisma 到 v6.19，对齐 ftg-server/dashboard 版本"
+  status: proposed
+  priority: P3
+
+- id: 28
+  description: "【Tavern-Server】升级 Prisma 到 v6.19"
+  status: proposed
+  priority: P3
+
+- id: 29
+  description: "【Cloud-Functions】清理空目录 `cloud-functions/all/`，明确云函数的位置策略（MiniApp 子目录 vs 独立目录）"
+  status: proposed
+  priority: P3
+
+- id: 30
+  description: "【全仓库】清理无必要的 eslint-disable 注释和已知的占位注释（如 tavern-server chat.ts 行 149 '// Clean up if needed'）"
+  status: proposed
+  priority: P3

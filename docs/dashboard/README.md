@@ -29,7 +29,7 @@
 - **Vite 前端** (端口 5173): 管理界面 SPA
 - **Admin API** (端口 3001 开发 / 3003 生产): 后台数据接口 (Express + Prisma)
 
-> ⚠️ **端口差异**: 开发环境 Admin API 运行在 3001 端口，但在生产 Docker 部署中运行在 3003 端口（由 `deploy/docker-compose.yml` 映射）。Nginx 会将 `/dashboard/api/*` 代理到 Admin API 容器。
+> Admin API 在生产 Docker 部署中运行在 3001 端口（内部），由 Nginx 代理到 `/api/v1/admin/*`。开发环境 `npx tsx server/server.ts` 默认使用 3001 端口。
 
 开发时需同时运行两个进程：
 ```bash
@@ -58,17 +58,15 @@ npx tsx server/server.ts
 | Dashboard | `/dashboard` | 多项目仪表盘 + 快速入口 |
 | Users | `/users` | 跨项目用户管理 |
 | Food Records | `/food-records` | FTG 食物记录审查 |
-| Themes | `/themes` | FTG 主题模板管理 |
+| Themes | `/themes` | FTG 主题模板管理（含模板编辑） |
 | Theme Classes | `/theme-classes` | CSS Class CRUD + 白名单预览 |
-| Theme Editor | `/theme-editor/:id` | 模板编辑器 + Class 选择器 |
 | Stats | `/stats` | FTG 数据可视化 |
 | Api Keys | `/api-keys` | API 密钥管理 |
 | Game1 Players | `/game1/players` | Game1 玩家管理 |
 | Game1 Config | `/game1/config` | Game1 游戏配置 |
 | Game1 Achievements | `/game1/achievements` | Game1 成就管理 |
 | Game1 Pvp | `/game1/pvp` | Game1 PVP 数据 |
-| Tavern | `/tavern/characters` | AI-Tavern 角色审核 |
-| Tavern Keys | `/tavern/keys` | AI-Tavern API 密钥审计 |
+| Tavern | `/tavern` | AI-Tavern 角色审核 + API 密钥审计 |
 | Monitoring | `/monitoring` | 系统监控 |
 | Audit Logs | `/audit-logs` | 操作审计日志 |
 | Projects | `/projects` | 项目管理 |
@@ -96,8 +94,13 @@ npx tsx server/server.ts
   │
   └── Admin API (Express 3001)
         ├── /admin/*            → 直查 shared DB (Prisma)
-        ├── /api/game1/*         → game1-proxy (GAME1_ADMIN_TOKEN)
-        └── /api/tavern/*        → tavern-proxy (TAVERN_ADMIN_TOKEN)
+        ├── /api/game1/*        → game1-proxy (GAME1_ADMIN_TOKEN)
+        └── /api/tavern/*       → tavern-proxy (TAVERN_ADMIN_TOKEN)
+
+生产环境 Nginx:
+  /api/v1/admin/* ──→ ftg-admin:3001
+  /api/v1/game1/*   ──→ game1-server:3001
+  /api/tavern/*     ──→ tavern-server:3002
 ```
 
 ## 构建与部署

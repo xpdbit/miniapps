@@ -29,7 +29,7 @@ OpenCode 全局指令 - 中文模式
 ## OVERVIEW
 个人小程序工坊 — 统一 dashboard 集中管理多个微信小程序项目（个人项目，不接外包）。
 当前 3 个子项目：FTG（食物主题生成器）、Game1（挂机放置游戏）、AI-Tavern（AI 角色聊天）。
-Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
+Monorepo，7 个独立 TypeScript 项目（3 MiniApp + 3 Server + 1 Dashboard），共 ~750 源文件（不含 node_modules）。
 
 ## STRUCTURE
 ```
@@ -43,12 +43,11 @@ Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
 │   ├── game1-server/              # Express 后端 API — Game1 (云端存档/PVP/成就)
 │   └── tavern-server/             # Express 后端 API — AI-Tavern (角色聊天/SSE)
 ├── dashboard/                     # React 管理后台 — 统一管理所有项目
-├── cloud-functions/               # 云函数 (orchestrateAIPipeline/themeCompose)
+├── cloud-functions/               # (空目录，云函数实际位于 apps/) 
 ├── deploy/                        # Docker Compose + Nginx 部署到 ECS
 ├── docs/                          # 项目文档 (按项目分类)
 │   ├── apps/ftg-miniapp/          # FTG 小程序文档
 │   ├── apps/game1-miniapp/        # Game1 小程序重构方案
-│   ├── apps/tavern-miniapp/       # Tavern 小程序文档
 │   ├── servers/ftg-server/        # FTG 后端文档
 │   ├── servers/game1-server/      # Game1 后端文档
 │   ├── servers/tavern-server/     # Tavern 后端文档
@@ -57,7 +56,10 @@ Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
 │   └── superpowers/               # Agent 工作文档
 ├── plan/                          # 项目规划 (tasks/humans/ideas)
 ├── prisma/                        # 统一 Prisma Schema (14表合并)
-├── screenshots/                   # 截图
+├── state/                         # 超级任务状态跟踪
+├── deploy_commands.sh             # 部署命令脚本
+├── deploy_remote.bat              # 远程部署批处理
+├── recover_and_deploy.sh          # 恢复+部署脚本
 └── .sisyphus/                     # Sisyphus Agent 工作目录
 ```
 
@@ -92,11 +94,15 @@ Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
 | CI/CD (Game1) | `servers/game1-server/.github/workflows/` | GitHub Actions (Node 20 + MySQL 服务) |
 | Game1 后端 API | `servers/game1-server/src/routes/` | 10 路由模块 (auth/players/save/pvp/achievements/config/social/admin) |
 | Tavern 后端 API | `servers/tavern-server/src/routes/` | 10 路由模块 (auth/characters/chat/personas/keys/market/admin/builtin/export) |
-| Game1 小程序引擎 | `apps/game1-miniapp/src/engine/` | 纯 TS 游戏逻辑引擎 (travel/combat/team/inventory/skill/card/event) |
+| Game1 小程序引擎 | `apps/game1-miniapp/src/engine/` | 纯 TS 游戏逻辑引擎 (18 子模块：travel/combat/team/inventory/skill/card/event/achievement/prestige/idle/pet/map 等) |
+| Game1 游戏数据配置 | `apps/game1-miniapp/src/config/` | 13 个 JSON 配置文件驱动所有游戏数据 |
 | Tavern 小程序 | `apps/tavern-miniapp/AGENTS.md` | Taro 4.x 角色聊天小程序 (AI-Tavern) |
 | Tavern 小程序源码 | `apps/tavern-miniapp/src/` | 8 页面 + 4 组件 + services/stores/hooks |
+| Tavern SSE Hook | `apps/tavern-miniapp/src/hooks/useSSE.ts` | SSE 流式聊天 EventSource 封装（断线重连 + 消息追加） |
+| Dashboard 骨架屏 | `dashboard/src/components/PageSkeleton/` | ⚠️ 纯内联样式，待迁移为 CSS Modules |
+| Dashboard 主题切换 | `dashboard/src/components/ThemeToggle/` | ⚠️ 纯内联样式 |
 | 域名共享配置 | `domain.config.js` | 所有 Taro 项目的 API_BASE 编译时配置 |
-| 项目文档 | `docs/` | 按项目分类 (ftg-miniapp/ftg-server/dashboard/deploy/game1-miniapp) |
+| 项目文档 | `docs/` | 按项目分类 (ftg-miniapp/ftg-server/game1-server/tavern-server/dashboard/deploy) |
 | Dashboard Game1 服务 | `dashboard/src/services/game1/` | Game1 运营/配置/成就/PVP API |
 | Dashboard Tavern 服务 | `dashboard/src/services/tavern/` | Tavern 角色/审核/统计 API |
 | Dashboard FTG 服务 | `dashboard/src/services/ftg/` | FTG 用户/主题/Class/成就 API |
@@ -116,12 +122,13 @@ Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
 | `authStore` (Dashboard) | 状态 | `dashboard/src/stores/authStore.ts` | Zustand 认证状态管理 |
 | `admin-auth` (Dashboard API) | 中间件 | `dashboard/server/admin-auth.ts` | JWT 认证 + RBAC 权限中间件 |
 | `token` (Dashboard) | 工具 | `dashboard/src/utils/token.ts` | Token 持久化（localStorage/sessionStorage） |
-| `orchestrateAIPipeline` | 云函数 | `cloud-functions/orchestrateAIPipeline/` | AI 流水线编排 |
-| `themeCompose` | 云函数 | `cloud-functions/themeCompose/` | 主题图片合成 |
-| `useAuthStore` (MiniApp) | 状态 | `apps/ftg-miniapp/src/stores/authStore.ts` | Zustand 认证状态 (token/user/初始化) |
-| `httpClient` (MiniApp) | 服务 | `apps/ftg-miniapp/src/services/httpClient.ts` | 统一 HTTP 客户端 (JWT) |
-| `authService` (MiniApp) | 服务 | `apps/ftg-miniapp/src/services/authService.ts` | 微信登录/自动注册/Token 验证 |
-| `CustomTabBar` (MiniApp) | 组件 | `apps/ftg-miniapp/src/custom-tab-bar/` | 自定义底部栏 (事件驱动高亮) |
+| `useAuthStore` (FTG) | 状态 | `apps/ftg-miniapp/src/stores/authStore.ts` | Zustand 认证状态 (token/user/初始化) |
+| `httpClient` (FTG) | 服务 | `apps/ftg-miniapp/src/services/httpClient.ts` | 统一 HTTP 客户端 (JWT) |
+| `authService` (FTG) | 服务 | `apps/ftg-miniapp/src/services/authService.ts` | 微信登录/自动注册/Token 验证 |
+| `CustomTabBar` (FTG) | 组件 | `apps/ftg-miniapp/src/custom-tab-bar/` | 自定义底部栏 (事件驱动高亮) |
+| `App` (Tavern MiniApp) | 入口 | `apps/tavern-miniapp/src/app.ts` | Tavern 小程序入口 |
+| `useSSE` (Tavern) | Hook | `apps/tavern-miniapp/src/hooks/useSSE.ts` | SSE 流式聊天 EventSource 封装 |
+| `GameEngine` (Game1) | 引擎 | `apps/game1-miniapp/src/engine/index.ts` | 纯 TS 游戏逻辑引擎总入口 |
 
 ## CONVENTIONS
 - **TypeScript strict** 全项目强制 (`no-explicit-any: error`)，但各项目严格度不同
@@ -149,6 +156,14 @@ Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
 - ❌ **类型断言** — apps/game1-miniapp/src/app.tsx 多处 `as` 断言，dashboard ThemeClasses `as Record<string, unknown>`
 - ❌ **占位注释** — servers/tavern-server/src/routes/chat.ts line 149 `// Clean up if needed` 无实际逻辑
 - ❌ **错误日志缺失** — servers/game1-server/src/routes/players.ts catch 块仅 `sendError` 无日志
+- ❌ **硬编码密钥** — `.sisyphus/aliyun-mysql-clear.js` 含明文阿里云 AK ID/SECRET，需迁移到环境变量
+- ❌ **缺失 ESLint 配置** — tavern-server 和 dashboard 无 ESLint 配置（其他项目均有）
+- ❌ **console.log 残留** — game1-miniapp 多个文件（app.tsx、AchievementEngine、SaveManager、PendingEventEngine）使用 console.log 而非日志框架
+- ❌ **result/index.tsx 假保存** — apps/ftg-miniapp/src/pages/result/index.tsx line 108 TODO 未实现，Toast "保存成功" 时无实际 API 调用
+- ❌ **`as any` 散布** — 全仓库约 10 处 `as any` 类型断言（gallery/DropEngine/chat/user.service/export.service 等）
+- ❌ **Prisma 版本分化** — ftg-server/dashboard v6.19、game1-server v5.22、tavern-server v5.10
+- ❌ **tavern-server 无路径别名** — 未配置 `@/*` 路径别名，使用相对路径 import
+- ❌ **tavern-server 无超时配置** — 服务器未设置 keepAliveTimeout/headersTimeout/timeout
 
 ## COMMANDS
 ```bash
@@ -156,6 +171,19 @@ Monorepo，8 个独立 TypeScript 项目 + 云函数，共 ~989 文件。
 npm run dev:weapp        # 开发模式 (watch)
 npm run build:weapp      # 生产构建
 npm run type-check       # TypeScript 类型检查
+
+# Game1 MiniApp (Taro) — cd apps/game1-miniapp
+npm run dev:weapp        # 开发模式 (watch)
+npm run build:weapp      # 生产构建
+npm run type-check       # TypeScript 类型检查
+
+# Tavern MiniApp (Taro) — cd apps/tavern-miniapp
+npm run dev:weapp        # 开发模式 (watch)
+npm run build:weapp      # 生产构建
+npm run type-check       # TypeScript 类型检查
+npm run lint             # ESLint 代码检查
+npm run format           # Prettier 格式化
+npm run generate-icons   # 生成 tabBar 图标
 
 # Server (Express) — cd servers/ftg-server
 npm run dev              # tsx watch 开发 (端口 env.PORT)
@@ -204,7 +232,7 @@ bash deploy/scripts/verify.sh   # 部署后健康检查
 - **MiniApp HTTP 客户端**: HttpClient 类封装 Taro.request，支持超时检测和网络连接错误中文提示
 - **MiniApp 降级模式**: 开发时可通过 `TARO_APP_MOCK_AUTH=true` 启用 mock 登录绕过微信授权
 - **API 代理**: Dashboard `/api` 在开发时代理到 Server `localhost:3000`
-- **生产架构**: Nginx(80/443) → Dashboard SPA / API(/api/v1/) / 识别(/recognition/*)
+- **生产架构**: Nginx(80/443) → Dashboard SPA / FTG API(/api/ftl/) / Game1 API(/api/v1/game1/) / Tavern API(/api/tavern/) / Admin API(/api/v1/admin/) / 识别(/recognition/*)
 - **识别服务**: PP-ShiTuV2 独立容器，通过 HTTP API 调用，开发模式可用 `RECOGNITION_MOCK_MODE=true` 降级
 - **Dashboard Auth 初始化**: `authStore` 初始化时 `isAuthenticated` 同步设为 `!!getToken()`，`user` 为 `null`。`restoreSession()` 异步调用 `/admin/me` 获取用户信息。`ProtectedRoute` 订阅 `initialized` 标志，仅在 `restoreSession` 完成后才进行权限判断，避免竞态条件导致 403。
 - **Game1 CI 触发条件**: `.github/workflows/ci.yml` 使用 `paths` 过滤，仅 `servers/game1-server/**` 变化时触发，含 MySQL 8.0 服务容器
