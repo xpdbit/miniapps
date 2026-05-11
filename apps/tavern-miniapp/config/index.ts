@@ -2,6 +2,7 @@ import { defineConfig } from '@tarojs/cli'
 import path from 'path'
 import devConfig from './dev'
 import prodConfig from './prod'
+import domain from '../../../domain.config.js'
 
 const baseConfig = {
   projectName: 'ai-tavern',
@@ -17,7 +18,7 @@ const baseConfig = {
   ],
   defineConstants: {
     'process.env.TARO_ENV': JSON.stringify('weapp'),
-    'process.env.TARO_APP_API_BASE': JSON.stringify(process.env.TARO_APP_API_BASE || 'http://localhost:3002/api/v1'),
+    'process.env.TARO_APP_API_BASE': JSON.stringify(process.env.TARO_APP_API_BASE || domain.TAVERN.PROD),
   },
   copy: { patterns: [{ from: 'src/assets/icons/', to: 'assets/icons/' }], options: {} },
   framework: 'react',

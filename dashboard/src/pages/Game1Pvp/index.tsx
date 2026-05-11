@@ -43,7 +43,7 @@ const Game1Pvp = () => {
         return rank
       },
     },
-    { title: '玩家', dataIndex: 'playerName', key: 'playerName' },
+    { title: '玩家', dataIndex: 'nickname', key: 'nickname', render: (val: string | null) => val || '(匿名)' },
     {
       title: '段位',
       dataIndex: 'tier',
@@ -55,7 +55,8 @@ const Game1Pvp = () => {
       ),
     },
     { title: 'Rating', dataIndex: 'rating', key: 'rating', sorter: (a: { rating: number }, b: { rating: number }) => a.rating - b.rating },
-    { title: '胜率', dataIndex: 'winRate', key: 'winRate' },
+    { title: '胜场', dataIndex: 'wins', key: 'wins', sorter: (a: { wins: number }, b: { wins: number }) => a.wins - b.wins },
+    { title: '负场', dataIndex: 'losses', key: 'losses' },
   ]
 
   return (

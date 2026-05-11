@@ -41,6 +41,10 @@ src/
 - **JWT 认证**: `auth` 中间件解析 token 并将 `req.playerId` 注入请求对象
 - **ELO 评分**: 基于 `lib/elo.ts` 的 K=32 标准实现, 段位系统 Bronze→Silver→Gold→Platinum→Diamond
 
+## ANTI-PATTERNS (新增)
+- ❌ **错误日志缺失** — `src/routes/players.ts` 所有 route handler 的 catch 块只返回 `sendError`，无错误日志记录
+- ❌ **无测试** — 无测试框架配置，路由/服务逻辑无覆盖
+
 ## COMMANDS
 ```bash
 npm run dev              # tsx watch 开发模式

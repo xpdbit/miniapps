@@ -8,14 +8,19 @@ export const PERMISSIONS = {
   KEYS: 'keys',
   MONITORING: 'monitoring',
   TAVERN: 'tavern',
+  // Game1 权限
+  GAME1_PLAYERS: 'game1_players',
+  GAME1_CONFIG: 'game1_config',
+  GAME1_ACHIEVEMENTS: 'game1_achievements',
+  GAME1_PVP: 'game1_pvp',
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
 /**
  * RBAC 角色权限映射表
- * super_admin: 所有权限（通配符 *）
- * admin: dashboard, users, records, themes, achievements, keys, monitoring
+ * super_admin: 所有权限
+ * admin: dashboard, users, records, themes, achievements, keys, monitoring, tavern
  * viewer: dashboard, monitoring（只读）
  */
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
@@ -29,6 +34,10 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.KEYS,
     PERMISSIONS.MONITORING,
     PERMISSIONS.TAVERN,
+    PERMISSIONS.GAME1_PLAYERS,
+    PERMISSIONS.GAME1_CONFIG,
+    PERMISSIONS.GAME1_ACHIEVEMENTS,
+    PERMISSIONS.GAME1_PVP,
   ],
   viewer: [PERMISSIONS.DASHBOARD, PERMISSIONS.MONITORING],
 }
@@ -52,4 +61,8 @@ export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
   '/api-keys': PERMISSIONS.KEYS,
   '/monitoring': PERMISSIONS.MONITORING,
   '/tavern': PERMISSIONS.TAVERN,
+  '/game1/players': PERMISSIONS.GAME1_PLAYERS,
+  '/game1/config': PERMISSIONS.GAME1_CONFIG,
+  '/game1/achievements': PERMISSIONS.GAME1_ACHIEVEMENTS,
+  '/game1/pvp': PERMISSIONS.GAME1_PVP,
 }

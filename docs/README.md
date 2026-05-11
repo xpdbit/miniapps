@@ -27,8 +27,9 @@ docs/
 │   └── README.md
 ├── deploy/              # Docker/Nginx 部署配置
 │   └── README.md
-├── game1-miniapp/       # Game1 架构方案（路径同 docs/game1-miniapp）
 ├── ARCHITECTURE.md      # 系统架构与数据流（跨项目）
+├── superpowers/         # Agent 工作文档 (plans/specs)
+├── .attachments/        # 文档附件
 └── README.md            # ← 当前文件（文档导航）
 ```
 

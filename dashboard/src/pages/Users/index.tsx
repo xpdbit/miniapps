@@ -1,412 +1,302 @@
-import { useState, useCallback } from 'react'
-import { Typography, Table, Input, DatePicker, Button, Tag, Avatar, Drawer, Card, Progress, Space, message, Modal, List, Statistic, Spin } from 'antd'
+import { useState } from 'react'
+import { Typography, Table, Input, DatePicker, Button, Tag, Avatar, Drawer, Card,
+  Progress, Space, message, Modal, List, Statistic, Spin, Empty,
+} from 'antd'
 import useMobile from '@/hooks/useMobile'
 import { SearchOutlined, ReloadOutlined, EyeOutlined, StopOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { usersAPI } from '@/services/ftg-api'
+import { game1AdminApi } from '@/services/game1'
+import { useProjectStore } from '@/stores/projectStore'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import PageHeader from '@/components/PageHeader'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
+import type { ColumnsType } from 'antd/es/table'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { RangePicker } = DatePicker
 
-// --- Types ---
+// ═══════════════════════════════════════════════════════════
+// FTG 用户管理（原有实现）
+// ═══════════════════════════════════════════════════════════
 
-interface User {
-  id: number
-  nickname: string
-  openid: string
-  avatar: string
-  foodRecordCount: number
-  checkInCount: number
-  registeredAt: string
-  status: 'active' | 'disabled'
+interface FtgUser {
+  id: number; nickname: string; openid: string; avatar: string
+  foodRecordCount: number; checkInCount: number
+  registeredAt: string; status: 'active' | 'disabled'
 }
 
-interface FoodTypeDist {
-  type: string
-  count: number
+interface FtgStats {
+  totalFoodRecords: number; totalCheckIns: number
+  foodTypeDistribution: Array<{ type: string; count: number }>
+  achievementProgress: Array<{ id: string; name: string; progress: number }>
+  recentFoodRecords: Array<{ id: number; foodName: string; foodType: string; createdAt: string }>
 }
 
-interface AchievementProgress {
-  id: string
-  name: string
-  progress: number
-}
-
-interface RecentFoodRecord {
-  id: number
-  foodName: string
-  foodType: string
-  createdAt: string
-}
-
-interface UserStats {
-  totalFoodRecords: number
-  totalCheckIns: number
-  foodTypeDistribution: FoodTypeDist[]
-  achievementProgress: AchievementProgress[]
-  recentFoodRecords: RecentFoodRecord[]
-}
-
-interface UserListResponse {
-  list: User[]
-  total: number
-}
-
-// --- Helpers ---
-
-/**
- * Mask the middle portion of an OpenID.
- * Example: "oxabcdefg" → "ox***efg"
- * Always shows first 2 and last 3 characters with *** in between.
- */
-const maskOpenId = (openid: string): string => {
-  if (!openid || openid.length <= 5) return openid || '-'
-  return `${openid.slice(0, 2)}***${openid.slice(-3)}`
-}
-
-// --- Component ---
-
-const Users = () => {
-  // Search state
+const FtgUsersView = () => {
   const [keyword, setKeyword] = useState('')
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20 })
-
-  // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-
+  const [selectedUser, setSelectedUser] = useState<FtgUser | null>(null)
   const queryClient = useQueryClient()
   const isMobile = useMobile()
 
-  // Build query params from current state
   const queryParams = {
-    page: pagination.current,
-    pageSize: pagination.pageSize,
+    page: pagination.current, pageSize: pagination.pageSize,
     ...(keyword ? { keyword } : {}),
     ...(dateRange?.[0] ? { startDate: dateRange[0].format('YYYY-MM-DD') } : {}),
     ...(dateRange?.[1] ? { endDate: dateRange[1].format('YYYY-MM-DD') } : {}),
   }
 
-  // --- React Query: fetch user list ---
-  const { data, isLoading } = useQuery<UserListResponse>({
-    queryKey: ['users', queryParams],
+  const { data, isLoading } = useQuery({
+    queryKey: ['ftg-users', queryParams],
     queryFn: async () => {
       const res = await usersAPI.list(queryParams)
-      return res.data as UserListResponse
+      return res.data as { list: FtgUser[]; total: number }
     },
     staleTime: 30_000,
   })
 
-  // --- React Query: fetch user stats for drawer ---
-  const { data: userStats, isLoading: statsLoading } = useQuery<UserStats>({
-    queryKey: ['userStats', selectedUser?.id],
+  const { data: userStats, isLoading: statsLoading } = useQuery<FtgStats>({
+    queryKey: ['ftg-userStats', selectedUser?.id],
     queryFn: async () => {
       const res = await usersAPI.getStats(selectedUser!.id)
-      return res.data as UserStats
+      return res.data as FtgStats
     },
     enabled: !!selectedUser && drawerOpen,
     staleTime: 60_000,
   })
 
-  // --- Mutation: toggle user enable/disable ---
   const toggleMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       const res = await usersAPI.update(id, { status })
       return res.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      message.success('操作成功')
-    },
-    onError: () => {
-      message.error('操作失败，请重试')
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['ftg-users'] }); message.success('操作成功') },
+    onError: () => { message.error('操作失败') },
   })
 
-  // --- Handlers ---
-
-  const handleSearch = useCallback((value: string) => {
-    setKeyword(value)
-    setPagination(prev => ({ ...prev, current: 1 }))
-  }, [])
-
-  const handleDateChange = useCallback((dates: [Dayjs | null, Dayjs | null] | null) => {
-    setDateRange(dates)
-    setPagination(prev => ({ ...prev, current: 1 }))
-  }, [])
-
-  const handleReset = useCallback(() => {
-    setKeyword('')
-    setDateRange(null)
-    setPagination({ current: 1, pageSize: 20 })
-  }, [])
-
-  const handleTableChange = useCallback((pag: TablePaginationConfig) => {
-    setPagination({
-      current: pag.current ?? 1,
-      pageSize: pag.pageSize ?? 20,
-    })
-  }, [])
-
-  const handleViewDetail = useCallback((user: User) => {
-    setSelectedUser(user)
-    setDrawerOpen(true)
-  }, [])
-
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false)
-    setSelectedUser(null)
-  }, [])
-
-  const handleToggleStatus = useCallback((user: User) => {
-    const newStatus = user.status === 'active' ? 'disabled' : 'active'
-    const actionText = newStatus === 'disabled' ? '禁用' : '启用'
-
-    Modal.confirm({
-      title: `确认${actionText}用户`,
-      content: `确定要${actionText}用户「${user.nickname}」吗？`,
-      okText: actionText,
-      cancelText: '取消',
-      okButtonProps: { danger: newStatus === 'disabled' },
-      onOk: () => toggleMutation.mutate({ id: user.id, status: newStatus }),
-    })
-  }, [toggleMutation])
-
-  // --- Table columns ---
-  const columns: ColumnsType<User> = [
+  const columns: ColumnsType<FtgUser> = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     { title: '昵称', dataIndex: 'nickname', key: 'nickname', ellipsis: true },
-    {
-      title: 'OpenID',
-      dataIndex: 'openid',
-      key: 'openid',
-      width: 170,
-      render: (val: string) => (
-        <Text code copyable={{ text: val }}>{maskOpenId(val)}</Text>
-      ),
-    },
-    {
-      title: '头像',
-      dataIndex: 'avatar',
-      key: 'avatar',
-      width: 70,
-      render: (val: string) => <Avatar src={val} size={36} />,
-    },
+    { title: 'OpenID', dataIndex: 'openid', key: 'openid', width: 170,
+      render: (val: string) => <Text code copyable={{ text: val }}>{val ? `${val.slice(0, 2)}***${val.slice(-3)}` : '-'}</Text> },
+    { title: '头像', dataIndex: 'avatar', key: 'avatar', width: 70,
+      render: (val: string) => <Avatar src={val} size={36} /> },
     { title: '食物记录', dataIndex: 'foodRecordCount', key: 'foodRecordCount', width: 90 },
     { title: '打卡数', dataIndex: 'checkInCount', key: 'checkInCount', width: 80 },
-    {
-      title: '注册时间',
-      dataIndex: 'registeredAt',
-      key: 'registeredAt',
-      width: 170,
-      render: (val: string) => dayjs(val).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 80,
-      render: (val: string) => (
-        <Tag color={val === 'active' ? 'green' : 'red'}>
-          {val === 'active' ? '正常' : '禁用'}
-        </Tag>
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 160,
-      render: (_: unknown, record: User) => (
+    { title: '注册时间', dataIndex: 'registeredAt', key: 'registeredAt', width: 170,
+      render: (val: string) => dayjs(val).format('YYYY-MM-DD HH:mm') },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 80,
+      render: (val: string) => <Tag color={val === 'active' ? 'green' : 'red'}>{val === 'active' ? '正常' : '禁用'}</Tag> },
+    { title: '操作', key: 'action', width: 160,
+      render: (_: unknown, record: FtgUser) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record)}>
-            详情
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            danger={record.status === 'active'}
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedUser(record); setDrawerOpen(true) }}>详情</Button>
+          <Button type="link" size="small" danger={record.status === 'active'}
             icon={record.status === 'active' ? <StopOutlined /> : <CheckCircleOutlined />}
-            onClick={() => handleToggleStatus(record)}
-          >
+            onClick={() => {
+              const newStatus = record.status === 'active' ? 'disabled' : 'active'
+              Modal.confirm({
+                title: `确认${newStatus === 'disabled' ? '禁用' : '启用'}用户`,
+                content: `确定要${newStatus === 'disabled' ? '禁用' : '启用'}「${record.nickname}」吗？`,
+                onOk: () => toggleMutation.mutate({ id: record.id, status: newStatus }),
+                okButtonProps: { danger: newStatus === 'disabled' },
+              })
+            }}>
             {record.status === 'active' ? '禁用' : '启用'}
           </Button>
         </Space>
-      ),
-    },
+      )},
   ]
 
-  // Total count for food type distribution percentages
-  const totalFoodTypeCount = userStats?.foodTypeDistribution.reduce(
-    (sum, item) => sum + item.count, 0,
-  ) ?? 0
+  const totalFoodTypeCount = userStats?.foodTypeDistribution.reduce((s, i) => s + i.count, 0) ?? 0
 
   return (
-    <div>
-      <PageHeader title="用户管理" />
+    <>
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Input.Search placeholder="搜索昵称/OpenID" value={keyword} onChange={(e) => setKeyword(e.target.value)}
+            onSearch={(v) => { setKeyword(v); setPagination(p => ({ ...p, current: 1 })) }}
+            allowClear style={{ width: 280 }} enterButton={<SearchOutlined />} />
+          <RangePicker value={dateRange} onChange={(dates) => { setDateRange(dates); setPagination(p => ({ ...p, current: 1 })) }} />
+          <Button icon={<ReloadOutlined />} onClick={() => { setKeyword(''); setDateRange(null); setPagination({ current: 1, pageSize: 20 }) }}>重置</Button>
+        </Space>
+      </Card>
 
-      {isLoading ? (
-        <PageSkeleton type="table" />
-      ) : (
-        <>
-          {/* Search Bar */}
-          <Card size="small" style={{ marginBottom: 16 }}>
-            <Space wrap>
-              <Input.Search
-                placeholder="搜索昵称/OpenID"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                onSearch={handleSearch}
-                allowClear
-                style={{ width: 280 }}
-                enterButton={<SearchOutlined />}
-              />
-              <RangePicker value={dateRange} onChange={handleDateChange} />
-              <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                重置
-              </Button>
-            </Space>
-          </Card>
-
-          {/* Data Table */}
-          <Table<User>
-            columns={columns}
-            dataSource={data?.list ?? []}
-            rowKey="id"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: data?.total ?? 0,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
-              showTotal: (total: number) => `共 ${total} 条`,
-            }}
-            onChange={(pag) => handleTableChange(pag)}
-            scroll={{ x: 960 }}
-          />
-        </>
+      {isLoading ? <PageSkeleton type="table" /> : (
+        <Table<FtgUser> columns={columns} dataSource={data?.list ?? []} rowKey="id"
+          pagination={{ current: pagination.current, pageSize: pagination.pageSize, total: data?.total ?? 0,
+            showSizeChanger: true, pageSizeOptions: ['10', '20', '50', '100'], showTotal: (t) => `共 ${t} 条` }}
+          onChange={(pag) => setPagination({ current: pag.current ?? 1, pageSize: pag.pageSize ?? 20 })}
+          scroll={{ x: 960 }} />
       )}
 
-      {/* Detail Drawer */}
-      <Drawer
-        title={selectedUser ? `用户详情 - ${selectedUser.nickname}` : '用户详情'}
-        open={drawerOpen}
-        onClose={handleCloseDrawer}
-        width={isMobile ? '100%' : 560}
-      >
-        {statsLoading ? (
-          <div style={{ textAlign: 'center', padding: 60 }}>
-            <Spin size="large" />
-          </div>
-        ) : selectedUser && userStats ? (
-          <>
-            {/* User Basic Info */}
+      <Drawer title={selectedUser ? `用户详情 - ${selectedUser.nickname}` : '用户详情'}
+        open={drawerOpen} onClose={() => { setDrawerOpen(false); setSelectedUser(null) }}
+        width={isMobile ? '100%' : 560}>
+        {statsLoading ? <div style={{ textAlign: 'center', padding: 60 }}><Spin size="large" /></div> :
+          selectedUser && userStats ? <>
             <Card size="small" style={{ marginBottom: 16 }}>
               <Space align="center" size={16}>
                 <Avatar src={selectedUser.avatar} size={64} />
                 <div>
-                  <Title level={4} style={{ margin: 0 }}>{selectedUser.nickname}</Title>
-                  <Text type="secondary" code copyable={{ text: selectedUser.openid }}>
-                    {maskOpenId(selectedUser.openid)}
-                  </Text>
-                  <br />
-                  <Tag
-                    color={selectedUser.status === 'active' ? 'green' : 'red'}
-                    style={{ marginTop: 4 }}
-                  >
-                    {selectedUser.status === 'active' ? '正常' : '已禁用'}
-                  </Tag>
+                  <Typography.Title level={4} style={{ margin: 0 }}>{selectedUser.nickname}</Typography.Title>
+                  <Text type="secondary" code copyable={{ text: selectedUser.openid }}>{selectedUser.openid.slice(0, 2)}***{selectedUser.openid.slice(-3)}</Text>
+                  <Tag color={selectedUser.status === 'active' ? 'green' : 'red'} style={{ marginTop: 4 }}>{selectedUser.status === 'active' ? '正常' : '已禁用'}</Tag>
                 </div>
               </Space>
             </Card>
-
-            {/* Stats Cards */}
             <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-              <Card size="small" style={{ flex: 1 }}>
-                <Statistic title="食物记录总数" value={userStats.totalFoodRecords} />
-              </Card>
-              <Card size="small" style={{ flex: 1 }}>
-                <Statistic title="打卡总数" value={userStats.totalCheckIns} />
-              </Card>
+              <Card size="small" style={{ flex: 1 }}><Statistic title="食物记录总数" value={userStats.totalFoodRecords} /></Card>
+              <Card size="small" style={{ flex: 1 }}><Statistic title="打卡总数" value={userStats.totalCheckIns} /></Card>
             </div>
-
-            {/* Food Type Distribution */}
             <Card title="食物类型分布" size="small" style={{ marginBottom: 16 }}>
-              {userStats.foodTypeDistribution.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {userStats.foodTypeDistribution.map((item) => (
-                    <div key={item.type}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text>{item.type}</Text>
-                        <Text type="secondary">{item.count} 次</Text>
-                      </div>
-                      <Progress
-                        percent={totalFoodTypeCount > 0
-                          ? Math.round((item.count / totalFoodTypeCount) * 100)
-                          : 0}
-                        size="small"
-                        showInfo={false}
-                      />
-                    </div>
-                  ))}
+              {userStats.foodTypeDistribution.map((item) => (
+                <div key={item.type} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text>{item.type}</Text><Text type="secondary">{item.count} 次</Text>
+                  </div>
+                  <Progress percent={totalFoodTypeCount > 0 ? Math.round((item.count / totalFoodTypeCount) * 100) : 0} size="small" showInfo={false} />
                 </div>
-              ) : (
-                <Text type="secondary">暂无数据</Text>
-              )}
+              ))}
+              {userStats.foodTypeDistribution.length === 0 && <Text type="secondary">暂无数据</Text>}
             </Card>
-
-            {/* Achievement Progress */}
             <Card title="成就进度" size="small" style={{ marginBottom: 16 }}>
-              {userStats.achievementProgress.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {userStats.achievementProgress.map((achv) => (
-                    <div key={achv.id}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text>{achv.name}</Text>
-                        <Text type="secondary">{achv.progress}%</Text>
-                      </div>
-                      <Progress percent={achv.progress} size="small" />
-                    </div>
-                  ))}
+              {userStats.achievementProgress.map((a) => (
+                <div key={a.id} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text>{a.name}</Text><Text type="secondary">{a.progress}%</Text>
+                  </div>
+                  <Progress percent={a.progress} size="small" />
                 </div>
-              ) : (
-                <Text type="secondary">暂无数据</Text>
-              )}
+              ))}
+              {userStats.achievementProgress.length === 0 && <Text type="secondary">暂无数据</Text>}
             </Card>
-
-            {/* Recent Food Records */}
             <Card title="最近食物记录" size="small">
-              {userStats.recentFoodRecords.length > 0 ? (
-                <List
-                  size="small"
-                  dataSource={userStats.recentFoodRecords}
-                  renderItem={(item: RecentFoodRecord) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={item.foodName}
-                        description={
-                          <Space>
-                            <Tag>{item.foodType}</Tag>
-                            <Text type="secondary">{dayjs(item.createdAt).format('MM-DD HH:mm')}</Text>
-                          </Space>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              ) : (
-                <Text type="secondary">暂无数据</Text>
-              )}
+              <List size="small" dataSource={userStats.recentFoodRecords}
+                renderItem={(item) => (
+                  <List.Item><List.Item.Meta title={item.foodName}
+                    description={<Space><Tag>{item.foodType}</Tag><Text type="secondary">{dayjs(item.createdAt).format('MM-DD HH:mm')}</Text></Space>} /></List.Item>
+                )} />
+              {userStats.recentFoodRecords.length === 0 && <Text type="secondary">暂无数据</Text>}
             </Card>
-          </>
-        ) : null}
+          </> : null}
       </Drawer>
+    </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// Game1 玩家管理
+// ═══════════════════════════════════════════════════════════
+
+const Game1PlayersView = () => {
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+
+  const { data: playersData, isLoading } = useQuery({
+    queryKey: ['game1-players', page, search],
+    queryFn: () => game1AdminApi.getPlayers({ page, pageSize: 20, search: search || undefined }),
+  })
+
+  const { data: dashboardRes } = useQuery({
+    queryKey: ['game1-dashboard'],
+    queryFn: () => game1AdminApi.getDashboard(),
+  })
+  const stats = dashboardRes?.data
+
+  const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
+    { title: '昵称', dataIndex: 'nickname', key: 'nickname', ellipsis: true, render: (v: string | null) => v || '(未设置)' },
+    { title: '等级', dataIndex: 'level', key: 'level', width: 70 },
+    { title: '里程', dataIndex: 'totalMileage', key: 'totalMileage', width: 100, render: (v: number) => v?.toLocaleString() || '0' },
+    { title: '转生', dataIndex: 'prestigeCount', key: 'prestigeCount', width: 70 },
+    { title: '经验', dataIndex: 'exp', key: 'exp', width: 100 },
+    { title: '登录天数', dataIndex: 'loginDays', key: 'loginDays', width: 90 },
+    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 160, render: (v: string) => dayjs(v).format('YYYY-MM-DD HH:mm') },
+  ]
+
+  return (
+    <>
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Input placeholder="搜索玩家昵称..." prefix={<SearchOutlined />} value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onPressEnter={() => { setSearch(searchInput); setPage(1) }}
+            style={{ width: 280 }} allowClear />
+          <Button type="primary" onClick={() => { setSearch(searchInput); setPage(1) }}>搜索</Button>
+        </Space>
+      </Card>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <Card size="small" style={{ flex: 1 }}><Statistic title="总玩家" value={stats?.totalPlayers ?? 0} /></Card>
+        <Card size="small" style={{ flex: 1 }}><Statistic title="今日新增" value={stats?.todayNewPlayers ?? 0} valueStyle={{ color: '#52c41a' }} /></Card>
+        <Card size="small" style={{ flex: 1 }}><Statistic title="本周新增" value={stats?.weekNewPlayers ?? 0} /></Card>
+        <Card size="small" style={{ flex: 1 }}><Statistic title="PVP场次" value={stats?.totalPvpMatches ?? 0} /></Card>
+      </div>
+      {isLoading ? <PageSkeleton type="table" /> : (
+        <Table columns={columns} dataSource={playersData?.data?.items ?? []} rowKey="id" scroll={{ x: 800 }}
+          pagination={{ current: page, pageSize: 20, total: playersData?.data?.total ?? 0, onChange: setPage, showTotal: (t) => `共 ${t} 位玩家` }} />
+      )}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// Tavern 用户管理（占位）
+// ═══════════════════════════════════════════════════════════
+
+const TavernUsersView = () => (
+  <Card>
+    <Empty description={
+      <span>AI 酒馆用户管理<Text type="secondary" style={{ display: 'block' }}>Tavern Server 暂未开放管理员用户接口</Text></span>
+    } />
+  </Card>
+)
+
+// ═══════════════════════════════════════════════════════════
+// 主组件 — 项目感知用户管理
+// ═══════════════════════════════════════════════════════════
+
+const getProjectType = (name: string | undefined): 'ftg' | 'game1' | 'tavern' | null => {
+  if (!name) return null
+  const n = name.toLowerCase()
+  if (n.includes('ftg') || n.includes('food')) return 'ftg'
+  if (n.includes('game1') || n.includes('game')) return 'game1'
+  if (n.includes('tavern') || n.includes('ai')) return 'tavern'
+  return null
+}
+
+const Users = () => {
+  const currentProject = useProjectStore((s) => s.currentProject)
+  const projectType = getProjectType(currentProject?.name)
+
+  const title = projectType === 'ftg' ? 'FTG 用户管理'
+    : projectType === 'game1' ? 'Game1 玩家管理'
+    : projectType === 'tavern' ? 'AI 酒馆用户管理'
+    : '用户管理'
+
+  if (!projectType) {
+    return (
+      <div>
+        <PageHeader title="用户管理" />
+        <Card>
+          <Empty description="请先在顶部选择项目以查看对应的用户数据" />
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <PageHeader title={title} />
+
+      {projectType === 'ftg' && <FtgUsersView />}
+      {projectType === 'game1' && <Game1PlayersView />}
+      {projectType === 'tavern' && <TavernUsersView />}
     </div>
   )
 }

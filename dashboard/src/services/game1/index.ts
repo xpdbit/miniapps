@@ -47,20 +47,25 @@ export interface Game1ConfigEntry {
 }
 
 export interface AchievementDefinition {
-  id: string
+  achievementId: string
   title: string
   description: string
   condition: string
   unlockedCount: number
   totalPlayers: number
+  unlockRate: number
 }
 
 export interface PvpLeaderboardEntry {
   rank: number
-  playerName: string
-  tier: string
+  playerId: number
+  nickname: string | null
+  avatarUrl: string | null
+  level: number
   rating: number
-  winRate: string
+  tier: string
+  wins: number
+  losses: number
 }
 
 export interface PvpLeaderboardResponse {

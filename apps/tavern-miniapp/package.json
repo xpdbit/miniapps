@@ -10,8 +10,9 @@
   },
   "scripts": {
     "build:weapp": "taro build --type weapp",
-    "predev": "node -e \"fs.rmSync('dist',{recursive:true,force:true});console.log('cleaned dist')\"",
+    "predev": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});fs.cpSync('src/assets/icons','dist/assets/icons',{recursive:true});console.log('cleaned dist, pre-copied icons')\"",
     "dev:weapp": "npm run build:weapp -- --watch",
+    "generate-icons": "node scripts/generate-icons.mjs",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,scss,css}'",
     "type-check": "tsc --noEmit"

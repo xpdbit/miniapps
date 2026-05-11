@@ -739,6 +739,5 @@ wx.setStorageSync('inventory', JSON.stringify(saveData));
 | [Zustand 文档](https://github.com/pmndrs/zustand) | 状态管理 |
 | [微信小程序开发文档](https://developers.weixin.qq.com/miniprogram/dev/framework/) | 原生 API |
 | [微信云开发](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html) | 云函数/数据库 |
-| [mp-automator](../../cloud-functions/README.md) | 小程序自动化测试工具 |
-| [apps/ftg-miniapp](../../apps/ftg-miniapp/) | 已有 Taro 小程序参考 |
-| [unity-game-save-adapter](./SERIALIZATION_ADAPTER.md) | 存档转换适配器（如需要） |
+| [apps/ftg-miniapp](../../../apps/ftg-miniapp/) | 已有 Taro 小程序参考 |
+| [mp-automator](../../../apps/ftg-miniapp/__test_errors.mjs) | 小程序自动化测试示例 |

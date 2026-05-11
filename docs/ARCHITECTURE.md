@@ -33,53 +33,55 @@
 
 **当前状态**：3 个子项目并进。FTG 已成熟部署至 ECS；Game1（小程序前端 + Express 后端）开发中；AI-Tavern（仅后端 API）开发中。dashboard 管理后台统一管理所有项目。
 
-## 整体架构（FTG 子系统）
+## 当前架构（FTG 子系统 — REST API）
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     微信小程序（Taro + React）                 │
+│                  WeChat MiniApp (Taro + React)                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐ │
-│  │  首页     │  │  设置     │  │  我的     │  │  拍照/结果   │ │
-│  │  home    │  │ settings │  │ profile  │  │ camera/     │ │
-│  │          │  │          │  │          │  │ result      │ │
+│  │  Home    │  │ Settings │  │ Profile  │  │ Camera/     │ │
+│  │  (home)  │  │(settings)│  │(profile) │  │ Result      │ │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬──────┘ │
 │       │             │             │               │         │
 │  ┌────┴─────────────┴─────────────┴───────────────┴──────┐  │
-│  │                  业务服务层 (services/)                  │  │
+│  │              Service Layer (services/)                  │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────────────────┐ │  │
-│  │  │ UserSvc  │  │ ApiKeySvc│  │  DAL 层 (7个集合)      │ │  │
-│  │  └──────────┘  └──────────┘  │  BaseDAL             │ │  │
-│  │                               │  UserDAL / FoodDAL   │ │  │
-│  │                               │  CheckinDAL / ...    │ │  │
-│  │                               └──────────────────────┘ │  │
-│  └────────────────────────┬───────────────────────────────┘  │
-│                           │  wx.cloud.callFunction()          │
+│  │  │ AuthSvc  │  │HttpClient│  │  ...Service modules   │ │  │
+│  │  │(JWT)     │  │(Taro.req)│  │  (user/record/checkin)│ │  │
+│  │  └──────────┘  └──────────┘  └──────────────────────┘ │  │
+│  │                         │                               │  │
+│  │              Zustand Stores (7 stores)                  │  │
+│  └─────────────────────────┬───────────────────────────────┘  │
+│                           │  HTTP GET/POST (JWT Bearer)       │
 └───────────────────────────┼───────────────────────────────────┘
                             │
 ┌───────────────────────────┼───────────────────────────────────┐
-│               微信云开发 CloudBase                              │
-│  ┌────────────────────────┴───────────────────────────────┐  │
-│  │                   云函数层                               │  │
-│  │  ┌────────────────┐  ┌──────────────┐  ┌────────────┐ │  │
-│  │  │orchestrateAI   │  │foodRecognize │  │textGenerate│ │  │
-│  │  │Pipeline (编排)  │  │(食物识别)     │  │(文本生成)   │ │  │
-│  │  └───────┬────────┘  └──────┬───────┘  └──────┬─────┘ │  │
-│  │          │                  │                  │       │  │
-│  │  ┌───────┴──────────────────┴──────────────────┴─────┐ │  │
-│  │  │              shared/ 共享模块                       │ │  │
-│  │  │  response.ts / errorHandler.ts / logger.ts         │ │  │
-│  │  └───────────────────────────────────────────────────┘ │  │
-│  └────────────────────────┬───────────────────────────────┘  │
-│                           │                                   │
-│  ┌────────────────────────┼───────────────────────────────┐  │
-│  │               CloudBase 云服务                          │  │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────────┐ │  │
-│  │  │ 云数据库  │  │ 云存储    │  │ CloudRun (ppshituv2) │ │  │
-│  │  │7个集合   │  │ 图片存储  │  │ PP-ShiTuV2 识别服务  │ │  │
-│  │  └──────────┘  └──────────┘  │ 2核4GB, 1-5实例     │ │  │
-│  │                               └──────────────────────┘ │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+│              servers/ftg-server (Express + TypeScript)         │
+│  ┌──────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
+│  │ Auth │  │ Middleware│  │ Routes   │  │ Services         │  │
+│  │ JWT  │  │ auth/    │  │ (16 mods)│  │ (recognition/    │  │
+│  │      │  │ admin/   │  │          │  │  theme-render/..)│  │
+│  └──┬───┘  └──────────┘  └────┬─────┘  └────────┬─────────┘  │
+│     │                          │                  │            │
+│     └──────────────────────────┼──────────────────┘            │
+│                                │                               │
+│  ┌─────────────────────────────┼───────────────────────────┐   │
+│  │                   Prisma ORM + MySQL 8.0                │   │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │   │
+│  │  │ Users    │  │FoodRecord│  │ Themes   │  │ Classes │ │   │
+│  │  │ Checkins │  │Achieve-  │  │ ApiKeys  │  │  ... (14│ │   │
+│  │  │          │  │ments     │  │          │  │   total)│ │   │
+│  │  └──────────┘  └──────────┘  └──────────┘  └────────┘ │   │
+│  └────────────────────────────────────────────────────────┘   │
+│                         │                                      │
+│  ┌──────────────────────┼───────────────────────────────────┐  │
+│  │          External Services                                │  │
+│  │  ┌──────────┐  ┌──────────────┐  ┌──────────────────┐   │  │
+│  │  │PP-ShiTuV2│  │ 通义千问      │  │ Redis 7 Cache    │   │  │
+│  │  │(Docker)  │  │ (DashScope)  │  │ (session/rate)   │   │  │
+│  │  └──────────┘  └──────────────┘  └──────────────────┘   │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ## 技术架构分层
@@ -89,63 +91,76 @@
 | 层级 | 目录 | 职责 |
 |------|------|------|
 | **页面层** | `src/pages/` | UI 渲染、用户交互、路由跳转 |
-| **组件层** | `src/components/` | 可复用 UI 组件（Loading 等） |
-| **服务层** | `src/services/` | 业务逻辑封装、云函数调用 |
-| **DAL 层** | `src/services/db/` | 数据库 CRUD 操作封装 |
+| **组件层** | `src/components/` | 可复用 UI 组件 (18 SVG icons, charts) |
+| **服务层** | `src/services/` | HTTP client, auth, business logic |
+| **状态层** | `src/stores/` | Zustand stores (auth, UI state) |
 | **工具层** | `src/utils/` | 纯函数工具（Canvas合成、图片处理等） |
 | **类型层** | `src/types/` | TypeScript 类型定义 |
 | **常量层** | `src/constants/` | 全局常量、配置数据 |
 
-### 后端层 (CloudBase)
+### 后端层 (REST API)
 
 | 层级 | 位置 | 职责 |
 |------|------|------|
-| **云函数** | `cloud-functions/` | 业务 API、身份认证、数据操作 |
-| **共享模块** | `cloud-functions/shared/` | 响应格式化、错误处理、日志 |
-| **AI 服务** | CloudRun | PP-ShiTuV2 食物识别（Docker部署） |
+| **API 路由** | `servers/ftg-server/src/routes/` | 16 个路由模块 (RESTful) |
+| **服务层** | `servers/ftg-server/src/services/` | 业务逻辑 (theme-render/class/recognition) |
+| **中间件** | `servers/ftg-server/src/middleware/` | JWT 认证、RBAC 权限 |
+| **ORM** | Prisma (MySQL 8.0) | 数据库访问 (14 表) |
+| **外部 AI** | PP-ShiTuV2 (Docker) | 食物识别服务 |
+| **外部 AI** | DashScope (通义千问) | 文本生成 |
 
 ## 核心数据流
 
-### AI 流水线状态机
-
-用户拍照到生成主题图片的完整流程：
+### AI 流水线 (current REST API version)
 
 ```
-用户拍照/选择图片
+User takes/selects photo
         │
         ▼
-  ① 图片上传至云存储
+  ① Upload → POST /upload → returns filename
         │
         ▼
-  ② 调用 orchestrateAIPipeline（编排器）
+  ② Recognize → POST /recognition/recognize → sends image path
+        │                        ┌──────────────────┐
+        ├─→ servers/ftg-server   │ PP-ShiTuV2 Docker│
+        │   proxies request ────→│ (port 5000)      │
+        │   ← returns result     │ food name/type/  │
+        │                        │ calories         │
+        │                        └──────────────────┘
         │
-        ├──► 状态: queued (0%)
-        ├──► 状态: preprocessing (10%) — 图片预处理
-        ├──► 状态: recognizing (30%) — 调用 foodRecognize → PP-ShiTuV2
-        ├──► 状态: generating (55%) — 调用 textGenerate → 混元大模型
-        ├──► 状态: composing (80%) — 前端 Canvas 2D 合成
-        └──► 状态: completed (100%) 或 failed (0%)
-                        │
-                        ▼
-  ③ 前端轮询 pipeline_status 集合获取进度
-                        │
-                        ▼
-  ④ 合成完成后保存至 food_records + checkins
+        ▼
+  ③ Generate → calls DashScope AI (通义千问) for themed description
+        │
+        ▼
+  ④ Render → POST /theme-render/render → markup template + CSS classes
+        │
+        ▼
+  ⑤ Save → POST /food-records → persisted to MySQL via Prisma
 ```
 
-### 用户认证流程
+### 用户认证流程 (current)
 
 ```
-小程序启动
+MiniApp launches
     │
     ▼
-wx.cloud.init() → CloudBase 免登录初始化
+Check cached JWT token in storage
     │
-    ▼
-调用 getOpenId 云函数获取 openid
+    ├── token exists → GET /auth/me → validate → show UI
     │
-    ▼
-前端缓存 openid，后续所有请求自动携带
+    └── no token → wx.login() → get code
+                      │
+                      ▼
+                  POST /auth/login { code }
+                      │
+                      ▼
+                  servers/ftg-server exchanges code via WeChat API
+                      │
+                      ▼
+                  Returns { token, user }
+                      │
+                      ▼
+                  Store token locally, set user state
 ```
 
 ## 路由与导航
@@ -255,4 +270,4 @@ T1(Prisma Schema扩展) — 新增 ThemeClass/ThemeUsageLog 表 + Theme 字段
     └──► 旧版 configJson 保留兼容
 ```
 
-所有 7 个实现任务已完成并部署至 ECS100。
+所有 7 个实现任务已完成并部署至 ECS。

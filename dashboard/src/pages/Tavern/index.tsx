@@ -4,57 +4,52 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CommentOutlined, ReloadOutlined } from '@ant-design/icons'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
-import axios from 'axios'
-import { getToken } from '@/utils/token'
+import { tavernAdminApi } from '@/services/tavern'
+import type { TavernCharacter, TavernStats, CharactersResponse } from '@/services/tavern'
 
-const API_BASE = '/api/tavern/api/v1'
-
-interface TavernCharacter {
-  id: string
-  name: string
-  creator: {
-    id: string
-    nickname: string
-  }
-  status: string
-  chatCount: number
-  likeCount: number
-  createdAt: string
-}
-
-interface TavernStats {
-  totalCharacters: number
-  totalChats: number
-  activeUsers: number
-  pendingReviews: number
-}
-
-interface CharactersResponse {
-  items: TavernCharacter[]
-  total: number
-}
-
+// 兼容旧版直接 API 调用（在 tavern proxy 未到位时用）
 const tavernApi = {
   getCharacters: async (params?: { page?: number; pageSize?: number }): Promise<CharactersResponse> => {
-    const token = getToken()
-    const res = await axios.get(`${API_BASE}/characters`, {
-      params,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    return res.data.data
+    try {
+      const res = await tavernAdminApi.getCharacters(params)
+      return res.data
+    } catch {
+      // Fallback: 直接调用 tavern-server（通过 nginx 代理）
+      const axios = (await import('axios')).default
+      const { getToken } = await import('@/utils/token')
+      const token = getToken()
+      const res = await axios.get('/api/tavern/api/v1/characters', {
+        params,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return res.data.data
+    }
   },
   getStats: async (): Promise<TavernStats> => {
-    const token = getToken()
-    const res = await axios.get(`${API_BASE}/admin/dashboard/stats`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    return res.data.data
+    try {
+      const res = await tavernAdminApi.getStats()
+      return res.data
+    } catch {
+      const axios = (await import('axios')).default
+      const { getToken } = await import('@/utils/token')
+      const token = getToken()
+      const res = await axios.get('/api/tavern/api/v1/admin/dashboard/stats', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return res.data.data
+    }
   },
   banCharacter: async (id: string): Promise<void> => {
-    const token = getToken()
-    await axios.post(`${API_BASE}/admin/ban/${id}`, { reason: '管理员封禁' }, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    try {
+      await tavernAdminApi.banCharacter(id, '管理员封禁')
+    } catch {
+      const axios = (await import('axios')).default
+      const { getToken } = await import('@/utils/token')
+      const token = getToken()
+      await axios.post(`/api/tavern/api/v1/admin/ban/${id}`, { reason: '管理员封禁' }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    }
   },
 }
 

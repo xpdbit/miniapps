@@ -62,6 +62,9 @@ apps/ftg-miniapp/
 - ❌ `getUserStats` 云函数返回硬编码零值 — 需实现数据库聚合
 - ❌ 不得在组件中直接写复杂业务逻辑 — 抽到 hooks/services
 - ❌ 禁止 `eslint-disable` 无充分理由的注释
+- ❌ **空 catch 块** — `src/app.ts` 有 4 个空 catch 块（line 55 "环境不支持时静默"、line 94/117/131 "Toast 失败时静默处理"），应添加错误日志
+- ❌ **TODO 占位实现** — `src/pages/result/index.tsx` line 108 `// TODO: 调用云函数保存食物记录`，handleSave 未完成
+- ❌ **Mock 降级代码** — `src/stores/authStore.ts` 存在 `TARO_APP_MOCK_AUTH=true` mock 分支，上线前需清理
 
 ## COMMANDS
 ```bash

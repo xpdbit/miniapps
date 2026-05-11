@@ -35,9 +35,9 @@ const Login = () => {
       <Card className={styles.loginCard}>
         <div className={styles.loginHeader}>
           <Title level={3} style={{ marginBottom: 4 }}>
-            FTG 管理后台
+            统一管理后台
           </Title>
-          <Typography.Text type="secondary">Food Theme Generator</Typography.Text>
+          <Typography.Text type="secondary">个人小程序工坊</Typography.Text>
         </div>
         <Form<LoginFormValues>
           onFinish={onFinish}

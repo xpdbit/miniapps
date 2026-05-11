@@ -89,7 +89,7 @@ const Game1Achievements = () => {
         <Table
           columns={columns}
           dataSource={achievements}
-          rowKey="id"
+          rowKey="achievementId"
           scroll={{ x: 700 }}
           pagination={false}
         />

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Layout as AntLayout, Button, theme, Modal, Drawer } from 'antd'
 import {
   MenuFoldOutlined,
@@ -9,6 +9,8 @@ import {
 import { Outlet, useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { useAuthStore } from '@/stores/authStore'
+import { useProjectStore } from '@/stores/projectStore'
+import { projectApi } from '@/services/projectApi'
 import useMobile from '@/hooks/useMobile'
 import ProjectSwitcher from '@/components/ProjectSwitcher'
 import Sidebar from './Sidebar'
@@ -23,9 +25,30 @@ const Layout = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const navigate = useNavigate()
   const logout = useAuthStore((state) => state.logout)
+  const setProjects = useProjectStore((state) => state.setProjects)
+  const setProject = useProjectStore((state) => state.setProject)
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken()
   const isMobile = useMobile(1024) // lg breakpoint
   const { isDark, toggleTheme } = useThemeStore()
+
+  // ─── 加载项目列表到 store（使 ProjectSwitcher 可选）───
+  useEffect(() => {
+    projectApi.list().then((res) => {
+      const projects = res.data.data.projects
+      setProjects(projects)
+      // 恢复上次选中的项目（如果有且仍存在）
+      const stored = sessionStorage.getItem('currentProject')
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as { id: number }
+          const exists = projects.find((p) => p.id === parsed.id)
+          if (exists) setProject(exists)
+        } catch { /* ignore parse error */ }
+      }
+    }).catch(() => {
+      // 项目列表加载失败不影响核心功能
+    })
+  }, [setProjects, setProject])
 
   const handleLogout = () => {
     Modal.confirm({

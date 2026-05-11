@@ -70,7 +70,7 @@ router.delete('/admin/players/:id', async (req, res) => {
 router.get('/admin/achievements', async (_req, res) => {
   try {
     const stats = await adminService.getAchievementStats();
-    sendSuccess(res, stats);
+    sendSuccess(res, { items: stats });
   } catch {
     sendError(res, ErrorCodes.INTERNAL_ERROR, '获取成就统计失败', 500);
   }

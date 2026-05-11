@@ -23,6 +23,11 @@ const Monitoring = lazy(() => import('@/pages/Monitoring'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const AuditLogs = lazy(() => import('@/pages/AuditLogs'))
 const Projects = lazy(() => import('@/pages/Projects'))
+const Game1Players = lazy(() => import('@/pages/Game1Players'))
+const Game1Config = lazy(() => import('@/pages/Game1Config'))
+const Game1Achievements = lazy(() => import('@/pages/Game1Achievements'))
+const Game1Pvp = lazy(() => import('@/pages/Game1Pvp'))
+const Tavern = lazy(() => import('@/pages/Tavern'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // ─── 全局加载态 ──────────────────────────────────────
@@ -168,6 +173,48 @@ const App = () => {
                 element={
                   <Suspense fallback={<PageLoading />}>
                     <Projects />
+                  </Suspense>
+                }
+              />
+              {/* ── Tavern 页面 ── */}
+              <Route
+                path={ROUTES.TAVERN}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <Tavern />
+                  </Suspense>
+                }
+              />
+              {/* ── Game1 页面 ── */}
+              <Route
+                path={ROUTES.GAME1_PLAYERS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <Game1Players />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.GAME1_CONFIG}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <Game1Config />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.GAME1_ACHIEVEMENTS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <Game1Achievements />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.GAME1_PVP}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <Game1Pvp />
                   </Suspense>
                 }
               />

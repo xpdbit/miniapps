@@ -36,6 +36,11 @@ servers/tavern-server/
 # CONVENTIONS
 同根目录：TypeScript strict，2 空格缩进，LF 换行，UTF-8，`@/*` 路径别名，Prisma ORM，独立 `npm install`。额外：Zod 参数校验，AES-256-GCM 加密 API Key，Helmet + rate-limit 安全中间件，SSE 流式响应。
 
+# ANTI-PATTERNS
+- ❌ **占位注释** — `src/routes/chat.ts` line 149 `// Clean up if needed` — 客户端断开处理未实现
+- ❌ **无 CI** — 无 GitHub Actions workflow，手动 npm scripts 部署
+- ❌ **类型定义** — `no-explicit-any: off`，类型检查不如其他项目严格
+
 # COMMANDS
 ```bash
 npm run dev                # tsx watch 热重载
