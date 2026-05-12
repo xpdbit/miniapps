@@ -179,7 +179,7 @@ class SuperTaskWindow(FluentWindow):
 | `gui/ui_pyqt/terminal_interface.py` | 终端页 | 200 |
 | `gui/ui_pyqt/history_interface.py` | 历史页 | 80 |
 | `gui/ui_pyqt/worker.py` | LoopManager QThread 子类 | 200 |
-| `plan/supertask/requirements.txt` | 添加 PyQt6 依赖 | 2 行追加 |
+| `tools/supertask/requirements.txt` | 添加 PyQt6 依赖 | 2 行追加 |
 
 **总计**: ~1550 行新代码 + ~400 行改造代码
 
@@ -222,5 +222,5 @@ class SuperTaskWindow(FluentWindow):
 - Python 3.10+ 要求（保持与现有一致）
 - 保留 core/file_manager.py 不变
 - 保留 state/ 和 logs/ 目录结构不变
-- 不修改 plan/ 目录内容
+- 不修改 tools/supertask/ 目录内容（已于 2026-05-12 从 plan/supertask/ 迁移至此）
 - 旧 gui/ui/ 目录保留（不删除），入口改为新路径

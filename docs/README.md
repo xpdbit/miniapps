@@ -31,6 +31,7 @@ docs/
 ├── ARCHITECTURE.md      # 系统架构与数据流（跨项目）
 ├── superpowers/         # Agent 工作文档 (plans/specs)
 ├── .attachments/        # 文档附件
+├── DOCUMENTATION_RULES.md  # 文档编写规则（本文档必须遵守）← 必读
 └── README.md            # ← 当前文件（文档导航）
 ```
 
@@ -47,6 +48,7 @@ docs/
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
 | **部署** | [deploy/](./deploy/) | Docker Compose + Nginx 一键部署到 ECS |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |
+| **文档编写规则** | [DOCUMENTATION_RULES.md](./DOCUMENTATION_RULES.md) | 文档编写规范与模板（新增/修改文档前必读） |
 
 ## 🔗 相关资源
 

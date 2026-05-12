@@ -29,7 +29,7 @@ OpenCode 全局指令 - 中文模式
 ## OVERVIEW
 个人小程序工坊 — 统一 dashboard 集中管理多个微信小程序项目（个人项目，不接外包）。
 当前 3 个子项目：FTG（食物主题生成器）、Game1（挂机放置游戏）、AI-Tavern（AI 角色聊天）。
-Monorepo，7 个独立 TypeScript 项目（3 MiniApp + 3 Server + 1 Dashboard），共 ~750 源文件（不含 node_modules）。
+Monorepo，7 个独立 TypeScript 项目（3 MiniApp + 3 Server + 1 Dashboard）+ 1 个 Python 桌面工具（SuperTask），共 ~780 源文件（不含 node_modules）。
 
 ## STRUCTURE
 ```
@@ -56,6 +56,8 @@ Monorepo，7 个独立 TypeScript 项目（3 MiniApp + 3 Server + 1 Dashboard）
 │   └── superpowers/               # Agent 工作文档
 ├── plan/                          # 项目规划 (tasks/humans/ideas)
 ├── prisma/                        # 统一 Prisma Schema (14表合并)
+├── tools/                         # 开发工具 (Python 桌面应用等)
+│   └── supertask/                 # SuperTask AI 自主开发监督系统 (PyQt6)
 ├── state/                         # 超级任务状态跟踪
 ├── deploy_commands.sh             # 部署命令脚本
 ├── deploy_remote.bat              # 远程部署批处理
@@ -106,6 +108,7 @@ Monorepo，7 个独立 TypeScript 项目（3 MiniApp + 3 Server + 1 Dashboard）
 | Dashboard Game1 服务 | `dashboard/src/services/game1/` | Game1 运营/配置/成就/PVP API |
 | Dashboard Tavern 服务 | `dashboard/src/services/tavern/` | Tavern 角色/审核/统计 API |
 | Dashboard FTG 服务 | `dashboard/src/services/ftg/` | FTG 用户/主题/Class/成就 API |
+| SuperTask 桌面工具 | `tools/supertask/` | Python PyQt6 GUI，AI 开发监督系统 |
 
 ## CODE MAP
 | 符号 | 类型 | 位置 | 角色 |
