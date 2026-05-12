@@ -39,56 +39,19 @@ servers/ftg-server/src/
 └── constants/       # 常量定义
 ```
 
-## API 路由 (挂载于 `/api/v1`)
+## API
 
-| 模块 | 主要端点 | 说明 |
-|------|----------|------|
-| auth | `POST /auth/login`, `GET /auth/me` | 微信登录 + JWT 签发 |
-| users | `GET /users/:id`, `PUT /users/:id`, `GET /leaderboard` | 用户管理 + 排行榜 |
-| food-records | `POST /`, `GET /:id`, `GET /user/:userId`, `DELETE /:id` | 食物记录 CRUD |
-| checkins | `POST /`, `GET /user/:userId`, `GET /stats/streak` | 位置打卡 |
-| stats | `GET /summary`, `GET /calendar`, `GET /distribution` | 数据统计面板 |
-| achievements | `GET /`, `POST /check` | 成就解锁 |
-| themes | `GET /`, `GET /:id`, `POST /`, `PUT /:id` | 主题 CRUD |
-| theme-classes | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` | CSS Class 管理 |
-| theme-render | `POST /render`, `GET /preview/:id` | Markup 模板渲染 |
-| theme-usage | `POST /log`, `GET /stats` | 使用统计 + 短链接 |
-| recognition | `POST /recognize` | PP-ShiTuV2 识别代理 |
-| upload | `POST /`, `GET /uploads/:filename` | 文件上传 (multer) |
-| health | `GET /health` | 健康检查 |
-| admin | `GET /users`, `GET /records` | 管理接口 |
-| api-keys | `POST /`, `GET /`, `DELETE /:id` | API 密钥管理 |
-| location | `POST /ip` | IP 定位 |
+详细 API 路由表（16 个模块）、服务层（16 个服务）、中间件与外部服务配置请见 [API.md](./API.md)。
 
-## 服务层
+## 核心流程
 
-| 服务 | 文件 | 职责 |
-|------|------|------|
-| Auth | `services/auth.service.ts` | JWT 生成/验证 + 微信 code 交换 |
-| User | `services/user.service.ts` | 用户管理 + 排行榜 |
-| Food Record | `services/food-record.service.ts` | 食物记录 CRUD + 分页 |
-| Checkin | `services/checkin.service.ts` | 打卡 + 连续天数计算 |
-| Achievement | `services/achievement.service.ts` | 成就解锁条件判断 |
-| Theme | `services/theme.service.ts` | 主题 CRUD + 使用统计 |
-| Theme Class | `services/theme-class.service.ts` | CSS Class CRUD + 白名单校验 |
-| Theme Render | `services/theme-render.service.ts` | Markup 模板 → HTML/CSS 渲染 |
-| Recognition | `services/recognition.service.ts` | PP-ShiTuV2 HTTP 客户端 (支持 mock 模式) |
-| Pipeline | `services/pipeline.service.ts` | AI 识别流水线编排 |
-| Text Generation | `services/textgen.service.ts` | DashScope AI 文本生成 |
-| Upload | `services/food-record.service.ts` | 文件上传处理 (路由层 upload.ts 实际处理) |
-| Share | `services/share.service.ts` | 分享卡片生成 |
-| Favorite | `services/favorite.service.ts` | 收藏记录管理 |
-| ApiKey | `services/apikey.service.ts` | API 密钥管理 |
-| Location | `services/location.service.ts` | IP 定位服务 |
+```
+拍照 → PP-ShiTuV2 识别 → Pipeline 编排 → 主题渲染 → 卡片生成
+                                              ↓
+                                    用户打卡 → 成就检查 → 统计更新
+```
 
-## 中间件
-
-| 中间件 | 文件 | 用途 |
-|--------|------|------|
-| Auth | `middleware/auth.ts` | JWT 验证，注入 `req.user` |
-| AdminGuard | `middleware/admin-guard.ts` | RBAC 管理员权限检查 |
-| RateLimit | `middleware/rate-limit.ts` | 按路由的速率限制 |
-| Upload | `middleware/upload.ts` | Multer 文件上传配置 |
+支持**位置打卡、连续天数统计、排行榜、API 密钥管理**。
 
 ## CI/CD
 
@@ -106,11 +69,7 @@ Dockerfile: 多阶段构建 (node:20-alpine builder → dist runner, 非 root `a
 - 管理: AdminUser, Project, AuditLog
 - 枚举: FoodType, PipelineStatus, AdminRole, AdminStatus, ProjectStatus
 
-## 外部服务
+---
 
-| 服务 | 协议 | 用途 |
-|------|------|------|
-| PP-ShiTuV2 (Docker) | HTTP API (port 5000) | 食物识别 |
-| DashScope (通义千问) | HTTP API | AI 文本生成 |
-| Redis 7 | TCP (port 6379) | 缓存 / 会话 |
-| WeChat API | HTTPS | code 换 session_key / openid |
+> 最后更新: 2026-05-13
+> 修改: 精简 README，API 路由表迁移至 API.md

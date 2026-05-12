@@ -43,7 +43,7 @@ docs/
 | **FTG 后端 API** | [servers/ftg-server/](./servers/ftg-server/) | 项目说明、16 个路由模块 |
 | **Game1 小程序** | [apps/game1-miniapp/](./apps/game1-miniapp/) | Unity 挂机放置游戏·小程序重构方案 |
 | **Game1 后端 API** | [servers/game1-server/](./servers/game1-server/) | 云端存档·PVP·成就系统·10 路由模块 |
-| **AI-Tavern 小程序** | [apps/tavern-miniapp/](../apps/tavern-miniapp/AGENTS.md) | Taro 4.x 角色聊天·SSE 流式·角色市场（参考 AGENTS.md） |
+| **AI-Tavern 小程序** | [apps/tavern-miniapp/](./apps/tavern-miniapp/) | Taro 4.x 角色聊天·SSE 流式·角色市场 |
 | **AI-Tavern 后端 API** | [servers/tavern-server/](./servers/tavern-server/) | AI 角色聊天·SSE·角色卡市场·10 路由模块 |
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
 | **部署** | [deploy/](./deploy/) | Docker Compose + Nginx 一键部署到 ECS |
@@ -54,3 +54,8 @@ docs/
 
 - [规划文档](../plan/) — 项目规划与任务分解
 - [域名配置](../domain.config.js) — 所有 Taro 项目的 API_BASE 编译时配置
+
+---
+
+> 最后更新: 2026-05-13
+> 修改: 更新 tavern-miniapp 文档索引链接
