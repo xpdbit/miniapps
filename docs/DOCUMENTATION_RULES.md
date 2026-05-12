@@ -74,6 +74,7 @@ docs/<project>/
 
 - **Server 项目**：必须包含 README.md + API.md（路由表）
 - **MiniApp 项目**：必须包含 README.md
+- **Tools 项目**（`tools/` 下的桌面工具、CLI 工具等）：必须包含 README.md（≤80行），描述用途、技术栈、快速开始
 - **Game1 MiniApp**：README.md 作为重构方案已超长，考虑拆分为 `DESIGN.md`
 
 ---
@@ -312,5 +313,5 @@ npm run dev
 
 ---
 
-> 最后更新: 2026-05-12
-> 修改: 首次创建本文档
+> 最后更新: 2026-05-13
+> 修改: 新增 Tools 项目文档规则（Section 2.3）
