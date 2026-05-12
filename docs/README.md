@@ -28,6 +28,8 @@ docs/
 │   └── README.md
 ├── deploy/              # Docker/Nginx 部署配置
 │   └── README.md
+├── tools/
+│   └── supertask/       # AI 自主开发监督系统
 ├── ARCHITECTURE.md      # 系统架构与数据流（跨项目）
 ├── superpowers/         # Agent 工作文档 (plans/specs)
 ├── .attachments/        # 文档附件
@@ -46,6 +48,7 @@ docs/
 | **AI-Tavern 小程序** | [apps/tavern-miniapp/](./apps/tavern-miniapp/) | Taro 4.x 角色聊天·SSE 流式·角色市场 |
 | **AI-Tavern 后端 API** | [servers/tavern-server/](./servers/tavern-server/) | AI 角色聊天·SSE·角色卡市场·10 路由模块 |
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
+| **SuperTask 桌面工具** | [tools/supertask/](./tools/supertask/) | PyQt6 AI 自主开发监督系统 |
 | **部署** | [deploy/](./deploy/) | Docker Compose + Nginx 一键部署到 ECS |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |
 | **文档编写规则** | [DOCUMENTATION_RULES.md](./DOCUMENTATION_RULES.md) | 文档编写规范与模板（新增/修改文档前必读） |
@@ -58,4 +61,4 @@ docs/
 ---
 
 > 最后更新: 2026-05-13
-> 修改: 更新 tavern-miniapp 文档索引链接
+> 修改: 新增 tools/supertask 文档索引
