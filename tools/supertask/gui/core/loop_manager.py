@@ -717,19 +717,29 @@ class LoopManager(QThread):
             daemon=True,
         ).start()
 
-    def _run_plan_phase(self, prompt: str, callback=None):
-        """后台线程：执行 AI 规划，完成后回调"""
-        try:
-            success, output = self._run_prompt(
-                prompt,
-                phase_name="任务规划",
-                completion_signal=self.COMPLETION_SIGNAL,
-            )
-            if callback:
-                callback(output if success else "")
-        finally:
-            with self._manual_lock:
-                self._manual_running.discard("plan")
+        def _run_plan_phase(self, prompt: str, callback=None):
+            """后台线程：执行 AI 规划，完成后回调"""
+            try:
+                # 检查是否被中断
+                if self.isInterruptionRequested():
+                    if callback:
+                        callback("")
+                    return
+                # 检查是否被中断
+                if self.isInterruptionRequested():
+                    if callback:
+                        callback("")
+                    return
+                success, output = self._run_prompt(
+                    prompt,
+                    phase_name="任务规划",
+                    completion_signal=self.COMPLETION_SIGNAL,
+                )
+                if callback:
+                    callback(output if success else "")
+            finally:
+                with self._manual_lock:
+                    self._manual_running.discard("plan")
 
     def _run_manual_phase(self, phase: str, project_name: str = None):
         """后台线程包装：执行阶段方法，完成后清理运行标志"""

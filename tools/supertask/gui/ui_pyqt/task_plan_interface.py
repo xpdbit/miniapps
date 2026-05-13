@@ -6,7 +6,7 @@
 import re
 import yaml
 
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                                QTextEdit, QSplitter, QScrollArea,
                                QButtonGroup, QRadioButton, QCheckBox,
                                QSizePolicy)
@@ -72,7 +72,14 @@ class QuestionCard(SimpleCardWidget):
                     font-size: 13px;
                     spacing: 8px;
                 }
-                QRadioButton::indicator, QCheckBox::indicator {
+                QRadioButton::indicator {
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid #30363d;
+                    border-radius: 8px;
+                    background: #0d1117;
+                }
+                QCheckBox::indicator {
                     width: 16px;
                     height: 16px;
                     border: 2px solid #30363d;
@@ -209,6 +216,21 @@ questions:
         self._start_btn.clicked.connect(self._on_start_plan)
         left_layout.addWidget(self._start_btn)
 
+        # 取消按钮（初始隐藏，规划进行时显示）
+        self._cancel_btn = PushButton("⏹ 取消规划")
+        self._cancel_btn.setVisible(False)
+        self._cancel_btn.clicked.connect(self._on_cancel_plan)
+        self._cancel_btn.setStyleSheet("""
+            QPushButton {
+                color: #f85149;
+                border-color: #f85149;
+            }
+            QPushButton:hover {
+                background-color: rgba(248, 81, 73, 0.15);
+            }
+        """)
+        left_layout.addWidget(self._cancel_btn)
+
         # 分隔线
         left_layout.addSpacing(8)
         sep = self._make_separator()
@@ -297,7 +319,6 @@ questions:
 
     @staticmethod
     def _make_separator():
-        from PyQt6.QtWidgets import QFrame
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setStyleSheet("color: #30363d;")
@@ -321,6 +342,8 @@ questions:
             return
 
         self._start_btn.setEnabled(False)
+        self._start_btn.setVisible(False)
+        self._cancel_btn.setVisible(True)
         self._start_btn.setText("⏳ 规划中...")
         self._status_label.setText("正在与 AI 沟通，生成规划问题...")
         self._status_label.setStyleSheet("color: #d29922; font-size: 11px;")
@@ -343,8 +366,7 @@ questions:
 
     def _process_plan_result(self, output: str):
         """在主线程中处理 AI 返回的规划结果"""
-        self._start_btn.setEnabled(True)
-        self._start_btn.setText("🚀 开始规划")
+        self._reset_plan_ui()
 
         if not output:
             self._status_label.setText("规划失败：AI 未返回结果")
@@ -409,6 +431,7 @@ questions:
         """清空所有状态"""
         self._input_edit.clear()
         self._clear_cards()
+        self._reset_plan_ui()
         self._status_label.setText(
             "输入任务描述并点击「开始规划」以生成问题"
         )
@@ -432,6 +455,21 @@ questions:
             card.get_selected() for card in self._cards
         )
         self._submit_btn.setEnabled(all_ready)
+
+    def _on_cancel_plan(self):
+        """取消当前规划操作"""
+        if self._loop:
+            self._loop.requestInterruption()
+        self._reset_plan_ui()
+        self._status_label.setText("规划已取消")
+        self._status_label.setStyleSheet("color: #d29922; font-size: 11px;")
+
+    def _reset_plan_ui(self):
+        """重置规划 UI 状态"""
+        self._start_btn.setVisible(True)
+        self._start_btn.setEnabled(True)
+        self._start_btn.setText("🚀 开始规划")
+        self._cancel_btn.setVisible(False)
 
     # ─── 提交选择 ─────────────────────────
 
@@ -484,3 +522,6 @@ questions:
             duration=3000,
             parent=self,
         )
+
+
+

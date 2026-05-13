@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """agent_status_interface.py — Agent 状态监控面板（当前阶段 + sub-agent 列表 + 耗时）"""
 import time
 
@@ -150,8 +150,8 @@ class PhaseStatusBar(QFrame):
             self._model_label.setText(model)
             self._model_hint.setText("模型")
         else:
-            self._model_label.setText("")
-            self._model_hint.setText("")
+            self._model_label.setText("—")
+            self._model_hint.setText("模型未识别")
 
     def clear(self):
         """重置为空闲状态"""

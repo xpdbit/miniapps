@@ -41,7 +41,7 @@ class HistoryTableWidget(TableWidget):
         self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.setEditTriggers(TableWidget.EditTrigger.NoEditTriggers)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.setSelectionMode(TableWidget.SelectionMode.MultiSelection)
+        self.setSelectionMode(TableWidget.SelectionMode.NoSelection)
         self.setSortingEnabled(True)
 
         self._last_clicked_row = -1  # Shift 多选锚点
@@ -212,7 +212,7 @@ class HistoryInterface(QWidget):
 
     # ─── 获取当前标签页选中 ID ────────────────
 
-    def _get_current_checked_ids(self) -> list[int]:
+    def _get_current_selected_ids(self) -> list[int]:
         """获取当前可见标签页中所有选中行的 ID"""
         current_widget = self._tab.currentWidget()
         if current_widget == self._done_tab:
@@ -225,7 +225,7 @@ class HistoryInterface(QWidget):
 
     def _on_delete_clicked(self):
         """删除选中历史记录"""
-        ids = self._get_current_checked_ids()
+        ids = self._get_current_selected_ids()
         if not ids:
             return
         if self._on_delete_cb:
@@ -233,7 +233,7 @@ class HistoryInterface(QWidget):
 
     def _on_revert_clicked(self):
         """回归选中历史记录至提议"""
-        ids = self._get_current_checked_ids()
+        ids = self._get_current_selected_ids()
         if not ids:
             return
         if self._on_revert_cb:
