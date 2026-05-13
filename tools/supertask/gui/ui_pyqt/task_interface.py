@@ -58,6 +58,7 @@ class TaskInterface(QWidget):
         self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._table.setSortingEnabled(True)
         self._table.currentCellChanged.connect(self._on_selection_changed)
         self._table.cellClicked.connect(self._on_proposal_cell_clicked)
         proposed_layout.addWidget(self._table)
@@ -85,6 +86,7 @@ class TaskInterface(QWidget):
         self._queue_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._queue_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._queue_table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self._queue_table.setSortingEnabled(True)
         self._queue_table.cellClicked.connect(self._on_queue_cell_clicked)
         queue_layout.addWidget(self._queue_table)
 

@@ -1,0 +1,12 @@
+prompts:
+  explore: ''
+  update_proposed: ''
+  execute: ''
+ui:
+  theme: dark
+agent:
+  timeout: 600
+behavior:
+  auto_push: false
+  cycle_interval: 5
+  max_retries: 2

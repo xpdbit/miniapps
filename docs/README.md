@@ -61,4 +61,4 @@ docs/
 ---
 
 > 最后更新: 2026-05-13
-> 修改: 新增 tools/supertask 文档索引
+> 修改: tools/supertask 控制面板布局、日志命名规范更新

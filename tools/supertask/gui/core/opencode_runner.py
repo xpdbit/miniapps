@@ -4,22 +4,58 @@ opencode_runner.py — 调用 opencode CLI 子进程
 发送指令，捕获输出，支持超时和错误处理
 """
 
-import subprocess
 import os
+import subprocess
+import sys
+import threading
 import time
 from typing import Tuple, Optional
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
 
+def _kill_process_tree(proc: subprocess.Popen, timeout: int = 5):
+    """跨平台安全终止进程树。
+    Unix: 向进程组发 SIGTERM/SIGKILL。
+    Windows: 使用 taskkill /T 递归终止。"""
+    if not proc or proc.poll() is not None:
+        return
+    try:
+        if sys.platform == "win32":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True, timeout=timeout,
+            )
+        else:
+            import signal
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                proc.wait(timeout=2)
+    except Exception:
+        try:
+            proc.kill()
+            proc.wait(timeout=2)
+        except Exception:
+            pass
+
+
 class OpencodeRunner(QObject):
-    """opencode CLI 调用器"""
+    """opencode CLI 调用器 — 使用后台读取线程避免 Windows 管道阻塞"""
 
     def __init__(self, working_dir: str, timeout: int = 600, parent=None):
         super().__init__(parent)
         self.working_dir = working_dir
         self.timeout = timeout
         self._process: Optional[subprocess.Popen] = None
+        self._exit_code: Optional[int] = None   # 最后退出的进程 exit code
+        # 后台读取线程（解决 Windows select.select 不支持管道的问题）
+        self._reader_thread: Optional[threading.Thread] = None
+        self._reader_lock = threading.Lock()
+        self._lines: list[str] = []            # 缓冲的行队列
+        self._reader_eof = False               # 读取线程是否已读到 EOF
 
     def run(self, prompt: str) -> Tuple[bool, str]:
         """同步调用 opencode（通过 stdin 传递 prompt），返回 (success, output)"""
@@ -46,6 +82,12 @@ class OpencodeRunner(QObject):
 
     def run_async_start(self, prompt: str) -> bool:
         """异步启动 opencode 进程，返回是否成功启动"""
+        # 先清理任何残留进程
+        if self._process:
+            _kill_process_tree(self._process)
+            self._process = None
+            time.sleep(0.3)
+
         try:
             self._process = subprocess.Popen(
                 ["opencode", "run"],
@@ -67,23 +109,57 @@ class OpencodeRunner(QObject):
             try:
                 self._process.wait(timeout=0.5)
                 # 进程已退出 → opencode 未找到或启动失败
+                self._exit_code = self._process.returncode
                 self._process = None
                 return False
             except subprocess.TimeoutExpired:
                 # 进程仍在运行 → 启动成功
+                self._exit_code = None
+                self._reader_eof = False
+                self._lines.clear()
+                # 启动后台读取线程
+                self._start_reader()
                 return True
         except Exception:
             self._process = None
+            self._exit_code = -1
             return False
 
-    def read_line(self) -> Optional[str]:
-        """读取一行异步输出"""
-        if not self._process or not self._process.stdout:
-            return None
+    def _start_reader(self):
+        """启动后台管道读取线程"""
+        self._reader_thread = threading.Thread(
+            target=self._reader_loop, daemon=True,
+        )
+        self._reader_thread.start()
+
+    def _reader_loop(self):
+        """后台线程：持续从管道读取行，写入缓冲队列"""
+        proc = self._process
+        if not proc or not proc.stdout:
+            return
         try:
-            return self._process.stdout.readline()
-        except Exception:
-            return None
+            while True:
+                line = proc.stdout.readline()
+                if not line:
+                    break  # EOF
+                with self._reader_lock:
+                    self._lines.append(line)
+        except (OSError, ValueError):
+            pass
+        finally:
+            self._reader_eof = True
+
+    def read_line(self) -> Optional[str]:
+        """从缓冲队列取一行（非阻塞，无数据返回 None）"""
+        with self._reader_lock:
+            if self._lines:
+                return self._lines.pop(0)
+        return None
+
+    def has_output(self, timeout: float = 0.01) -> bool:
+        """检查缓冲队列是否有数据（非阻塞）"""
+        with self._reader_lock:
+            return len(self._lines) > 0
 
     def is_running(self) -> bool:
         """检查异步进程是否在运行"""
@@ -92,14 +168,98 @@ class OpencodeRunner(QObject):
         return self._process.poll() is None
 
     def kill(self):
-        """终止子进程"""
+        """终止子进程（整个进程树），等待读取线程结束"""
         if self._process:
+            _kill_process_tree(self._process)
+            self._exit_code = self._process.returncode
+            # 等待读取线程检测到 EOF 后退出
+            reader = self._reader_thread
+            if reader and reader.is_alive():
+                reader.join(timeout=3)
+            self._process = None
+
+    def is_eof(self) -> bool:
+        """读取线程是否已到达 EOF（进程输出完毕）"""
+        return self._reader_eof
+
+    def run_with_completion_signal(self, prompt: str, timeout: int = 600,
+                                    completion_signal: str = "===TASK_DONE===") -> Tuple[bool, str]:
+        """异步启动 opencode，读取输出直到检测到 completion_signal 或超时后 kill 进程返回。
+        用于 /ulw-loop 模式（进程不会自动退出，需通过信号判断完成）。"""
+        import select as _select
+        try:
+            process = subprocess.Popen(
+                ["opencode", "run"],
+                cwd=self.working_dir,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                shell=True,
+            )
+            if process.stdin:
+                process.stdin.write(prompt)
+                process.stdin.close()
+
+            output_parts: list[str] = []
+            start_time = time.time()
+            signal_found = False
+
+            while True:
+                # 超时检查
+                if time.time() - start_time > timeout:
+                    process.kill()
+                    process.wait(timeout=5)
+                    output = "".join(output_parts)
+                    return False, output + f"\n[超时 {timeout}s，未收到完成信号]"
+
+                # 进程已退出（兼容非 /ulw-loop 模式）
+                if process.poll() is not None:
+                    break
+
+                # 尝试非阻塞读取一行
+                if process.stdout:
+                    try:
+                        r, _, _ = _select.select([process.stdout], [], [], 1.0)
+                        if r:
+                            line = process.stdout.readline()
+                            if line:
+                                output_parts.append(line)
+                                if completion_signal in line:
+                                    signal_found = True
+                                    break
+                    except (OSError, ValueError):
+                        line = process.stdout.readline()
+                        if not line:
+                            time.sleep(0.1)
+                            continue
+                        output_parts.append(line)
+                        if completion_signal in line:
+                            signal_found = True
+                            break
+
+            # 信号已找到 或 进程自然退出 → 先 kill 进程（避免 read() 死锁），再读取剩余输出
             try:
-                self._process.kill()
-                self._process.wait(timeout=5)
+                process.kill()
+                process.wait(timeout=5)
             except Exception:
                 pass
-            self._process = None
+
+            if process.stdout:
+                try:
+                    remaining = process.stdout.read()
+                    if remaining:
+                        output_parts.append(remaining)
+                except Exception:
+                    pass
+
+            output = "".join(output_parts)
+            return signal_found, output.strip()
+
+        except Exception as e:
+            return False, f"异常: {str(e)}"
 
     def get_git_commit(self) -> str:
         """获取最新 commit hash"""
