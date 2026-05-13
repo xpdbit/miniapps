@@ -5,8 +5,15 @@ prompts:
 ui:
   theme: dark
 agent:
-  timeout: 600
+  timeout: 1200
 behavior:
   auto_push: false
   cycle_interval: 5
   max_retries: 2
+  # Worktree 隔离执行（每个任务在独立 git worktree 中执行）
+  use_worktree: false
+  worktrees_dir: ".worktrees"
+  # 会话持久化与断点续跑
+  checkpoint_interval: 300
+  max_sessions: 10
+  auto_resume: false

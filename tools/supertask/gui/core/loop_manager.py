@@ -4,17 +4,24 @@ loop_manager.py — 主循环调度 (PyQt6 QThread)
 阶段: 执行批准任务 → 更新待审批 → 探索与提议 → 收尾
 """
 
+import os
 import re
+import subprocess
+import sys
 import threading
 import time
 import yaml
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from .file_manager import FileManager
 from .opencode_runner import OpencodeRunner
+from .prompt_manager import PromptManager
+from .worktree_manager import WorktreeManager
+from .session_manager import SessionManager, SessionState
 
 
 # ─── Agent 状态追踪数据结构 ──────────────────
@@ -34,13 +41,35 @@ class AgentState:
 
 class AgentTracker:
     """解析 opencode 输出文本，实时追踪 agent/sub-agent 活动。
-    通过正则匹配 opencode 的输出格式（task() 调用 / 后台任务完成通知）
-    来检测 agent 的创建和完成事件。"""
+    
+    支持两级解析：
+    1. 结构化标记 [SUPERTASK:event ...] — 高精度，由 prompt 引导 agent 输出
+    2. 正则匹配 opencode 原生格式 — 回退方案，兼容未启用结构化标记的旧 prompt
+    """
 
-    # 匹配 task(subagent_type="X", ...) 调用
-    _TASK_RE = re.compile(r'task\(subagent_type\s*=\s*"(\w+)"')
-    # 匹配 Task ID / task_id 提取
-    _TASK_ID_RE = re.compile(r'(?:Task ID|task_id)[:\s]*`?(\S+)`?')
+    # ─── 结构化事件标记（优先级高于正则） ───
+    # 格式: [SUPERTASK:agent_start id=xxx type=xxx preview="xxx"]
+    _STRUCTURED_EVENT_RE = re.compile(
+        r'\[SUPERTASK:(agent_start|agent_done|agent_error)\s+([^\]]+)\]'
+    )
+    # 解析 key=value 或 key="value" 对
+    _KV_RE = re.compile(r'(\w+)=(?:"([^"]*)"|(\S+))')
+
+    # task() 调用的已知类别（降低假阳性）
+    _KNOWN_CATEGORIES = frozenset({
+        # subagent_type (旧版)
+        "explore", "librarian", "oracle", "hephaestus", "metis", "momus",
+        # category (新版)
+        "visual-engineering", "artistry", "ultrabrain", "deep", "quick",
+        "unspecified-low", "unspecified-high", "writing",
+    })
+
+    # 匹配 task(subagent_type="X", ...) 调用（旧版语法）
+    _TASK_RE = re.compile(r'task\(subagent_type\s*=\s*["\'](\w+)["\']')
+    # 匹配 task(category="X", ...) 调用（新版语法）
+    _CATEGORY_TASK_RE = re.compile(r'task\(category\s*=\s*["\']([^"\']+)["\']')
+    # 匹配 Task ID / task_id 提取（仅匹配单词字符+连字符，避免包含尾随逗号）
+    _TASK_ID_RE = re.compile(r'(?:Task ID|task_id)[:\s]*`?([\w-]+)`?')
     # 匹配后台任务完成通知（跨行缓冲：先捕获 [BACKGROUND TASK COMPLETED]，再在后续行中匹配 ID）
     _BG_DONE_RE = re.compile(r'\[BACKGROUND TASK COMPLETED\]')
     _BG_ID_RE = re.compile(r'\*\*ID:\*\*\s*`(\S+)`')
@@ -81,6 +110,62 @@ class AgentTracker:
         # 先去 ANSI 残余，再去包装字符和标点
         clean = AgentTracker._ANSI_RE.sub('', name)
         return clean.strip('`\'" \t.,;:!?')
+
+    def _parse_structured_events(self, clean_line: str) -> list[dict]:
+        """解析结构化事件标记 [SUPERTASK:event key=value ...]
+
+        支持的标记格式:
+          [SUPERTASK:agent_start id=xxx type=explore preview="任务描述"]
+          [SUPERTASK:agent_done id=xxx]
+          [SUPERTASK:agent_error id=xxx]
+
+        Returns: 事件列表（与 feed_line 返回值格式兼容）
+        """
+        events = []
+        for m in self._STRUCTURED_EVENT_RE.finditer(clean_line):
+            event_type = m.group(1)  # agent_start / agent_done / agent_error
+            payload = m.group(2)     # key=value 对
+
+            # 解析 key=value 对
+            props: dict[str, str] = {}
+            for kv in self._KV_RE.finditer(payload):
+                key = kv.group(1)
+                value = kv.group(2) if kv.group(2) is not None else kv.group(3)
+                props[key] = value
+
+            agent_id = props.get("id", "")
+            if not agent_id:
+                continue
+
+            if event_type == "agent_start":
+                agent_type = props.get("type", "unknown")
+                if agent_type not in self._KNOWN_CATEGORIES:
+                    continue  # 未知类型，忽略
+                if agent_id not in self.agents:
+                    preview = props.get("preview", "")
+                    self.agents[agent_id] = AgentState(
+                        agent_id=agent_id,
+                        agent_type=agent_type,
+                        model=self._global_model,
+                        status="running",
+                        start_time=time.time(),
+                        preview=preview,
+                    )
+                    events.append({"type": "agent_started", "id": agent_id, "agent_type": agent_type})
+
+            elif event_type == "agent_done":
+                if agent_id in self.agents:
+                    self.agents[agent_id].status = "done"
+                    self.agents[agent_id].end_time = time.time()
+                    events.append({"type": "agent_done", "id": agent_id})
+
+            elif event_type == "agent_error":
+                if agent_id in self.agents:
+                    self.agents[agent_id].status = "error"
+                    self.agents[agent_id].end_time = time.time()
+                    events.append({"type": "agent_error", "id": agent_id})
+
+        return events
 
     def __init__(self):
         self.agents: dict[str, AgentState] = {}
@@ -141,11 +226,21 @@ class AgentTracker:
 
     def feed_line(self, line: str) -> list[dict]:
         """解析一行输出文本，返回检测到的事件列表。
-        每个事件 dict: {"type": "agent_started"|"agent_done"|"agent_error", ...}"""
+        每个事件 dict: {"type": "agent_started"|"agent_done"|"agent_error", ...}
+
+        优先级：结构化标记 [SUPERTASK:*] > 正则匹配 opencode 原生格式
+        """
         events: list[dict] = []
 
         # 先去除 ANSI 转义码（stdout 管道原始输出含颜色码）
         clean_line = self._strip_ansi(line)
+
+        # ── 结构化事件标记（优先级最高） ──
+        structured_events = self._parse_structured_events(clean_line)
+        if structured_events:
+            events.extend(structured_events)
+            # 结构化标记成功后，跳过正则解析（避免重复计数）
+            return events
 
         # ── 主编排器类型检测 ──
         if not self._main_agent_type:
@@ -204,26 +299,30 @@ class AgentTracker:
 
         # 检测 task() 调用 — agent 启动
         m = self._TASK_RE.search(line)
+        if not m:
+            m = self._CATEGORY_TASK_RE.search(line)
         if m:
             agent_type = m.group(1)
-            tid_match = self._TASK_ID_RE.search(line)
-            agent_id = tid_match.group(1) if tid_match else f"agent_{len(self.agents) + 1}"
-            if agent_id not in self.agents:
-                # 从 task() 调用行提取 description 作为 preview
-                desc_match = self._DESC_RE.search(line)
-                preview = desc_match.group(1) if desc_match else ""
-                # 提取 task() 调用中显式指定的 model 参数
-                model_match = self._TASK_MODEL_RE.search(line)
-                agent_model = model_match.group(1) if model_match else self._global_model
-                self.agents[agent_id] = AgentState(
-                    agent_id=agent_id,
-                    agent_type=agent_type,
-                    model=agent_model,
-                    status="running",
-                    start_time=time.time(),
-                    preview=preview,
-                )
-                events.append({"type": "agent_started", "id": agent_id, "agent_type": agent_type})
+            # 降低假阳性：仅对已知类别创建 agent 记录
+            if agent_type in self._KNOWN_CATEGORIES:
+                tid_match = self._TASK_ID_RE.search(line)
+                agent_id = tid_match.group(1) if tid_match else f"agent_{len(self.agents) + 1}"
+                if agent_id not in self.agents:
+                    # 从 task() 调用行提取 description 作为 preview
+                    desc_match = self._DESC_RE.search(line)
+                    preview = desc_match.group(1) if desc_match else ""
+                    # 提取 task() 调用中显式指定的 model 参数
+                    model_match = self._TASK_MODEL_RE.search(line)
+                    agent_model = model_match.group(1) if model_match else self._global_model
+                    self.agents[agent_id] = AgentState(
+                        agent_id=agent_id,
+                        agent_type=agent_type,
+                        model=agent_model,
+                        status="running",
+                        start_time=time.time(),
+                        preview=preview,
+                    )
+                    events.append({"type": "agent_started", "id": agent_id, "agent_type": agent_type})
 
         # 检测后台任务完成通知（跨行缓冲）
         if self._BG_DONE_RE.search(line):
@@ -338,146 +437,8 @@ class LoopSignals(QThread):
 class LoopManager(QThread):
     """主循环调度器 — QThread 版本"""
 
-    # 已知项目目录映射（用于指定项目探索）
-    PROJECT_DIRS = {
-        "ftg": "（主目录 apps/ftg-miniapp/，后端 servers/ftg-server/）",
-        "game1": "（主目录 apps/game1-miniapp/，后端 servers/game1-server/）",
-        "tavern": "（主目录 apps/tavern-miniapp/，后端 servers/tavern-server/）",
-    }
-
-    PROMPT_EXPLORE = """/ulw-loop
-请探索{project_filter}（忽略 plan/ 和 .git），发现需要改进的领域，生成 **粗粒度** 的任务提议。
-
-重点关注：
-- 需要修复一批相关文件的问题（如：某个模块的类型错误、API 路由缺少校验）
-- 可以增加的一项独立功能（如：添加数据导出功能、新增筛选条件）
-- 需要重构的模块（如：将某个组件拆分为更小的子组件）
-
-## 任务粒度指南（基于 AI Agent 工程最佳实践）
-- 每项任务应可由一个 agent 会话在 20 分钟内完成（3-8 个 tool call）
-- 采用垂直切片：按功能路径而非技术层次分解（例如 "添加用户创建流程" 而非 "建表+API+前端" 三个独立任务）
-- 如果任务描述超过 150 字，很可能过大，应考虑拆分
-- 不要将多个独立项目的工作合并为一个任务（如 "Dashboard 拆分 + Tavern 补齐" 应分开）
-
-**不要** 生成过于细节的任务（如修改单行代码、修复单个变量名、添加单条注释）。
-每项提议应涉及多个文件的修改或一项完整功能，但不应超过 3 个独立模块。
-
-将任务列表以 YAML 格式写入 state/proposed_tasks.yaml，格式如下：
-```yaml
-- id: 1
-  description: 任务描述（适中粒度，3-8 个 tool call 可完成）
-  status: proposed
-- id: 2
-  description: 任务描述
-  status: proposed
-```
-
-注意：仅写入 YAML 文件，不要执行任何任务，不要修改其他文件。
-
-## 🚫 严禁事项（违反会导致 opencode 终止会话）
-- ❌ 输出纯文本等待消息，例如 "waiting...", "<!-- 等待 -->", "正在等待...", "稍等..."
-- ❌ 输出任何不含 tool call 的纯文本段落
-- ✅ 如果无事可做，直接执行下一步或用 Read/Glob 探索代码库
-- ✅ 每一条文本输出之后，必须立即跟随至少一个 tool call
-
-完成后请输出 ===TASK_DONE===
-"""
-
     # Ultraworker 完成信号 — agent 输出此信号后 runner 自动 kill 进程
     COMPLETION_SIGNAL = "===TASK_DONE==="
-
-    PROMPT_EXECUTE = """/ulw-loop
-请执行以下开发任务：
-
-任务描述：{desc}
-
-## ⏱ 时间管理（本次超时限制约 20 分钟）
-1. 如果任务很大，优先完成核心部分，非关键细节可延后
-2. 每 5 分钟检查剩余时间 — 如果只剩 3 分钟，立即收尾并标记部分完成
-3. 不要把时间花在过度探索上：读取 3-5 个关键文件足够理解上下文即可
-
-## 执行步骤
-1. 快速理解任务要求（Read/Grep 关键文件，不超过 30 秒）
-2. 制定简要执行计划（不超过 3 步），立即开始实施
-3. 执行修改，完成后验证
-4. 修改 state/approved_queue.yaml 中对应项的 status 为 done
-5. 若遇到无法自动完成的错误，将 status 改为 error，并在 error 字段中附加原因
-6. 若需追加新任务，写入 proposed_tasks.yaml（status: proposed，待人工审批）
-7. 忽略 plan 文件夹
-
-## 🔄 后台子任务等待策略（⚠ 违反会导致 opencode 终止会话）
-如果你派出了后台子任务（task(run_in_background=true)），必须用 background_output 轮询，而不是输出等待文本：
-- ✅ 正确：直接调用 background_output(task_id="xxx") 检查结果
-- ✅ 如果结果尚未就绪，立即做其他有用的 tool call（Read/Glob/Grep）
-- ❌ 错误：输出 "waiting...", "<!-- 等待 -->", "正在等待...", "稍等..."
-- ❌ 错误：输出任何不含 tool call 的纯文本段落
-- ❌ 错误：输出 "still running...", "plan agent 仍在运行中..."
-
-## 🚫 严禁事项
-- ❌ 输出纯文本等待消息
-- ❌ 输出任何不含 tool call 的纯文本段落
-- ✅ 每一条文本输出之后，必须立即跟随至少一个 tool call
-
-完成后请输出 ===TASK_DONE===
-"""
-
-    PROMPT_UPDATE_PROPOSED = """/ulw-loop
-以下是当前待审批任务列表：
-
-{content}
-
-请根据项目最新状态逐一检查每项：
-- 已完成的任务标记 status: done
-- 不再有效的任务标记 status: cancelled
-- 需要调整描述的更新 description
-- 可补充新任务（粗粒度：至少涉及多个文件或一项完整功能）
-
-将更新后的完整列表写回 state/proposed_tasks.yaml（保持 YAML 格式）。
-注意：仅更新 YAML 文件，不要执行任务。
-
-## 🚫 严禁事项（违反会导致 opencode 终止会话）
-- ❌ 输出纯文本等待消息，例如 "waiting...", "<!-- 等待 -->", "正在等待...", "稍等..."
-- ❌ 输出任何不含 tool call 的纯文本段落
-- ✅ 每一条文本输出之后，必须立即跟随至少一个 tool call
-
-完成后请输出 ===TASK_DONE===
-"""
-
-    PROMPT_VERIFY_DELIVERABLES = """/ulw-loop
-你是一个代码审查专家。请检查以下已完成任务的成果实现情况：
-
-{tasks}
-
-## 检查步骤
-对每项已完成的任务：
-1. 阅读任务的 description 字段，准确理解任务的原始要求
-2. 在代码库中搜索任务描述涉及的模块、文件、功能或修复
-3. 仔细验证该功能/修复是否已实际存在于代码库中
-4. 判断实现是否完整、有无遗漏、是否存在缺陷或漏洞
-
-## 判定标准
-- ✅ **已验证通过**: 任务描述的功能已完整、正确地实现在代码库中
-- ⚠️ **需要修补**: 实现不完整、有严重遗漏、存在缺陷或安全漏洞
-
-## 修补任务要求
-对于标记为"需要修补"的任务，请在 state/approved_queue.yaml 中新增修补任务项：
-- description 格式: "【修补】{原任务描述摘要} — {发现的具体问题}"
-- status: "pending"
-- priority: "high"
-- 为新任务分配递增的 id（从现有最大 id + 1 开始）
-
-⚠️ 修补任务直接写入 state/approved_queue.yaml，直接进入工作队列，不要写入 proposed_tasks.yaml。
-
-## 输出要求
-完成后输出简短总结：检查数量 / 问题数量 / 修补任务数量
-
-## 🚫 严禁事项（违反会导致 opencode 终止会话）
-- ❌ 输出纯文本等待消息
-- ❌ 输出任何不含 tool call 的纯文本段落
-- ✅ 每一条文本输出之后，必须立即跟随至少一个 tool call
-
-然后输出 ===TASK_DONE===
-"""
 
     def __init__(self, working_dir: str, state_dir: str, logs_dir: str,
                  parent=None):
@@ -488,6 +449,18 @@ class LoopManager(QThread):
         self._terminal = None  # 可选：终端面板引用
         self._tracker = AgentTracker()  # Agent 状态追踪器
         self.signals = LoopSignals()
+
+        # 提示词管理器（模板目录为 state/prompts/）
+        prompts_dir = os.path.join(state_dir, "prompts")
+        self._prompt_manager = PromptManager(prompts_dir)
+
+        # Worktree 隔离管理器（惰性初始化，首次 use_worktree=true 时创建）
+        self._worktree_manager: Optional[WorktreeManager] = None
+        self._config_use_worktree: bool = False
+
+        # 会话持久化管理器
+        self._session_manager = SessionManager(state_dir)
+        self._config_checkpoint_interval: int = 300  # 默认 5 分钟
 
         self._paused = False
         self._cycle_count = 0       # 总轮次计数
@@ -571,20 +544,18 @@ class LoopManager(QThread):
         return self._paused
 
     def apply_config(self, config: dict):
-        """应用配置：更新 prompts、timeout 等运行时参数"""
-        prompts = config.get("prompts", {})
-        explore = prompts.get("explore", "").strip()
-        update = prompts.get("update_proposed", "").strip()
-        execute = prompts.get("execute", "").strip()
-        if explore:
-            self.PROMPT_EXPLORE = explore
-        elif 'PROMPT_EXPLORE' in self.__dict__:
-            del self.PROMPT_EXPLORE  # 恢复为类默认值
-        if update:
-            self._custom_update_template = update
-        else:
-            self._custom_update_template = None
-        self._custom_execute_template = execute if execute else None
+        """应用配置：更新 prompts、timeout、projects 等运行时参数"""
+        # 提示词配置：支持从 config.yaml 指定自定义模板路径
+        prompts_cfg = config.get("prompts", {})
+        custom_prompts_dir = prompts_cfg.get("dir", "").strip()
+        if custom_prompts_dir:
+            prompts_path = os.path.join(self.fm.state_dir, custom_prompts_dir)
+            self._prompt_manager = PromptManager(prompts_path)
+        # 重新加载缓存（支持配置热更新）
+        self._prompt_manager.reload()
+
+        # 项目配置
+        self._config_projects = config.get("projects", [])
 
         agent_cfg = config.get("agent", {})
         self._config_timeout = agent_cfg.get("timeout", 1200)
@@ -599,6 +570,16 @@ class LoopManager(QThread):
         self._config_cycle_interval = behavior_cfg.get("cycle_interval", 5)
         self._config_max_retries = behavior_cfg.get("max_retries", 2)
         self._config_auto_push = behavior_cfg.get("auto_push", False)
+
+        # Worktree 隔离配置
+        self._config_use_worktree = behavior_cfg.get("use_worktree", False)
+        self._config_worktrees_dir = behavior_cfg.get("worktrees_dir", ".worktrees")
+
+        # 会话持久化配置
+        self._config_checkpoint_interval = behavior_cfg.get("checkpoint_interval", 300)
+        self._config_max_sessions = behavior_cfg.get("max_sessions", 10)
+        self._config_auto_resume = behavior_cfg.get("auto_resume", False)
+        self._session_manager.checkpoint_interval = self._config_checkpoint_interval
 
     def _get_timeout(self) -> int:
         """获取当前配置的超时时间"""
@@ -676,6 +657,24 @@ class LoopManager(QThread):
             target=self._run_manual_phase, args=("update_proposed",), daemon=True,
         ).start()
 
+    def trigger_deploy(self):
+        """手动触发部署至服务端（在后台线程运行，避免阻塞主线程）。
+        运行 deploy/scripts/deploy.sh 脚本将项目部署到远程 ECS 服务器。"""
+        if self.is_running():
+            self._log("warning", "主循环运行中，请先停止后再手动触发")
+            return
+        with self._manual_lock:
+            if self._manual_running:
+                self._log("warning", f"已有操作 {self._manual_running} 运行中，忽略部署触发")
+                return
+            if "deploy" in self._manual_running:
+                self._log("info", "部署已在运行中，忽略重复触发")
+                return
+            self._manual_running.add("deploy")
+        threading.Thread(
+            target=self._run_manual_phase, args=("deploy",), daemon=True,
+        ).start()
+
     def trigger_verify_deliverables(self):
         """手动触发检查已完成任务成果（在后台线程运行，避免阻塞主线程）。
         检查所有 status=done 的任务，验证代码实现率，
@@ -717,29 +716,24 @@ class LoopManager(QThread):
             daemon=True,
         ).start()
 
-        def _run_plan_phase(self, prompt: str, callback=None):
-            """后台线程：执行 AI 规划，完成后回调"""
-            try:
-                # 检查是否被中断
-                if self.isInterruptionRequested():
-                    if callback:
-                        callback("")
-                    return
-                # 检查是否被中断
-                if self.isInterruptionRequested():
-                    if callback:
-                        callback("")
-                    return
-                success, output = self._run_prompt(
-                    prompt,
-                    phase_name="任务规划",
-                    completion_signal=self.COMPLETION_SIGNAL,
-                )
+    def _run_plan_phase(self, prompt: str, callback=None):
+        """后台线程：执行 AI 规划，完成后回调"""
+        try:
+            # 检查是否被中断
+            if self.isInterruptionRequested():
                 if callback:
-                    callback(output if success else "")
-            finally:
-                with self._manual_lock:
-                    self._manual_running.discard("plan")
+                    callback("")
+                return
+            success, output = self._run_prompt(
+                prompt,
+                phase_name="任务规划",
+                completion_signal=self.COMPLETION_SIGNAL,
+            )
+            if callback:
+                callback(output if success else "")
+        finally:
+            with self._manual_lock:
+                self._manual_running.discard("plan")
 
     def _run_manual_phase(self, phase: str, project_name: str = None):
         """后台线程包装：执行阶段方法，完成后清理运行标志"""
@@ -750,6 +744,8 @@ class LoopManager(QThread):
                 self._phase_execute()
             elif phase == "finish":
                 self._phase_finish()
+            elif phase == "deploy":
+                self._phase_deploy()
             elif phase == "update_proposed":
                 self._phase_update_proposed()
             elif phase == "verify":
@@ -759,7 +755,8 @@ class LoopManager(QThread):
                 self._manual_running.discard(phase)
 
     def _run_prompt(self, prompt: str, phase_name: str = "unknown", timeout: int = None,
-                    clear_agents: bool = True, completion_signal: str = None):
+                    clear_agents: bool = True, completion_signal: str = None,
+                    current_session: Optional[SessionState] = None):
         """运行 prompt — terminal 模式使用异步 runner 实时流式输出到终端，
         非 terminal 模式使用同步 runner。
         自动记录 agent 输入/输出到 logs/{date}_terminal.md。
@@ -809,6 +806,7 @@ class LoopManager(QThread):
             _suspend_begin = 0.0    # 本轮暂停开始时间
             last_emit = start_time
             last_agent_emit = start_time  # 独立的 agent 状态刷新计时器
+            last_checkpoint_time = start_time  # 独立的 checkpoint 计时器
 
             while self.runner.is_running():
                 # 非阻塞检查是否有数据可读（Unix: select, Windows: 回退到阻塞读取）
@@ -839,6 +837,16 @@ class LoopManager(QThread):
                 if now - last_agent_emit >= 5.0:
                     self._emit_agent_status_if_changed()
                     last_agent_emit = now
+
+                # 定期 checkpoint（基于配置的 checkpoint_interval）
+                if (current_session and
+                        now - last_checkpoint_time >= self._session_manager.checkpoint_interval):
+                    new_since_last = output_parts[emitted_count:]
+                    self._session_manager.checkpoint(
+                        current_session,
+                        new_output=new_since_last[-100:] if len(new_since_last) > 100 else new_since_last,
+                    )
+                    last_checkpoint_time = now
 
                 if self.isInterruptionRequested():
                     self.runner.kill()
@@ -972,8 +980,80 @@ class LoopManager(QThread):
 
     # ─── 主循环 ────────────────────────────────
 
+    def _recover_interrupted_tasks(self):
+        """崩溃恢复：扫描 approved_queue.yaml 中 status=running 的任务。
+        这些是上次运行时标记为执行中但未完成的任务。
+        策略：将它们重置回 pending 以便重新执行。
+        """
+        approved = self.fm.load_approved()
+        interrupted = [t for t in approved if t.get("status") == "running"]
+
+        if not interrupted:
+            return
+
+        self._log("decision", f"发现 {len(interrupted)} 个中断任务，正在恢复...")
+        for task in interrupted:
+            task_id = task.get("id", "?")
+            desc = str(task.get("description", ""))[:80]
+            fail_count = task.get("fail_count", 0)
+
+            if fail_count >= 2:
+                # 已经失败太多次，标记为放弃
+                task["status"] = "failed_blocked"
+                self.fm.record_to_history(task, "failed_blocked")
+                self._log("error", f"任务 #{task_id} 已失败 {fail_count} 次，阻塞: {desc}")
+            else:
+                # 重置为 pending 等待重新执行
+                task["status"] = "pending"
+                task.pop("started_at", None)
+                task["fail_count"] = fail_count + 1  # 计入一次失败
+                self._log("info", f"任务 #{task_id} 已恢复为 pending: {desc}")
+
+        self.fm.save_approved(approved)
+        self.signals.state_changed.emit()
+
+    def _detect_residual_sessions(self):
+        """启动时扫描残留 session 文件，通知 UI。
+
+        不自动恢复（需用户确认），仅记录并发出信号。
+        如果 auto_resume=true，则自动恢复最近的残留会话。
+        """
+        residual = self._session_manager.detect_residual()
+        if not residual:
+            return
+
+        self._log("decision", f"发现 {len(residual)} 个残留会话（上次异常退出）")
+        for session in residual:
+            summary = self._session_manager.get_summary(session)
+            self._log(
+                "info",
+                f"残留会话: task-{session.task_id} | phase={session.phase} | "
+                f"actions={summary['completed_actions']} | "
+                f"checkpoints={summary['checkpoint_count']}",
+            )
+
+        # 自动恢复模式
+        if self._config_auto_resume:
+            for session in residual:
+                task_id = session.task_id
+                if self._session_manager.can_resume(task_id):
+                    # 将对应任务重置为 pending 以便重新执行
+                    # 实际恢复逻辑在 _phase_execute 中检查
+                    self._log("info", f"自动恢复: task-{task_id} 将在下次执行时恢复进度")
+            # 自动恢复模式：不清理 session，等待 _phase_execute 使用
+        else:
+            # 非自动恢复：仅通知，不处理（用户可在 UI 中操作）
+            self._log("info", "残留会话已记录，可在 Agent 状态面板中查看")
+
+        self.signals.state_changed.emit()
+
     def run(self):
         """主循环：永久运行，直到 stop"""
+        # 启动时执行崩溃恢复
+        self._recover_interrupted_tasks()
+        # 检测残留 session
+        self._detect_residual_sessions()
+
         while not self.isInterruptionRequested():
             if self._paused:
                 time.sleep(1)
@@ -1007,6 +1087,15 @@ class LoopManager(QThread):
                 self.fm.increment_cycle()
                 cycle_wait = getattr(self, '_config_cycle_interval', 5)
                 self._log("info", f"轮次 {self._cycle_count} 完成，等待 {cycle_wait} 秒...")
+
+                # 自动进度存档（每轮次保存一次状态快照）
+                if self._work_done_this_cycle:
+                    try:
+                        self.fm.save_snapshot(label=f"cycle-{self._cycle_count}")
+                        self.fm.cleanup_snapshots(keep=20)
+                    except Exception:
+                        pass  # 快照失败不影响主循环
+
                 self.signals.state_changed.emit()
                 time.sleep(cycle_wait)
 
@@ -1019,7 +1108,7 @@ class LoopManager(QThread):
     # ─── 阶段 ──────────────────────────────────
 
     def _phase_execute(self):
-        """执行批准队列中的任务"""
+        """执行批准队列中的任务（支持 worktree 隔离模式）"""
         approved = self.fm.load_approved()
         pending = [t for t in approved if t.get("status") == "pending"]
 
@@ -1034,6 +1123,7 @@ class LoopManager(QThread):
                 return
 
             desc = task.get("description", "无描述")
+            task_id = task.get("id", idx + 1)
             self._log("approved", f"执行: {desc}")
 
             # ── 任务大小检测：超长描述给出警告 ──
@@ -1043,17 +1133,81 @@ class LoopManager(QThread):
                     f"任务描述较长（{len(desc)} 字），建议拆分为多个小任务以提高成功率",
                 )
 
-            # 使用自定义执行模板（若已配置），否则使用类默认值
-            template = getattr(self, '_custom_execute_template', None) or self.PROMPT_EXECUTE
-            prompt = template.format(desc=desc)
+            prompt = self._prompt_manager.render("execute", desc=desc)
+
+            # ── Session 恢复检查 ──
+            current_session: Optional[SessionState] = None
+            if self._session_manager.can_resume(task_id):
+                current_session = self._session_manager.load(task_id)
+                if current_session:
+                    resume_ctx = self._session_manager.build_resume_context(current_session)
+                    # 将恢复上下文与原 prompt 合并
+                    prompt = self._prompt_manager.render(
+                        "resume",
+                        resume_context=resume_ctx,
+                        original_prompt=prompt,
+                    )
+                    self._log("info", f"恢复会话: task-{task_id}，已完成 {len(current_session.completed_actions)} 个步骤")
+
+            # 创建新 session（如果不需要恢复或恢复 session 不存在）
+            if current_session is None:
+                current_session = self._session_manager.create(task_id, "execute", prompt)
+
+            # 崩溃恢复：执行前将任务标记为 running，记录开始时间
+            task["status"] = "running"
+            task["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.fm.save_approved(approved)
+
+            # ── Worktree 隔离模式 ──
+            wt_name = f"task-{task_id}"
+            if self._config_use_worktree:
+                if self._worktree_manager is None:
+                    worktrees_dir = getattr(self, '_config_worktrees_dir', '.worktrees')
+                    self._worktree_manager = WorktreeManager(
+                        self.working_dir, worktrees_dir,
+                    )
+                try:
+                    wt_path = self._worktree_manager.create(wt_name)
+                    self.runner.set_working_dir(wt_path)
+                    self._log("info", f"Worktree 模式: {wt_path}")
+                except Exception as e:
+                    self._log("error", f"Worktree 创建失败，回退到主目录: {e}")
+                    self.runner.reset_working_dir()
 
             # 首个任务清空 agent 列表，后续任务累加（保留跨任务的 agent 追踪）
             success, output = self._run_prompt(
                 prompt, phase_name=f"执行任务 [{idx + 1}/{len(pending)}]",
                 clear_agents=(idx == 0),
                 completion_signal=self.COMPLETION_SIGNAL,
+                current_session=current_session,
             )
             self.signals.agent_output.emit(output)
+
+            # ── Session 完成/清理 ──
+            if success:
+                if current_session:
+                    self._session_manager.complete(current_session)
+            else:
+                # 失败时保留 session 文件用于后续恢复
+                if current_session:
+                    self._session_manager.checkpoint(
+                        current_session,
+                        completed_actions=[f"失败: {output[:100]}"],
+                    )
+                # 清理旧 session（维持 max_sessions 限制）
+                self._session_manager.purge_old(self._config_max_sessions)
+
+            # ── Worktree 收尾：同步状态 + 清理 ──
+            if self._config_use_worktree and self._worktree_manager:
+                try:
+                    if success:
+                        self._worktree_manager.sync_state(wt_name)
+                    self._worktree_manager.remove(wt_name)
+                except Exception as e:
+                    self._log("warning", f"Worktree 清理异常: {e}")
+                finally:
+                    self.runner.reset_working_dir()
+
             if self._is_terminal_mode():
                 # 终端模式下：成功时依赖 agent 自己修改 YAML，失败时自动更新状态防止死锁
                 if success:
@@ -1073,6 +1227,7 @@ class LoopManager(QThread):
                 approved = self.fm.load_approved()
             elif success:
                 task["status"] = "done"
+                task["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.fm.record_to_history(task, "done")
                 self._log("info", f"完成: {desc}")
             else:
@@ -1102,8 +1257,11 @@ class LoopManager(QThread):
         self._prompt_retry_count = 0  # 重置自动重试计数器
         self._log("decision", "更新待审批列表...")
         content = yaml.dump(proposed, allow_unicode=True, default_flow_style=False)
-        template = getattr(self, '_custom_update_template', None) or self.PROMPT_UPDATE_PROPOSED
-        prompt = template.format(content=content)
+        template = getattr(self, '_custom_update_template', None)
+        if template:
+            prompt = template.format(content=content)
+        else:
+            prompt = self._prompt_manager.render("update_proposed", content=content)
 
         success, output = self._run_prompt(
             prompt, phase_name="更新待审批列表",
@@ -1118,12 +1276,42 @@ class LoopManager(QThread):
         # 刷新 UI
         self.signals.state_changed.emit()
 
-    def _get_project_filter(self, project_name: str = None) -> str:
-        """根据项目名生成 PROMPT_EXPLORE 的 {project_filter} 替换内容"""
+    def _get_project_info(self, project_name: str = None) -> dict:
+        """根据项目名从配置中获取项目信息。
+
+        Returns:
+            dict with keys: label (显示名), source_dirs (源码目录列表), exclude_dirs (排除目录)
+            如果 project_name 为 None 或 "全部"，返回全部项目的汇总信息。
+        """
+        projects = getattr(self, '_config_projects', [])
         if not project_name or project_name == "全部":
-            return "项目仓库结构"
-        dirs = self.PROJECT_DIRS.get(project_name, "")
-        return f"项目 {project_name}{dirs}"
+            if not projects:
+                return {"label": "项目仓库", "source_dirs": "所有源码目录", "exclude_dirs": "plan/"}
+            labels = [p.get("label", p.get("name", "?")) for p in projects]
+            dirs = []
+            for p in projects:
+                dirs.extend(p.get("source_dirs", []))
+            return {
+                "label": "全部项目",
+                "source_dirs": ", ".join(dirs) if dirs else "所有源码目录",
+                "exclude_dirs": "plan/",
+            }
+
+        # 查找指定项目
+        for p in projects:
+            if p.get("name") == project_name:
+                dirs = p.get("source_dirs", [])
+                return {
+                    "label": p.get("label", project_name),
+                    "source_dirs": ", ".join(dirs) if dirs else project_name,
+                    "exclude_dirs": "plan/",
+                }
+        # 项目未配置，回退到简单描述
+        return {
+            "label": project_name,
+            "source_dirs": project_name,
+            "exclude_dirs": "plan/",
+        }
 
     def _phase_explore(self, project_name: str = None):
         """探索项目并生成提议。project_name：指定项目名，None 表示全部。"""
@@ -1135,13 +1323,13 @@ class LoopManager(QThread):
             self._log("info", f"已有 {len(pending)} 个待审批任务，跳过探索")
             return
 
-        project_filter = self._get_project_filter(project_name)
-        try:
-            prompt = self.PROMPT_EXPLORE.format(project_filter=project_filter)
-        except KeyError:
-            # 自定义 prompt 缺少 {project_filter} 占位符时使用原文本
-            prompt = self.PROMPT_EXPLORE
-            self._log("warning", "自定义探索提示词缺少 {project_filter} 占位符，使用原始文本")
+        project_info = self._get_project_info(project_name)
+        prompt = self._prompt_manager.render(
+            "explore",
+            project_label=project_info["label"],
+            source_dirs=project_info["source_dirs"],
+            exclude_dirs=project_info["exclude_dirs"],
+        )
 
         self._prompt_retry_count = 0  # 重置自动重试计数器
         self._work_done_this_cycle = True
@@ -1185,7 +1373,7 @@ class LoopManager(QThread):
         self._log("decision", f"开始检查 {len(all_done)} 个已完成任务的成果实现率…")
 
         tasks_yaml = yaml.dump(all_done, allow_unicode=True, default_flow_style=False)
-        prompt = self.PROMPT_VERIFY_DELIVERABLES.format(tasks=tasks_yaml)
+        prompt = self._prompt_manager.render("verify_deliverables", tasks=tasks_yaml)
 
         success, output = self._run_prompt(
             prompt, phase_name="检查已完成任务成果",
@@ -1204,10 +1392,7 @@ class LoopManager(QThread):
         self._log("decision", "执行收尾步骤...")
 
         # 文档更新
-        prompt = """请更新项目文档：
-- 更新根目录 AGENTS.md（反映最新的项目结构和代码变更）
-- 更新 docs/ 中相关文件
-- 忽略 plan 文件夹"""
+        prompt = self._prompt_manager.render("finish")
         self._run_prompt(prompt, phase_name="收尾-文档更新")
 
         # Git 推送（仅在 auto_push 启用时执行）
@@ -1222,6 +1407,88 @@ class LoopManager(QThread):
                 self._log("error", f"Git 推送失败: {msg}")
         else:
             self._log("info", "auto_push 已禁用，跳过 Git 推送")
+
+    def _phase_deploy(self):
+        """部署至服务端：直接执行部署脚本（优先 Windows .bat，回退到 .sh）"""
+        self._log("decision", "开始部署至服务端...")
+        self.signals.state_changed.emit()
+
+        # 平台检测选择脚本
+        if sys.platform == "win32":
+            # Windows: 优先 .bat 脚本，回退到 Git Bash / WSL
+            bat_path = os.path.join(self.working_dir, "deploy_remote.bat")
+            sh_path = os.path.join(self.working_dir, "deploy", "scripts", "deploy.sh")
+            if os.path.isfile(bat_path):
+                cmd = [bat_path]
+                self._log("info", f"Windows 平台: 使用批处理部署 {bat_path}")
+            elif os.path.isfile(sh_path):
+                # 尝试通过 Git Bash 或 WSL 运行
+                cmd = ["bash", sh_path]
+                self._log("info", f"Windows 平台: 使用 Git Bash 运行 {sh_path}")
+            else:
+                self._log("error", f"未找到部署脚本 (尝试: {bat_path}, {sh_path})")
+                self.signals.state_changed.emit()
+                return
+        else:
+            # Unix/Mac: 直接执行 .sh
+            sh_path = os.path.join(self.working_dir, "deploy", "scripts", "deploy.sh")
+            if not os.path.isfile(sh_path):
+                self._log("error", f"部署脚本不存在: {sh_path}")
+                self.signals.state_changed.emit()
+                return
+            cmd = ["bash", sh_path]
+            self._log("info", f"Unix 平台: 执行 {sh_path}")
+
+        # 启动 tracker 用于显示阶段状态
+        self._tracker.start_phase("部署至服务端", clear=True)
+        self._emit_agent_status_if_changed()
+
+        try:
+            self._log("info", f"执行命令: {' '.join(cmd)}")
+            # Windows .bat 文件需要用 shell=True 或直接执行
+            use_shell = sys.platform == "win32" and cmd[0].endswith(".bat")
+            process = subprocess.Popen(
+                cmd,
+                cwd=self.working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                shell=use_shell,
+            )
+
+            output_lines = []
+            for line in process.stdout:
+                line = line.rstrip("\n")
+                output_lines.append(line)
+                # 流式输出到终端和日志
+                self.signals.terminal_output.emit(line + "\n")
+                self._log("info", line)
+
+            process.wait()
+
+            if process.returncode == 0:
+                self._log("info", "部署至服务端完成 ✓")
+                self._tracker.end_phase(True)
+            else:
+                self._log("error", f"部署失败 (exit code: {process.returncode})")
+                # 输出最后几行作为错误摘要
+                tail = output_lines[-5:] if len(output_lines) > 5 else output_lines
+                for err_line in tail:
+                    self._log("error", f"  {err_line}")
+                self._tracker.end_phase(False)
+
+        except FileNotFoundError as e:
+            self._log("error", f"命令未找到: {e}")
+            self._log("error", "提示: Windows 上请安装 Git Bash 或使用 WSL")
+            self._tracker.end_phase(False)
+        except Exception as e:
+            self._log("error", f"部署异常: {e}")
+            self._tracker.end_phase(False)
+
+        self._emit_agent_status_if_changed()
+        self.signals.state_changed.emit()
 
     # ─── 工具 ──────────────────────────────────
 

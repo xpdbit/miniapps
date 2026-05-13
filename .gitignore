@@ -54,3 +54,6 @@ temp-tsc-test/
 # 规划与部署配置
 plan/
 deploy/
+
+# SuperTask Worktree 临时目录
+.worktrees/

@@ -11,6 +11,7 @@ import threading
 import time
 from typing import Tuple, Optional
 
+import psutil
 from PyQt6.QtCore import QObject, pyqtSignal
 
 
@@ -26,6 +27,11 @@ def _kill_process_tree(proc: subprocess.Popen, timeout: int = 5):
                 ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                 capture_output=True, timeout=timeout,
             )
+            # taskkill 外部终止后需 poll 以更新 returncode
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.poll()
         else:
             import signal
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
@@ -48,14 +54,26 @@ class OpencodeRunner(QObject):
     def __init__(self, working_dir: str, timeout: int = 600, parent=None):
         super().__init__(parent)
         self.working_dir = working_dir
+        self._original_working_dir = working_dir  # 保存原始目录，用于 worktree 模式恢复
         self.timeout = timeout
         self._process: Optional[subprocess.Popen] = None
         self._exit_code: Optional[int] = None   # 最后退出的进程 exit code
+        self._suspended: bool = False           # 手动暂停标志（进程树）
         # 后台读取线程（解决 Windows select.select 不支持管道的问题）
         self._reader_thread: Optional[threading.Thread] = None
         self._reader_lock = threading.Lock()
         self._lines: list[str] = []            # 缓冲的行队列
         self._reader_eof = False               # 读取线程是否已读到 EOF
+
+    def set_working_dir(self, path: str):
+        """动态切换工作目录（用于 worktree 隔离模式）。
+        调用后所有后续的 run/run_async_start/run_with_completion_signal
+        将在新目录中执行 opencode。"""
+        self.working_dir = path
+
+    def reset_working_dir(self):
+        """恢复到构造时的工作目录"""
+        self.working_dir = self._original_working_dir
 
     def run(self, prompt: str) -> Tuple[bool, str]:
         """同步调用 opencode（通过 stdin 传递 prompt），返回 (success, output)"""
@@ -116,6 +134,7 @@ class OpencodeRunner(QObject):
                 # 进程仍在运行 → 启动成功
                 self._exit_code = None
                 self._reader_eof = False
+                self._suspended = False
                 self._lines.clear()
                 # 启动后台读取线程
                 self._start_reader()
@@ -168,15 +187,89 @@ class OpencodeRunner(QObject):
         return self._process.poll() is None
 
     def kill(self):
-        """终止子进程（整个进程树），等待读取线程结束"""
+        """终止子进程（整个进程树），等待读取线程结束。
+        先恢复暂停的进程以确保 kill 信号能正常传递。"""
         if self._process:
+            # 如果进程被暂停，先恢复再终止（确保 kill 信号生效）
+            if self.is_suspended():
+                try:
+                    self.resume()
+                except Exception:
+                    pass
             _kill_process_tree(self._process)
             self._exit_code = self._process.returncode
+            self._suspended = False
             # 等待读取线程检测到 EOF 后退出
             reader = self._reader_thread
             if reader and reader.is_alive():
                 reader.join(timeout=3)
             self._process = None
+
+    def _suspend_process_tree(self, pid: int) -> bool:
+        """挂起整个进程树（包括 shell 和所有子进程）。
+        在 shell=True 模式下，pid 是 shell，需要递归挂起子进程树才能真正暂停 agent。"""
+        try:
+            root = psutil.Process(pid)
+            # 先挂起子进程（自底向上），再挂起父进程
+            children = root.children(recursive=True)
+            for child in children:
+                try:
+                    child.suspend()
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            root.suspend()
+            return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return False
+
+    def _resume_process_tree(self, pid: int) -> bool:
+        """恢复整个进程树（包括 shell 和所有子进程）。"""
+        try:
+            root = psutil.Process(pid)
+            # 先恢复父进程，再恢复子进程（自顶向下）
+            root.resume()
+            children = root.children(recursive=True)
+            for child in children:
+                try:
+                    child.resume()
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return False
+
+    def suspend(self) -> bool:
+        """暂停（挂起）Agent 进程树 — 使用 psutil 跨平台实现。
+        由于 shell=True 下 pid 是 shell，会递归挂起整个进程树确保 agent 真正停止。
+        Windows: NtSuspendProcess, Unix: SIGSTOP。
+        返回 True 表示成功，False 表示进程不存在或无权限。"""
+        if not self._process or self._process.poll() is not None:
+            return False
+        if self._suspended:
+            return True  # 已经是暂停状态，幂等
+        if self._suspend_process_tree(self._process.pid):
+            self._suspended = True
+            return True
+        return False
+
+    def resume(self) -> bool:
+        """恢复（继续）已暂停的 Agent 进程树 — 使用 psutil 跨平台实现。
+        递归恢复整个进程树（shell + agent + 子进程）。
+        返回 True 表示成功，False 表示进程不存在或无权限。"""
+        if not self._process:
+            return False
+        if not self._suspended:
+            return True  # 已经是运行状态，幂等
+        if self._resume_process_tree(self._process.pid):
+            self._suspended = False
+            return True
+        return False
+
+    def is_suspended(self) -> bool:
+        """检查 Agent 是否处于手动暂停状态。
+        使用内部布尔标志位（而非 psutil status()），避免 shell=True 下
+        shell 状态与 agent 状态不一致的问题。"""
+        return self._suspended
 
     def is_eof(self) -> bool:
         """读取线程是否已到达 EOF（进程输出完毕）"""
@@ -184,9 +277,10 @@ class OpencodeRunner(QObject):
 
     def run_with_completion_signal(self, prompt: str, timeout: int = 600,
                                     completion_signal: str = "===TASK_DONE===") -> Tuple[bool, str]:
-        """异步启动 opencode，读取输出直到检测到 completion_signal 或超时后 kill 进程返回。
-        用于 /ulw-loop 模式（进程不会自动退出，需通过信号判断完成）。"""
-        import select as _select
+        """异步启动 opencode，使用后台读取线程收集输出，轮询检测完成信号。
+        用于 /ulw-loop 模式（进程不会自动退出，需通过信号判断完成）。
+        Agent 暂停期间不计入超时（通过 is_suspended() 检查）。
+        Windows 兼容：使用后台线程读取而非 select.select（避免 pipe 不可 select 问题）。"""
         try:
             process = subprocess.Popen(
                 ["opencode", "run"],
@@ -199,53 +293,62 @@ class OpencodeRunner(QObject):
                 errors="replace",
                 shell=True,
             )
+            self._process = process
+            self._reader_eof = False
+            self._suspended = False
+            self._lines.clear()
+
             if process.stdin:
                 process.stdin.write(prompt)
                 process.stdin.close()
 
+            # 启动后台读取线程（复用类已有的 _start_reader / _reader_loop）
+            self._start_reader()
+
             output_parts: list[str] = []
             start_time = time.time()
+            total_suspended = 0.0
+            _was_suspended = False
+            _suspend_begin = 0.0
             signal_found = False
 
             while True:
-                # 超时检查
-                if time.time() - start_time > timeout:
-                    process.kill()
-                    process.wait(timeout=5)
+                # 超时检查：Agent 暂停期间不计入超时
+                _cur_suspended = self.is_suspended()
+                if _cur_suspended and not _was_suspended:
+                    _suspend_begin = time.time()
+                elif not _cur_suspended and _was_suspended:
+                    total_suspended += time.time() - _suspend_begin
+                _was_suspended = _cur_suspended
+
+                if not _cur_suspended and time.time() - start_time - total_suspended > timeout:
+                    _kill_process_tree(process)
+                    self._process = None
                     output = "".join(output_parts)
                     return False, output + f"\n[超时 {timeout}s，未收到完成信号]"
 
-                # 进程已退出（兼容非 /ulw-loop 模式）
-                if process.poll() is not None:
+                # 进程已退出且所有缓冲行已消费
+                if process.poll() is not None and not self._lines:
                     break
 
-                # 尝试非阻塞读取一行
-                if process.stdout:
-                    try:
-                        r, _, _ = _select.select([process.stdout], [], [], 1.0)
-                        if r:
-                            line = process.stdout.readline()
-                            if line:
-                                output_parts.append(line)
-                                if completion_signal in line:
-                                    signal_found = True
-                                    break
-                    except (OSError, ValueError):
-                        line = process.stdout.readline()
-                        if not line:
-                            time.sleep(0.1)
-                            continue
-                        output_parts.append(line)
-                        if completion_signal in line:
-                            signal_found = True
-                            break
+                # 非阻塞读取缓冲行
+                line = self.read_line()
+                if line:
+                    output_parts.append(line)
+                    if completion_signal in line:
+                        signal_found = True
+                        break
+                else:
+                    # 无数据可用，短暂休眠避免忙等
+                    time.sleep(0.1)
 
-            # 信号已找到 或 进程自然退出 → 先 kill 进程（避免 read() 死锁），再读取剩余输出
+            # 信号已找到或进程退出 → kill 进程，读取剩余输出
             try:
-                process.kill()
-                process.wait(timeout=5)
+                _kill_process_tree(process)
             except Exception:
                 pass
+            finally:
+                self._process = None
 
             if process.stdout:
                 try:
@@ -259,6 +362,7 @@ class OpencodeRunner(QObject):
             return signal_found, output.strip()
 
         except Exception as e:
+            self._process = None
             return False, f"异常: {str(e)}"
 
     def get_git_commit(self) -> str:
