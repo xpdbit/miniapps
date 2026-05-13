@@ -22,6 +22,7 @@ from .opencode_runner import OpencodeRunner
 from .prompt_manager import PromptManager
 from .worktree_manager import WorktreeManager
 from .session_manager import SessionManager, SessionState
+from .prompt_orchestrator import PromptOrchestrator
 
 
 # ─── Agent 状态追踪数据结构 ──────────────────
@@ -462,6 +463,10 @@ class LoopManager(QThread):
         self._session_manager = SessionManager(state_dir)
         self._config_checkpoint_interval: int = 300  # 默认 5 分钟
 
+        # 动态 Prompt 组装引擎
+        self._prompt_orchestrator = PromptOrchestrator(working_dir)
+        self._config_use_orchestrator: bool = False
+
         self._paused = False
         self._cycle_count = 0       # 总轮次计数
         self._work_done_this_cycle = False  # 本周期是否有实际工作
@@ -580,6 +585,13 @@ class LoopManager(QThread):
         self._config_max_sessions = behavior_cfg.get("max_sessions", 10)
         self._config_auto_resume = behavior_cfg.get("auto_resume", False)
         self._session_manager.checkpoint_interval = self._config_checkpoint_interval
+
+        # Prompt Orchestrator 配置
+        orchestrator_cfg = config.get("prompt_orchestrator", {})
+        self._config_use_orchestrator = orchestrator_cfg.get("enabled", False)
+        self._config_tool_prefs = orchestrator_cfg.get("tool_preferences", {})
+        self._config_tool_context_max = orchestrator_cfg.get("tool_context_max_chars", 800)
+        self._config_project_context_max = orchestrator_cfg.get("project_context_max_chars", 1500)
 
     def _get_timeout(self) -> int:
         """获取当前配置的超时时间"""
@@ -1133,7 +1145,18 @@ class LoopManager(QThread):
                     f"任务描述较长（{len(desc)} 字），建议拆分为多个小任务以提高成功率",
                 )
 
-            prompt = self._prompt_manager.render("execute", desc=desc)
+            # ── 生成执行 prompt ──
+            if self._config_use_orchestrator:
+                prompt = self._prompt_orchestrator.compose(
+                    task,
+                    tool_prefs=self._config_tool_prefs,
+                    project_context_max_chars=self._config_project_context_max,
+                    tool_context_max_chars=self._config_tool_context_max,
+                )
+                task_type = self._prompt_orchestrator.get_task_type(task)
+                self._log("info", f"编排 prompt: 类型={task_type}, {desc[:50]}...")
+            else:
+                prompt = self._prompt_manager.render("execute", desc=desc)
 
             # ── Session 恢复检查 ──
             current_session: Optional[SessionState] = None

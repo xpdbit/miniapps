@@ -17,3 +17,14 @@ behavior:
   checkpoint_interval: 300
   max_sessions: 10
   auto_resume: false
+# Prompt 编排引擎（动态选择模板和工具）
+prompt_orchestrator:
+  enabled: false
+  tool_context_max_chars: 800
+  project_context_max_chars: 1500
+  tool_preferences:
+    explore: ["explore", "librarian"]
+    execute: ["deep", "quick"]
+    fix: ["systematic-debugging"]
+    refactor: ["deep"]
+    feature: ["brainstorming", "visual-engineering"]
