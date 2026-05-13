@@ -19,7 +19,8 @@ from qfluentwidgets import (BodyLabel, PrimaryPushButton, PushButton,
 class QuestionCard(SimpleCardWidget):
     """单个规划问题卡片：问题文本 + 选项按钮组"""
 
-    def __init__(self, question_data: dict, index: int, parent=None):
+    def __init__(self, question_data: dict, index: int, parent=None,
+                 on_selection_changed=None):
         super().__init__(parent)
         self._index = index
         self._question = question_data.get("question", "")
@@ -27,6 +28,7 @@ class QuestionCard(SimpleCardWidget):
         self._qtype = question_data.get("type", "single")  # single | multi
         self._selected: list[int] = []
         self._buttons: list = []  # QRadioButton or QCheckBox
+        self._on_selection_changed = on_selection_changed  # parent callback
 
         self.setBorderRadius(8)
         self.setMinimumHeight(100)
@@ -105,6 +107,9 @@ class QuestionCard(SimpleCardWidget):
             else:
                 if idx in self._selected:
                     self._selected.remove(idx)
+        # 通知父组件选择变化
+        if self._on_selection_changed:
+            self._on_selection_changed()
 
     def get_selected(self) -> list[int]:
         return sorted(self._selected)
@@ -357,7 +362,8 @@ questions:
         self._render_cards()
         self._status_label.setText(f"已生成 {len(questions)} 个规划问题，请选择选项")
         self._status_label.setStyleSheet("color: #3fb950; font-size: 11px;")
-        self._submit_btn.setEnabled(True)
+        # 提交按钮初始禁用，待用户选择后启用
+        self._check_submit_enabled()
 
     def _parse_questions(self, text: str) -> list[dict]:
         """从 AI 输出文本中解析 questions YAML"""
@@ -413,11 +419,19 @@ questions:
         self._clear_cards()
 
         for i, q_data in enumerate(self._questions):
-            card = QuestionCard(q_data, i, self._cards_container)
+            card = QuestionCard(q_data, i, self._cards_container,
+                               on_selection_changed=self._check_submit_enabled)
             self._cards_layout.insertWidget(
                 self._cards_layout.count() - 1, card  # 插入到 stretch 之前
             )
             self._cards.append(card)
+
+    def _check_submit_enabled(self):
+        """检查是否所有问题都已有选择，决定提交按钮状态"""
+        all_ready = self._cards and all(
+            card.get_selected() for card in self._cards
+        )
+        self._submit_btn.setEnabled(all_ready)
 
     # ─── 提交选择 ─────────────────────────
 
