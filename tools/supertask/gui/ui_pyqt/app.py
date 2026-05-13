@@ -77,6 +77,13 @@ class SuperTaskWindow(FluentWindow):
         self.control_interface._execute_btn.clicked.connect(self._loop.trigger_execute)
         # 更新待审批
         self.control_interface._update_btn.clicked.connect(self._loop.trigger_update_proposed)
+        # 检查已完成任务成果
+        self.control_interface._verify_btn.clicked.connect(self._on_verify_clicked)
+        # 更新文档并推送 Github
+        self.control_interface._github_btn.clicked.connect(self._on_github_clicked)
+        # 暂停/继续 Agent
+        self.control_interface._pause_agent_btn.clicked.connect(self._on_pause_agent)
+        self.control_interface._resume_agent_btn.clicked.connect(self._on_resume_agent)
 
         # 连接任务面板回调 → FileManager
         self.task_interface.set_on_approve(self._approve_tasks)
@@ -115,6 +122,26 @@ class SuperTaskWindow(FluentWindow):
         label = project or "全部"
         self._log("info", f"触发探索 [{label}]...")
         self._loop.trigger_explore(project)
+
+    def _on_verify_clicked(self):
+        """检查成果按钮点击：触发已完成任务的实现率检查"""
+        self._log("decision", "开始检查已完成任务成果的实现率…")
+        self._loop.trigger_verify_deliverables()
+
+    def _on_github_clicked(self):
+        """更新文档并推送按钮点击：触发收尾阶段（文档更新 + Git 推送）"""
+        self._log("decision", "开始更新文档并推送 Github...")
+        self._loop.trigger_finish()
+
+    def _on_pause_agent(self):
+        """暂停 Agent 按钮点击"""
+        self._log("decision", "请求暂停 Agent...")
+        self._loop.suspend_agent()
+
+    def _on_resume_agent(self):
+        """继续 Agent 按钮点击"""
+        self._log("decision", "请求继续 Agent...")
+        self._loop.resume_agent()
 
     # ─── 信号处理 ────────────────────────────────
 

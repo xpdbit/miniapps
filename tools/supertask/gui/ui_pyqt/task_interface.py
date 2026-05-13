@@ -3,7 +3,7 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                QSplitter, QHeaderView, QTableWidgetItem,
                                QAbstractItemView, QApplication)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QItemSelectionModel
 from PyQt6.QtGui import QColor, QBrush
 from qfluentwidgets import (TableWidget, PrimaryPushButton, PushButton,
                              BodyLabel, InfoBar, InfoBarPosition)
@@ -54,13 +54,15 @@ class TaskInterface(QWidget):
         self._table.setHorizontalHeaderLabels(["", "描述", "状态", "优先级"])
         self._table.setBorderRadius(8)
         self._table.horizontalHeader().setStretchLastSection(False)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._table.setColumnWidth(0, 40)
         self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self._table.setSortingEnabled(True)
         self._table.currentCellChanged.connect(self._on_selection_changed)
         self._table.cellClicked.connect(self._on_proposal_cell_clicked)
+        self._table.itemChanged.connect(self._on_checkbox_changed)
         proposed_layout.addWidget(self._table)
 
         left_splitter.addWidget(proposed_widget)
@@ -82,12 +84,14 @@ class TaskInterface(QWidget):
         self._queue_table.setHorizontalHeaderLabels(["", "描述", "状态"])
         self._queue_table.setBorderRadius(8)
         self._queue_table.horizontalHeader().setStretchLastSection(False)
-        self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._queue_table.setColumnWidth(0, 40)
         self._queue_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._queue_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._queue_table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self._queue_table.setSortingEnabled(True)
         self._queue_table.cellClicked.connect(self._on_queue_cell_clicked)
+        self._queue_table.itemChanged.connect(self._on_queue_checkbox_changed)
         queue_layout.addWidget(self._queue_table)
 
         left_splitter.addWidget(queue_widget)
@@ -123,18 +127,6 @@ class TaskInterface(QWidget):
             Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
         )
         return item
-
-    @staticmethod
-    def _toggle_checkbox(table: TableWidget, row: int):
-        """切换指定行的勾选框状态"""
-        item = table.item(row, 0)
-        if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-            new_state = (
-                Qt.CheckState.Unchecked
-                if item.checkState() == Qt.CheckState.Checked
-                else Qt.CheckState.Checked
-            )
-            item.setCheckState(new_state)
 
     @staticmethod
     def _toggle_range(table: TableWidget, from_row: int, to_row: int):
@@ -236,23 +228,17 @@ class TaskInterface(QWidget):
     # ================= 点击事件（多选核心逻辑） =================
 
     def _on_proposal_cell_clicked(self, row: int, col: int):
-        """提议表格点击事件"""
+        """提议表格点击事件（仅处理 shift-click 范围选取，checkbox 由 itemChanged 跟踪）"""
         modifiers = QApplication.keyboardModifiers()
-        if col == 0:
-            # 点击勾选框列 → 切换单行
-            self._toggle_checkbox(self._table, row)
-        elif modifiers == Qt.KeyboardModifier.ShiftModifier and self._proposal_last_clicked >= 0:
-            # Shift + 点击 → 范围多选
+        if modifiers == Qt.KeyboardModifier.ShiftModifier and self._proposal_last_clicked >= 0:
+            # Shift + 点击 → 范围多选（_toggle_range 触发 itemChanged 事件流）
             self._toggle_range(self._table, self._proposal_last_clicked, row)
-        # 非 shift 点击非勾选列 → 仅切换选中态（用于详情展示），不操作勾选框
         self._proposal_last_clicked = row
 
     def _on_queue_cell_clicked(self, row: int, col: int):
-        """工作队列表格点击事件 — 同时更新详情面板"""
+        """工作队列表格点击事件 — 同时更新详情面板（checkbox 由 itemChanged 跟踪）"""
         modifiers = QApplication.keyboardModifiers()
-        if col == 0:
-            self._toggle_checkbox(self._queue_table, row)
-        elif modifiers == Qt.KeyboardModifier.ShiftModifier and self._queue_last_clicked >= 0:
+        if modifiers == Qt.KeyboardModifier.ShiftModifier and self._queue_last_clicked >= 0:
             self._toggle_range(self._queue_table, self._queue_last_clicked, row)
         self._queue_last_clicked = row
         # 更新详情面板
@@ -271,6 +257,37 @@ class TaskInterface(QWidget):
             self._detail.show_task(task)
             if hasattr(self, "_on_selection_cb") and self._on_selection_cb:
                 self._on_selection_cb(task)
+
+    def _on_checkbox_changed(self, item):
+        """提议表格勾选框变化时同步行选中状态"""
+        if item.column() != 0:
+            return
+        row = item.row()
+        if item.checkState() == Qt.CheckState.Checked:
+            self._table.selectRow(row)
+        else:
+            # 只取消当前行选中，不执行 clearSelection()——保留其他行的多选状态
+            self._table.selectionModel().select(
+                self._table.model().index(row, 0),
+                QItemSelectionModel.SelectionFlag.Deselect,
+            )
+
+    def _on_queue_checkbox_changed(self, item):
+        """工作队列表格勾选框变化时同步行选中状态并更新详情"""
+        if item.column() != 0:
+            return
+        row = item.row()
+        if item.checkState() == Qt.CheckState.Checked:
+            self._queue_table.selectRow(row)
+        else:
+            # 只取消当前行选中，保留其他行的选中状态
+            self._queue_table.selectionModel().select(
+                self._queue_table.model().index(row, 0),
+                QItemSelectionModel.SelectionFlag.Deselect,
+            )
+        # 更新详情面板
+        if 0 <= row < len(self._approved_items):
+            self._detail.show_task(self._approved_items[row])
 
     def _on_approve_clicked(self):
         ids = self.get_selected_ids()

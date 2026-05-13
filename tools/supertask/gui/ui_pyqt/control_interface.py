@@ -13,18 +13,27 @@ from datetime import datetime
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel,
-                               QScrollBar,
+from PyQt6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout,
+                               QLabel, QScrollBar, QSizePolicy,
                                QSplitter, QTableWidgetItem, QTextEdit,
                                QVBoxLayout, QWidget, QHeaderView,
                                QAbstractItemView)
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIcon as FIF,
-    PushButton, SimpleCardWidget, TitleLabel, TableWidget,
+    PushButton, SimpleCardWidget, StrongBodyLabel, TitleLabel, TableWidget,
 )
 
 from gui.ui_pyqt.agent_status_interface import PhaseStatusBar
 from gui.ui_pyqt.detail_widget import STATUS_COLORS, STATUS_LABELS
+
+# FIF 图标版本兼容（某些 qfluentwidgets 版本缺少部分图标）
+_FIF_GITHUB = getattr(FIF, 'GITHUB', None) or FIF.SYNC
+_FIF_SEARCH = getattr(FIF, 'SEARCH', None) or FIF.SYNC
+_FIF_SEND = getattr(FIF, 'SEND', None) or FIF.SYNC
+_FIF_SYNC = getattr(FIF, 'SYNC', None) or FIF.UP
+_FIF_ACCEPT = getattr(FIF, 'ACCEPT', None) or FIF.SYNC
+_FIF_PAUSE = getattr(FIF, 'PAUSE', None) or getattr(FIF, 'PAUSE_BADGE', None) or FIF.SYNC
+_FIF_PLAY = getattr(FIF, 'PLAY', None) or getattr(FIF, 'PLAY_BADGE', None) or FIF.SYNC
 
 
 # ─── 日志颜色 ───
@@ -59,6 +68,7 @@ class ControlInterface(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._stat_labels: dict[str, ValueLabel] = {}
+
         self._setup_ui()
 
     # ===================================================================
@@ -66,7 +76,7 @@ class ControlInterface(QWidget):
     # ===================================================================
 
     # ─── 公共访问（按钮/组件引用，供 app.py 连接） ───
-    # _explore_btn / _execute_btn / _update_btn 在 _setup_ui 中创建
+    # _explore_btn / _execute_btn / _update_btn / _verify_btn / _github_btn 在 _setup_ui 中创建
 
     def _setup_ui(self) -> None:
         main_layout = QVBoxLayout(self)
@@ -164,7 +174,7 @@ class ControlInterface(QWidget):
         return w
 
     def _build_top_right(self) -> QWidget:
-        """上侧右侧：手动操作 — 项目选择 + 持续探索/执行队列/更新待审批"""
+        """上侧右侧：手动操作 — 分组布局（项目选择 / 任务操作 / Agent控制）"""
         w = QWidget()
         layout = QVBoxLayout(w)
         layout.setContentsMargins(12, 0, 0, 0)
@@ -173,51 +183,156 @@ class ControlInterface(QWidget):
         ctrl_card = SimpleCardWidget()
         ctrl_card.setBorderRadius(12)
         ctrl_layout = QVBoxLayout(ctrl_card)
-        ctrl_layout.setSpacing(10)
+        ctrl_layout.setSpacing(0)
 
-        ctrl_layout.addWidget(BodyLabel("手动操作"))
-        ctrl_layout.addSpacing(4)
+        # ── 标题栏 ──
+        ctrl_layout.addWidget(StrongBodyLabel("🔧 手动操作"))
+        ctrl_layout.addSpacing(10)
 
-        # 第一行：项目选择（独占一行）
-        row_project = QHBoxLayout()
-        row_project.setSpacing(8)
-        row_project.addWidget(CaptionLabel("项目"))
+        # ── 分隔线 ──
+        ctrl_layout.addWidget(self._make_separator())
+        ctrl_layout.addSpacing(12)
+
+        # ════════════════════════════════════════
+        # 第 1 组：项目选择
+        # ════════════════════════════════════════
+        ctrl_layout.addWidget(self._make_section_label("📋 项目选择"))
+        ctrl_layout.addSpacing(6)
+
         self._project_combo = QComboBox()
         self._project_combo.addItems(["全部", "ftg", "game1", "tavern"])
         self._project_combo.setCurrentIndex(0)
         self._project_combo.setEditable(True)
         self._project_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self._project_combo.setToolTip("选择要探索的目标项目，或输入自定义项目名")
         self._project_combo.setStyleSheet("""
             QComboBox {
                 color: #c9d1d9; background: #0d1117;
-                border: 1px solid #30363d; border-radius: 4px;
-                padding: 4px 8px; min-width: 80px;
+                border: 1px solid #30363d; border-radius: 6px;
+                padding: 6px 12px; font-size: 13px;
             }
-            QComboBox::drop-down { border: none; width: 20px; }
+            QComboBox:hover { border-color: #58a6ff; }
+            QComboBox::drop-down { border: none; width: 24px; }
+            QComboBox::down-arrow { image: none; }
             QComboBox QAbstractItemView {
                 color: #c9d1d9; background: #161b22;
-                border: 1px solid #30363d; selection-background-color: #1f6feb;
+                border: 1px solid #30363d; border-radius: 6px;
+                selection-background-color: #1f6feb;
+                padding: 4px;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 6px 12px; border-radius: 4px;
+            }
+            QComboBox QAbstractItemView::item:hover {
+                background: #21262d;
             }
         """)
-        row_project.addWidget(self._project_combo)
-        row_project.addStretch()
-        ctrl_layout.addLayout(row_project)
+        ctrl_layout.addWidget(self._project_combo)
+        ctrl_layout.addSpacing(16)
 
-        # 第二行：持续探索 + 执行队列 + 更新待审批
-        row_actions = QHBoxLayout()
-        row_actions.setSpacing(8)
-        self._explore_btn = PushButton(FIF.SEARCH, "持续探索")
-        self._execute_btn = PushButton(FIF.SEND, "执行队列")
-        self._update_btn = PushButton(FIF.SYNC, "更新待审批")
-        row_actions.addWidget(self._explore_btn)
-        row_actions.addWidget(self._execute_btn)
-        row_actions.addWidget(self._update_btn)
-        row_actions.addStretch()
-        ctrl_layout.addLayout(row_actions)
+        # ════════════════════════════════════════
+        # 第 2 组：任务操作（卡片式网格布局 2×3）
+        # ════════════════════════════════════════
+        ctrl_layout.addWidget(self._make_separator())
+        ctrl_layout.addSpacing(12)
+        ctrl_layout.addWidget(self._make_section_label("⚡ 任务操作"))
+        ctrl_layout.addSpacing(8)
+
+        task_grid = QGridLayout()
+        task_grid.setSpacing(8)
+
+        # 按钮定义: (属性名, 图标, 文本, 工具提示, 行, 列)
+        task_buttons = [
+            ("_explore_btn", _FIF_SEARCH, "持续探索",
+             "AI 遍历项目发现改进领域，生成粗粒度任务提议", 0, 0),
+            ("_execute_btn", _FIF_SEND, "执行队列",
+             "按顺序执行工作队列中的待处理任务", 0, 1),
+            ("_update_btn", _FIF_SYNC, "更新待审批",
+             "AI 检查并更新待审批列表状态（标记完成/失效/调整描述）", 1, 0),
+            ("_verify_btn", _FIF_ACCEPT, "检查成果",
+             "检查已完成任务的代码实现率，发现遗漏/缺陷/漏洞时自动生成修补提议并直接进入工作队列", 1, 1),
+            ("_github_btn", _FIF_GITHUB, "更新文档并推送",
+             "更新项目文档并推送代码到 Github 仓库", 2, 0),
+        ]
+
+        for attr_name, icon, text, tooltip, row, col in task_buttons:
+            card = SimpleCardWidget()
+            card.setBorderRadius(8)
+            card.setMinimumSize(140, 60)
+            card.setStyleSheet("""
+                SimpleCardWidget {
+                    background-color: transparent;
+                    border: 1px solid #30363d;
+                }
+                SimpleCardWidget:hover {
+                    border-color: #58a6ff;
+                }
+            """)
+
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(0, 0, 0, 0)
+
+            btn = PushButton(icon, text)
+            btn.setToolTip(tooltip)
+            btn.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Expanding,
+            )
+            setattr(self, attr_name, btn)
+
+            card_layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
+            task_grid.addWidget(card, row, col)
+
+        # 第 3 行第 2 列 — 空白占位
+        placeholder = QWidget()
+        placeholder.setMinimumSize(140, 60)
+        placeholder.setStyleSheet("background: transparent; border: none;")
+        task_grid.addWidget(placeholder, 2, 1)
+
+        # 两列等宽展开
+        task_grid.setColumnStretch(0, 1)
+        task_grid.setColumnStretch(1, 1)
+
+        ctrl_layout.addLayout(task_grid)
+        ctrl_layout.addSpacing(16)
+
+        # ════════════════════════════════════════
+        # 第 3 组：Agent 控制
+        # ════════════════════════════════════════
+        ctrl_layout.addWidget(self._make_separator())
+        ctrl_layout.addSpacing(12)
+        ctrl_layout.addWidget(self._make_section_label("🤖 Agent 控制"))
+        ctrl_layout.addSpacing(8)
+
+        row_agent = QHBoxLayout()
+        row_agent.setSpacing(8)
+        self._pause_agent_btn = PushButton(_FIF_PAUSE, "暂停")
+        self._pause_agent_btn.setToolTip("挂起当前运行的 Agent 进程（可恢复）")
+        self._resume_agent_btn = PushButton(_FIF_PLAY, "继续")
+        self._resume_agent_btn.setToolTip("恢复已暂停的 Agent 进程")
+        row_agent.addWidget(self._pause_agent_btn)
+        row_agent.addWidget(self._resume_agent_btn)
+        row_agent.addStretch()
+        ctrl_layout.addLayout(row_agent)
 
         layout.addWidget(ctrl_card)
         layout.addStretch()
         return w
+
+    @staticmethod
+    def _make_separator() -> QFrame:
+        """创建水平分隔线"""
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setStyleSheet("color: #30363d;")
+        return sep
+
+    @staticmethod
+    def _make_section_label(text: str) -> CaptionLabel:
+        """创建分组标题标签"""
+        label = CaptionLabel(text)
+        label.setStyleSheet("color: #8b949e; font-size: 11px; font-weight: bold;")
+        return label
 
     # ── 下侧 65% ──────────────────────────────────────────
 
@@ -404,8 +519,6 @@ class ControlInterface(QWidget):
         elapsed = status.get("phase_elapsed", 0)
         self._phase_bar.update_phase(phase, phase_status, elapsed)
         self._phase_bar.update_model(status.get("global_model", ""))
-
-
 
     def get_selected_project(self) -> str | None:
         """返回 ComboBox 中选择的项目名，'全部'返回 None"""
