@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 loop_manager.py — 主循环调度 (PyQt6 QThread)
 阶段: 执行批准任务 → 更新待审批 → 探索与提议 → 收尾
@@ -56,6 +56,15 @@ class AgentTracker:
     _MODEL_RE = re.compile(r'powered by the model named\s+(\S+)')
     # 回退：匹配模型 ID（"The exact model ID is opencode-go/deepseek-v4-flash"）
     _MODEL_ID_RE = re.compile(r'model ID is\s+(\S+)')
+    # 匹配 opencode banner 中的 agent 名称（用于识别主编排器类型）
+    # 格式: "> Sisyphus (Ultraworker) · model-name" 或 "> Sisyphus Pro · model-name"
+    _BANNER_AGENT_RE = re.compile(r'>\s+([\w][\w\s-]*?)(?:\s*\([^)]*\))?\s*·\s*\S+')
+    # 更宽松的模型名匹配（模型名中可能包含 / 或 -）
+    _MODEL_FLEX_RE = re.compile(r'(?:powered by|using)\s+(?:the\s+)?(?:model\s+)?(?:named\s+)?(\S[\S]*)')
+    # 匹配 "The exact model ID is X" (无 "opencode-go/" 前缀变体)
+    _EXACT_MODEL_ID_RE = re.compile(r'(?:exact|precise)\s+model\s+id(?:entifier)?\s+is\s+(\S+)', re.IGNORECASE)
+    # 从 task() 调用的 model 参数提取显式模型
+    _TASK_MODEL_RE = re.compile(r"""model\s*=\s*["']([^"']+)["']""")
 
     @staticmethod
     def _strip_ansi(text: str) -> str:
@@ -79,6 +88,7 @@ class AgentTracker:
         self.phase_status: str = "idle"   # idle | running | paused | done | error
         self.phase_start: float = 0.0
         self._global_model: str = ""      # 从 opencode 输出解析的全局模型名
+        self._main_agent_type: str = ""
         self._pending_bg_done: bool = False  # 跨行缓冲：上一行检测到 [BACKGROUND TASK COMPLETED]
         self._pending_bg_error: bool = False  # 跨行缓冲：上一行检测到 [BACKGROUND TASK ERROR/FAILED]
         self._paused_at: float = 0.0      # 暂停发生的时间戳
@@ -137,6 +147,14 @@ class AgentTracker:
         # 先去除 ANSI 转义码（stdout 管道原始输出含颜色码）
         clean_line = self._strip_ansi(line)
 
+        # ── 主编排器类型检测 ──
+        if not self._main_agent_type:
+            m = self._BANNER_AGENT_RE.search(clean_line)
+            if m:
+                agent_name = m.group(1).strip()
+                # 规范化名称 (移除多余空格，统一大小写)
+                self._main_agent_type = ' '.join(agent_name.split())
+
         # ── 模型名称检测（三级回退） ──
         # 1. opencode banner 格式: "> Sisyphus (Ultraworker) · model-name"
         if not self._global_model:
@@ -165,6 +183,25 @@ class AgentTracker:
                     self._global_model = new_model
                     self._backfill_agent_models()
 
+        # 3.5. "exact model id is X" (case insensitive)
+        if not self._global_model:
+            m = self._EXACT_MODEL_ID_RE.search(clean_line)
+            if m:
+                new_model = self._clean_model_name(m.group(1))
+                if new_model:
+                    self._global_model = new_model
+                    self._backfill_agent_models()
+
+        # 3.6. 更柔性的模型匹配
+        if not self._global_model:
+            m = self._MODEL_FLEX_RE.search(clean_line)
+            if m:
+                candidate = self._clean_model_name(m.group(1))
+                # 过滤掉太通用的匹配 (至少包含字母和数字/特殊字符)
+                if candidate and len(candidate) > 3 and any(c.isalpha() for c in candidate):
+                    self._global_model = candidate
+                    self._backfill_agent_models()
+
         # 检测 task() 调用 — agent 启动
         m = self._TASK_RE.search(line)
         if m:
@@ -175,10 +212,13 @@ class AgentTracker:
                 # 从 task() 调用行提取 description 作为 preview
                 desc_match = self._DESC_RE.search(line)
                 preview = desc_match.group(1) if desc_match else ""
+                # 提取 task() 调用中显式指定的 model 参数
+                model_match = self._TASK_MODEL_RE.search(line)
+                agent_model = model_match.group(1) if model_match else self._global_model
                 self.agents[agent_id] = AgentState(
                     agent_id=agent_id,
                     agent_type=agent_type,
-                    model=self._global_model,
+                    model=agent_model,
                     status="running",
                     start_time=time.time(),
                     preview=preview,
@@ -260,7 +300,7 @@ class AgentTracker:
                 for a in self.agents.values()
             )
         )
-        return (self.active_phase, self.phase_status, self._global_model, agents_key)
+        return (self.active_phase, self.phase_status, self._global_model, self._main_agent_type, agents_key)
 
     def get_status(self) -> dict:
         """返回当前完整状态快照，供 UI 渲染"""
@@ -270,6 +310,7 @@ class AgentTracker:
             "phase_status": self.phase_status,
             "phase_elapsed": now - self.phase_start if self.phase_start > 0 else 0,
             "global_model": self._global_model,
+            "main_agent_type": self._main_agent_type,
             "agents": [
                 {
                     "id": a.agent_id,
@@ -653,6 +694,42 @@ class LoopManager(QThread):
         threading.Thread(
             target=self._run_manual_phase, args=("verify",), daemon=True,
         ).start()
+
+    def trigger_plan(self, prompt: str, callback=None):
+        """手动触发 AI 任务规划（在后台线程运行）。
+        运行用户提供的 planning prompt，完成后通过 callback(output) 返回结果。
+        callback 签名为 callback(output_str: str)，output 为 AI 返回的文本。
+        主循环运行时拒绝手动触发。"""
+        if self.is_running():
+            self._log("warning", "主循环运行中，请先停止后再手动触发")
+            return
+        with self._manual_lock:
+            if self._manual_running:
+                self._log("warning", f"已有操作 {self._manual_running} 运行中，忽略规划触发")
+                return
+            if "plan" in self._manual_running:
+                self._log("info", "任务规划已在运行中，忽略重复触发")
+                return
+            self._manual_running.add("plan")
+        threading.Thread(
+            target=self._run_plan_phase,
+            args=(prompt, callback),
+            daemon=True,
+        ).start()
+
+    def _run_plan_phase(self, prompt: str, callback=None):
+        """后台线程：执行 AI 规划，完成后回调"""
+        try:
+            success, output = self._run_prompt(
+                prompt,
+                phase_name="任务规划",
+                completion_signal=self.COMPLETION_SIGNAL,
+            )
+            if callback:
+                callback(output if success else "")
+        finally:
+            with self._manual_lock:
+                self._manual_running.discard("plan")
 
     def _run_manual_phase(self, phase: str, project_name: str = None):
         """后台线程包装：执行阶段方法，完成后清理运行标志"""

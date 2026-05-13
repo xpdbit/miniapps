@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """agent_status_interface.py — Agent 状态监控面板（当前阶段 + sub-agent 列表 + 耗时）"""
 import time
 
@@ -286,7 +286,12 @@ class AgentStatusInterface(QWidget):
         """按筛选条件构建分组表格，支持 main/sub-agent 层级"""
         # 1. 筛选
         if filter_type != "All":
-            agents = [a for a in agents if a.get("type") == filter_type]
+            # 如果筛选类型是主编排器类型，显示所有 agent（因为主编排器不是子 agent 的类型）
+            main_type = self._last_status.get("main_agent_type", "")
+            if filter_type == main_type:
+                pass  # 不过滤，显示全部
+            else:
+                agents = [a for a in agents if a.get("type") == filter_type]
 
         # 2. 按 type 分组
         by_type: dict[str, list] = {}
@@ -413,10 +418,12 @@ class AgentStatusInterface(QWidget):
         elif phase_status == "paused":
             self._hint_label.setText(f"已暂停: {phase}  —  Agent 进程已挂起")
         elif phase_status == "running":
+            main_type = self._last_status.get("main_agent_type", "")
+            type_info = f" [{main_type}]" if main_type else ""
             if running_count > 0:
                 tag = f" [{filter_type}]" if filter_type != "All" else ""
                 self._hint_label.setText(
-                    f"正在运行: {phase}{tag}  —  {running_count}/{agent_count} 活跃"
+                    f"正在运行: {phase}{type_info}{tag}  —  {running_count}/{agent_count} 活跃"
                 )
             else:
                 self._hint_label.setText(f"正在运行: {phase}  —  {agent_count} 个 agent")
@@ -439,6 +446,7 @@ class AgentStatusInterface(QWidget):
         self._phase_bar.update_model(status.get("global_model", ""))
 
         agents = status.get("agents", [])
+        main_type = status.get("main_agent_type", "")
 
         # 更新 agent 计数
         self._agent_count_label.setText(f"({len(agents)} 个 sub-agent)")
@@ -448,6 +456,10 @@ class AgentStatusInterface(QWidget):
         self._type_combo.blockSignals(True)
         self._type_combo.clear()
         self._type_combo.addItem("All")
+        # 添加主编排器类型（若存在）
+        if main_type:
+            self._type_combo.addItem(main_type)
+        # 添加子 agent 类型
         types = sorted(set(a.get("type", "?") for a in agents))
         for t in types:
             self._type_combo.addItem(t)

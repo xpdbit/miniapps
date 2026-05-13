@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """task_interface.py — 提议与工作（QSplitter 水平左右分栏：左侧提议|队列，右侧详情卡片）"""
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                QSplitter, QHeaderView, QTableWidgetItem,
@@ -50,19 +50,16 @@ class TaskInterface(QWidget):
         proposed_layout.addLayout(toolbar)
 
         self._table = TableWidget(self)
-        self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(["", "描述", "状态", "优先级"])
+        self._table.setColumnCount(3)
+        self._table.setHorizontalHeaderLabels(["描述", "状态", "优先级"])
         self._table.setBorderRadius(8)
         self._table.horizontalHeader().setStretchLastSection(False)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self._table.setColumnWidth(0, 40)
-        self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self._table.setSortingEnabled(True)
         self._table.currentCellChanged.connect(self._on_selection_changed)
         self._table.cellClicked.connect(self._on_proposal_cell_clicked)
-        self._table.itemChanged.connect(self._on_checkbox_changed)
         proposed_layout.addWidget(self._table)
 
         left_splitter.addWidget(proposed_widget)
@@ -80,18 +77,15 @@ class TaskInterface(QWidget):
         queue_layout.addLayout(queue_toolbar)
 
         self._queue_table = TableWidget(self)
-        self._queue_table.setColumnCount(3)
-        self._queue_table.setHorizontalHeaderLabels(["", "描述", "状态"])
+        self._queue_table.setColumnCount(2)
+        self._queue_table.setHorizontalHeaderLabels(["描述", "状态"])
         self._queue_table.setBorderRadius(8)
         self._queue_table.horizontalHeader().setStretchLastSection(False)
-        self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self._queue_table.setColumnWidth(0, 40)
-        self._queue_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._queue_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._queue_table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self._queue_table.setSortingEnabled(True)
         self._queue_table.cellClicked.connect(self._on_queue_cell_clicked)
-        self._queue_table.itemChanged.connect(self._on_queue_checkbox_changed)
         queue_layout.addWidget(self._queue_table)
 
         left_splitter.addWidget(queue_widget)
@@ -112,72 +106,25 @@ class TaskInterface(QWidget):
         self._reject_btn.clicked.connect(self._on_reject_clicked)
         self._remove_btn.clicked.connect(self._remove_selected)
 
-    # ================= 勾选框工具方法 =================
-
-    @staticmethod
-    def _make_check_item(checked: bool = False) -> QTableWidgetItem:
-        """创建带勾选框的表格项"""
-        item = QTableWidgetItem()
-        item.setFlags(
-            Qt.ItemFlag.ItemIsUserCheckable
-            | Qt.ItemFlag.ItemIsEnabled
-            | Qt.ItemFlag.ItemIsSelectable
-        )
-        item.setCheckState(
-            Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        )
-        return item
-
-    @staticmethod
-    def _toggle_range(table: TableWidget, from_row: int, to_row: int):
-        """Shift 多选：统一切换 from_row → to_row 范围内勾选状态"""
-        start = min(from_row, to_row)
-        end = max(from_row, to_row)
-        target = table.item(to_row, 0)
-        if not target or not (target.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-            return
-        # 以目标行状态为基准：目标行勾选 → 全部取消；目标行未勾选 → 全部勾选
-        new_state = (
-            Qt.CheckState.Unchecked
-            if target.checkState() == Qt.CheckState.Checked
-            else Qt.CheckState.Checked
-        )
-        for r in range(start, end + 1):
-            item = table.item(r, 0)
-            if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-                item.setCheckState(new_state)
-
-    def _get_checked_ids(self, table, items_source) -> list[int]:
-        """获取指定表格中所有勾选行的 ID 列表"""
-        ids = []
-        for row in range(table.rowCount()):
-            item = table.item(row, 0)
-            if item and item.checkState() == Qt.CheckState.Checked:
-                if 0 <= row < len(items_source):
-                    ids.append(items_source[row].get("id", 0))
-        return ids
-
     # ================= 提议面板 =================
 
     def set_proposed(self, tasks: list[dict]):
         self._proposed_items = list(tasks)
-        self._proposal_last_clicked = -1  # 重置 shift 多选锚点
+        self._proposal_last_clicked = -1
         self._table.setRowCount(len(tasks))
         for i, t in enumerate(tasks):
-            # 第 0 列：勾选框
-            self._table.setItem(i, 0, self._make_check_item())
-            # 第 1 列：描述
+            # 第 0 列：描述
             item = QTableWidgetItem(str(t.get("description", "")))
             item.setToolTip(str(t.get("description", "")))
-            self._table.setItem(i, 1, item)
-            # 第 2 列：状态
+            self._table.setItem(i, 0, item)
+            # 第 1 列：状态
             status = t.get("status", "pending")
             status_item = QTableWidgetItem(STATUS_LABELS.get(status, status))
             color = STATUS_COLORS.get(status, "#e6edf3")
             status_item.setForeground(QBrush(QColor(color)))
-            self._table.setItem(i, 2, status_item)
-            # 第 3 列：优先级
-            self._table.setItem(i, 3, QTableWidgetItem(str(t.get("priority", ""))))
+            self._table.setItem(i, 1, status_item)
+            # 第 2 列：优先级
+            self._table.setItem(i, 2, QTableWidgetItem(str(t.get("priority", ""))))
 
     def set_on_selection_change(self, callback):
         self._on_selection_cb = callback
@@ -195,51 +142,50 @@ class TaskInterface(QWidget):
         self._detail._on_remove_cb = callback
 
     def get_selected_ids(self) -> list[int]:
-        """返回提议表格中所有勾选行的 ID"""
-        return self._get_checked_ids(self._table, self._proposed_items)
+        """返回提议表格中所有选中行的 ID（通过 SelectionModel）"""
+        rows = set()
+        for idx in self._table.selectionModel().selectedRows():
+            rows.add(idx.row())
+        return [self._proposed_items[r].get("id", 0) for r in sorted(rows)
+                if 0 <= r < len(self._proposed_items)]
 
     # ================= 工作队列面板 =================
 
     def set_approved(self, tasks: list[dict]):
-        """填充工作队列表格，每项含勾选框、描述与状态"""
+        """填充工作队列表格，每项含描述与状态"""
         self._approved_items = list(tasks)
-        self._queue_last_clicked = -1  # 重置 shift 多选锚点
+        self._queue_last_clicked = -1
         self._queue_table.setRowCount(len(tasks))
         for i, t in enumerate(tasks):
-            # 第 0 列：勾选框
-            self._queue_table.setItem(i, 0, self._make_check_item())
-            # 第 1 列：描述
+            # 第 0 列：描述
             item = QTableWidgetItem(str(t.get("desc", t.get("description", ""))))
             item.setToolTip(str(t.get("desc", t.get("description", ""))))
-            self._queue_table.setItem(i, 1, item)
-            # 第 2 列：状态
+            self._queue_table.setItem(i, 0, item)
+            # 第 1 列：状态
             status = t.get("status", "pending")
             status_item = QTableWidgetItem(STATUS_LABELS.get(status, status))
             color = STATUS_COLORS.get(status, "#e6edf3")
             status_item.setForeground(QBrush(QColor(color)))
-            self._queue_table.setItem(i, 2, status_item)
+            self._queue_table.setItem(i, 1, status_item)
 
     def _remove_selected(self):
-        """获取工作队列中勾选行的 ID，触发移除回调"""
-        ids = self._get_checked_ids(self._queue_table, self._approved_items)
+        """获取工作队列中选中行的 ID，触发移除回调"""
+        rows = set()
+        for idx in self._queue_table.selectionModel().selectedRows():
+            rows.add(idx.row())
+        ids = [self._approved_items[r].get("id", 0) for r in sorted(rows)
+               if 0 <= r < len(self._approved_items)]
         if ids and self._on_remove_cb:
             self._on_remove_cb(ids)
 
     # ================= 点击事件（多选核心逻辑） =================
 
     def _on_proposal_cell_clicked(self, row: int, col: int):
-        """提议表格点击事件（仅处理 shift-click 范围选取，checkbox 由 itemChanged 跟踪）"""
-        modifiers = QApplication.keyboardModifiers()
-        if modifiers == Qt.KeyboardModifier.ShiftModifier and self._proposal_last_clicked >= 0:
-            # Shift + 点击 → 范围多选（_toggle_range 触发 itemChanged 事件流）
-            self._toggle_range(self._table, self._proposal_last_clicked, row)
+        """提议表格点击事件"""
         self._proposal_last_clicked = row
 
     def _on_queue_cell_clicked(self, row: int, col: int):
-        """工作队列表格点击事件 — 同时更新详情面板（checkbox 由 itemChanged 跟踪）"""
-        modifiers = QApplication.keyboardModifiers()
-        if modifiers == Qt.KeyboardModifier.ShiftModifier and self._queue_last_clicked >= 0:
-            self._toggle_range(self._queue_table, self._queue_last_clicked, row)
+        """工作队列表格点击事件 — 更新详情面板"""
         self._queue_last_clicked = row
         # 更新详情面板
         if 0 <= row < len(self._approved_items):
@@ -257,37 +203,6 @@ class TaskInterface(QWidget):
             self._detail.show_task(task)
             if hasattr(self, "_on_selection_cb") and self._on_selection_cb:
                 self._on_selection_cb(task)
-
-    def _on_checkbox_changed(self, item):
-        """提议表格勾选框变化时同步行选中状态"""
-        if item.column() != 0:
-            return
-        row = item.row()
-        if item.checkState() == Qt.CheckState.Checked:
-            self._table.selectRow(row)
-        else:
-            # 只取消当前行选中，不执行 clearSelection()——保留其他行的多选状态
-            self._table.selectionModel().select(
-                self._table.model().index(row, 0),
-                QItemSelectionModel.SelectionFlag.Deselect,
-            )
-
-    def _on_queue_checkbox_changed(self, item):
-        """工作队列表格勾选框变化时同步行选中状态并更新详情"""
-        if item.column() != 0:
-            return
-        row = item.row()
-        if item.checkState() == Qt.CheckState.Checked:
-            self._queue_table.selectRow(row)
-        else:
-            # 只取消当前行选中，保留其他行的选中状态
-            self._queue_table.selectionModel().select(
-                self._queue_table.model().index(row, 0),
-                QItemSelectionModel.SelectionFlag.Deselect,
-            )
-        # 更新详情面板
-        if 0 <= row < len(self._approved_items):
-            self._detail.show_task(self._approved_items[row])
 
     def _on_approve_clicked(self):
         ids = self.get_selected_ids()

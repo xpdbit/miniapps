@@ -231,46 +231,52 @@ class ControlInterface(QWidget):
         ctrl_layout.addSpacing(16)
 
         # ════════════════════════════════════════
-        # 第 2 组：任务操作（卡片式网格布局 2×3）
+        # 第 2 组：任务操作（4:3 方块卡片水平布局）
         # ════════════════════════════════════════
         ctrl_layout.addWidget(self._make_separator())
         ctrl_layout.addSpacing(12)
         ctrl_layout.addWidget(self._make_section_label("⚡ 任务操作"))
         ctrl_layout.addSpacing(8)
 
-        task_grid = QGridLayout()
-        task_grid.setSpacing(8)
+        task_row = QHBoxLayout()
+        task_row.setSpacing(8)
 
-        # 按钮定义: (属性名, 图标, 文本, 工具提示, 行, 列)
+        # 按钮定义: (属性名, 图标, 文本, 工具提示)
         task_buttons = [
             ("_explore_btn", _FIF_SEARCH, "持续探索",
-             "AI 遍历项目发现改进领域，生成粗粒度任务提议", 0, 0),
+             "AI 遍历项目发现改进领域，生成粗粒度任务提议"),
             ("_execute_btn", _FIF_SEND, "执行队列",
-             "按顺序执行工作队列中的待处理任务", 0, 1),
+             "按顺序执行工作队列中的待处理任务"),
             ("_update_btn", _FIF_SYNC, "更新待审批",
-             "AI 检查并更新待审批列表状态（标记完成/失效/调整描述）", 1, 0),
+             "AI 检查并更新待审批列表状态（标记完成/失效/调整描述）"),
             ("_verify_btn", _FIF_ACCEPT, "检查成果",
-             "检查已完成任务的代码实现率，发现遗漏/缺陷/漏洞时自动生成修补提议并直接进入工作队列", 1, 1),
+             "检查已完成任务的代码实现率，发现遗漏/缺陷/漏洞时自动生成修补提议并直接进入工作队列"),
             ("_github_btn", _FIF_GITHUB, "更新文档并推送",
-             "更新项目文档并推送代码到 Github 仓库", 2, 0),
+             "更新项目文档并推送代码到 Github 仓库"),
         ]
 
-        for attr_name, icon, text, tooltip, row, col in task_buttons:
-            card = SimpleCardWidget()
-            card.setBorderRadius(8)
-            card.setMinimumSize(140, 60)
+        for attr_name, icon, text, tooltip in task_buttons:
+            # 卡片容器（4:3 ≈ 120:90）
+            card = QWidget()
+            card.setMinimumSize(100, 90)
+            card.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
+            )
             card.setStyleSheet("""
-                SimpleCardWidget {
-                    background-color: transparent;
+                QWidget {
+                    background-color: #161b22;
                     border: 1px solid #30363d;
+                    border-radius: 8px;
                 }
-                SimpleCardWidget:hover {
+                QWidget:hover {
                     border-color: #58a6ff;
                 }
             """)
 
             card_layout = QVBoxLayout(card)
-            card_layout.setContentsMargins(0, 0, 0, 0)
+            card_layout.setContentsMargins(4, 4, 4, 4)
+            card_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn = PushButton(icon, text)
             btn.setToolTip(tooltip)
@@ -281,20 +287,9 @@ class ControlInterface(QWidget):
             setattr(self, attr_name, btn)
 
             card_layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
-            task_grid.addWidget(card, row, col)
+            task_row.addWidget(card)
 
-        # 第 3 行第 2 列 — 空白占位
-        placeholder = QWidget()
-        placeholder.setMinimumSize(140, 60)
-        placeholder.setStyleSheet("background: transparent; border: none;")
-        task_grid.addWidget(placeholder, 2, 1)
-
-        # 两列等宽展开
-        task_grid.setColumnStretch(0, 1)
-        task_grid.setColumnStretch(1, 1)
-
-        ctrl_layout.addLayout(task_grid)
-        ctrl_layout.addSpacing(16)
+        ctrl_layout.addLayout(task_row)
 
         # ════════════════════════════════════════
         # 第 3 组：Agent 控制

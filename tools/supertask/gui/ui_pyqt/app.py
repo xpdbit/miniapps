@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """SuperTask PyQt6 主窗口 — FluentWindow + LoopManager 信号连接"""
 import sys
 from datetime import datetime
@@ -10,6 +10,7 @@ from qfluentwidgets import FluentWindow, NavigationItemPosition, Theme, setTheme
 
 # FIF.ROBOT 是较新版本的图标，旧版本可能没有，fallback 到 FIF.PEOPLE
 _FIF_AGENT_ICON = getattr(FIF, 'ROBOT', None) or getattr(FIF, 'PEOPLE', FIF.CHAT)
+_FIF_PLAN = getattr(FIF, 'EDIT', None) or FIF.APPLICATION
 
 from gui.ui_pyqt.control_interface import ControlInterface
 from gui.ui_pyqt.history_interface import HistoryInterface
@@ -18,6 +19,7 @@ from gui.ui_pyqt.task_interface import TaskInterface
 from gui.ui_pyqt.terminal_interface import TerminalInterface
 from gui.ui_pyqt.agent_status_interface import AgentStatusInterface
 from gui.ui_pyqt.config_interface import ConfigInterface
+from gui.ui_pyqt.task_plan_interface import TaskPlanInterface
 from gui.core.loop_manager import LoopManager
 
 
@@ -46,6 +48,8 @@ class SuperTaskWindow(FluentWindow):
         self.config_interface = ConfigInterface()
         self.config_interface.setObjectName("configInterface")
 
+        self.task_plan_interface = TaskPlanInterface()
+        self.task_plan_interface.setObjectName("taskPlanInterface")
         # 注册导航
         self._init_navigation()
         self._init_window()
@@ -57,6 +61,7 @@ class SuperTaskWindow(FluentWindow):
             logs_dir=logs_dir,
         )
         self._loop.set_terminal(self.terminal_interface)
+        self.task_plan_interface.set_loop_manager(self._loop)
 
         # 连接 LoopManager 信号 → UI
         self._loop.signals.log_received.connect(self._on_log)
@@ -103,6 +108,7 @@ class SuperTaskWindow(FluentWindow):
     def _init_navigation(self):
         self.addSubInterface(self.control_interface, FIF.HOME, "控制面板")
         self.addSubInterface(self.task_interface, FIF.APPLICATION, "提议与工作")
+        self.addSubInterface(self.task_plan_interface, _FIF_PLAN, "任务规划")
         self.addSubInterface(self.agent_status_interface, _FIF_AGENT_ICON, "Agent 状态")
         self.addSubInterface(self.log_interface, FIF.DOCUMENT, "日志")
         self.addSubInterface(self.terminal_interface, FIF.COMMAND_PROMPT, "终端")

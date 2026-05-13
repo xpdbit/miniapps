@@ -1,17 +1,18 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """history_interface.py — 历史记录（历史执行 / 历史驳回 标签页表格）
 
-支持勾选多选、删除选中、回归选中至提议。
+支持原生 QTableWidget 行选中（MultiSelection），通过 SelectionModel 读取选中行。
 """
 from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QHeaderView,
-                               QWidget, QTableWidgetItem, QApplication)
-from PyQt6.QtCore import Qt
+                               QWidget, QTableWidgetItem, QApplication,
+                               QAbstractItemView)
+from PyQt6.QtCore import Qt, QItemSelectionModel
 from PyQt6.QtGui import QColor, QBrush
 from qfluentwidgets import TableWidget, BodyLabel, TabWidget, PushButton, CaptionLabel
 
 
 class HistoryTableWidget(TableWidget):
-    """带统一样式的历史子表格（含勾选列 + Shift 多选）"""
+    """带统一样式的历史子表格（原生 MultiSelection + Shift 多选）"""
 
     STATUS_LABELS = {
         "done": "完成",
@@ -32,15 +33,15 @@ class HistoryTableWidget(TableWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # 列：勾选 | 描述 | 状态 | 完成时间
-        self.setColumnCount(4)
-        self.setHorizontalHeaderLabels(["", "描述", "状态", "完成时间"])
+        # 列：描述 | 状态 | 完成时间
+        self.setColumnCount(3)
+        self.setHorizontalHeaderLabels(["描述", "状态", "完成时间"])
         self.setBorderRadius(8)
         self.horizontalHeader().setStretchLastSection(False)
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.setEditTriggers(TableWidget.EditTrigger.NoEditTriggers)
-        self.setSelectionMode(TableWidget.SelectionMode.NoSelection)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(TableWidget.SelectionMode.MultiSelection)
         self.setSortingEnabled(True)
 
         self._last_clicked_row = -1  # Shift 多选锚点
@@ -48,85 +49,41 @@ class HistoryTableWidget(TableWidget):
     # ─── 填充数据 ──────────────────────────────
 
     def set_tasks(self, tasks: list[dict]):
-        """填充表格数据（含勾选列）"""
+        """填充表格数据（描述存入 UserRole 供 get_selected_ids 使用，排序安全）"""
         self.setRowCount(len(tasks))
         for i, t in enumerate(tasks):
-            # 第 0 列：勾选框（ID 存入 UserRole，支持排序后正确读取）
-            check_item = self._make_check_item()
-            check_item.setData(Qt.ItemDataRole.UserRole, t.get("id", 0))
-            self.setItem(i, 0, check_item)
-
-            # 第 1 列：描述
+            # 第 0 列：描述（ID 存入 UserRole）
             desc = t.get("desc", t.get("description", "?"))
             item = QTableWidgetItem(str(desc))
             item.setToolTip(str(desc))
-            self.setItem(i, 1, item)
+            item.setData(Qt.ItemDataRole.UserRole, t.get("id", 0))
+            self.setItem(i, 0, item)
 
-            # 第 2 列：状态
+            # 第 1 列：状态
             status = t.get("resolution", t.get("status", "pending"))
             label = self.STATUS_LABELS.get(status, status)
             color = self.STATUS_COLORS.get(status, "#e6edf3")
             status_item = QTableWidgetItem(label)
             status_item.setForeground(QBrush(QColor(color)))
-            self.setItem(i, 2, status_item)
+            self.setItem(i, 1, status_item)
 
-            # 第 3 列：时间
+            # 第 2 列：时间
             resolved_at = t.get("resolved_at", "")
             time_item = QTableWidgetItem(resolved_at)
             time_item.setForeground(QBrush(QColor("#8b949e")))
-            self.setItem(i, 3, time_item)
+            self.setItem(i, 2, time_item)
 
         self._last_clicked_row = -1  # 重置 Shift 多选锚点
 
-    # ─── 勾选框工具方法 ────────────────────────
+    # ─── 选中行获取 ────────────────────────────
 
-    @staticmethod
-    def _make_check_item(checked: bool = False) -> QTableWidgetItem:
-        item = QTableWidgetItem()
-        item.setFlags(
-            Qt.ItemFlag.ItemIsUserCheckable
-            | Qt.ItemFlag.ItemIsEnabled
-            | Qt.ItemFlag.ItemIsSelectable
-        )
-        item.setCheckState(
-            Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        )
-        return item
-
-    def _toggle_checkbox(self, row: int):
-        """切换指定行的勾选框状态"""
-        item = self.item(row, 0)
-        if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-            new_state = (
-                Qt.CheckState.Unchecked
-                if item.checkState() == Qt.CheckState.Checked
-                else Qt.CheckState.Checked
-            )
-            item.setCheckState(new_state)
-
-    def _toggle_range(self, from_row: int, to_row: int):
-        """Shift 多选：统一切换 from_row → to_row 范围内勾选状态"""
-        start = min(from_row, to_row)
-        end = max(from_row, to_row)
-        target = self.item(to_row, 0)
-        if not target or not (target.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-            return
-        new_state = (
-            Qt.CheckState.Unchecked
-            if target.checkState() == Qt.CheckState.Checked
-            else Qt.CheckState.Checked
-        )
-        for r in range(start, end + 1):
-            item = self.item(r, 0)
-            if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-                item.setCheckState(new_state)
-
-    def get_checked_ids(self) -> list[int]:
-        """获取所有勾选行的 ID 列表（通过 item UserRole 存储的 ID，排序安全）"""
+    def get_selected_ids(self) -> list[int]:
+        """获取所有选中行的 ID 列表（通过 SelectionModel，排序安全）"""
         ids = []
-        for row in range(self.rowCount()):
+        for idx in self.selectionModel().selectedRows():
+            row = idx.row()
             item = self.item(row, 0)
-            if item and item.checkState() == Qt.CheckState.Checked:
+            if item:
                 tid = item.data(Qt.ItemDataRole.UserRole)
                 if tid:
                     ids.append(tid)
@@ -135,15 +92,28 @@ class HistoryTableWidget(TableWidget):
     # ─── 点击事件 ──────────────────────────────
 
     def on_cell_clicked(self, row: int, col: int):
-        """处理单元格点击（勾选切换 + Shift 多选，与提议表格行为一致）"""
+        """点击单元格 → 更新选中状态（原生 MultiSelection + Shift 范围选择）"""
         modifiers = QApplication.keyboardModifiers()
-        if col == 0:
-            # 点击勾选框列 → 切换单行
-            self._toggle_checkbox(row)
-        elif modifiers == Qt.KeyboardModifier.ShiftModifier and self._last_clicked_row >= 0:
-            # Shift + 点击 → 范围多选
-            self._toggle_range(self._last_clicked_row, row)
-        # 非 shift 点击非勾选列 → 仅更新锚点，不操作勾选（与提议表格一致）
+        if modifiers == Qt.KeyboardModifier.ShiftModifier and self._last_clicked_row >= 0:
+            # Shift + 点击选中范围
+            start = min(self._last_clicked_row, row)
+            end = max(self._last_clicked_row, row)
+            self.clearSelection()
+            for r in range(start, end + 1):
+                self.selectRow(r)
+        elif modifiers == Qt.KeyboardModifier.ControlModifier:
+            # Ctrl + 点击切换单行
+            if self.selectionModel().isRowSelected(row, self.model().index(row, 0).parent()):
+                self.selectionModel().select(
+                    self.model().index(row, 0),
+                    QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows,
+                )
+            else:
+                self.selectRow(row)
+        else:
+            # 普通点击 → 单选
+            self.clearSelection()
+            self.selectRow(row)
         self._last_clicked_row = row
 
 
@@ -240,15 +210,15 @@ class HistoryInterface(QWidget):
             f"共 {total} 条记录  |  已执行 {done_count}  |  已驳回 {rejected_count}"
         )
 
-    # ─── 获取当前标签页勾选 ID ─────────────────
+    # ─── 获取当前标签页选中 ID ────────────────
 
     def _get_current_checked_ids(self) -> list[int]:
-        """获取当前可见标签页中所有勾选行的 ID"""
+        """获取当前可见标签页中所有选中行的 ID"""
         current_widget = self._tab.currentWidget()
         if current_widget == self._done_tab:
-            return self._done_table.get_checked_ids()
+            return self._done_table.get_selected_ids()
         elif current_widget == self._rejected_tab:
-            return self._rejected_table.get_checked_ids()
+            return self._rejected_table.get_selected_ids()
         return []
 
     # ─── 按钮回调 ──────────────────────────────
