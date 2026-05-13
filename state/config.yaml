@@ -17,6 +17,14 @@ behavior:
   checkpoint_interval: 300
   max_sessions: 10
   auto_resume: false
+  # 事件驱动（Webhook + Cron）
+  webhook:
+    enabled: false
+    port: 9090
+    secret: ""
+  cron:
+    enabled: false
+    jobs: []
 # Prompt 编排引擎（动态选择模板和工具）
 prompt_orchestrator:
   enabled: false

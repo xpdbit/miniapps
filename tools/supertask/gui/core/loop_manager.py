@@ -23,6 +23,7 @@ from .prompt_manager import PromptManager
 from .worktree_manager import WorktreeManager
 from .session_manager import SessionManager, SessionState
 from .prompt_orchestrator import PromptOrchestrator
+from .event_driven import create_event_system, WebhookServer, CronScheduler
 
 
 # ─── Agent 状态追踪数据结构 ──────────────────
@@ -467,6 +468,16 @@ class LoopManager(QThread):
         self._prompt_orchestrator = PromptOrchestrator(working_dir)
         self._config_use_orchestrator: bool = False
 
+        # 事件驱动系统（惰性初始化）
+        self._webhook_server: Optional[WebhookServer] = None
+        self._cron_scheduler = CronScheduler()
+
+    # ─── 日志辅助 ──────────────────────────────────
+
+    def _log_event(self, level: str, message: str):
+        """事件系统专用日志回调"""
+        self._log(level, message)
+
         self._paused = False
         self._cycle_count = 0       # 总轮次计数
         self._work_done_this_cycle = False  # 本周期是否有实际工作
@@ -476,18 +487,67 @@ class LoopManager(QThread):
     # ─── 控制 ──────────────────────────────────
 
     def start(self):
-        """启动循环"""
+        """启动循环 + 事件驱动系统"""
         if self.isRunning():
             return
         self._paused = False
         super().start()
+        self._start_event_system()
         self._log("info", "循环已启动")
 
     def stop(self):
-        """停止循环"""
+        """停止循环 + 事件驱动系统"""
         self.requestInterruption()
         self.runner.kill()
+        self._stop_event_system()
         self._log("info", "循环已停止")
+
+    def _start_event_system(self):
+        """启动 webhook + cron 调度器"""
+        config = self.fm.load_config()
+        behavior_cfg = config.get("behavior", {})
+        webhook_cfg = behavior_cfg.get("webhook", {})
+
+        if webhook_cfg.get("enabled", False):
+            self._webhook_server, _ = create_event_system(
+                webhook_config=webhook_cfg,
+                log_callback=self._log_event,
+                on_webhook_trigger=self._on_event_trigger,
+            )
+            if self._webhook_server:
+                self._webhook_server.start()
+
+        cron_cfg = behavior_cfg.get("cron", {})
+        if cron_cfg.get("enabled", False):
+            for job in cron_cfg.get("jobs", []):
+                if isinstance(job, dict):
+                    self._cron_scheduler.add_job(
+                        cron_expr=job.get("schedule", "0 2 * * *"),
+                        action=job.get("action", "auto_cycle"),
+                        project=job.get("project", "all"),
+                    )
+            self._cron_scheduler.set_on_trigger(self._on_event_trigger)
+            self._cron_scheduler.start()
+
+    def _stop_event_system(self):
+        """停止 webhook + cron 调度器"""
+        if self._webhook_server:
+            self._webhook_server.stop()
+        self._cron_scheduler.stop()
+
+    def _on_event_trigger(self, action: str, project: str = "all"):
+        """事件触发回调：分发到对应的 LoopManager 方法"""
+        self._log("decision", f"事件触发: action={action}, project={project}")
+        if action == "explore":
+            self.trigger_explore(project if project != "all" else None)  # type: ignore[arg-type]
+        elif action == "execute":
+            self.trigger_execute()
+        elif action == "auto_cycle":
+            self.trigger_explore(project if project != "all" else None)  # type: ignore[arg-type]
+            time.sleep(2)
+            self.trigger_execute()
+        elif action == "verify":
+            self.trigger_verify_deliverables()
 
     def pause(self):
         self._paused = True
@@ -592,6 +652,13 @@ class LoopManager(QThread):
         self._config_tool_prefs = orchestrator_cfg.get("tool_preferences", {})
         self._config_tool_context_max = orchestrator_cfg.get("tool_context_max_chars", 800)
         self._config_project_context_max = orchestrator_cfg.get("project_context_max_chars", 1500)
+
+        # 事件驱动配置
+        webhook_cfg = behavior_cfg.get("webhook", {})
+        self._config_webhook_enabled = webhook_cfg.get("enabled", False)
+        self._config_webhook_port = webhook_cfg.get("port", 9090)
+        self._config_webhook_secret = webhook_cfg.get("secret", "")
+        self._config_cron_enabled = behavior_cfg.get("cron", {}).get("enabled", False)
 
     def _get_timeout(self) -> int:
         """获取当前配置的超时时间"""
