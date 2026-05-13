@@ -3,8 +3,8 @@
 import sys
 from datetime import datetime
 
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import FluentWindow, NavigationItemPosition, Theme, setTheme
 
@@ -71,10 +71,7 @@ class SuperTaskWindow(FluentWindow):
         self.config_interface.set_config(config)
         self.config_interface.set_on_save(self._on_config_save)
 
-        # 连接控制面板按钮 → LoopManager
-        self.control_interface._start_btn.clicked.connect(self._start_loop)
-        self.control_interface._stop_btn.clicked.connect(self._stop_loop)
-        self.control_interface._pause_btn.clicked.connect(self._toggle_pause)
+        # 连接控制面板按钮 → LoopManager（手动模式）
         # 手动探索：读取项目选择 ComboBox 后传递 project_name
         self.control_interface._explore_btn.clicked.connect(self._on_explore_clicked)
         self.control_interface._execute_btn.clicked.connect(self._loop.trigger_execute)
@@ -95,8 +92,6 @@ class SuperTaskWindow(FluentWindow):
 
         # 初始刷新
         QTimer.singleShot(500, self._refresh_all)
-        # 定期刷新按钮状态
-        QTimer.singleShot(1000, self._update_control_state)
 
     def _init_navigation(self):
         self.addSubInterface(self.control_interface, FIF.HOME, "控制面板")
@@ -112,7 +107,7 @@ class SuperTaskWindow(FluentWindow):
         setTheme(Theme.DARK)
         self.resize(1400, 900)
 
-    # ─── 循环控制 ────────────────────────────────
+    # ─── 手动操作 ────────────────────────────────
 
     def _on_explore_clicked(self):
         """手动探索按钮点击：读取项目选择，传递 project_name 到 trigger_explore"""
@@ -120,33 +115,6 @@ class SuperTaskWindow(FluentWindow):
         label = project or "全部"
         self._log("info", f"触发探索 [{label}]...")
         self._loop.trigger_explore(project)
-
-    def _start_loop(self):
-        """启动主循环"""
-        if not self._loop.isRunning():
-            self._loop.start()
-            self.control_interface.set_running(True, False)
-            self._log("info", "循环已启动")
-
-    def _stop_loop(self):
-        """停止主循环"""
-        if self._loop.isRunning():
-            self._loop.requestInterruption()
-            self._loop.wait(3000)
-            self._loop.runner.kill()
-            self.control_interface.set_running(False)
-            self._log("info", "循环已停止")
-
-    def _toggle_pause(self):
-        """切换暂停/恢复"""
-        if not self._loop.isRunning():
-            return
-        if self._loop.is_paused():
-            self._loop.resume()
-            self.control_interface.set_running(True, False)
-        else:
-            self._loop.pause()
-            self.control_interface.set_running(True, True)
 
     # ─── 信号处理 ────────────────────────────────
 
@@ -256,28 +224,13 @@ class SuperTaskWindow(FluentWindow):
         except Exception as e:
             self._log("error", f"刷新失败: {e}")
 
-    def _update_control_state(self):
-        """定期更新按钮状态"""
-        running = self._loop.isRunning()
-        paused = self._loop.is_paused() if running else False
-        self.control_interface.set_running(running, paused)
-        QTimer.singleShot(500, self._update_control_state)
-
     # ─── 关闭处理 ────────────────────────────────
 
     def closeEvent(self, event):
         if self._loop.isRunning():
-            reply = QMessageBox.question(
-                self, "确认退出", "循环正在运行，确定退出吗？",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            if reply == QMessageBox.StandardButton.No:
-                event.ignore()
-                return
-        self._loop.requestInterruption()
-        self._loop.wait(3000)
-        self._loop.runner.kill()
+            self._loop.requestInterruption()
+            self._loop.wait(3000)
+            self._loop.runner.kill()
         event.accept()
 
 

@@ -14,13 +14,13 @@ from datetime import datetime
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel,
-                               QProgressBar, QPushButton, QScrollBar,
+                               QScrollBar,
                                QSplitter, QTableWidgetItem, QTextEdit,
                                QVBoxLayout, QWidget, QHeaderView,
                                QAbstractItemView)
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIcon as FIF,
-    PrimaryPushButton, PushButton, SimpleCardWidget, TitleLabel, TableWidget,
+    PushButton, SimpleCardWidget, TitleLabel, TableWidget,
 )
 
 from gui.ui_pyqt.agent_status_interface import PhaseStatusBar
@@ -160,7 +160,7 @@ class ControlInterface(QWidget):
         return w
 
     def _build_top_right(self) -> QWidget:
-        """上侧右侧：循环控制按钮 + 项目选择 + 状态指示"""
+        """上侧右侧：循环控制（手动模式）— 项目选择 + 持续探索/执行队列/更新待审批"""
         w = QWidget()
         layout = QVBoxLayout(w)
         layout.setContentsMargins(12, 0, 0, 0)
@@ -169,29 +169,15 @@ class ControlInterface(QWidget):
         ctrl_card = SimpleCardWidget()
         ctrl_card.setBorderRadius(12)
         ctrl_layout = QVBoxLayout(ctrl_card)
-        ctrl_layout.setSpacing(8)
+        ctrl_layout.setSpacing(10)
 
-        ctrl_layout.addWidget(BodyLabel("循环控制"))
+        ctrl_layout.addWidget(BodyLabel("手动操作"))
         ctrl_layout.addSpacing(4)
 
-        # 按钮行 1：启停
-        btn_row1 = QHBoxLayout()
-        btn_row1.setSpacing(8)
-        self._start_btn = PrimaryPushButton(FIF.PLAY, "启动循环")
-        self._stop_btn = PushButton(FIF.CANCEL, "停止循环")
-        self._pause_btn = PushButton(FIF.PAUSE, "暂停循环")
-        self._stop_btn.setEnabled(False)
-        self._pause_btn.setEnabled(False)
-        btn_row1.addWidget(self._start_btn)
-        btn_row1.addWidget(self._stop_btn)
-        btn_row1.addWidget(self._pause_btn)
-        btn_row1.addStretch()
-        ctrl_layout.addLayout(btn_row1)
-
-        # 按钮行 2：项目选择（独占一行）
-        btn_row2 = QHBoxLayout()
-        btn_row2.setSpacing(8)
-        btn_row2.addWidget(CaptionLabel("项目"))
+        # 第一行：项目选择（独占一行）
+        row_project = QHBoxLayout()
+        row_project.setSpacing(8)
+        row_project.addWidget(CaptionLabel("项目"))
         self._project_combo = QComboBox()
         self._project_combo.addItems(["全部", "ftg", "game1", "tavern"])
         self._project_combo.setCurrentIndex(0)
@@ -209,34 +195,21 @@ class ControlInterface(QWidget):
                 border: 1px solid #30363d; selection-background-color: #1f6feb;
             }
         """)
-        btn_row2.addWidget(self._project_combo)
-        btn_row2.addStretch()
-        ctrl_layout.addLayout(btn_row2)
+        row_project.addWidget(self._project_combo)
+        row_project.addStretch()
+        ctrl_layout.addLayout(row_project)
 
-        # 按钮行 3：持续探索 + 执行队列 + 更新待审批
-        btn_row3 = QHBoxLayout()
-        btn_row3.setSpacing(8)
+        # 第二行：持续探索 + 执行队列 + 更新待审批
+        row_actions = QHBoxLayout()
+        row_actions.setSpacing(8)
         self._explore_btn = PushButton(FIF.SEARCH, "持续探索")
         self._execute_btn = PushButton(FIF.SEND, "执行队列")
         self._update_btn = PushButton(FIF.SYNC, "更新待审批")
-        btn_row3.addWidget(self._explore_btn)
-        btn_row3.addWidget(self._execute_btn)
-        btn_row3.addWidget(self._update_btn)
-        btn_row3.addStretch()
-        ctrl_layout.addLayout(btn_row3)
-
-        # 状态指示器
-        self._status_label = CaptionLabel("● 已停止")
-        self._status_label.setStyleSheet("color: #8b949e; font-size: 13px;")
-        ctrl_layout.addWidget(self._status_label)
-
-        # 进度条（不确定模式，仅在运行时显示）
-        self._progress_bar = QProgressBar()
-        self._progress_bar.setTextVisible(False)
-        self._progress_bar.setRange(0, 0)
-        self._progress_bar.setFixedHeight(4)
-        self._progress_bar.setVisible(False)
-        ctrl_layout.addWidget(self._progress_bar)
+        row_actions.addWidget(self._explore_btn)
+        row_actions.addWidget(self._execute_btn)
+        row_actions.addWidget(self._update_btn)
+        row_actions.addStretch()
+        ctrl_layout.addLayout(row_actions)
 
         layout.addWidget(ctrl_card)
         layout.addStretch()
@@ -424,27 +397,7 @@ class ControlInterface(QWidget):
         self._phase_bar.update_phase(phase, phase_status, elapsed)
         self._phase_bar.update_model(status.get("global_model", ""))
 
-    def set_running(self, running: bool, paused: bool = False) -> None:
-        """设置运行状态 —— 控制启停/暂停按钮启用/禁用 + 状态指示器"""
-        self._start_btn.setEnabled(not running)
-        self._stop_btn.setEnabled(running)
-        self._pause_btn.setEnabled(running)
 
-        if running and paused:
-            self._pause_btn.setText("恢复循环")
-            self._status_label.setText("\u23f8 已暂停")
-            self._status_label.setStyleSheet("color: #d29922; font-size: 13px;")
-            self._progress_bar.setVisible(False)
-        elif running:
-            self._pause_btn.setText("暂停循环")
-            self._status_label.setText("\u25cf 运行中")
-            self._status_label.setStyleSheet("color: #3fb950; font-size: 13px;")
-            self._progress_bar.setVisible(True)
-        else:
-            self._pause_btn.setText("暂停循环")
-            self._status_label.setText("\u25cf 已停止")
-            self._status_label.setStyleSheet("color: #8b949e; font-size: 13px;")
-            self._progress_bar.setVisible(False)
 
     def get_selected_project(self) -> str | None:
         """返回 ComboBox 中选择的项目名，'全部'返回 None"""
