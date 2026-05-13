@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """task_plan_interface.py — AI 驱动的任务规划界面
 左：输入描述 + 开始规划按钮 + 规划结果
 右：AI 生成的多选问题卡片
@@ -216,7 +216,7 @@ questions:
         self._start_btn.clicked.connect(self._on_start_plan)
         left_layout.addWidget(self._start_btn)
 
-        # 取消按钮（初始隐藏，规划进行时显示）
+        # 取消按钮（初始隐藏）
         self._cancel_btn = PushButton("⏹ 取消规划")
         self._cancel_btn.setVisible(False)
         self._cancel_btn.clicked.connect(self._on_cancel_plan)
@@ -356,8 +356,7 @@ questions:
         else:
             self._status_label.setText("错误：未连接到 LoopManager")
             self._status_label.setStyleSheet("color: #f85149; font-size: 11px;")
-            self._start_btn.setEnabled(True)
-            self._start_btn.setText("🚀 开始规划")
+            self._reset_plan_ui()
 
     def _on_plan_result(self, output: str):
         """AI 返回结果后的回调（在后台线程中调用，通过 QTimer 回到主线程）"""
