@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""control_interface.py — 控制面板仪表盘（状态总览 + 循环控制 + 日志检视 + 队列检视）
+"""control_interface.py — 控制面板仪表盘（状态总览 + 手动操作 + 日志检视 + 队列检视）
 
 布局：
   上侧 35%
     ├─ 左侧 50%: 待审批 / 排队中 / 已完成 / 已失败 数字 + Agent 状态 + 模型
-    └─ 右侧 50%: 循环控制（启停、项目、探索、执行）
+    └─ 右侧 50%: 手动操作（项目选择、持续探索、执行队列、更新待审批）
   下侧 65%
     ├─ 左侧 50%: 日志检视（彩色 HTML 实时日志）
     └─ 右侧 50%: 队列检视（工作队列表格）
@@ -60,9 +60,7 @@ class ControlInterface(QWidget):
     # ===================================================================
 
     # ─── 公共访问（按钮/组件引用，供 app.py 连接） ───
-    # start_btn / stop_btn / pause_btn 已在 __init__ 中公开
-    # _explore_btn / _execute_btn 已在 _setup_ui 中创建
-    # 新增 update_btn 供 app.py 连接
+    # _explore_btn / _execute_btn / _update_btn 在 _setup_ui 中创建
 
     def _setup_ui(self) -> None:
         main_layout = QVBoxLayout(self)
@@ -105,7 +103,7 @@ class ControlInterface(QWidget):
         left_top = self._build_top_left()
         top_splitter.addWidget(left_top)
 
-        # 右侧：循环控制
+        # 右侧：手动操作
         right_top = self._build_top_right()
         top_splitter.addWidget(right_top)
 
@@ -160,7 +158,7 @@ class ControlInterface(QWidget):
         return w
 
     def _build_top_right(self) -> QWidget:
-        """上侧右侧：循环控制（手动模式）— 项目选择 + 持续探索/执行队列/更新待审批"""
+        """上侧右侧：手动操作 — 项目选择 + 持续探索/执行队列/更新待审批"""
         w = QWidget()
         layout = QVBoxLayout(w)
         layout.setContentsMargins(12, 0, 0, 0)
