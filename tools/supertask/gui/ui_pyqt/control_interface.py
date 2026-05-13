@@ -188,9 +188,9 @@ class ControlInterface(QWidget):
         btn_row1.addStretch()
         ctrl_layout.addLayout(btn_row1)
 
-        # 按钮行 2：项目选择 + 持续探索 + 执行队列
+        # 按钮行 2：项目选择（独占一行）
         btn_row2 = QHBoxLayout()
-        btn_row2.setSpacing(6)
+        btn_row2.setSpacing(8)
         btn_row2.addWidget(CaptionLabel("项目"))
         self._project_combo = QComboBox()
         self._project_combo.addItems(["全部", "ftg", "game1", "tavern"])
@@ -209,20 +209,18 @@ class ControlInterface(QWidget):
                 border: 1px solid #30363d; selection-background-color: #1f6feb;
             }
         """)
-        self._explore_btn = PushButton(FIF.SEARCH, "持续探索")
-        self._execute_btn = PushButton(FIF.SEND, "执行队列")
         btn_row2.addWidget(self._project_combo)
-        btn_row2.addSpacing(6)
-        btn_row2.addWidget(self._explore_btn)
-        btn_row2.addWidget(self._execute_btn)
         btn_row2.addStretch()
         ctrl_layout.addLayout(btn_row2)
 
-        # 按钮行 3：更新待审批
+        # 按钮行 3：持续探索 + 执行队列 + 更新待审批
         btn_row3 = QHBoxLayout()
         btn_row3.setSpacing(8)
+        self._explore_btn = PushButton(FIF.SEARCH, "持续探索")
+        self._execute_btn = PushButton(FIF.SEND, "执行队列")
         self._update_btn = PushButton(FIF.SYNC, "更新待审批")
-        self._update_btn.setEnabled(True)
+        btn_row3.addWidget(self._explore_btn)
+        btn_row3.addWidget(self._execute_btn)
         btn_row3.addWidget(self._update_btn)
         btn_row3.addStretch()
         ctrl_layout.addLayout(btn_row3)
