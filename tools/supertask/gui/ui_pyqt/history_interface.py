@@ -41,7 +41,7 @@ class HistoryTableWidget(TableWidget):
         self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.setEditTriggers(TableWidget.EditTrigger.NoEditTriggers)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.setSelectionMode(TableWidget.SelectionMode.NoSelection)
+        self.setSelectionMode(TableWidget.SelectionMode.MultiSelection)
         self.setSortingEnabled(True)
 
         self._last_clicked_row = -1  # Shift 多选锚点

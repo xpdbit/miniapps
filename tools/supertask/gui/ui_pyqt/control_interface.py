@@ -258,10 +258,10 @@ class ControlInterface(QWidget):
         for attr_name, icon, text, tooltip in task_buttons:
             # 卡片容器（4:3 ≈ 120:90）
             card = QWidget()
-            card.setMinimumSize(100, 90)
+            card.setMinimumSize(120, 90)
             card.setSizePolicy(
                 QSizePolicy.Policy.Expanding,
-                QSizePolicy.Policy.Fixed,
+                QSizePolicy.Policy.Expanding,
             )
             card.setStyleSheet("""
                 QWidget {
