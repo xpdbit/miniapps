@@ -208,10 +208,27 @@ class FileManager:
         time_str = datetime.now().strftime("%H:%M:%S")
         log_path = os.path.join(self.logs_dir, f"{date_str}.md")
 
+        entry = ""
+
+        # Section separators for major events
+        if level == "error":
+            entry += "\n---\n\n"
+        elif level == "approved":
+            entry += "\n"
+
         prefix = {"info": "-", "error": "!", "decision": ">", "approved": "[APPROVED]"}.get(level, "-")
 
+        # Truncate long messages to 150 chars
+        max_len = 150
+        if len(message) > max_len:
+            truncated = message[:max_len] + "…"
+            entry += f"{prefix} {time_str} {truncated}\n"
+            entry += f"  {message}\n"  # full text on next line indented
+        else:
+            entry += f"{prefix} {time_str} {message}\n"
+
         with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"{prefix} {time_str} {message}\n")
+            f.write(entry)
 
     def read_logs(self, date_str: str = None) -> str:
         """读取指定日期日志"""
@@ -233,7 +250,12 @@ class FileManager:
             log_path = os.path.join(self.logs_dir, f"{date_str}_terminal.md")
 
             status = "✓ 成功" if success else "✗ 失败"
-            line = f"\n## {time_str} - {phase_name} [{status}]\n\n"
+            prompt_len = len(prompt)
+            output_len = len(output) if output else 0
+            line = (
+                f"\n## {time_str} - {phase_name} [{status}]"
+                f" (prompt: {prompt_len} chars, output: {output_len} chars)\n\n"
+            )
             line += f"**Prompt:**\n```\n{prompt}\n```\n\n"
             if output:
                 line += f"**Output:**\n```\n{output}\n```\n"
@@ -267,20 +289,30 @@ class FileManager:
             global_model = status.get("global_model", "")
             agents = status.get("agents", [])
 
-            line = f"\n## {time_str} - 阶段: {phase} [{phase_status}]\n\n"
-            if global_model:
-                line += f"- **全局模型:** {global_model}\n"
-            if agents:
-                line += f"- **Sub-agent 数:** {len(agents)}\n"
+            if not agents:
+                model_part = f" [{global_model}]" if global_model else ""
+                line = (
+                    f"## {time_str} - 阶段: {phase} [{phase_status}]{model_part} (0 agents)\n"
+                    f"\n---\n"
+                )
+            else:
+                model_part = f" [{global_model}]" if global_model else ""
+                line = (
+                    f"## {time_str} - 阶段: {phase} [{phase_status}]{model_part}"
+                    f" — {len(agents)} agents\n"
+                    f"| ID | 类型 | 模型 | 状态 | 耗时 |\n"
+                    f"|----|------|------|------|------|\n"
+                )
                 for a in agents:
                     aid = a.get("id", "?")
                     atype = a.get("type", "?")
-                    amodel = a.get("model", "")
-                    astatus = a.get("status", "?")
-                    aelapsed = a.get("elapsed", 0)
-                    model_str = f" [{amodel}]" if amodel else ""
-                    line += f"  - `{aid}` ({atype}){model_str} → {astatus} ({aelapsed:.0f}s)\n"
-            line += "\n---\n"
+                    amodel = a.get("model", "") or "-"
+                    a_status = a.get("status", "?")
+                    elapsed = a.get("elapsed", 0)
+                    line += (
+                        f"| {aid} | {atype} | {amodel} | {a_status} | {elapsed:.0f}s |\n"
+                    )
+                line += "\n---\n"
 
             with open(log_path, "a", encoding="utf-8") as f:
                 f.write(line)

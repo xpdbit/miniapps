@@ -35,6 +35,12 @@ _LOG_COLORS = {
     "approved": "#bc8cff",
 }
 _LOG_PREFIX = {"info": "\u00b7", "error": "\u2717", "decision": "\u25b6", "approved": "\u2713"}
+_LOG_BADGE = {
+    "info": ("INFO", "#3fb950"),
+    "error": ("ERROR", "#f85149"),
+    "decision": ("DECIDE", "#58a6ff"),
+    "approved": ("OK", "#bc8cff"),
+}
 
 
 class ValueLabel(QLabel):
@@ -343,7 +349,8 @@ class ControlInterface(QWidget):
         for i, t in enumerate(tasks):
             # 第 0 列：描述
             desc = str(t.get("desc", t.get("description", "")))
-            item = QTableWidgetItem(desc)
+            display = desc if len(desc) <= 80 else desc[:77] + "…"
+            item = QTableWidgetItem(display)
             item.setToolTip(desc)
             item.setForeground(Qt.GlobalColor.white)  # 由 qss 控制
             self._queue_table.setItem(i, 0, item)
@@ -375,12 +382,15 @@ class ControlInterface(QWidget):
     def append_log(self, level: str, message: str) -> None:
         """追加日志（由 _on_log 转发）"""
         ts = datetime.now().strftime("%H:%M:%S")
-        prefix = _LOG_PREFIX.get(level, "\u00b7")
+        badge, bg = _LOG_BADGE.get(level, ("·", "transparent"))
         color = _LOG_COLORS.get(level, "#c9d1d9")
         safe_msg = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         html = (
-            f'<span style="color:#8b949e">[{ts}]</span> '
-            f'<span style="color:{color}">{prefix} {safe_msg}</span><br>'
+            f'<span style="color:#8b949e">[{ts}]</span>'
+            f'<span style="display:inline-block;background:{bg};color:#000;'
+            f'padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;'
+            f'margin:0 4px 0 2px;">{badge}</span>'
+            f'<span style="color:{color}">{safe_msg}</span><br>'
         )
         self._log_text.insertHtml(html)
         if self._log_auto_scroll_btn.isChecked():

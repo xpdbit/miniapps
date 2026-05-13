@@ -164,6 +164,16 @@ class AgentTracker:
                 return aid
         return ""
 
+    def status_key(self) -> tuple:
+        """Return hashable key for change detection (excludes elapsed time)"""
+        agents_key = tuple(
+            sorted(
+                (a.agent_id, a.agent_type, a.status)
+                for a in self.agents.values()
+            )
+        )
+        return (self.active_phase, self.phase_status, self._global_model, agents_key)
+
     def get_status(self) -> dict:
         """返回当前完整状态快照，供 UI 渲染"""
         now = time.time()
@@ -436,9 +446,8 @@ class LoopManager(QThread):
 
         # 启动阶段追踪
         self._tracker.start_phase(phase_name, clear=clear_agents)
-        status = self._tracker.get_status()
-        self.signals.agent_status_changed.emit(status)
-        self.fm.write_agent_status(status)
+        self._last_status_key: tuple | None = None
+        self._emit_agent_status_if_changed()
 
         if self._terminal:
             # 等待终端空闲（最多 120 秒）
@@ -451,9 +460,7 @@ class LoopManager(QThread):
                 self._log("error", msg)
                 self.fm.write_agent_log(phase_name, prompt, msg, False)
                 self._tracker.end_phase(False)
-                status = self._tracker.get_status()
-                self.signals.agent_status_changed.emit(status)
-                self.fm.write_agent_status(status)
+                self._emit_agent_status_if_changed()
                 return False, msg
 
             # 使用异步 runner，实时流式输出到终端
@@ -463,9 +470,7 @@ class LoopManager(QThread):
                 self._log("error", msg)
                 self.fm.write_agent_log(phase_name, prompt, msg, False)
                 self._tracker.end_phase(False)
-                status = self._tracker.get_status()
-                self.signals.agent_status_changed.emit(status)
-                self.fm.write_agent_status(status)
+                self._emit_agent_status_if_changed()
                 return False, msg
 
             # 轮询读取输出，每 0.5s 向终端推送新内容（避免 UI 空白）
@@ -503,9 +508,7 @@ class LoopManager(QThread):
 
                 # 每 2 秒独立刷新 agent 状态（使用独立计时器，避免与终端输出冲突）
                 if now - last_agent_emit >= 2.0:
-                    status = self._tracker.get_status()
-                    self.signals.agent_status_changed.emit(status)
-                    self.fm.write_agent_status(status)
+                    self._emit_agent_status_if_changed()
                     last_agent_emit = now
 
                 if self.isInterruptionRequested():
@@ -513,9 +516,7 @@ class LoopManager(QThread):
                     output = "".join(output_parts)
                     self.fm.write_agent_log(phase_name, prompt, output, False)
                     self._tracker.end_phase(False)
-                    status = self._tracker.get_status()
-                    self.signals.agent_status_changed.emit(status)
-                    self.fm.write_agent_status(status)
+                    self._emit_agent_status_if_changed()
                     return False, "已中断"
 
                 if time.time() - start_time > timeout:
@@ -525,9 +526,7 @@ class LoopManager(QThread):
                     self._log("error", msg)
                     self.fm.write_agent_log(phase_name, prompt, output, False)
                     self._tracker.end_phase(False)
-                    status = self._tracker.get_status()
-                    self.signals.agent_status_changed.emit(status)
-                    self.fm.write_agent_status(status)
+                    self._emit_agent_status_if_changed()
                     return False, msg
 
             # 进程可能已结束但 pipe 中还有数据未被轮询读取（信号丢失竞争条件）
@@ -592,9 +591,7 @@ class LoopManager(QThread):
             success = signal_found
             self.fm.write_agent_log(phase_name, prompt, output, success)
             self._tracker.end_phase(success)
-            status = self._tracker.get_status()
-            self.signals.agent_status_changed.emit(status)
-            self.fm.write_agent_status(status)
+            self._emit_agent_status_if_changed()
             return success, output
         else:
             # 非 terminal 模式
@@ -611,14 +608,21 @@ class LoopManager(QThread):
             for line in output.split("\n"):
                 self._tracker.feed_line(line)
             self._tracker.end_phase(success)
-            status = self._tracker.get_status()
-            self.signals.agent_status_changed.emit(status)
-            self.fm.write_agent_status(status)
+            self._emit_agent_status_if_changed()
             return success, output
 
     def _is_terminal_mode(self) -> bool:
         """终端模式下所有命令通过终端面板异步执行"""
         return self._terminal is not None
+
+    def _emit_agent_status_if_changed(self):
+        """Emits agent_status_changed and writes status file only when semantic state differs from last emitted state."""
+        new_key = self._tracker.status_key()
+        if new_key != getattr(self, '_last_status_key', None):
+            self._last_status_key = new_key
+            status = self._tracker.get_status()
+            self.signals.agent_status_changed.emit(status)
+            self.fm.write_agent_status(status)
 
     # ─── 主循环 ────────────────────────────────
 
