@@ -22,8 +22,8 @@ OpenCode 全局指令 - 中文模式
 
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-05-11
-**Commit:** 31a31e9
+**Generated:** 2026-05-14
+**Commit:** (current HEAD)
 **Branch:** master
 
 ## OVERVIEW

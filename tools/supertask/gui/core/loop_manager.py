@@ -20,6 +20,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from .file_manager import FileManager
 from .opencode_runner import OpencodeRunner
 from .prompt_manager import PromptManager
+from .proposal_merger import ProposalMerger
 from .worktree_manager import WorktreeManager
 from .session_manager import SessionManager, SessionState
 from .prompt_orchestrator import PromptOrchestrator
@@ -472,17 +473,27 @@ class LoopManager(QThread):
         self._webhook_server: Optional[WebhookServer] = None
         self._cron_scheduler = CronScheduler()
 
+        # 选定任务上下文（由 app.py 设置，注入到操作 prompt 中）
+        self._selected_task_context: str = ""
+
+        # 循环/手动操作控制
+        self._paused: bool = False
+        self._cycle_count: int = 0              # 总轮次计数
+        self._work_done_this_cycle: bool = False  # 本周期是否有实际工作
+        self._manual_running: set[str] = set()  # 手动触发防重入
+        self._manual_lock = threading.Lock()    # _manual_running 的线程安全锁
+
+        # 持续探索控制
+        self._continuous_explore_active: bool = False
+        self._continuous_explore_project: str | None = None
+        self._continuous_explore_stop: bool = False
+        self._config_proposed_target_count: int = 200
+
     # ─── 日志辅助 ──────────────────────────────────
 
     def _log_event(self, level: str, message: str):
         """事件系统专用日志回调"""
         self._log(level, message)
-
-        self._paused = False
-        self._cycle_count = 0       # 总轮次计数
-        self._work_done_this_cycle = False  # 本周期是否有实际工作
-        self._manual_running: set[str] = set()  # 手动触发防重入
-        self._manual_lock = threading.Lock()    # _manual_running 的线程安全锁
 
     # ─── 控制 ──────────────────────────────────
 
@@ -608,6 +619,11 @@ class LoopManager(QThread):
     def is_paused(self) -> bool:
         return self._paused
 
+    def set_selected_task_context(self, context: str):
+        """设置当前选定任务的上下文（由 app.py 调用）。
+        该上下文会自动注入到探索/执行/验证操作的 prompt 中。"""
+        self._selected_task_context = context
+
     def apply_config(self, config: dict):
         """应用配置：更新 prompts、timeout、projects 等运行时参数"""
         # 提示词配置：支持从 config.yaml 指定自定义模板路径
@@ -619,22 +635,47 @@ class LoopManager(QThread):
         # 重新加载缓存（支持配置热更新）
         self._prompt_manager.reload()
 
+        # 加载 config.yaml 中内联定义的提示词模板（覆盖文件系统模板和默认值）
+        # 支持的模板名: explore, execute, update_proposed, verify_deliverables,
+        #               check_fix, finish, update_task, execute_batch
+        _KNOWN_TEMPLATE_NAMES = {
+            "explore", "execute", "update_proposed", "verify_deliverables",
+            "check_fix", "finish", "update_task", "execute_batch",
+        }
+        for tmpl_name in _KNOWN_TEMPLATE_NAMES:
+            inline_tmpl = prompts_cfg.get(tmpl_name, "")
+            if isinstance(inline_tmpl, str) and inline_tmpl.strip():
+                self._prompt_manager.set_inline(tmpl_name, inline_tmpl)
+
         # 项目配置
         self._config_projects = config.get("projects", [])
 
         agent_cfg = config.get("agent", {})
         self._config_timeout = agent_cfg.get("timeout", 1200)
 
-        # 模型配置回退：如果 config.yaml 中指定了 model，用它作为默认值
+        # 模型配置
         config_model = agent_cfg.get("model", "").strip()
+        self._config_default_model = config_model  # 回退默认模型
+        self._config_model_explore = agent_cfg.get("model_explore", "").strip()
+        self._config_model_execute = agent_cfg.get("model_execute", "").strip()
+        self._config_model_verify = agent_cfg.get("model_verify", "").strip()
+        self._config_model_push = agent_cfg.get("model_push", "").strip()
+        self._config_model_evaluate = agent_cfg.get("model_evaluate", "").strip()
+
+        # 模型配置回退：如果 config.yaml 中指定了 model，用它作为默认值
         if config_model:
             self._tracker._global_model = config_model
-            self._log("info", f"从配置读取模型: {config_model}")
+            self._log("info", f"从配置读取默认模型: {config_model}")
+        else:
+            if self._tracker._global_model:
+                self._tracker._global_model = ''
+                self._log("info", "模型已清除（用户选择不指定默认模型）")
 
         behavior_cfg = config.get("behavior", {})
         self._config_cycle_interval = behavior_cfg.get("cycle_interval", 5)
         self._config_max_retries = behavior_cfg.get("max_retries", 2)
         self._config_auto_push = behavior_cfg.get("auto_push", False)
+        self._config_proposed_target_count = behavior_cfg.get("proposed_target_count", 200)
 
         # Worktree 隔离配置
         self._config_use_worktree = behavior_cfg.get("use_worktree", False)
@@ -659,6 +700,9 @@ class LoopManager(QThread):
         self._config_webhook_port = webhook_cfg.get("port", 9090)
         self._config_webhook_secret = webhook_cfg.get("secret", "")
         self._config_cron_enabled = behavior_cfg.get("cron", {}).get("enabled", False)
+
+        # 通知 UI：模型可能在 config 中变更为非空值
+        self._emit_agent_status_if_changed()
 
     def _get_timeout(self) -> int:
         """获取当前配置的超时时间"""
@@ -685,6 +729,71 @@ class LoopManager(QThread):
         threading.Thread(
             target=self._run_manual_phase, args=("explore", project_name), daemon=True,
         ).start()
+
+    def trigger_continuous_explore(self, project_name: str = None):
+        """持续探索模式：自动循环探索，直到手动停止或达到目标提议数量。
+        project_name：指定项目名，None 表示探索全部。
+        即使 agent 出错也会自动重启，确保永不停止。"""
+        if self.is_running():
+            self._log("warning", "主循环运行中，请先停止后再手动触发")
+            return
+        with self._manual_lock:
+            if self._manual_running:
+                self._log("warning", f"已有操作 {self._manual_running} 运行中，忽略持续探索触发")
+                return
+            if "continuous_explore" in self._manual_running:
+                self._log("info", "持续探索已在运行中，忽略重复触发")
+                return
+            self._manual_running.add("continuous_explore")
+
+        self._continuous_explore_active = True
+        self._continuous_explore_project = project_name
+        self._continuous_explore_stop = False
+        self._log("decision", f"持续探索已启动，目标提议数量: {self._config_proposed_target_count}")
+        threading.Thread(
+            target=self._run_continuous_explore_loop, args=(project_name,), daemon=True,
+        ).start()
+
+    def stop_continuous_explore(self):
+        """请求停止持续探索模式（在下一次探索完成后生效）"""
+        self._continuous_explore_stop = True
+        self._log("decision", "持续探索已请求停止（当前探索完成后生效）")
+
+    def _run_continuous_explore_loop(self, project_name: str = None):
+        """后台线程：持续探索循环，直到手动停止或达到目标数量"""
+        try:
+            cycle = 0
+            while not self._continuous_explore_stop and not self.isInterruptionRequested():
+                cycle += 1
+                label = f"持续探索[{project_name}](第{cycle}轮)" if project_name else f"持续探索[全部](第{cycle}轮)"
+                self._log("decision", f"开始{label}...")
+
+                # 执行探索（即使失败也继续循环）
+                self._phase_explore(project_name)
+
+                # 检查是否达到目标数量
+                proposed = self.fm.load_proposed()
+                current_count = len(proposed)
+                if current_count >= self._config_proposed_target_count:
+                    self._log("info",
+                        f"持续探索完成：待审批任务 {current_count}/{self._config_proposed_target_count} 已达目标")
+                    break
+
+                # 短暂等待后继续下一轮
+                self._log("info",
+                    f"持续探索第{cycle}轮完成，当前 {current_count}/{self._config_proposed_target_count} 条提议")
+                time.sleep(3)
+
+            self._continuous_explore_active = False
+            if not self._continuous_explore_stop:
+                self._log("info", "持续探索已自然结束（达到目标数量或中断）")
+            else:
+                self._log("decision", "持续探索已手动停止")
+            self.signals.state_changed.emit()
+        finally:
+            self._continuous_explore_active = False
+            with self._manual_lock:
+                self._manual_running.discard("continuous_explore")
 
     def trigger_execute(self):
         """手动触发执行阶段（在后台线程运行，避免阻塞主线程）。
@@ -736,6 +845,25 @@ class LoopManager(QThread):
             target=self._run_manual_phase, args=("update_proposed",), daemon=True,
         ).start()
 
+    def trigger_update_task(self, project_name: str = None):
+        """手动触发更新任务：重新检查项目，根据项目当前情况更新任务项内容。
+        包括不限于任务描述、预期成果、约束、头脑风暴历史等。
+        project_name：指定项目名，None 表示全部项目。"""
+        if self.is_running():
+            self._log("warning", "主循环运行中，请先停止后再手动触发")
+            return
+        with self._manual_lock:
+            if self._manual_running:
+                self._log("warning", f"已有操作 {self._manual_running} 运行中，忽略更新任务触发")
+                return
+            if "update_task" in self._manual_running:
+                self._log("info", "更新任务已在运行中，忽略重复触发")
+                return
+            self._manual_running.add("update_task")
+        threading.Thread(
+            target=self._run_manual_phase, args=("update_task", project_name), daemon=True,
+        ).start()
+
     def trigger_deploy(self):
         """手动触发部署至服务端（在后台线程运行，避免阻塞主线程）。
         运行 deploy/scripts/deploy.sh 脚本将项目部署到远程 ECS 服务器。"""
@@ -773,6 +901,42 @@ class LoopManager(QThread):
             target=self._run_manual_phase, args=("verify",), daemon=True,
         ).start()
 
+    def trigger_check_fix(self, project_name: str = None):
+        """手动触发检查并修复当前项目（在后台线程运行）。
+        对选中项目运行代码检查（类型、lint）并自动修复常见问题。"""
+        if self.is_running():
+            self._log("warning", "主循环运行中，请先停止后再手动触发")
+            return
+        with self._manual_lock:
+            if self._manual_running:
+                self._log("warning", f"已有操作 {self._manual_running} 运行中，忽略检查修复触发")
+                return
+            if "check_fix" in self._manual_running:
+                self._log("info", "检查修复已在运行中，忽略重复触发")
+                return
+            self._manual_running.add("check_fix")
+        threading.Thread(
+            target=self._run_manual_phase, args=("check_fix", project_name), daemon=True,
+        ).start()
+
+    def trigger_evaluate(self):
+        """手动触发二次评估：用高级模型重新评估待审批提议的实用性和优先级。
+        主循环运行时拒绝手动触发，避免并发访问。"""
+        if self.is_running():
+            self._log("warning", "主循环运行中，请先停止后再手动触发")
+            return
+        with self._manual_lock:
+            if self._manual_running:
+                self._log("warning", f"已有操作 {self._manual_running} 运行中，忽略评估触发")
+                return
+            if "evaluate" in self._manual_running:
+                self._log("info", "二次评估已在运行中，忽略重复触发")
+                return
+            self._manual_running.add("evaluate")
+        threading.Thread(
+            target=self._run_manual_phase, args=("evaluate",), daemon=True,
+        ).start()
+
     def trigger_plan(self, prompt: str, callback=None):
         """手动触发 AI 任务规划（在后台线程运行）。
         运行用户提供的 planning prompt，完成后通过 callback(output) 返回结果。
@@ -796,7 +960,10 @@ class LoopManager(QThread):
         ).start()
 
     def _run_plan_phase(self, prompt: str, callback=None):
-        """后台线程：执行 AI 规划，完成后回调"""
+        """后台线程：执行 AI 规划，完成后回调。
+        注意：不使用 completion_signal，因为规划 prompt（纯文本 YAML 输出）
+        在 opencode run 模式下不会触发 tool call，会被提前终止。
+        直接收集所有输出并交给回调处理。"""
         try:
             # 检查是否被中断
             if self.isInterruptionRequested():
@@ -806,10 +973,10 @@ class LoopManager(QThread):
             success, output = self._run_prompt(
                 prompt,
                 phase_name="任务规划",
-                completion_signal=self.COMPLETION_SIGNAL,
             )
             if callback:
-                callback(output if success else "")
+                # 无论 success 如何都传递 output，规划流程自行解析内容
+                callback(output if output else "")
         finally:
             with self._manual_lock:
                 self._manual_running.discard("plan")
@@ -827,8 +994,14 @@ class LoopManager(QThread):
                 self._phase_deploy()
             elif phase == "update_proposed":
                 self._phase_update_proposed()
+            elif phase == "update_task":
+                self._phase_update_task(project_name)
             elif phase == "verify":
                 self._phase_verify_deliverables()
+            elif phase == "check_fix":
+                self._phase_check_fix(project_name)
+            elif phase == "evaluate":
+                self._phase_evaluate()
         finally:
             with self._manual_lock:
                 self._manual_running.discard(phase)
@@ -845,6 +1018,9 @@ class LoopManager(QThread):
         run_with_completion_signal 执行（非 terminal 模式），检测到信号后 kill 进程返回。"""
         if timeout is None:
             timeout = self._get_timeout()
+
+        # 根据阶段设置 runner 模型
+        self._set_runner_model_for_phase(phase_name)
 
         # 启动阶段追踪
         self._tracker.start_phase(phase_name, clear=clear_agents)
@@ -1187,7 +1363,15 @@ class LoopManager(QThread):
     # ─── 阶段 ──────────────────────────────────
 
     def _phase_execute(self):
-        """执行批准队列中的任务（支持 worktree 隔离模式）"""
+        """执行批准队列中的任务（按项目分组，多 agent 并行执行）。
+        
+        分组策略：
+        - 将 pending 任务按 project 字段分组
+        - 同项目 ≥2 个任务 → 合并为一个批量执行提示词，单个 agent 按序完成
+        - 同项目 1 个任务 → 使用单独执行提示词
+        - 不同项目组 → 并行执行（各自独立线程 + 独立 runner）
+        - 终端模式下回退到串行执行
+        """
         approved = self.fm.load_approved()
         pending = [t for t in approved if t.get("status") == "pending"]
 
@@ -1196,162 +1380,248 @@ class LoopManager(QThread):
 
         self._work_done_this_cycle = True
 
-        for idx, task in enumerate(pending):
-            self._prompt_retry_count = 0  # 每任务重置自动重试计数器
+        # ── 按项目分组 ──
+        groups: dict[str, list[dict]] = {}
+        for task in pending:
+            proj = task.get("project", "") or task.get("source", "") or task.get("label", "")
+            proj = str(proj).strip() or "默认"
+            if proj not in groups:
+                groups[proj] = []
+            groups[proj].append(task)
+
+        total_groups = len(groups)
+        total_tasks = len(pending)
+        self._log("decision", f"并行执行: {total_tasks} 个任务 → {total_groups} 个项目组同时进行")
+
+        # ── 将所有待执行任务标记为 running ──
+        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for task in pending:
+            task["status"] = "running"
+            task["started_at"] = now_ts
+        self.fm.save_approved(approved)
+
+        # ── 终端模式下回退到串行 ──
+        if self._is_terminal_mode():
+            self._log("info", "终端模式下不支持并行执行，回退到串行模式")
+            for proj, tasks in groups.items():
+                self._execute_project_group_serial(tasks, proj, approved)
+            self.signals.state_changed.emit()
+            return
+
+        # ── 并行执行各项目组 ──
+        import concurrent.futures
+        results: dict[str, tuple[bool, str]] = {}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(groups)) as executor:
+            future_map = {}
+            for proj, tasks in groups.items():
+                future = executor.submit(self._execute_project_group_batch, tasks, proj)
+                future_map[future] = proj
+
+            for future in concurrent.futures.as_completed(future_map):
+                proj = future_map[future]
+                try:
+                    success, output = future.result()
+                    results[proj] = (success, output)
+                except Exception as e:
+                    results[proj] = (False, str(e))
+                    self._log("error", f"项目组 [{proj}] 执行异常: {e}")
+
+        # ── 执行完毕：重新加载 approved.yaml 并从历史推断状态 ──
+        # agent 可能已自行更新 YAML，这里做兜底处理
+        approved = self.fm.load_approved()
+        # 将仍为 running 的任务根据对应项目组的成功/失败标记状态
+        for task in approved:
+            if task.get("status") != "running":
+                continue
+            task_proj = task.get("project", "") or task.get("source", "") or task.get("label", "")
+            task_proj = str(task_proj).strip() or "默认"
+            proj_success = results.get(task_proj, (False, ""))[0]
+            desc = str(task.get("description", ""))[:80]
+            if proj_success:
+                task["status"] = "done"
+                task["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.fm.record_to_history(task, "done")
+                self._log("info", f"完成 [{task_proj}]: {desc}")
+            else:
+                task["fail_count"] = task.get("fail_count", 0) + 1
+                if task["fail_count"] >= 2:
+                    task["status"] = "failed_blocked"
+                    self.fm.record_to_history(task, "failed_blocked")
+                    self._log("error", f"阻塞 [{task_proj}]: {desc}")
+                else:
+                    task["status"] = "error"
+                    task["error"] = results.get(task_proj, ("", ""))[1][:200]
+                    self.fm.record_to_history(task, "error")
+                    self._log("error", f"失败 [{task_proj}]: {desc}")
+
+        self.fm.save_approved(approved)
+        self.signals.state_changed.emit()
+
+        # 并行执行后短暂等待（让文件系统同步）
+        time.sleep(1)
+
+    def _execute_project_group_batch(self, tasks: list[dict], project_name: str) -> tuple[bool, str]:
+        """在独立线程中执行一个项目的所有任务（并行模式）。
+        
+        Args:
+            tasks: 该项目下的所有 pending 任务列表
+            project_name: 项目名称
+            
+        Returns:
+            (success, output) 元组
+        """
+        if not tasks:
+            return True, ""
+
+        # 创建独立的 runner 实例
+        runner = OpencodeRunner(self.working_dir)
+        # 应用阶段模型配置
+        model = getattr(self, '_config_model_execute', '') or getattr(self, '_config_default_model', '')
+        if model:
+            runner.set_model(model)
+
+        descs = [str(t.get("description", t.get("desc", ""))) for t in tasks]
+        tasks_count = len(tasks)
+
+        # 单任务直接用原始 execute 模板
+        if tasks_count == 1:
+            prompt = self._prompt_manager.render("execute", desc=descs[0])
+            phase_label = f"执行[{project_name}]"
+        else:
+            # 多任务使用批量模板
+            task_lines = []
+            for i, (t, d) in enumerate(zip(tasks, descs)):
+                task_lines.append(f"### 任务 {i + 1}（ID: {t.get('id', '?')}）")
+                task_lines.append(d)
+                task_lines.append("")
+            task_list_text = "\n".join(task_lines)
+            prompt = self._prompt_manager.render("execute_batch", task_list=task_list_text)
+            phase_label = f"批量执行[{project_name}]({tasks_count}项)"
+
+        # 注入选定任务上下文
+        if self._selected_task_context:
+            prompt = (
+                f"## ⚡ 当前聚焦任务\n{self._selected_task_context}\n\n"
+                f"以上是用户当前聚焦的任务目标。请在执行过程中优先处理与此相关的操作。\n\n"
+                + prompt
+            )
+
+        self._log("approved", f"启动 [{project_name}]: {tasks_count} 个任务 (agent 并行)")
+
+        # 使用独立的 tracker 追踪该组的 agent 活动
+        group_tracker = AgentTracker()
+        group_tracker.start_phase(phase_label)
+        group_tracker._global_model = runner._model
+
+        # 使用同步 runner 执行（非终端模式）
+        self._set_runner_model_for_phase("execute")
+        if model:
+            runner._model = model  # runner 已设置，确保一致性
+
+        success, output = runner.run_with_completion_signal(
+            prompt,
+            timeout=self._get_timeout(),
+            completion_signal=self.COMPLETION_SIGNAL,
+        )
+
+        # 解析输出中的 agent 活动
+        for line in output.split("\n"):
+            events = group_tracker.feed_line(line)
+            for evt in events:
+                if evt.get("type") == "agent_started":
+                    evt["project"] = project_name
+
+        group_tracker.end_phase(success)
+
+        # 发送输出到 UI
+        self.signals.agent_output.emit(output)
+        self.fm.write_agent_log(phase_label, prompt, output, success)
+
+        if success:
+            self._log("info", f"[{project_name}] 全部 {tasks_count} 个任务执行完成")
+        else:
+            self._log("error", f"[{project_name}] 执行未完成: {output[:100]}")
+
+        return success, output
+
+    def _execute_project_group_serial(self, tasks: list[dict], project_name: str,
+                                       approved: list[dict]):
+        """终端模式下的串行执行（单任务逐个处理，与旧逻辑兼容）。
+        
+        Args:
+            tasks: 项目任务列表
+            project_name: 项目名称
+            approved: 完整的 approved 列表（会被就地修改并保存）
+        """
+        for idx, task in enumerate(tasks):
+            self._prompt_retry_count = 0
             if self.isInterruptionRequested():
                 return
 
             desc = task.get("description", "无描述")
             task_id = task.get("id", idx + 1)
-            self._log("approved", f"执行: {desc}")
+            self._log("approved", f"执行 [{project_name}]: {desc}")
 
-            # ── 任务大小检测：超长描述给出警告 ──
-            if len(desc) > 200:
-                self._log(
-                    "warning",
-                    f"任务描述较长（{len(desc)} 字），建议拆分为多个小任务以提高成功率",
+            prompt = self._prompt_manager.render("execute", desc=desc)
+
+            if self._selected_task_context:
+                prompt = (
+                    f"## ⚡ 当前聚焦任务\n{self._selected_task_context}\n\n"
+                    + prompt
                 )
 
-            # ── 生成执行 prompt ──
-            if self._config_use_orchestrator:
-                prompt = self._prompt_orchestrator.compose(
-                    task,
-                    tool_prefs=self._config_tool_prefs,
-                    project_context_max_chars=self._config_project_context_max,
-                    tool_context_max_chars=self._config_tool_context_max,
-                )
-                task_type = self._prompt_orchestrator.get_task_type(task)
-                self._log("info", f"编排 prompt: 类型={task_type}, {desc[:50]}...")
-            else:
-                prompt = self._prompt_manager.render("execute", desc=desc)
-
-            # ── Session 恢复检查 ──
-            current_session: Optional[SessionState] = None
-            if self._session_manager.can_resume(task_id):
-                current_session = self._session_manager.load(task_id)
-                if current_session:
-                    resume_ctx = self._session_manager.build_resume_context(current_session)
-                    # 将恢复上下文与原 prompt 合并
-                    prompt = self._prompt_manager.render(
-                        "resume",
-                        resume_context=resume_ctx,
-                        original_prompt=prompt,
-                    )
-                    self._log("info", f"恢复会话: task-{task_id}，已完成 {len(current_session.completed_actions)} 个步骤")
-
-            # 创建新 session（如果不需要恢复或恢复 session 不存在）
-            if current_session is None:
-                current_session = self._session_manager.create(task_id, "execute", prompt)
-
-            # 崩溃恢复：执行前将任务标记为 running，记录开始时间
-            task["status"] = "running"
-            task["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.fm.save_approved(approved)
-
-            # ── Worktree 隔离模式 ──
-            wt_name = f"task-{task_id}"
-            if self._config_use_worktree:
-                if self._worktree_manager is None:
-                    worktrees_dir = getattr(self, '_config_worktrees_dir', '.worktrees')
-                    self._worktree_manager = WorktreeManager(
-                        self.working_dir, worktrees_dir,
-                    )
-                try:
-                    wt_path = self._worktree_manager.create(wt_name)
-                    self.runner.set_working_dir(wt_path)
-                    self._log("info", f"Worktree 模式: {wt_path}")
-                except Exception as e:
-                    self._log("error", f"Worktree 创建失败，回退到主目录: {e}")
-                    self.runner.reset_working_dir()
-
-            # 首个任务清空 agent 列表，后续任务累加（保留跨任务的 agent 追踪）
             success, output = self._run_prompt(
-                prompt, phase_name=f"执行任务 [{idx + 1}/{len(pending)}]",
+                prompt, phase_name=f"执行[{project_name}] [{idx + 1}/{len(tasks)}]",
                 clear_agents=(idx == 0),
                 completion_signal=self.COMPLETION_SIGNAL,
-                current_session=current_session,
             )
             self.signals.agent_output.emit(output)
 
-            # ── Session 完成/清理 ──
             if success:
-                if current_session:
-                    self._session_manager.complete(current_session)
-            else:
-                # 失败时保留 session 文件用于后续恢复
-                if current_session:
-                    self._session_manager.checkpoint(
-                        current_session,
-                        completed_actions=[f"失败: {output[:100]}"],
-                    )
-                # 清理旧 session（维持 max_sessions 限制）
-                self._session_manager.purge_old(self._config_max_sessions)
-
-            # ── Worktree 收尾：同步状态 + 清理 ──
-            if self._config_use_worktree and self._worktree_manager:
-                try:
-                    if success:
-                        self._worktree_manager.sync_state(wt_name)
-                    self._worktree_manager.remove(wt_name)
-                except Exception as e:
-                    self._log("warning", f"Worktree 清理异常: {e}")
-                finally:
-                    self.runner.reset_working_dir()
-
-            if self._is_terminal_mode():
-                # 终端模式下：成功时依赖 agent 自己修改 YAML，失败时自动更新状态防止死锁
-                if success:
-                    self._log("info", f"终端模式：已发送任务「{desc[:50]}」，请人工确认结果")
-                else:
-                    # 终端模式超时/错误：自动更新状态，避免任务永远 pending
-                    task["fail_count"] = task.get("fail_count", 0) + 1
-                    if task["fail_count"] >= 2:
-                        task["status"] = "failed_blocked"
-                        self.fm.record_to_history(task, "failed_blocked")
-                        self._log("error", f"阻塞: {desc[:80]}（连续失败 {task['fail_count']} 次）")
-                    else:
-                        task["status"] = "error"
-                        task["error"] = output[:200] if output else "超时/无输出"
-                        self.fm.record_to_history(task, "error")
-                        self._log("error", f"失败: {desc[:80]} — 超时或无输出")
-                approved = self.fm.load_approved()
-            elif success:
                 task["status"] = "done"
                 task["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.fm.record_to_history(task, "done")
-                self._log("info", f"完成: {desc}")
+                self._log("info", f"完成 [{project_name}]: {desc}")
             else:
-                # 检查失败次数
                 task["fail_count"] = task.get("fail_count", 0) + 1
                 if task["fail_count"] >= 2:
                     task["status"] = "failed_blocked"
                     self.fm.record_to_history(task, "failed_blocked")
-                    self._log("error", f"阻塞: {desc}（连续失败 {task['fail_count']} 次）")
                 else:
                     task["status"] = "error"
-                    task["error"] = output[:200]
+                    task["error"] = output[:200] if output else "超时/无输出"
                     self.fm.record_to_history(task, "error")
-                    self._log("error", f"失败: {desc} — {output[:100]}")
+                self._log("error", f"失败 [{project_name}]: {desc}")
 
-            if not self._is_terminal_mode():
-                self.fm.save_approved(approved)
+            self.fm.save_approved(approved)
             self.signals.state_changed.emit()
-            time.sleep(2)
+            time.sleep(1)
 
     def _phase_update_proposed(self):
-        """更新待审批任务列表"""
+        """更新待审批任务列表（带 ProposalMerger 保护，防止 AI 覆盖丢失数据）"""
         proposed = self.fm.load_proposed()
         if not proposed:
             return
 
+        # ── 更新前：快照现有提议（保留原始时间戳） ──
+        merger = ProposalMerger(self.fm.state_dir, lock=self.fm._lock)
+        merger.snapshot()
+
         self._prompt_retry_count = 0  # 重置自动重试计数器
         self._log("decision", "更新待审批列表...")
-        content = yaml.dump(proposed, allow_unicode=True, default_flow_style=False)
-        template = getattr(self, '_custom_update_template', None)
-        if template:
-            prompt = template.format(content=content)
-        else:
-            prompt = self._prompt_manager.render("update_proposed", content=content)
+        # 构建项目上下文，让 AI 知道提议任务所属的项目
+        projects = getattr(self, '_config_projects', [])
+        project_header = ""
+        if projects:
+            lines = []
+            for p in projects:
+                label = p.get("label", p.get("name", "?"))
+                lines.append(f"- 【项目】{label}")
+            project_header = "## 可用项目\n" + "\n".join(lines) + "\n\n"
+
+        content = project_header + yaml.dump(proposed, allow_unicode=True, default_flow_style=False)
+        prompt = self._prompt_manager.render("update_proposed", content=content)
 
         success, output = self._run_prompt(
             prompt, phase_name="更新待审批列表",
@@ -1360,10 +1630,62 @@ class LoopManager(QThread):
         self.signals.agent_output.emit(output)
         if success:
             self._log("info", "待审批列表已更新")
+            # ── 更新后：脚本合并新旧提议，保留原始时间戳 ──
+            config_projects = getattr(self, '_config_projects', [])
+            merged = merger.merge(project_label="", projects=config_projects)
+            self._log("info", f"提议合并完成，共 {len(merged)} 条（保留原有时间戳）")
         else:
             self._log("error", f"更新待审批失败: {output[:100]}")
+            # 失败时恢复快照
+            merger.merge(project_label="")
 
         # 刷新 UI
+        self.signals.state_changed.emit()
+
+    def _phase_update_task(self, project_name: str = None):
+        """更新任务：重新检查项目，更新所有任务项的内容。
+        包括任务描述、预期成果、约束、头脑风暴历史等。
+        功能替代原来的"更新待审批"，但更全面地审查项目状态。"""
+        project_info = self._get_project_info(project_name)
+        proposed = self.fm.load_proposed()
+        approved = self.fm.load_approved()
+
+        # 构建上下文：当前提议 + 工作队列 + 项目信息
+        context_parts = []
+        context_parts.append(f"## 项目信息\n【项目】{project_info['label']}\n源码目录: {project_info['source_dirs']}")
+        if proposed:
+            context_parts.append(f"## 当前待审批任务（{len(proposed)} 条）")
+            context_parts.append(yaml.dump(proposed, allow_unicode=True, default_flow_style=False))
+        if approved:
+            context_parts.append(f"## 当前工作队列（{len(approved)} 条）")
+            context_parts.append(yaml.dump(approved, allow_unicode=True, default_flow_style=False))
+        context = "\n".join(context_parts)
+
+        # ── 更新前：快照现有提议（保留原始时间戳） ──
+        merger = ProposalMerger(self.fm.state_dir, lock=self.fm._lock)
+        merger.snapshot()
+
+        self._prompt_retry_count = 0
+        self._log("decision", f"开始更新任务 [{project_info['label']}]...")
+
+        prompt = self._prompt_manager.render("update_task", content=context)
+
+        success, output = self._run_prompt(
+            prompt, phase_name=f"更新任务[{project_info['label']}]",
+            completion_signal=self.COMPLETION_SIGNAL,
+        )
+        self.signals.agent_output.emit(output)
+        if success:
+            self._log("info", f"任务已更新 [{project_info['label']}]")
+            # ── 更新后：脚本合并，保留原始时间戳 ──
+            project_label = project_info.get("label", project_name or "")
+            merged = merger.merge(project_label=project_label)
+            self._log("info", f"任务合并完成，共 {len(merged)} 条")
+        else:
+            self._log("error", f"更新任务失败: {output[:100]}")
+            # 恢复快照
+            merger.merge(project_label="")
+
         self.signals.state_changed.emit()
 
     def _get_project_info(self, project_name: str = None) -> dict:
@@ -1403,23 +1725,68 @@ class LoopManager(QThread):
             "exclude_dirs": "plan/",
         }
 
+    def _build_project_list_for_prompt(self) -> str:
+        """构建项目列表字符串，供 explore 模板中 AI 推断 project 归属。
+
+        从 config.yaml 的 projects 配置读取，格式化为：
+        - FTG 食物主题生成器（关键词: ftg-miniapp, ftg-server）
+        - Game1 挂机放置游戏（关键词: game1-miniapp, game1-server）
+        ...
+        """
+        projects = getattr(self, '_config_projects', [])
+        if not projects:
+            return "（未配置项目列表）"
+
+        lines: list[str] = []
+        for p in projects:
+            label = p.get("label", p.get("name", "?"))
+            source_dirs = p.get("source_dirs", [])
+            # 从 source_dirs 提取关键词：apps/ftg-miniapp/src/ → ftg-miniapp
+            keywords: list[str] = []
+            for d in source_dirs:
+                path_parts = [x for x in d.strip("/").split("/") if x not in ("src", "")]
+                project_part = path_parts[-1] if path_parts else ""
+                if project_part and project_part not in ("apps", "servers", "tools", "src"):
+                    keywords.append(project_part)
+            # 如果没有 source_dirs，回退到 name 字段 + label 分词
+            if not keywords:
+                name = p.get("name", "")
+                if name and name != label:
+                    keywords.append(name)
+                label_words = label.split()
+                for word in label_words:
+                    if word not in keywords:
+                        keywords.append(word)
+            kw_str = ", ".join(keywords) if keywords else label
+            lines.append(f"- {label}（关键词: {kw_str}）")
+
+        return "\n".join(lines)
+
     def _phase_explore(self, project_name: str = None):
         """探索项目并生成提议。project_name：指定项目名，None 表示全部。"""
-        # 仅当存在 status=proposed 的待审批任务时才跳过探索
-        # （done/cancelled 等已完成状态不应阻止新探索）
-        proposed = self.fm.load_proposed()
-        pending = [t for t in proposed if t.get("status") == "proposed"]
-        if pending:
-            self._log("info", f"已有 {len(pending)} 个待审批任务，跳过探索")
-            return
+        # 即有待审批任务也允许探索，不跳过
 
         project_info = self._get_project_info(project_name)
+        project_list = self._build_project_list_for_prompt()
         prompt = self._prompt_manager.render(
             "explore",
             project_label=project_info["label"],
             source_dirs=project_info["source_dirs"],
             exclude_dirs=project_info["exclude_dirs"],
+            project_list=project_list,
         )
+
+        # 注入选定任务上下文
+        if self._selected_task_context:
+            prompt = (
+                f"## ⚡ 当前聚焦任务\n{self._selected_task_context}\n\n"
+                f"请优先探索与上述任务相关的代码区域。\n\n"
+                + prompt
+            )
+
+        # ── 探索前：快照现有提议（保留原始时间戳和 project） ──
+        merger = ProposalMerger(self.fm.state_dir, lock=self.fm._lock)
+        merger.snapshot()
 
         self._prompt_retry_count = 0  # 重置自动重试计数器
         self._work_done_this_cycle = True
@@ -1432,8 +1799,15 @@ class LoopManager(QThread):
         self.signals.agent_output.emit(output)
         if success:
             self._log("info", "探索完成，已生成提议")
+            # ── 探索后：脚本合并新旧提议，保留原始时间戳，补充 project 字段 ──
+            project_label = project_info.get("label", project_name or "")
+            config_projects = getattr(self, '_config_projects', [])
+            merged = merger.merge(project_label=project_label, projects=config_projects)
+            self._log("info", f"提议合并完成，共 {len(merged)} 条（保留原有时间戳）")
         else:
             self._log("error", f"探索失败: {output[:100]}")
+            # 探索失败时，恢复快照（防止 AI 写了一半损坏数据）
+            merger.merge(project_label="")
             # 记录空转（计数器由主循环统一递增，此处仅记录日志）
             count = self.fm.load_cycle_count() + 1
             self._log("info", f"空转轮次（预计）: {count}")
@@ -1462,8 +1836,26 @@ class LoopManager(QThread):
         self._prompt_retry_count = 0
         self._log("decision", f"开始检查 {len(all_done)} 个已完成任务的成果实现率…")
 
-        tasks_yaml = yaml.dump(all_done, allow_unicode=True, default_flow_style=False)
+        # 构建项目上下文，让 AI 知道任务所属的项目
+        projects = getattr(self, '_config_projects', [])
+        project_header = ""
+        if projects:
+            lines = []
+            for p in projects:
+                label = p.get("label", p.get("name", "?"))
+                lines.append(f"- 【项目】{label}")
+            project_header = "## 可用项目\n" + "\n".join(lines) + "\n\n"
+        
+        tasks_yaml = project_header + yaml.dump(all_done, allow_unicode=True, default_flow_style=False)
         prompt = self._prompt_manager.render("verify_deliverables", tasks=tasks_yaml)
+
+        # 注入选定任务上下文
+        if self._selected_task_context:
+            prompt = (
+                f"## ⚡ 当前聚焦任务\n{self._selected_task_context}\n\n"
+                f"请优先验证与上述任务相关的代码实现。\n\n"
+                + prompt
+            )
 
         success, output = self._run_prompt(
             prompt, phase_name="检查已完成任务成果",
@@ -1474,6 +1866,94 @@ class LoopManager(QThread):
             self._log("info", "任务成果检查完成，修补提议已进入工作队列")
         else:
             self._log("error", f"检查失败: {output[:100]}")
+
+        self.signals.state_changed.emit()
+
+    def _phase_check_fix(self, project_name: str = None):
+        """检查并修复当前项目：运行类型检查、lint，自动修复常见问题。
+        project_name：指定项目名，None 表示全部。"""
+        project_info = self._get_project_info(project_name)
+        self._prompt_retry_count = 0
+        self._log("decision", f"开始检查并修复 [{project_info['label']}]...")
+
+        prompt = self._prompt_manager.render(
+            "check_fix",
+            project_label=project_info["label"],
+            source_dirs=project_info["source_dirs"],
+            exclude_dirs=project_info["exclude_dirs"],
+        )
+
+        # 注入选定任务上下文
+        if self._selected_task_context:
+            prompt = (
+                f"## ⚡ 当前聚焦任务\n{self._selected_task_context}\n\n"
+                f"请优先检查与上述任务相关的代码。\n\n"
+                + prompt
+            )
+
+        success, output = self._run_prompt(
+            prompt, phase_name="检查并修复",
+            completion_signal=self.COMPLETION_SIGNAL,
+        )
+        self.signals.agent_output.emit(output)
+        if success:
+            self._log("info", f"[{project_info['label']}] 检查修复完成")
+        else:
+            self._log("error", f"检查修复失败: {output[:100]}")
+
+        self.signals.state_changed.emit()
+
+    def _phase_evaluate(self):
+        """二次评估：用高级模型重新评估待审批提议的实用性和优先级。
+        
+        读取 proposed_tasks.yaml 中的所有提议，交由 AI 重新评估：
+        - 验证提议描述的真实性（假阳性检测）
+        - 合并同类项（如多个"空 catch 补日志"合并为一条）
+        - 重新评定优先级（flash 的 P2 可能实际是 P3）
+        - 添加置信度评估和修复难度预估
+        
+        评估结果直接覆写 proposed_tasks.yaml。
+        失败时保留原始提议不变。
+        """
+        proposed = self.fm.load_proposed()
+        if not proposed:
+            self._log("info", "没有待审批提议需要评估")
+            self.signals.state_changed.emit()
+            return
+
+        self._prompt_retry_count = 0
+        self._log("decision", f"开始二次评估 {len(proposed)} 条提议...")
+
+        # 构建上下文：提议列表 + 项目信息
+        context_parts = [f"## 待评估提议（{len(proposed)} 条）"]
+        context_parts.append(yaml.dump(proposed, allow_unicode=True, default_flow_style=False))
+        content = "\n".join(context_parts)
+
+        prompt = self._prompt_manager.render("evaluate", content=content)
+
+        # 注入选定任务上下文
+        if self._selected_task_context:
+            prompt = (
+                f"## ⚡ 当前聚焦任务\n{self._selected_task_context}\n\n"
+                f"请优先评估与上述任务相关的提议。\n\n"
+                + prompt
+            )
+
+        # 评估前快照（失败时恢复）
+        merger = ProposalMerger(self.fm.state_dir)
+        merger.snapshot()
+
+        success, output = self._run_prompt(
+            prompt, phase_name="二次评估提议",
+            completion_signal=self.COMPLETION_SIGNAL,
+        )
+        self.signals.agent_output.emit(output)
+        if success:
+            self._log("info", f"二次评估完成，已更新提议列表")
+        else:
+            self._log("error", f"二次评估失败: {output[:100]}")
+            # 恢复快照
+            merger.merge(project_label="")
 
         self.signals.state_changed.emit()
 
@@ -1581,6 +2061,32 @@ class LoopManager(QThread):
         self.signals.state_changed.emit()
 
     # ─── 工具 ──────────────────────────────────
+
+    def _set_runner_model_for_phase(self, phase_name: str):
+        """根据阶段名称设置 runner 使用的 AI 模型。
+        优先级：分阶段专用模型 > 全局默认模型 > 空（跟随 opencode 自动选择）。
+        
+        阶段映射：
+        - 探索/更新类 → model_explore
+        - 执行类 → model_execute
+        - 检查类 → model_verify
+        - 收尾/部署类 → model_push
+        - 其他 → 默认模型
+        """
+        default = getattr(self, '_config_default_model', '')
+        if phase_name.startswith("探索") or phase_name.startswith("更新"):
+            model = getattr(self, '_config_model_explore', '') or default
+        elif phase_name.startswith("执行"):
+            model = getattr(self, '_config_model_execute', '') or default
+        elif phase_name.startswith("检查"):
+            model = getattr(self, '_config_model_verify', '') or default
+        elif phase_name.startswith("评估"):
+            model = getattr(self, '_config_model_evaluate', '') or default
+        elif phase_name.startswith("收尾") or phase_name.startswith("部署"):
+            model = getattr(self, '_config_model_push', '') or default
+        else:
+            model = default
+        self.runner.set_model(model)
 
     def _log(self, level: str, message: str):
         self.fm.write_log(level, message)
