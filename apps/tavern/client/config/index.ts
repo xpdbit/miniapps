@@ -20,11 +20,6 @@ const baseConfig = {
   copy: {
     patterns: [
       { from: 'src/assets/icons/', to: 'dist/assets/icons/' },
-      {
-        from: 'node_modules/tdesign-miniprogram-taro/miniprogram_dist/',
-        to: 'dist/miniprogram_npm/tdesign-miniprogram/',
-        ignore: ['*.ts', '*.map', 'type.js'],
-      },
     ],
     options: {},
   },
