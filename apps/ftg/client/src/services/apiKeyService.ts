@@ -81,6 +81,10 @@ async function callManageApiKey<T>(
   action: string,
   data?: Record<string, unknown>,
 ): Promise<ApiResponse<T>> {
+  // 云函数仅在微信小程序环境可用
+  if (process.env.TARO_ENV !== 'weapp') {
+    return { success: false, errMsg: 'CloudBase not available on H5' } as ApiResponse<T>;
+  }
   const res = await wx.cloud.callFunction({
     name: CLOUD_FN,
     data: {

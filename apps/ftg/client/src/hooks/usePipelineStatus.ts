@@ -205,6 +205,10 @@ export function usePipelineStatus(
     }
 
     try {
+      // 云函数仅在微信小程序环境可用，H5 跳过轮询
+      if (process.env.TARO_ENV !== 'weapp') {
+        return;
+      }
       const res = await wx.cloud.callFunction({
         name: CLOUD_FUNCTION_NAME,
         data: {

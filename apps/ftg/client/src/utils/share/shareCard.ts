@@ -309,7 +309,10 @@ export async function generateShareCard(
   // ============================================================
   // 8. 导出为临时文件
   // ============================================================
-  // 使用 wx.canvasToTempFilePath（WeChat 原生 API），
+  // 使用 wx.canvasToTempFilePath（WeChat 原生 API），H5 平台不可用
+  if (process.env.TARO_ENV !== 'weapp') {
+    throw new Error('Share card generation only available on WeChat Mini Program');
+  }
   // Taro.createOffscreenCanvas 返回的 canvas 可在运行时直接传入
   const tempRes = await new Promise<{
     tempFilePath: string;

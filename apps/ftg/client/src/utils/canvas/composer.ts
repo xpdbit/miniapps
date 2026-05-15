@@ -339,7 +339,10 @@ export async function composeThemeImage(request: ComposeRequest): Promise<Compos
   const config = await getTemplateConfig(request.themeId);
   const { width, height } = config.canvasSize;
 
-  // 2. 创建离屏 Canvas
+  // 2. 创建离屏 Canvas（微信小程序专有 API）
+  if (process.env.TARO_ENV !== 'weapp') {
+    throw new ComposeError('Canvas compositing is only available on WeChat Mini Program');
+  }
   const rawCanvas = wx.createOffscreenCanvas({ type: '2d', width, height });
   const canvas = rawCanvas as unknown as WeappCanvas;
   const ctx = canvas.getContext('2d');
@@ -720,6 +723,10 @@ function exportCanvas(
   width: number,
   height: number,
 ): Promise<string> {
+  // 微信小程序专有 API
+  if (process.env.TARO_ENV !== 'weapp') {
+    throw new Error('canvasToTempFilePath only available on WeChat Mini Program');
+  }
   return new Promise<string>((resolve, reject) => {
     wx.canvasToTempFilePath({
       canvas: canvas as unknown as WechatMiniprogram.OffscreenCanvas,

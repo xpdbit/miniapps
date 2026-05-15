@@ -33,6 +33,10 @@ async function getOpenId(): Promise<string> {
     return cachedOpenId;
   }
 
+  // 云函数仅在微信小程序环境可用
+  if (process.env.TARO_ENV !== 'weapp') {
+    throw new Error('CloudBase not available on H5 platform');
+  }
   const res = await wx.cloud.callFunction({
     name: 'getOpenId',
   });
@@ -56,6 +60,8 @@ async function getOpenId(): Promise<string> {
  */
 async function fetchUserStats(openid: string): Promise<UserStats | null> {
   try {
+    // 云函数仅在微信小程序环境可用
+    if (process.env.TARO_ENV !== 'weapp') return null;
     const statsRes = await wx.cloud.callFunction({
       name: CLOUD_FUNCTIONS.GET_USER_STATS,
       data: { openid },
