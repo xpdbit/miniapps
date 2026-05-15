@@ -32,7 +32,6 @@
     "@tarojs/taro": "4.0.13",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tdesign-miniprogram-taro": "^0.0.4",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

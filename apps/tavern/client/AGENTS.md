@@ -98,4 +98,4 @@ npm run generate-icons   # 鐢熸垚 tabBar 鍥炬爣
 - **澶氭ā鍨嬫敮鎸?*: 閫氳繃 ModelSelector 缁勪欢鍒囨崲 AI 妯″瀷 (閫氫箟鍗冮棶绛?
 - **authStore**: 浣跨敤 `@tarojs/taro` Storage API锛屽弻骞冲彴鍏煎
 - **H5 鏋勫缓**: 鍦?`apps/tavern/` 涓嬪畨瑁呬緷璧栧悗锛岃繍琛?`npm run dev:h5` 鍗冲彲
-- **⚠️ H5 已知限制**: `tdesign-miniprogram-taro` 为微信小程序专用组件库，`app.config.ts` 中的 `usingComponents` 配置仅在 weapp 平台生效。H5 构建时这些组件不可用，需要在后续版本中替换为 H5 兼容的替代组件（如 @tarojs/components 原生组件或 NutUI/Taroify 等 H5 兼容组件库）。当前 Tavern H5 版本可编译但部分 UI 组件渲染不完整。
+- **H5 兼容性**: 已移除未使用的 `tdesign-miniprogram-taro` 依赖和 `app.config.ts` 中的 `usingComponents` 配置（这些组件从未在源码中实际使用）。Tavern 现已完全支持 H5 和 weapp 双平台构建。

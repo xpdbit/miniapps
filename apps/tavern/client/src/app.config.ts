@@ -41,33 +41,7 @@ const config = {
       },
     ],
   },
-  usingComponents: {
-    // 基础组件
-    't-button': 'tdesign-miniprogram/button/button',
-    't-icon': 'tdesign-miniprogram/icon/icon',
-    // 表单组件
-    't-input': 'tdesign-miniprogram/input/input',
-    't-textarea': 'tdesign-miniprogram/textarea/textarea',
-    't-switch': 'tdesign-miniprogram/switch/switch',
-    // 导航组件
-    't-navbar': 'tdesign-miniprogram/navbar/navbar',
-    't-tabs': 'tdesign-miniprogram/tabs/tabs',
-    // 展示组件
-    't-avatar': 'tdesign-miniprogram/avatar/avatar',
-    't-badge': 'tdesign-miniprogram/badge/badge',
-    't-cell': 'tdesign-miniprogram/cell/cell',
-    't-cell-group': 'tdesign-miniprogram/cell-group/cell-group',
-    't-tag': 'tdesign-miniprogram/tag/tag',
-    't-progress': 'tdesign-miniprogram/progress/progress',
-    't-divider': 'tdesign-miniprogram/divider/divider',
-    't-skeleton': 'tdesign-miniprogram/skeleton/skeleton',
-    't-empty': 'tdesign-miniprogram/empty/empty',
-    't-loading': 'tdesign-miniprogram/loading/loading',
-    // 反馈组件
-    't-toast': 'tdesign-miniprogram/toast/toast',
-    't-dialog': 'tdesign-miniprogram/dialog/dialog',
-    't-popup': 'tdesign-miniprogram/popup/popup',
-  },
+  usingComponents: {},
   permission: {
     'scope.userLocation': {
       desc: '用于获取您的位置信息',
