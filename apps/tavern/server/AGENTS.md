@@ -8,7 +8,7 @@ AI 角色聊天后端，SSE 流式聊天，通义千问/OpenAI/DeepSeek/OpenRout
 
 # STRUCTURE
 ```
-servers/tavern-server/
+apps/tavern/server/
 ├── src/
 │   ├── app.ts                 # Express 入口
 │   ├── index.ts               # 启动入口
