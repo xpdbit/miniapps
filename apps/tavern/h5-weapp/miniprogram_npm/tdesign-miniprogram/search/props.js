@@ -1,0 +1,1 @@
+const props={actionText:{type:String,value:""},center:{type:Boolean,value:!1},disabled:{type:Boolean,value:!1},focus:{type:Boolean,value:!1},keyword:{type:String,value:""},label:{type:String,value:""},leftIcon:{type:String,value:"search"},placeholder:{type:String,value:""},rightIcon:{type:String,value:"close"},shape:{type:String,value:"square"}};export default props;

@@ -1,0 +1,1 @@
+const props={bordered:{type:Boolean,value:!0},color:{type:Array,value:["#0052D9","rgba(0, 0, 0, .6)"]},externalClasses:{type:Array},fixed:{type:Boolean,value:!0},safeAreaInsetBottom:{type:Boolean,value:!0},value:{type:String,optionalTypes:[Number],value:0}};export default props;

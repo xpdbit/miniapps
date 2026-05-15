@@ -1,0 +1,59 @@
+{
+  "name": "food-theme-generator",
+  "version": "1.0.0",
+  "description": "食物主题生成器 - 基于Taro的微信小程序",
+  "private": true,
+  "templateInfo": {
+    "name": "default",
+    "typescript": true,
+    "css": "sass"
+  },
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "build:weapp:prod": "taro build --type weapp --mode production",
+    "build:h5": "taro build --type h5",
+    "build:h5:prod": "taro build --type h5 --mode production",
+    "dev:h5": "taro build --type h5 --watch",
+    "predev": "node -e \"fs.rmSync('dist',{recursive:true,force:true});console.log('cleaned dist')\"",
+    "dev:weapp": "npm run build:weapp -- --watch",
+    "dev:weapp:remote": "set TARO_APP_API_BASE=http://47.94.108.150/api/v1 && npm run build:weapp -- --watch",
+    "dev:weapp:https": "set TARO_APP_API_BASE=https://mnapp.top/api/ftl/api/v1 && npm run build:weapp -- --watch",
+    "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx,scss,css}'",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tarojs/components": "4.0.13",
+    "@tarojs/plugin-framework-react": "4.0.13",
+    "@tarojs/plugin-html": "4.0.13",
+    "@tarojs/plugin-platform-weapp": "4.0.13",
+    "@tarojs/react": "4.0.13",
+    "@tarojs/runtime": "4.0.13",
+    "@tarojs/taro": "4.0.13",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-react": "^7.24.0",
+    "@babel/preset-typescript": "^7.24.0",
+    "@tarojs/cli": "4.0.13",
+    "@tarojs/webpack5-runner": "4.0.13",
+    "@types/react": "^18.3.0",
+    "@types/webpack-env": "^1.18.0",
+    "@types/wechat-miniprogram": "^3.4.10",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "babel-preset-taro": "4.0.13",
+    "eslint": "^8.57.0",
+    "eslint-config-taro": "4.0.13",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "postcss": "^8.4.38",
+    "prettier": "^3.2.0",
+    "sass": "^1.72.0",
+    "typescript": "^5.4.0",
+    "webpack": "5.91.0"
+  }
+}

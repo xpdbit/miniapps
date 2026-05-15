@@ -1,0 +1,1 @@
+export default{year:"\u5e74",month:"\u6708",day:"\u65e5",hour:"\u65f6",minute:"\u5206",am:"\u4e0a\u5348",pm:"\u4e0b\u5348",confirm:"\u786e\u5b9a",cancel:"\u53d6\u6d88"};

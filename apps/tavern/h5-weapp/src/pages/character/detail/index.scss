@@ -1,0 +1,127 @@
+/* ============================================================
+ *  Character Detail Page — 现代扁平角色详情
+ *  风格: 头部展示 + 信息分区 + 底部操作
+ * ============================================================ */
+
+.page-character-detail {
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding: var(--spacing-md) var(--spacing-md) 140rpx;
+
+  &-loading {
+    display: flex;
+    justify-content: center;
+    padding-top: 200rpx;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-body);
+  }
+
+  /* ── 头部 ── */
+  &-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-xl) 0;
+  }
+
+  &-avatar {
+    width: 128rpx;
+    height: 128rpx;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+    border: 2px solid var(--color-primary);
+  }
+
+  &-name {
+    font-size: var(--font-title);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &-tags {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+  }
+
+  &-stats {
+    display: flex;
+    gap: var(--spacing-xl);
+  }
+
+  &-stat {
+    font-size: var(--font-body-sm);
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── 内容区 ── */
+  &-body {
+    padding: var(--spacing-md) 0;
+  }
+
+  &-section {
+    margin-bottom: var(--spacing-lg);
+    animation: fade-in var(--duration-normal) var(--ease-out);
+  }
+
+  &-section-title {
+    font-size: var(--font-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    padding-left: var(--spacing-sm);
+    border-left: 3rpx solid var(--color-primary);
+  }
+
+  &-section-content {
+    font-size: var(--font-body-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  &-first-msg {
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    font-style: italic;
+    border: 1px solid var(--color-border-subtle);
+    line-height: var(--leading-relaxed);
+  }
+
+  /* ── 操作按钮 ── */
+  &-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg) 0;
+    padding-bottom: env(safe-area-inset-bottom, var(--spacing-lg));
+  }
+
+  &-chat-btn {
+    background: var(--color-primary) !important;
+    color: var(--color-primary-foreground) !important;
+    border: none !important;
+    border-radius: var(--radius-md);
+    height: 88rpx;
+    line-height: 88rpx;
+    font-size: var(--font-body);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-publish-btn {
+    background: transparent !important;
+    color: var(--color-primary) !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: var(--radius-md);
+    height: 88rpx;
+    line-height: 88rpx;
+    font-size: var(--font-body);
+  }
+}

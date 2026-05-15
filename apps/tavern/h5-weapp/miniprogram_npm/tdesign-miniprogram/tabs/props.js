@@ -1,0 +1,1 @@
+const props={animation:{type:Object},externalClasses:{type:Array},placement:{type:String,value:"top"},showBottomLine:{type:Boolean,value:!0},value:{type:String,optionalTypes:[Number]}};export default props;

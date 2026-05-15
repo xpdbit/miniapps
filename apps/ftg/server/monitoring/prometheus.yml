@@ -1,0 +1,57 @@
+# =============================================================================
+# Prometheus 配置 — 抓取 FTG_Server 指标
+# =============================================================================
+
+global:
+  scrape_interval:     15s  # 默认抓取间隔
+  evaluation_interval: 15s  # 规则评估间隔
+
+# Alertmanager 配置（后续可扩展）
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: []
+
+# 规则文件（后续可扩展告警规则）
+# rule_files:
+#   - "alerts/*.yml"
+
+scrape_configs:
+
+  # ---------------------------------------------------------------------------
+  # Prometheus 自身指标
+  # ---------------------------------------------------------------------------
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ---------------------------------------------------------------------------
+  # FTG_Server 应用指标
+  # 服务需要在 /metrics 端点暴露 Prometheus 格式指标
+  # 推荐使用 prom-client (https://github.com/siimon/prom-client)
+  # 参考示例:
+  #   import promClient from 'prom-client';
+  #   app.get('/metrics', async (_req, res) => {
+  #     res.set('Content-Type', promClient.register.contentType);
+  #     res.end(await promClient.register.metrics());
+  #   });
+  # ---------------------------------------------------------------------------
+  - job_name: ftg-server
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:3000"]  # macOS/Windows Docker Desktop
+        labels:
+          service: ftg-server
+          env: production
+    # 如果是 Linux 容器间通信，改用服务名:
+    # - targets: ["server:3000"]
+    # 如果是本机端口映射:
+    # - targets: ["172.17.0.1:3000"]
+
+  # ---------------------------------------------------------------------------
+  # Node Exporter — 主机系统指标（可选）
+  # 需额外部署 node-exporter 容器
+  # ---------------------------------------------------------------------------
+  # - job_name: node-exporter
+  #   static_configs:
+  #     - targets: ["node-exporter:9100"]

@@ -1,0 +1,1 @@
+export default Behavior({methods:{gettingBoundingClientRect(e,t){return new Promise((r,n)=>{try{wx.createSelectorQuery().in(this)[t?"selectAll":"select"](e).boundingClientRect(e=>{t&&Array.isArray(e)&&e.length||!t&&e?r(e):n()}).exec()}catch(e){n(e)}})}}});

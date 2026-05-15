@@ -54,6 +54,17 @@ echo "数据库表结构已同步"
 docker compose --env-file .env exec -T admin npx prisma db seed 2>&1
 echo "管理员种子数据已检查"
 
+# 4b. AI Tavern 数据库 — 确保 ai_tavern 库存在（已有数据卷不会重新执行 init-db.sql）
+echo "确保 ai_tavern 数据库存在..."
+docker compose --env-file .env exec -T mysql \
+  mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e \
+  "CREATE DATABASE IF NOT EXISTS ai_tavern CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON ai_tavern.* TO 'ftg_user'@'%'; FLUSH PRIVILEGES;" 2>&1 || echo "⚠️  数据库创建可能失败（可手动执行）"
+
+echo "执行 AI Tavern Server 数据库迁移..."
+docker compose --env-file .env exec -T tavern-server npx prisma db push --accept-data-loss 2>&1 | tail -10 || echo "⚠️  tavern迁移可能失败，请检查日志"
+echo "AI Tavern 数据库表结构已同步"
+docker compose --env-file .env exec -T tavern-server npx tsx prisma/seed.ts 2>&1 | tail -10 || echo "⚠️  tavern种子数据可能已存在"
+
 # 5. SSL 证书自动配置（通过 DNS-01 验证，无需开放 80 端口）
 #    使用阿里云 DNS API 自动获取 Let's Encrypt 通配符证书
 echo ""
@@ -106,6 +117,9 @@ echo "健康检查:"
 curl -s http://localhost/api/admin/health 2>/dev/null || echo "Admin API 启动中..."
 curl -s -o /dev/null -w "Nginx HTTP: %{http_code}\n" http://localhost/ 2>/dev/null || echo "Nginx 启动中..."
 curl -s -o /dev/null -w "Nginx HTTPS: %{http_code}\n" https://localhost/health --connect-timeout 5 2>/dev/null || echo "HTTPS 启动中..."
+# AI Tavern 健康检查
+TAVERN_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
+echo "Tavern API: HTTP ${TAVERN_HEALTH} $( [ "$TAVERN_HEALTH" = "200" ] && echo '✅' || echo '⚠️' )"
 
 echo ""
 echo "=========================================="
@@ -119,4 +133,4 @@ echo "微信小程序配置检查清单："
 echo "  1. mp.weixin.qq.com → 开发管理 → request合法域名:"
 echo "     https://mnapp.top"
 echo "  2. /opt/ftg/deploy/.env → WECHAT_SECRET 已填写"
-echo "  3. 小程序构建: cd apps/ftg-miniapp && npm run build:weapp:prod"
+echo "  3. 小程序构建: cd apps/ftg/h5-weapp && npm run build:weapp:prod"

@@ -1,0 +1,1 @@
+const props={addContent:{type:String},config:{type:Object},deleteBtn:{type:String},files:{type:Array},gridConfig:{type:Object},gutter:{type:Number,value:16},max:{type:Number,value:0},mediaType:{type:Array,value:["image","video"]},requestMethod:{type:null},sizeLimit:{type:Number,optionalTypes:[Object]}};export default props;

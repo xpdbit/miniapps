@@ -38,23 +38,27 @@
 ```
 .miniapps/
 ├── apps/
-│   ├── ftg-miniapp/      # Taro 4.x 微信小程序 — FTG 食物主题生成器
-│   ├── game1-miniapp/    # Taro 微信小程序 — Game1 挂机放置游戏（开发中）
-│   └── tavern-miniapp/   # Taro 4.x 微信小程序 — AI-Tavern 角色聊天（开发中）
-├── servers/
-│   ├── ftg-server/       # Express 后端 API — FTG
-│   ├── game1-server/     # Express 后端 API — Game1
-│   └── tavern-server/    # Express 后端 API — AI-Tavern
+│   ├── ftg/              # FTG 项目
+│   │   ├── h5-core/     # 跨平台共享代码
+│   │   ├── h5-weapp/    # Taro 4.x 微信小程序
+│   │   ├── h5-webview/  # H5 独立 Web 版本（预留）
+│   │   └── server/      # Express 后端 API
+│   ├── game1/            # Game1 项目
+│   │   ├── h5-core/     # 跨平台共享代码
+│   │   ├── h5-weapp/    # Taro 微信小程序
+│   │   ├── h5-webview/  # H5 独立 Web 版本（预留）
+│   │   └── server/      # Express 后端 API
+│   └── tavern/           # AI-Tavern 项目
+│       ├── h5-core/     # 跨平台共享代码
+│       ├── h5-weapp/    # Taro 4.x 微信小程序
+│       ├── h5-webview/  # H5 独立 Web 版本（预留）
+│       └── server/      # Express 后端 API
 ├── dashboard/            # 统一管理后台
 ├── deploy/               # 部署配置 (Docker/Nginx)
 ├── docs/                 # 项目文档
-│   ├── apps/ftg-miniapp/ # 小程序文档
-│   ├── servers/ftg-server/ # 后端文档
-│   ├── dashboard/        # 管理后台文档
-│   └── deploy/           # 部署文档
 ├── plan/                 # 规划文档
-├── cloud-functions/      # 云函数（规划中）
-└── .sisyphus/            # Agent 工作目录
+├── prisma/               # 统一 Prisma Schema
+└── tools/                # 开发工具
 ```
 
 ## 快速开始
@@ -62,7 +66,7 @@
 ### 后端
 
 ```bash
-cd servers/ftg-server
+cd apps/ftg/server
 npm install
 npm run dev
 ```
@@ -78,15 +82,23 @@ npm run dev
 ### 小程序
 
 ```bash
-# FTG 食物主题生成器
-cd apps/ftg-miniapp
+# FTG 食物主题生成器 (WeChat)
+cd apps/ftg/h5-weapp
 npm install
 npm run dev:weapp
 
-# AI-Tavern 角色聊天
-cd apps/tavern-miniapp
+# FTG H5 开发
+cd apps/ftg/h5-weapp
+npm run dev:h5
+
+# AI-Tavern 角色聊天 (WeChat)
+cd apps/tavern/h5-weapp
 npm install
 npm run dev:weapp
+
+# AI-Tavern H5 开发
+cd apps/tavern/h5-weapp
+npm run dev:h5
 ```
 
 ## 文档

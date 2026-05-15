@@ -1,0 +1,1 @@
+.t-float-left{float:left}.t-float-right{float:right}@keyframes tdesign-fade-out{from{opacity:1}to{opacity:0}}.t-rate{align-items:center;display:flex;justify-content:flex-start}.t-rate__wrapper{display:inline-flex;line-height:1em}.t-rate__star{line-height:1em}.t-rate__desc{color:rgba(0,0,0,.4);font-size:32rpx;padding-left:32rpx;vertical-align:middle}

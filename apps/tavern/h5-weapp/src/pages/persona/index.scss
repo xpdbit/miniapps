@@ -1,0 +1,130 @@
+/* ============================================================
+ *  Persona Page — 现代扁平人设管理
+ *  风格: 列表 + 操作按钮 + 底部创建
+ * ============================================================ */
+
+.page-persona {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+
+  &-content {
+    flex: 1;
+    padding: var(--spacing-md);
+  }
+
+  &-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 180rpx;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-body);
+  }
+
+  &-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 240rpx;
+    color: var(--color-text-tertiary);
+
+    &-title {
+      font-size: var(--font-body-lg);
+      margin-bottom: var(--spacing-sm);
+      color: var(--color-text);
+    }
+
+    &-hint {
+      font-size: var(--font-body-sm);
+    }
+  }
+
+  &-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-subtle);
+
+    &-avatar {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: var(--spacing-md);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    &-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    &-name {
+      font-size: var(--font-body);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+    }
+
+    &-badge {
+      font-size: var(--font-caption);
+      padding: 2rpx 8rpx;
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      border-radius: var(--radius-xs);
+      font-weight: var(--font-weight-medium);
+    }
+
+    &-desc {
+      font-size: var(--font-body-sm);
+      color: var(--color-text-secondary);
+      margin-top: 4rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4rpx;
+      margin-left: var(--spacing-sm);
+    }
+
+    &-action {
+      font-size: var(--font-caption);
+      color: var(--color-primary);
+      padding: 4rpx 8rpx;
+      text-align: center;
+
+      &.disabled {
+        color: var(--color-text-tertiary);
+      }
+
+      &.delete {
+        color: var(--color-error);
+      }
+    }
+  }
+
+  &-footer {
+    padding: var(--spacing-md);
+    background: var(--color-bg-elevated);
+    border-top: 1px solid var(--color-border-subtle);
+  }
+}

@@ -1,0 +1,71 @@
+# =============================================================================
+# Tavern Server — CI Workflow
+# 在推送到 master/develop 或发起 PR 时执行：lint → type-check → build
+# =============================================================================
+
+name: Tavern Server CI
+
+on:
+  push:
+    branches: [master, develop]
+    paths:
+      - 'servers/tavern-server/**'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'servers/tavern-server/**'
+
+concurrency:
+  group: ci-tavern-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: servers/tavern-server
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: tavern_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: servers/tavern-server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: mysql://root:test@localhost:3306/tavern_test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build

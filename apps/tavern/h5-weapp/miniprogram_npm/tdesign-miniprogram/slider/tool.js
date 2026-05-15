@@ -1,0 +1,1 @@
+export const trimSingleValue=(e,r,i)=>"number"!==typeof e||e<r?r:e>i?i:e;export const trimValue=(e,r)=>{const{min:i,max:t,range:n}=r;return n&&Array.isArray(e)?(e[0]=trimSingleValue(e[0],i,t),e[1]=trimSingleValue(e[1],i,t),e[0]<=e[1]?e:[e[1],e[0]]):n?[i,t]:n?void 0:trimSingleValue(e,i,t)};

@@ -1,0 +1,1 @@
+const props={destroyOnHide:{type:Boolean,value:!0},disabled:{type:Boolean,value:!1},label:{type:String},panel:{type:String},value:{type:String,optionalTypes:[Number]}};export default props;

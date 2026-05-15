@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── 玩家 ───
+model Game1Player {
+  id             Int      @id @default(autoincrement())
+  openid         String   @unique
+  nickname       String?
+  avatarUrl      String?  @map("avatar_url")
+  level          Int      @default(1)
+  exp            Int      @default(0)
+  gold           Int      @default(0)
+  gems           Int      @default(0)
+  totalMileage   Float    @default(0) @map("total_mileage")
+  playTime       Int      @default(0) @map("play_time")
+  prestigeCount  Int      @default(0) @map("prestige_count")
+  loginDays      Int      @default(1) @map("login_days")
+  lastLoginDate  DateTime? @map("last_login_date")
+  lastLoginAt    DateTime @default(now()) @map("last_login_at")
+  lastSyncAt     DateTime @default(now()) @map("last_sync_at")
+  isDeleted      Boolean  @default(false) @map("is_deleted")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  cloudSave       Game1CloudSave?
+  pvpMatches      Game1PvpMatch[]   @relation("playerMatches")
+  opponentMatches Game1PvpMatch[]   @relation("opponentMatches")
+  pvpRanking      Game1PvpRanking?
+  achievements    Game1Achievement[]
+  shareLogs       Game1ShareLog[]
+
+  @@index([openid])
+  @@index([totalMileage(sort: Desc)])
+  @@index([level(sort: Desc)])
+  @@index([lastLoginAt(sort: Desc)])
+  @@map("game1_players")
+}
+
+// ─── 云端存档 ───
+model Game1CloudSave {
+  id        Int      @id @default(autoincrement())
+  playerId  Int      @unique @map("player_id")
+  saveData  Json     @map("save_data")
+  version   Int      @default(1)
+  checksum  String?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  player Game1Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("game1_cloud_saves")
+}
+
+// ─── PVP 对战记录 ───
+model Game1PvpMatch {
+  id             Int      @id @default(autoincrement())
+  playerId       Int      @map("player_id")
+  opponentId     Int      @map("opponent_id")
+  result         String
+  ratingChange   Int      @map("rating_change")
+  playerRating   Int      @map("player_rating")
+  opponentRating Int      @map("opponent_rating")
+  season         Int      @default(1)
+  battleLog      Json?    @map("battle_log")
+  createdAt      DateTime @default(now())
+
+  player   Game1Player @relation("playerMatches", fields: [playerId], references: [id], onDelete: Cascade)
+  opponent Game1Player @relation("opponentMatches", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, createdAt(sort: Desc)])
+  @@index([season, createdAt(sort: Desc)])
+  @@map("game1_pvp_matches")
+}
+
+// ─── PVP 排行榜 ───
+model Game1PvpRanking {
+  id        Int      @id @default(autoincrement())
+  playerId  Int      @unique @map("player_id")
+  rating    Int      @default(1000)
+  rank      String   @default("Bronze")
+  season    Int      @default(1)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  player Game1Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([rating(sort: Desc)])
+  @@index([season, rating(sort: Desc)])
+  @@map("game1_pvp_rankings")
+}
+
+// ─── 成就记录 ───
+model Game1Achievement {
+  id            Int      @id @default(autoincrement())
+  playerId      Int      @map("player_id")
+  achievementId String   @map("achievement_id")
+  title         String
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+  progress      Float    @default(0)
+
+  player Game1Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, achievementId])
+  @@map("game1_achievements")
+}
+
+// ─── 分享记录 ───
+model Game1ShareLog {
+  id        Int      @id @default(autoincrement())
+  playerId  Int      @map("player_id")
+  shareType String   @map("share_type")
+  createdAt DateTime @default(now())
+
+  player Game1Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, createdAt(sort: Desc)])
+  @@map("game1_share_logs")
+}
+
+// ─── 游戏配置 ───
+model Game1Config {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  version   Int      @default(1)
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @updatedAt
+
+  @@map("game1_configs")
+}

@@ -1,0 +1,39 @@
+/* ============================================================
+ *  Character List Page — 现代扁平角色列表
+ *  风格: TDesign Tabs + 角色卡列表
+ * ============================================================ */
+
+.page-character-list {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+
+  &-content {
+    flex: 1;
+    padding: var(--spacing-md);
+  }
+
+  &-loading {
+    display: block;
+    text-align: center;
+    padding: var(--spacing-md);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-body-sm);
+  }
+
+  &-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 160rpx;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-body);
+  }
+
+  &-empty-hint {
+    font-size: var(--font-body-sm);
+    margin-top: var(--spacing-sm);
+  }
+}

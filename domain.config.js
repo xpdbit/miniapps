@@ -63,7 +63,7 @@ const config = {
   // ─── AI-Tavern 项目 ───
   TAVERN: {
     // 开发测试（通过域名访问，需要 DNS 或 hosts 指向服务器）
-    DEV: `http://${DOMAIN}/api/tavern/api/v1`,
+    DEV: `http://${IP}/api/tavern/api/v1`,
     // 生产（ICP 备案后生效）
     PROD: `https://${DOMAIN}/api/tavern/api/v1`,
   },

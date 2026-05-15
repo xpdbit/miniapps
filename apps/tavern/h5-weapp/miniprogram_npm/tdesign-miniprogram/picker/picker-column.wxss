@@ -1,0 +1,1 @@
+.t-float-left{float:left}.t-float-right{float:right}@keyframes tdesign-fade-out{from{opacity:1}to{opacity:0}}.t-picker-column__group{flex:1;height:400rpx;overflow:hidden}.t-picker-column__wrapper{padding:160rpx 0}.t-picker-column__item{align-items:center;color:#000;display:flex;height:80rpx;justify-content:center;line-height:80rpx}:host{display:flex;flex:1}

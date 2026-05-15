@@ -1,0 +1,1 @@
+const props={checked:{type:Boolean,value:!1},closable:{type:String,optionalTypes:[Boolean],value:!1},content:{type:String,optionalTypes:[Number]},disabled:{type:Boolean,value:!1},icon:{type:String},shape:{type:String,value:"square"},size:{type:String,value:"medium"}};export default props;

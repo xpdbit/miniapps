@@ -1,0 +1,1 @@
+const props={disabled:{type:Boolean,value:!1},disableInput:{type:Boolean,value:!1},externalClasses:{type:Array},inputWidth:{type:Number},max:{type:Number,value:100},min:{type:Number,value:0},step:{type:Number,value:1},theme:{type:String,value:"normal"},value:{type:String,optionalTypes:[Number],value:null}};export default props;

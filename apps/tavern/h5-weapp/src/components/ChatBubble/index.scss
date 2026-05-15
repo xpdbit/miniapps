@@ -1,0 +1,98 @@
+/* ============================================================
+ *  ChatBubble — 现代扁平聊天气泡
+ *  风格: 干净平面 / 高对比度 / 微交互
+ * ============================================================ */
+
+.chat-bubble {
+  display: flex;
+  margin-bottom: var(--spacing-md);
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  animation: enter-message var(--duration-normal) var(--ease-out);
+
+  &--user {
+    flex-direction: row-reverse;
+  }
+
+  &--character {
+    flex-direction: row;
+  }
+
+  /* ── 头像 ── */
+  &-avatar {
+    width: 72rpx;
+    height: 72rpx;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1.5px solid var(--color-border-subtle);
+    background: var(--color-bg-surface);
+  }
+
+  /* ── 消息体 ── */
+  &-body {
+    display: flex;
+    flex-direction: column;
+    max-width: 72%;
+    min-width: 0;
+  }
+
+  /* ── 发送者名字 ── */
+  &-header {
+    margin-bottom: var(--spacing-2xs);
+    padding: 0 var(--spacing-xs);
+  }
+
+  &-name {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* ── 消息内容 ── */
+  &-content {
+    max-width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: var(--font-body-sm);
+    line-height: var(--leading-relaxed);
+    word-break: break-word;
+    position: relative;
+    transition: background var(--duration-fast) var(--ease-out);
+
+    &--streaming {
+      border-color: var(--color-primary);
+    }
+  }
+
+  /* ── 用户消息 ── */
+  &--user &-content {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border-bottom-right-radius: var(--radius-xs);
+  }
+
+  /* ── 角色消息 ── */
+  &--character &-content {
+    background: var(--color-bg-surface);
+    color: var(--color-text);
+    border-bottom-left-radius: var(--radius-xs);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  /* ── 时间戳 ── */
+  &-time {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-2xs);
+    padding: 0 var(--spacing-xs);
+  }
+
+  /* ── 流式光标 ── */
+  &-cursor {
+    animation: blink-cursor 1s infinite;
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+    margin-left: 1rpx;
+  }
+}

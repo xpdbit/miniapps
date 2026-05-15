@@ -1,0 +1,258 @@
+/* ============================================================
+ *  Creator Page — 现代扁平角色创建向导
+ *  风格: 步骤指示器 + 表单 + 预览
+ * ============================================================ */
+
+.page-creator {
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: env(safe-area-inset-bottom, var(--spacing-xl));
+
+  /* ── 步骤指示器 ── */
+  &-steps {
+    display: flex;
+    padding: var(--spacing-md);
+    background: var(--color-bg-elevated);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  &-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rpx;
+    opacity: 0.4;
+    transition: opacity var(--duration-fast) var(--ease-out);
+
+    &.active { opacity: 1; }
+    &.done { opacity: 0.7; }
+  }
+
+  &-step-num {
+    width: 32rpx;
+    height: 32rpx;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-caption);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+
+  &-step.active &-step-num {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  &-step.done &-step-num {
+    background: var(--color-success);
+    color: var(--color-primary-foreground);
+  }
+
+  &-step-label {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── 表单区域 ── */
+  &-form {
+    padding: var(--spacing-md);
+  }
+
+  &-field {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  &-label {
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-input {
+    height: 72rpx;
+    background: var(--color-bg-input);
+    border-radius: var(--radius-md);
+    padding: 0 var(--spacing-md);
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    border: 1px solid var(--color-border-subtle);
+    transition: border-color var(--duration-fast) var(--ease-out);
+
+    &:focus-within {
+      border-color: var(--color-border-focus);
+    }
+  }
+
+  &-textarea {
+    width: 100%;
+    min-height: 140rpx;
+    background: var(--color-bg-input);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    border: 1px solid var(--color-border-subtle);
+
+    &--large { min-height: 220rpx; }
+  }
+
+  &-hint {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    margin-top: 4rpx;
+    display: block;
+  }
+
+  /* ── 头像选择器 ── */
+  &-avatar-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+  }
+
+  &-avatar-preview {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    background: var(--color-bg-input);
+    border: 2px dashed var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &-avatar-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  &-avatar-placeholder {
+    font-size: var(--font-body-lg);
+    color: var(--color-text-tertiary);
+  }
+
+  &-avatar-hint {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── 标签选择 ── */
+  &-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  &-tag {
+    padding: 6rpx 16rpx;
+    border-radius: var(--radius-full);
+    font-size: var(--font-caption);
+    color: var(--color-text-secondary);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-subtle);
+    transition: all var(--duration-fast) var(--ease-out);
+
+    &.active {
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+  }
+
+  /* ── 导航按钮 ── */
+  &-nav {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+  }
+
+  &-prev-btn,
+  &-next-btn,
+  &-submit-btn {
+    flex: 1;
+    height: 80rpx;
+    line-height: 80rpx;
+    border-radius: var(--radius-md);
+    font-size: var(--font-body);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-prev-btn {
+    background: var(--color-bg-surface) !important;
+    color: var(--color-text) !important;
+    border: 1px solid var(--color-border-subtle) !important;
+  }
+
+  &-next-btn,
+  &-submit-btn {
+    background: var(--color-primary) !important;
+    color: var(--color-primary-foreground) !important;
+    border: none !important;
+  }
+
+  /* ── 预览卡片 ── */
+  &-preview-card {
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--color-border-subtle);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  &-preview-name {
+    font-size: var(--font-subtitle);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    display: block;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &-preview-desc {
+    font-size: var(--font-body-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+    display: block;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &-preview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4rpx;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &-preview-tag {
+    font-size: var(--font-caption);
+    color: var(--color-primary);
+    background: var(--color-primary-bg);
+    padding: 2rpx 8rpx;
+    border-radius: var(--radius-xs);
+  }
+
+  &-preview-first {
+    background: var(--color-bg-elevated);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  &-preview-first-label {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &-preview-first-text {
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    font-style: italic;
+  }
+}

@@ -1,0 +1,155 @@
+/* ============================================================
+ *  Profile Page — 现代扁平个人中心
+ *  风格: 头像卡片 + 配额指标 + 菜单列表
+ * ============================================================ */
+
+.page-profile {
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: env(safe-area-inset-bottom, var(--spacing-2xl));
+
+  /* ── 头部卡片 ── */
+  &-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-lg);
+    background: var(--color-bg-elevated);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  &-avatar {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    background: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+    border: 2px solid var(--color-primary);
+  }
+
+  &-name {
+    font-size: var(--font-subtitle);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  /* ── 配额显示 ── */
+  &-quota {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
+    width: 100%;
+  }
+
+  &-quota-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &-quota-value {
+    font-size: var(--font-title);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+
+    &--highlight {
+      color: var(--color-primary);
+    }
+  }
+
+  &-quota-label {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-2xs);
+  }
+
+  &-quota-divider {
+    width: 1rpx;
+    height: 44rpx;
+    background: var(--color-border-subtle);
+  }
+
+  /* ── 配额进度条 ── */
+  &-quota-bar {
+    width: 240rpx;
+    height: 4rpx;
+    background: var(--color-bg-input);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+
+    &-fill {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: var(--radius-full);
+      transition: width var(--duration-slow) var(--ease-in-out);
+    }
+  }
+
+  /* ── 菜单列表 ── */
+  &-menu {
+    margin: var(--spacing-md);
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  &-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border-subtle);
+    transition: background var(--duration-fast) var(--ease-out);
+
+    &:active {
+      background: var(--color-bg-surface-hover);
+    }
+
+    &--last {
+      border-bottom: none;
+    }
+
+    &-left {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    &-icon {
+      font-size: var(--font-body-lg);
+      width: 36rpx;
+      text-align: center;
+    }
+
+    &-label {
+      font-size: var(--font-body);
+      color: var(--color-text);
+    }
+
+    &-arrow {
+      font-size: var(--font-body-lg);
+      color: var(--color-text-tertiary);
+      font-weight: var(--font-weight-bold);
+    }
+  }
+
+  /* ── 版本 ── */
+  &-footer {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-xl);
+  }
+
+  &-footer-text {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+  }
+}

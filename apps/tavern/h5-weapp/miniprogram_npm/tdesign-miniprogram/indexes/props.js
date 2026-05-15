@@ -1,0 +1,1 @@
+const props={height:{type:Number},list:{type:Array,value:[],required:!0}};export default props;
