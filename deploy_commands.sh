@@ -1,136 +1,126 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 echo "=========================================="
-echo " FTG Dashboard 部署 + SSL 证书自动配置"
+echo " FTG Dashboard 閮ㄧ讲 + SSL 璇佷功鑷姩閰嶇疆"
 echo "=========================================="
 
-# 0. 预检：确保 SSL 凭证文件已存在
-echo ""
-echo "[0/6] 检查 SSL 配置..."
+# 0. 棰勬锛氱‘淇?SSL 鍑瘉鏂囦欢宸插瓨鍦?echo ""
+echo "[0/6] 妫€鏌?SSL 閰嶇疆..."
 if [ -f /opt/ftg/deploy/nginx/aliyun-credentials.ini ]; then
-    echo "阿里云 DNS 凭证: 已就绪"
+    echo "闃块噷浜?DNS 鍑瘉: 宸插氨缁?
 else
-    echo "⚠️  阿里云 DNS 凭证文件不存在，SSL 自动配置将跳过"
-    echo "   请先复制文件："
+    echo "鈿狅笍  闃块噷浜?DNS 鍑瘉鏂囦欢涓嶅瓨鍦紝SSL 鑷姩閰嶇疆灏嗚烦杩?
+    echo "   璇峰厛澶嶅埗鏂囦欢锛?
     echo "   scp deploy/nginx/aliyun-credentials.ini root@mnapp.top:/opt/ftg/deploy/nginx/"
     echo "   scp deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
 fi
 
-# 1. 构建 Dashboard 前端
+# 1. 鏋勫缓 Dashboard 鍓嶇
 echo ""
-echo "[1/6] 构建 Dashboard 前端..."
+echo "[1/6] 鏋勫缓 Dashboard 鍓嶇..."
 cd /opt/ftg/dashboard
 npm run build 2>&1 | tail -5
-echo "构建完成: $(ls dist/ | wc -l) 个文件"
+echo "鏋勫缓瀹屾垚: $(ls dist/ | wc -l) 涓枃浠?
 
-# 2. 复制构建产物到 Nginx
+# 2. 澶嶅埗鏋勫缓浜х墿鍒?Nginx
 echo ""
-echo "[2/6] 复制到 Nginx 部署目录..."
+echo "[2/6] 澶嶅埗鍒?Nginx 閮ㄧ讲鐩綍..."
 rm -rf /opt/ftg/deploy/nginx/html/*
 cp -r dist/* /opt/ftg/deploy/nginx/html/
-echo "复制完成"
+echo "澶嶅埗瀹屾垚"
 
-# 3. 重建 Docker 容器（含最新的 nginx.conf，扩展了 cipher 列表）
-echo ""
-echo "[3/6] 启动 Docker 容器..."
+# 3. 閲嶅缓 Docker 瀹瑰櫒锛堝惈鏈€鏂扮殑 nginx.conf锛屾墿灞曚簡 cipher 鍒楄〃锛?echo ""
+echo "[3/6] 鍚姩 Docker 瀹瑰櫒..."
 cd /opt/ftg/deploy
 docker compose --env-file .env up -d --build 2>&1 | tail -10
 
-# 4. 初始化 Dashboard Admin 数据库
-echo ""
-echo "[4/6] 初始化 Dashboard Admin 数据库..."
+# 4. 鍒濆鍖?Dashboard Admin 鏁版嵁搴?echo ""
+echo "[4/6] 鍒濆鍖?Dashboard Admin 鏁版嵁搴?.."
 sleep 10
-echo "等待 MySQL 就绪..."
+echo "绛夊緟 MySQL 灏辩华..."
 for i in $(seq 1 30); do
     if docker inspect --format='{{.State.Health.Status}}' ftg-mysql 2>/dev/null | grep -q healthy; then
         break
     fi
     sleep 2
 done
-echo "执行数据库迁移..."
+echo "鎵ц鏁版嵁搴撹縼绉?.."
 docker compose --env-file .env exec -T admin npx prisma db push --accept-data-loss 2>&1 | tail -5
-echo "数据库表结构已同步"
+echo "鏁版嵁搴撹〃缁撴瀯宸插悓姝?
 docker compose --env-file .env exec -T admin npx prisma db seed 2>&1
-echo "管理员种子数据已检查"
+echo "绠＄悊鍛樼瀛愭暟鎹凡妫€鏌?
 
-# 4b. AI Tavern 数据库 — 确保 ai_tavern 库存在（已有数据卷不会重新执行 init-db.sql）
-echo "确保 ai_tavern 数据库存在..."
+# 4b. AI Tavern 鏁版嵁搴?鈥?纭繚 ai_tavern 搴撳瓨鍦紙宸叉湁鏁版嵁鍗蜂笉浼氶噸鏂版墽琛?init-db.sql锛?echo "纭繚 ai_tavern 鏁版嵁搴撳瓨鍦?.."
 docker compose --env-file .env exec -T mysql \
   mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e \
-  "CREATE DATABASE IF NOT EXISTS ai_tavern CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON ai_tavern.* TO 'ftg_user'@'%'; FLUSH PRIVILEGES;" 2>&1 || echo "⚠️  数据库创建可能失败（可手动执行）"
+  "CREATE DATABASE IF NOT EXISTS ai_tavern CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON ai_tavern.* TO 'ftg_user'@'%'; FLUSH PRIVILEGES;" 2>&1 || echo "鈿狅笍  鏁版嵁搴撳垱寤哄彲鑳藉け璐ワ紙鍙墜鍔ㄦ墽琛岋級"
 
-echo "执行 AI Tavern Server 数据库迁移..."
-docker compose --env-file .env exec -T tavern-server npx prisma db push --accept-data-loss 2>&1 | tail -10 || echo "⚠️  tavern迁移可能失败，请检查日志"
-echo "AI Tavern 数据库表结构已同步"
-docker compose --env-file .env exec -T tavern-server npx tsx prisma/seed.ts 2>&1 | tail -10 || echo "⚠️  tavern种子数据可能已存在"
+echo "鎵ц AI Tavern Server 鏁版嵁搴撹縼绉?.."
+docker compose --env-file .env exec -T tavern-server npx prisma db push --accept-data-loss 2>&1 | tail -10 || echo "鈿狅笍  tavern杩佺Щ鍙兘澶辫触锛岃妫€鏌ユ棩蹇?
+echo "AI Tavern 鏁版嵁搴撹〃缁撴瀯宸插悓姝?
+docker compose --env-file .env exec -T tavern-server npx tsx prisma/seed.ts 2>&1 | tail -10 || echo "鈿狅笍  tavern绉嶅瓙鏁版嵁鍙兘宸插瓨鍦?
 
-# 5. SSL 证书自动配置（通过 DNS-01 验证，无需开放 80 端口）
-#    使用阿里云 DNS API 自动获取 Let's Encrypt 通配符证书
-echo ""
-echo "[5/6] SSL 证书自动配置..."
+# 5. SSL 璇佷功鑷姩閰嶇疆锛堥€氳繃 DNS-01 楠岃瘉锛屾棤闇€寮€鏀?80 绔彛锛?#    浣跨敤闃块噷浜?DNS API 鑷姩鑾峰彇 Let's Encrypt 閫氶厤绗﹁瘉涔?echo ""
+echo "[5/6] SSL 璇佷功鑷姩閰嶇疆..."
 if [ -f /opt/ftg/deploy/scripts/setup-ssl.sh ]; then
-    # 设置阿里云 DNS API 凭证（从 deploy/.env 读取）
-    source /opt/ftg/deploy/.env 2>/dev/null || true
+    # 璁剧疆闃块噷浜?DNS API 鍑瘉锛堜粠 deploy/.env 璇诲彇锛?    source /opt/ftg/deploy/.env 2>/dev/null || true
     
     if [ -n "${ALIYUN_AK:-}" ] && [ -n "${ALIYUN_SK:-}" ]; then
-        # 导出为 acme.sh 所需的格式
-        export Ali_Key="$ALIYUN_AK"
+        # 瀵煎嚭涓?acme.sh 鎵€闇€鐨勬牸寮?        export Ali_Key="$ALIYUN_AK"
         export Ali_Secret="$ALIYUN_SK"
         
-        # 检查是否已有 Let's Encrypt 证书
+        # 妫€鏌ユ槸鍚﹀凡鏈?Let's Encrypt 璇佷功
         if [ -f /opt/ftg/deploy/nginx/ssl/fullchain.pem ]; then
-            # 检查证书是否由 CA 签发（不是自签名）
-            ISSUER=$(openssl x509 -in /opt/ftg/deploy/nginx/ssl/fullchain.pem -noout -issuer 2>/dev/null)
+            # 妫€鏌ヨ瘉涔︽槸鍚︾敱 CA 绛惧彂锛堜笉鏄嚜绛惧悕锛?            ISSUER=$(openssl x509 -in /opt/ftg/deploy/nginx/ssl/fullchain.pem -noout -issuer 2>/dev/null)
             SUBJECT=$(openssl x509 -in /opt/ftg/deploy/nginx/ssl/fullchain.pem -noout -subject 2>/dev/null)
             if [ "$ISSUER" != "$SUBJECT" ]; then
-                echo "已有 CA 签发证书，跳过 SSL 配置"
+                echo "宸叉湁 CA 绛惧彂璇佷功锛岃烦杩?SSL 閰嶇疆"
             else
-                echo "当前为自签名证书，正在获取 Let's Encrypt 证书..."
+                echo "褰撳墠涓鸿嚜绛惧悕璇佷功锛屾鍦ㄨ幏鍙?Let's Encrypt 璇佷功..."
                 bash /opt/ftg/deploy/scripts/setup-ssl.sh 2>&1 | tail -20
             fi
         else
-            echo "正在获取 Let's Encrypt 证书..."
+            echo "姝ｅ湪鑾峰彇 Let's Encrypt 璇佷功..."
             bash /opt/ftg/deploy/scripts/setup-ssl.sh 2>&1 | tail -20
         fi
     else
-        echo "⚠️  阿里云 DNS 凭证未配置，跳过 SSL 自动配置"
-        echo "   请编辑 /opt/ftg/deploy/.env 填入 ALIYUN_AK / ALIYUN_SK"
-        echo "   或手动运行: bash /opt/ftg/deploy/scripts/setup-ssl.sh"
+        echo "鈿狅笍  闃块噷浜?DNS 鍑瘉鏈厤缃紝璺宠繃 SSL 鑷姩閰嶇疆"
+        echo "   璇风紪杈?/opt/ftg/deploy/.env 濉叆 ALIYUN_AK / ALIYUN_SK"
+        echo "   鎴栨墜鍔ㄨ繍琛? bash /opt/ftg/deploy/scripts/setup-ssl.sh"
     fi
 else
-    echo "⚠️  setup-ssl.sh 不存在，跳过 SSL 配置"
-    echo "   请复制脚本: scp deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
+    echo "鈿狅笍  setup-ssl.sh 涓嶅瓨鍦紝璺宠繃 SSL 閰嶇疆"
+    echo "   璇峰鍒惰剼鏈? scp deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
 fi
 
-# 6. 验证
+# 6. 楠岃瘉
 echo ""
-echo "[6/6] 等待服务启动并验证..."
+echo "[6/6] 绛夊緟鏈嶅姟鍚姩骞堕獙璇?.."
 sleep 5
 
 echo ""
-echo "容器状态:"
+echo "瀹瑰櫒鐘舵€?"
 docker ps --format 'table {{.Names}}\t{{.Status}}'
 
 echo ""
-echo "健康检查:"
-curl -s http://localhost/api/admin/health 2>/dev/null || echo "Admin API 启动中..."
-curl -s -o /dev/null -w "Nginx HTTP: %{http_code}\n" http://localhost/ 2>/dev/null || echo "Nginx 启动中..."
-curl -s -o /dev/null -w "Nginx HTTPS: %{http_code}\n" https://localhost/health --connect-timeout 5 2>/dev/null || echo "HTTPS 启动中..."
-# AI Tavern 健康检查
-TAVERN_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
-echo "Tavern API: HTTP ${TAVERN_HEALTH} $( [ "$TAVERN_HEALTH" = "200" ] && echo '✅' || echo '⚠️' )"
+echo "鍋ュ悍妫€鏌?"
+curl -s http://localhost/api/admin/health 2>/dev/null || echo "Admin API 鍚姩涓?.."
+curl -s -o /dev/null -w "Nginx HTTP: %{http_code}\n" http://localhost/ 2>/dev/null || echo "Nginx 鍚姩涓?.."
+curl -s -o /dev/null -w "Nginx HTTPS: %{http_code}\n" https://localhost/health --connect-timeout 5 2>/dev/null || echo "HTTPS 鍚姩涓?.."
+# AI Tavern 鍋ュ悍妫€鏌?TAVERN_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
+echo "Tavern API: HTTP ${TAVERN_HEALTH} $( [ "$TAVERN_HEALTH" = "200" ] && echo '鉁? || echo '鈿狅笍' )"
 
 echo ""
 echo "=========================================="
-echo " 部署完成!"
+echo " 閮ㄧ讲瀹屾垚!"
 echo "=========================================="
 echo ""
-echo "如果 HTTPS 仍未就绪，请手动在服务器上运行："
+echo "濡傛灉 HTTPS 浠嶆湭灏辩华锛岃鎵嬪姩鍦ㄦ湇鍔″櫒涓婅繍琛岋細"
 echo "  bash /opt/ftg/deploy/scripts/setup-ssl.sh"
 echo ""
-echo "微信小程序配置检查清单："
-echo "  1. mp.weixin.qq.com → 开发管理 → request合法域名:"
+echo "寰俊灏忕▼搴忛厤缃鏌ユ竻鍗曪細"
+echo "  1. mp.weixin.qq.com 鈫?寮€鍙戠鐞?鈫?request鍚堟硶鍩熷悕:"
 echo "     https://mnapp.top"
-echo "  2. /opt/ftg/deploy/.env → WECHAT_SECRET 已填写"
-echo "  3. 小程序构建: cd apps/ftg/h5-weapp && npm run build:weapp:prod"
+echo "  2. /opt/ftg/deploy/.env 鈫?WECHAT_SECRET 宸插～鍐?
+echo "  3. 灏忕▼搴忔瀯寤? cd apps/ftg/client && npm run build:weapp:prod"

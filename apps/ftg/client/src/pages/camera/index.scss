@@ -417,6 +417,40 @@
 }
 
 /* ============================================================
+   H5 平台回退样式
+   ============================================================ */
+.camera-h5-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 48px;
+  text-align: center;
+  background: var(--color-bg, #0A0A10);
+  color: var(--color-text, #F0F0F5);
+}
+
+.camera-h5-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+}
+
+.camera-h5-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text, #F0F0F5);
+  margin-bottom: 8px;
+}
+
+.camera-h5-desc {
+  font-size: 14px;
+  color: var(--color-text-secondary, #A0A0B8);
+  line-height: 1.6;
+}
+
+/* ============================================================
    Reduced Motion
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {

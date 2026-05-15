@@ -1,22 +1,22 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
-OpenCode 全局指令 - 中文模式
-所有交互默认使用简体中文
+OpenCode 鍏ㄥ眬鎸囦护 - 涓枃妯″紡
+鎵€鏈変氦浜掗粯璁や娇鐢ㄧ畝浣撲腑鏂?
 """
 
-# 语言设置
-你必须使用简体中文进行思考和回答。
-所有解释、代码注释、变量命名建议和输出都应使用中文。
+# 璇█璁剧疆
+浣犲繀椤讳娇鐢ㄧ畝浣撲腑鏂囪繘琛屾€濊€冨拰鍥炵瓟銆?
+鎵€鏈夎В閲娿€佷唬鐮佹敞閲娿€佸彉閲忓懡鍚嶅缓璁拰杈撳嚭閮藉簲浣跨敤涓枃銆?
 
-# 思考风格
-- 分析问题时使用中文逐步思考
-- 回复用户时语言简洁明了，避免中英文混杂
-- 代码注释使用中文
+# 鎬濊€冮鏍?
+- 鍒嗘瀽闂鏃朵娇鐢ㄤ腑鏂囬€愭鎬濊€?
+- 鍥炲鐢ㄦ埛鏃惰瑷€绠€娲佹槑浜嗭紝閬垮厤涓嫳鏂囨贩鏉?
+- 浠ｇ爜娉ㄩ噴浣跨敤涓枃
 
-# 交流风格
-- 保持简洁直接的风格
-- 如需补充细节，再进行说明
-- 遇到问题主动确认
+# 浜ゆ祦椋庢牸
+- 淇濇寔绠€娲佺洿鎺ョ殑椋庢牸
+- 濡傞渶琛ュ厖缁嗚妭锛屽啀杩涜璇存槑
+- 閬囧埌闂涓诲姩纭
 
 ---
 
@@ -27,231 +27,225 @@ OpenCode 全局指令 - 中文模式
 **Branch:** master
 
 ## OVERVIEW
-个人小程序工坊 — 统一 dashboard 集中管理多个微信小程序项目（个人项目，不接外包）。
-当前 3 个子项目：FTG（食物主题生成器）、Game1（挂机放置游戏）、AI-Tavern（AI 角色聊天）。
-Monorepo，7 个独立 TypeScript 项目（3 H5-Frontend + 3 Server + 1 Dashboard）+ 1 个 Python 桌面工具（SuperTask），共 ~780 源文件（不含 node_modules）。
+涓汉灏忕▼搴忓伐鍧?鈥?缁熶竴 dashboard 闆嗕腑绠＄悊澶氫釜寰俊灏忕▼搴忛」鐩紙涓汉椤圭洰锛屼笉鎺ュ鍖咃級銆?
+褰撳墠 3 涓瓙椤圭洰锛欶TG锛堥鐗╀富棰樼敓鎴愬櫒锛夈€丟ame1锛堟寕鏈烘斁缃父鎴忥級銆丄I-Tavern锛圓I 瑙掕壊鑱婂ぉ锛夈€?
+Monorepo锛? 涓嫭绔?TypeScript 椤圭洰锛? H5-Frontend + 3 Server + 1 Dashboard锛? 1 涓?Python 妗岄潰宸ュ叿锛圫uperTask锛夛紝鍏?~780 婧愭枃浠讹紙涓嶅惈 node_modules锛夈€?
 
 ## STRUCTURE
 ```
 .miniapps/
-├── apps/
-│   ├── ftg/                       # FTG 项目
-│   │   ├── h5-core/              # 跨平台共享代码（types/utils/constants）
-│   │   ├── h5-weapp/             # Taro 4.x 微信小程序 — FTG 食物主题生成器
-│   │   ├── h5-webview/           # H5 独立 Web 版本（预留）
-│   │   └── server/               # Express 后端 API (Prisma ORM, 16路由)
-│   ├── game1/                     # Game1 项目
-│   │   ├── h5-core/              # 跨平台共享代码
-│   │   ├── h5-weapp/             # Taro 微信小程序 — Game1 挂机放置游戏（开发中）
-│   │   ├── h5-webview/           # H5 独立 Web 版本（预留）
-│   │   └── server/               # Express 后端 API (云端存档/PVP/成就)
-│   └── tavern/                    # AI-Tavern 项目
-│       ├── h5-core/              # 跨平台共享代码
-│       ├── h5-weapp/             # Taro 4.x 微信小程序 — AI-Tavern 角色聊天（开发中）
-│       ├── h5-webview/           # H5 独立 Web 版本（预留）
-│       └── server/               # Express 后端 API (角色聊天/SSE)
-├── dashboard/                     # React 管理后台 — 统一管理所有项目
-├── cloud-functions/               # (空目录，云函数实际位于 apps/) 
-├── deploy/                        # Docker Compose + Nginx 部署到 ECS
-├── docs/                          # 项目文档 (按项目分类)
-│   ├── apps/ftg-miniapp/          # FTG 小程序文档
-│   ├── apps/game1-miniapp/        # Game1 小程序重构方案
-│   ├── servers/ftg-server/        # FTG 后端文档
-│   ├── servers/game1-server/      # Game1 后端文档
-│   ├── servers/tavern-server/     # Tavern 后端文档
-│   ├── dashboard/                 # 管理后台文档
-│   ├── deploy/                    # 部署文档
-│   └── superpowers/               # Agent 工作文档
-├── plan/                          # 项目规划 (tasks/humans/ideas)
-├── prisma/                        # 统一 Prisma Schema (14表合并)
-├── tools/                         # 开发工具 (Python 桌面应用等)
-│   └── supertask/                 # SuperTask AI 自主开发监督系统 (PyQt6)
-├── state/                         # 超级任务状态跟踪
-├── deploy_commands.sh             # 部署命令脚本
-├── deploy_remote.bat              # 远程部署批处理
-├── recover_and_deploy.sh          # 恢复+部署脚本
-└── .sisyphus/                     # Sisyphus Agent 工作目录
+鈹溾攢鈹€ apps/
+鈹?  鈹溾攢鈹€ ftg/                       # FTG 椤圭洰
+鈹?  鈹?  鈹溾攢鈹€ client/             # Taro 4.x 璺ㄥ钩鍙板鎴风 鈥?FTG 椋熺墿涓婚鐢熸垚鍣?
+鈹?  鈹?  鈹斺攢鈹€ server/               # Express 鍚庣 API (Prisma ORM, 16璺敱)
+鈹?  鈹溾攢鈹€ game1/                     # Game1 椤圭洰
+鈹?  鈹?  鈹溾攢鈹€ client/             # Taro 璺ㄥ钩鍙板鎴风 鈥?Game1 鎸傛満鏀剧疆娓告垙
+鈹?  鈹?  鈹斺攢鈹€ server/               # Express 鍚庣 API (浜戠瀛樻。/PVP/鎴愬氨)
+鈹?  鈹斺攢鈹€ tavern/                    # AI-Tavern 椤圭洰
+鈹?      鈹溾攢鈹€ client/             # Taro 4.x 璺ㄥ钩鍙板鎴风 鈥?AI-Tavern 瑙掕壊鑱婂ぉ
+鈹?      鈹斺攢鈹€ server/               # Express 鍚庣 API (瑙掕壊鑱婂ぉ/SSE)
+鈹溾攢鈹€ dashboard/                     # React 绠＄悊鍚庡彴 鈥?缁熶竴绠＄悊鎵€鏈夐」鐩?
+鈹溾攢鈹€ cloud-functions/               # (绌虹洰褰曪紝浜戝嚱鏁板疄闄呬綅浜?apps/) 
+鈹溾攢鈹€ deploy/                        # Docker Compose + Nginx 閮ㄧ讲鍒?ECS
+鈹溾攢鈹€ docs/                          # 椤圭洰鏂囨。 (鎸夐」鐩垎绫?
+鈹?  鈹溾攢鈹€ apps/ftg-miniapp/          # FTG 灏忕▼搴忔枃妗?
+鈹?  鈹溾攢鈹€ apps/game1-miniapp/        # Game1 灏忕▼搴忛噸鏋勬柟妗?
+鈹?  鈹溾攢鈹€ servers/ftg-server/        # FTG 鍚庣鏂囨。
+鈹?  鈹溾攢鈹€ servers/game1-server/      # Game1 鍚庣鏂囨。
+鈹?  鈹溾攢鈹€ servers/tavern-server/     # Tavern 鍚庣鏂囨。
+鈹?  鈹溾攢鈹€ dashboard/                 # 绠＄悊鍚庡彴鏂囨。
+鈹?  鈹溾攢鈹€ deploy/                    # 閮ㄧ讲鏂囨。
+鈹?  鈹斺攢鈹€ superpowers/               # Agent 宸ヤ綔鏂囨。
+鈹溾攢鈹€ plan/                          # 椤圭洰瑙勫垝 (tasks/humans/ideas)
+鈹溾攢鈹€ prisma/                        # 缁熶竴 Prisma Schema (14琛ㄥ悎骞?
+鈹溾攢鈹€ tools/                         # 寮€鍙戝伐鍏?(Python 妗岄潰搴旂敤绛?
+鈹?  鈹斺攢鈹€ supertask/                 # SuperTask AI 鑷富寮€鍙戠洃鐫ｇ郴缁?(PyQt6)
+鈹溾攢鈹€ state/                         # 瓒呯骇浠诲姟鐘舵€佽窡韪?
+鈹溾攢鈹€ deploy_commands.sh             # 閮ㄧ讲鍛戒护鑴氭湰
+鈹溾攢鈹€ deploy_remote.bat              # 杩滅▼閮ㄧ讲鎵瑰鐞?
+鈹溾攢鈹€ recover_and_deploy.sh          # 鎭㈠+閮ㄧ讲鑴氭湰
+鈹斺攢鈹€ .sisyphus/                     # Sisyphus Agent 宸ヤ綔鐩綍
 ```
 
-## 架构说明
-- **一管多**: dashboard 管理后台统一管理所有小程序项目
-- **当前项目**: FTG (成熟) + Game1 (开发中) + AI-Tavern (开发中)
-- **共享基础设施**: 部署脚本、Nginx 配置、Prisma Schema、域名配置复用
-- **独立部署**: 各 servers 独立容器/Dockerfile，通过 Nginx 统一路由
-- **个人项目**: 所有小程序为个人项目，不接受外包
+## 鏋舵瀯璇存槑
+- **涓€绠″**: dashboard 绠＄悊鍚庡彴缁熶竴绠＄悊鎵€鏈夊皬绋嬪簭椤圭洰
+- **褰撳墠椤圭洰**: FTG (鎴愮啛) + Game1 (寮€鍙戜腑) + AI-Tavern (寮€鍙戜腑)
+- **鍏变韩鍩虹璁炬柦**: 閮ㄧ讲鑴氭湰銆丯ginx 閰嶇疆銆丳risma Schema銆佸煙鍚嶉厤缃鐢?
+- **鐙珛閮ㄧ讲**: 鍚?servers 鐙珛瀹瑰櫒/Dockerfile锛岄€氳繃 Nginx 缁熶竴璺敱
+- **涓汉椤圭洰**: 鎵€鏈夊皬绋嬪簭涓轰釜浜洪」鐩紝涓嶆帴鍙楀鍖?
 
 ## WHERE TO LOOK
-| 任务 | 位置 | 说明 |
+| 浠诲姟 | 浣嶇疆 | 璇存槑 |
 |------|------|------|
-| 小程序页面/组件 | `apps/ftg/h5-weapp/src/` | Taro + React，含 pages/components/hooks |
-| 后端 API 路由 | `apps/ftg/server/src/routes/` | 16 个路由模块 (含 theme-classes/theme-render)RESTful |
-| 管理后台界面 | `dashboard/src/` | React + Vite + Ant Design，含 ThemeClasses |
-| 数据库 Schema | `prisma/schema.prisma` | 统一 Prisma Schema (14表: User/FoodRecord/Theme/AdminUser等) |
-| 部署配置 | `deploy/docker-compose.yml` | Docker 统一编排 (MySQL/Redis/AI/Server/Admin/Nginx) |
-| 模板渲染引擎 | `apps/ftg/server/src/services/theme-render.service.ts` | Markup 模板 + CSS Class 渲染 |
-| Class 系统 | `apps/ftg/server/src/services/theme-class.service.ts` | CSS 属性白名单 + CRUD |
-| AI 识别服务 | `apps/ftg/server/src/services/` | PP-ShiTuV2 食物识别 |
-| MiniApp 状态管理 | `apps/ftg/h5-weapp/src/stores/` | Zustand 认证状态 (authStore) |
-| MiniApp HTTP 客户端 | `apps/ftg/h5-weapp/src/services/httpClient.ts` | 统一 HTTP 封装 (JWT 自动携带) |
-| MiniApp 认证服务 | `apps/ftg/h5-weapp/src/services/authService.ts` | 微信登录 + Token 验证封装 |
-| MiniApp 自定义 tabBar | `apps/ftg/h5-weapp/src/custom-tab-bar/` | 自定义底部栏 (替代原生 tabBar) |
-| Dashboard 主题 | `dashboard/src/components/ThemeToggle/` | 暗色模式切换 |
-| Dashboard 骨架屏 | `dashboard/src/components/PageSkeleton/` | 统一加载态（4种类型）|
-| Dashboard PageHeader | `dashboard/src/components/PageHeader/` | 通用页面头部组件 |
-| MiniApp 组件库 | `apps/ftg/h5-weapp/src/components/` | AppButton/AppCard/SectionHeader/EmptyState/Icon/Skeleton |
-| MiniApp 图表 | `apps/ftg/h5-weapp/src/components/charts/` | LineChart/PieChart/BarChart/CalendarHeatmap |
+| 灏忕▼搴忛〉闈?缁勪欢 | `apps/ftg/client/src/` | Taro + React锛屽惈 pages/components/hooks |
+| 鍚庣 API 璺敱 | `apps/ftg/server/src/routes/` | 16 涓矾鐢辨ā鍧?(鍚?theme-classes/theme-render)RESTful |
+| 绠＄悊鍚庡彴鐣岄潰 | `dashboard/src/` | React + Vite + Ant Design锛屽惈 ThemeClasses |
+| 鏁版嵁搴?Schema | `prisma/schema.prisma` | 缁熶竴 Prisma Schema (14琛? User/FoodRecord/Theme/AdminUser绛? |
+| 閮ㄧ讲閰嶇疆 | `deploy/docker-compose.yml` | Docker 缁熶竴缂栨帓 (MySQL/Redis/AI/Server/Admin/Nginx) |
+| 妯℃澘娓叉煋寮曟搸 | `apps/ftg/server/src/services/theme-render.service.ts` | Markup 妯℃澘 + CSS Class 娓叉煋 |
+| Class 绯荤粺 | `apps/ftg/server/src/services/theme-class.service.ts` | CSS 灞炴€х櫧鍚嶅崟 + CRUD |
+| AI 璇嗗埆鏈嶅姟 | `apps/ftg/server/src/services/` | PP-ShiTuV2 椋熺墿璇嗗埆 |
+| MiniApp 鐘舵€佺鐞?| `apps/ftg/client/src/stores/` | Zustand 璁よ瘉鐘舵€?(authStore) |
+| MiniApp HTTP 瀹㈡埛绔?| `apps/ftg/client/src/services/httpClient.ts` | 缁熶竴 HTTP 灏佽 (JWT 鑷姩鎼哄甫) |
+| MiniApp 璁よ瘉鏈嶅姟 | `apps/ftg/client/src/services/authService.ts` | 寰俊鐧诲綍 + Token 楠岃瘉灏佽 |
+| MiniApp 鑷畾涔?tabBar | `apps/ftg/client/src/custom-tab-bar/` | 鑷畾涔夊簳閮ㄦ爮 (鏇夸唬鍘熺敓 tabBar) |
+| Dashboard 涓婚 | `dashboard/src/components/ThemeToggle/` | 鏆楄壊妯″紡鍒囨崲 |
+| Dashboard 楠ㄦ灦灞?| `dashboard/src/components/PageSkeleton/` | 缁熶竴鍔犺浇鎬侊紙4绉嶇被鍨嬶級|
+| Dashboard PageHeader | `dashboard/src/components/PageHeader/` | 閫氱敤椤甸潰澶撮儴缁勪欢 |
+| MiniApp 缁勪欢搴?| `apps/ftg/client/src/components/` | AppButton/AppCard/SectionHeader/EmptyState/Icon/Skeleton |
+| MiniApp 鍥捐〃 | `apps/ftg/client/src/components/charts/` | LineChart/PieChart/BarChart/CalendarHeatmap |
 | CI/CD | `apps/ftg/server/.github/workflows/` | GitHub Actions (lint/type-check/build/docker) |
-| CI/CD (Game1) | `apps/game1/server/.github/workflows/` | GitHub Actions (Node 20 + MySQL 服务) |
-| Game1 后端 API | `apps/game1/server/src/routes/` | 10 路由模块 (auth/players/save/pvp/achievements/config/social/admin) |
-| Tavern 后端 API | `apps/tavern/server/src/routes/` | 10 路由模块 (auth/characters/chat/personas/keys/market/admin/builtin/export) |
-| Game1 小程序引擎 | `apps/game1/h5-weapp/src/engine/` | 纯 TS 游戏逻辑引擎 (18 子模块：travel/combat/team/inventory/skill/card/event/achievement/prestige/idle/pet/map 等) |
-| Game1 游戏数据配置 | `apps/game1/h5-weapp/src/config/` | 13 个 JSON 配置文件驱动所有游戏数据 |
-| Tavern 小程序 | `apps/tavern/h5-weapp/AGENTS.md` | Taro 4.x 角色聊天小程序 (AI-Tavern) |
-| Tavern 小程序源码 | `apps/tavern/h5-weapp/src/` | 8 页面 + 4 组件 + services/stores/hooks |
-| Tavern SSE Hook | `apps/tavern/h5-weapp/src/hooks/useSSE.ts` | SSE 流式聊天 EventSource 封装（断线重连 + 消息追加） |
-| Dashboard 骨架屏 | `dashboard/src/components/PageSkeleton/` | ⚠️ 纯内联样式，待迁移为 CSS Modules |
-| Dashboard 主题切换 | `dashboard/src/components/ThemeToggle/` | ⚠️ 纯内联样式 |
-| 域名共享配置 | `domain.config.js` | 所有 Taro 项目的 API_BASE 编译时配置 |
-| 项目文档 | `docs/` | 按项目分类 (ftg-miniapp/ftg-server/game1-server/tavern-server/dashboard/deploy) |
-| Dashboard Game1 服务 | `dashboard/src/services/game1/` | Game1 运营/配置/成就/PVP API |
-| Dashboard Tavern 服务 | `dashboard/src/services/tavern/` | Tavern 角色/审核/统计 API |
-| Dashboard FTG 服务 | `dashboard/src/services/ftg/` | FTG 用户/主题/Class/成就 API |
-| SuperTask 桌面工具 | `tools/supertask/` | Python PyQt6 GUI，AI 开发监督系统 |
+| CI/CD (Game1) | `apps/game1/server/.github/workflows/` | GitHub Actions (Node 20 + MySQL 鏈嶅姟) |
+| Game1 鍚庣 API | `apps/game1/server/src/routes/` | 10 璺敱妯″潡 (auth/players/save/pvp/achievements/config/social/admin) |
+| Tavern 鍚庣 API | `apps/tavern/server/src/routes/` | 10 璺敱妯″潡 (auth/characters/chat/personas/keys/market/admin/builtin/export) |
+| Game1 灏忕▼搴忓紩鎿?| `apps/game1/client/src/engine/` | 绾?TS 娓告垙閫昏緫寮曟搸 (18 瀛愭ā鍧楋細travel/combat/team/inventory/skill/card/event/achievement/prestige/idle/pet/map 绛? |
+| Game1 娓告垙鏁版嵁閰嶇疆 | `apps/game1/client/src/config/` | 13 涓?JSON 閰嶇疆鏂囦欢椹卞姩鎵€鏈夋父鎴忔暟鎹?|
+| Tavern 灏忕▼搴?| `apps/tavern/client/AGENTS.md` | Taro 4.x 瑙掕壊鑱婂ぉ灏忕▼搴?(AI-Tavern) |
+| Tavern 灏忕▼搴忔簮鐮?| `apps/tavern/client/src/` | 8 椤甸潰 + 4 缁勪欢 + services/stores/hooks |
+| Tavern SSE Hook | `apps/tavern/client/src/hooks/useSSE.ts` | SSE 娴佸紡鑱婂ぉ EventSource 灏佽锛堟柇绾块噸杩?+ 娑堟伅杩藉姞锛?|
+| Dashboard 楠ㄦ灦灞?| `dashboard/src/components/PageSkeleton/` | 鈿狅笍 绾唴鑱旀牱寮忥紝寰呰縼绉讳负 CSS Modules |
+| Dashboard 涓婚鍒囨崲 | `dashboard/src/components/ThemeToggle/` | 鈿狅笍 绾唴鑱旀牱寮?|
+| 鍩熷悕鍏变韩閰嶇疆 | `domain.config.js` | 鎵€鏈?Taro 椤圭洰鐨?API_BASE 缂栬瘧鏃堕厤缃?|
+| 椤圭洰鏂囨。 | `docs/` | 鎸夐」鐩垎绫?(ftg-miniapp/ftg-server/game1-server/tavern-server/dashboard/deploy) |
+| Dashboard Game1 鏈嶅姟 | `dashboard/src/services/game1/` | Game1 杩愯惀/閰嶇疆/鎴愬氨/PVP API |
+| Dashboard Tavern 鏈嶅姟 | `dashboard/src/services/tavern/` | Tavern 瑙掕壊/瀹℃牳/缁熻 API |
+| Dashboard FTG 鏈嶅姟 | `dashboard/src/services/ftg/` | FTG 鐢ㄦ埛/涓婚/Class/鎴愬氨 API |
+| SuperTask 妗岄潰宸ュ叿 | `tools/supertask/` | Python PyQt6 GUI锛孉I 寮€鍙戠洃鐫ｇ郴缁?|
 
 ## CODE MAP
-| 符号 | 类型 | 位置 | 角色 |
+| 绗﹀彿 | 绫诲瀷 | 浣嶇疆 | 瑙掕壊 |
 |------|------|------|------|
-| `App` (MiniApp) | 入口 | `apps/ftg/h5-weapp/src/app.ts` | 小程序应用入口 |
-| `App` (Server) | 入口 | `apps/ftg/server/src/app.ts` | FTG 后端 Express 服务 |
-| `App` (Game1 Server) | 入口 | `apps/game1/server/src/app.ts` | Game1 后端 Express 服务 |
-| `App` (Tavern Server) | 入口 | `apps/tavern/server/src/app.ts` | Tavern 后端 Express 应用定义 |
-| `index` (Tavern Server) | 入口 | `apps/tavern/server/src/index.ts` | Tavern 服务器启动监听 |
-| `App` (Game1 MiniApp) | 入口 | `apps/game1/h5-weapp/src/app.tsx` | Game1 小程序入口 |
-| `main` (Dashboard) | 入口 | `dashboard/src/main.tsx` | 管理后台 SPA 入口 |
-| `server` (Dashboard API) | 入口 | `dashboard/server/server.ts` | Admin 独立 API (3001端口) |
-| `ProtectedRoute` (Dashboard) | 组件 | `dashboard/src/components/ProtectedRoute/` | 路由守卫（登录+权限双检查） |
-| `authStore` (Dashboard) | 状态 | `dashboard/src/stores/authStore.ts` | Zustand 认证状态管理 |
-| `admin-auth` (Dashboard API) | 中间件 | `dashboard/server/admin-auth.ts` | JWT 认证 + RBAC 权限中间件 |
-| `token` (Dashboard) | 工具 | `dashboard/src/utils/token.ts` | Token 持久化（localStorage/sessionStorage） |
-| `useAuthStore` (FTG) | 状态 | `apps/ftg/h5-weapp/src/stores/authStore.ts` | Zustand 认证状态 (token/user/初始化) |
-| `httpClient` (FTG) | 服务 | `apps/ftg/h5-weapp/src/services/httpClient.ts` | 统一 HTTP 客户端 (JWT) |
-| `authService` (FTG) | 服务 | `apps/ftg/h5-weapp/src/services/authService.ts` | 微信登录/自动注册/Token 验证 |
-| `CustomTabBar` (FTG) | 组件 | `apps/ftg/h5-weapp/src/custom-tab-bar/` | 自定义底部栏 (事件驱动高亮) |
-| `App` (Tavern MiniApp) | 入口 | `apps/tavern/h5-weapp/src/app.ts` | Tavern 小程序入口 |
-| `useSSE` (Tavern) | Hook | `apps/tavern/h5-weapp/src/hooks/useSSE.ts` | SSE 流式聊天 EventSource 封装 |
-| `GameEngine` (Game1) | 引擎 | `apps/game1/h5-weapp/src/engine/index.ts` | 纯 TS 游戏逻辑引擎总入口 |
+| `App` (MiniApp) | 鍏ュ彛 | `apps/ftg/client/src/app.ts` | 灏忕▼搴忓簲鐢ㄥ叆鍙?|
+| `App` (Server) | 鍏ュ彛 | `apps/ftg/server/src/app.ts` | FTG 鍚庣 Express 鏈嶅姟 |
+| `App` (Game1 Server) | 鍏ュ彛 | `apps/game1/server/src/app.ts` | Game1 鍚庣 Express 鏈嶅姟 |
+| `App` (Tavern Server) | 鍏ュ彛 | `apps/tavern/server/src/app.ts` | Tavern 鍚庣 Express 搴旂敤瀹氫箟 |
+| `index` (Tavern Server) | 鍏ュ彛 | `apps/tavern/server/src/index.ts` | Tavern 鏈嶅姟鍣ㄥ惎鍔ㄧ洃鍚?|
+| `App` (Game1 MiniApp) | 鍏ュ彛 | `apps/game1/client/src/app.tsx` | Game1 灏忕▼搴忓叆鍙?|
+| `main` (Dashboard) | 鍏ュ彛 | `dashboard/src/main.tsx` | 绠＄悊鍚庡彴 SPA 鍏ュ彛 |
+| `server` (Dashboard API) | 鍏ュ彛 | `dashboard/server/server.ts` | Admin 鐙珛 API (3001绔彛) |
+| `ProtectedRoute` (Dashboard) | 缁勪欢 | `dashboard/src/components/ProtectedRoute/` | 璺敱瀹堝崼锛堢櫥褰?鏉冮檺鍙屾鏌ワ級 |
+| `authStore` (Dashboard) | 鐘舵€?| `dashboard/src/stores/authStore.ts` | Zustand 璁よ瘉鐘舵€佺鐞?|
+| `admin-auth` (Dashboard API) | 涓棿浠?| `dashboard/server/admin-auth.ts` | JWT 璁よ瘉 + RBAC 鏉冮檺涓棿浠?|
+| `token` (Dashboard) | 宸ュ叿 | `dashboard/src/utils/token.ts` | Token 鎸佷箙鍖栵紙localStorage/sessionStorage锛?|
+| `useAuthStore` (FTG) | 鐘舵€?| `apps/ftg/client/src/stores/authStore.ts` | Zustand 璁よ瘉鐘舵€?(token/user/鍒濆鍖? |
+| `httpClient` (FTG) | 鏈嶅姟 | `apps/ftg/client/src/services/httpClient.ts` | 缁熶竴 HTTP 瀹㈡埛绔?(JWT) |
+| `authService` (FTG) | 鏈嶅姟 | `apps/ftg/client/src/services/authService.ts` | 寰俊鐧诲綍/鑷姩娉ㄥ唽/Token 楠岃瘉 |
+| `CustomTabBar` (FTG) | 缁勪欢 | `apps/ftg/client/src/custom-tab-bar/` | 鑷畾涔夊簳閮ㄦ爮 (浜嬩欢椹卞姩楂樹寒) |
+| `App` (Tavern MiniApp) | 鍏ュ彛 | `apps/tavern/client/src/app.ts` | Tavern 灏忕▼搴忓叆鍙?|
+| `useSSE` (Tavern) | Hook | `apps/tavern/client/src/hooks/useSSE.ts` | SSE 娴佸紡鑱婂ぉ EventSource 灏佽 |
+| `GameEngine` (Game1) | 寮曟搸 | `apps/game1/client/src/engine/index.ts` | 绾?TS 娓告垙閫昏緫寮曟搸鎬诲叆鍙?|
 
 ## CONVENTIONS
-- **TypeScript strict** 全项目强制 (`no-explicit-any: error`)，但各项目严格度不同
-  - Dashboard 最严格：`noUnusedLocals/Parameters: true`, `verbatimModuleSyntax: true`
-  - MiniApp 通用：额外启用 `noUncheckedIndexedAccess: true`（Server 未启用）
-  - tavern-server 为 `no-explicit-any: off`
-- **2 空格缩进**，LF 换行，UTF-8
-- **路径别名** `@/*` → 各项目 `src/`，MiniApp 另有 `@utils/@components/@services` 等别名
-- **Prettier**: ftg-miniapp/ftg-server/game1-server 统一 `printWidth:100`, `singleQuote:true`, `trailingComma:all`；tavern-server/dashboard 无独立配置
-- **ESLint**: ftg-miniapp 含 React Hooks 规则 (`rules-of-hooks: error`)，Server 通用 `no-non-null-assertion: error`
-- **Zod 校验**: game1-server 和 tavern-server 在路由层使用 Zod request validation
-- **Prisma**: 统一 ORM，但版本分化 — ftg-server/dashboard v6.19, game1-server v5.22, tavern-server v5.10
-- **无 monorepo workspace** — 各项目独立 `npm install`
+- **TypeScript strict** 鍏ㄩ」鐩己鍒?(`no-explicit-any: error`)锛屼絾鍚勯」鐩弗鏍煎害涓嶅悓
+  - Dashboard 鏈€涓ユ牸锛歚noUnusedLocals/Parameters: true`, `verbatimModuleSyntax: true`
+  - MiniApp 閫氱敤锛氶澶栧惎鐢?`noUncheckedIndexedAccess: true`锛圫erver 鏈惎鐢級
+  - tavern-server 涓?`no-explicit-any: off`
+- **2 绌烘牸缂╄繘**锛孡F 鎹㈣锛孶TF-8
+- **璺緞鍒悕** `@/*` 鈫?鍚勯」鐩?`src/`锛孧iniApp 鍙︽湁 `@utils/@components/@services` 绛夊埆鍚?
+- **Prettier**: ftg-miniapp/ftg-server/game1-server 缁熶竴 `printWidth:100`, `singleQuote:true`, `trailingComma:all`锛泃avern-server/dashboard 鏃犵嫭绔嬮厤缃?
+- **ESLint**: ftg-miniapp 鍚?React Hooks 瑙勫垯 (`rules-of-hooks: error`)锛孲erver 閫氱敤 `no-non-null-assertion: error`
+- **Zod 鏍￠獙**: game1-server 鍜?tavern-server 鍦ㄨ矾鐢卞眰浣跨敤 Zod request validation
+- **Prisma**: 缁熶竴 ORM锛屼絾鐗堟湰鍒嗗寲 鈥?ftg-server/dashboard v6.19, game1-server v5.22, tavern-server v5.10
+- **鏃?monorepo workspace** 鈥?鍚勯」鐩嫭绔?`npm install`
 
-## ANTI-PATTERNS (本项目)
-- ❌ **零测试覆盖** — 全项目无测试框架/文件/脚本（game1-miniapp 有 vitest.config 但无测试文件）
-- ❌ `textGenerate` 云函数为占位实现（未接入混元 AI）
-- ❌ `getUserStats` 云函数返回硬编码零值
-- ❌ 存在无必要的 `eslint-disable` 注释
-- ❌ `cloud-functions/` 根目录为空，云函数实际在 MiniApp 子目录下
-- ❌ Dashboard 内联样式过多 — 已迁移 Login/Dashboard/Layout 为 CSS Modules，其余页面待迁移
-- ❌ MiniApp 跨任务并行执行可能产生导入冲突 — 注意 chart types/utils 需从 `@/components/charts` 导入
-- ❌ **空 catch 块** — apps/ftg/h5-weapp/src/app.ts 有 4 个空 catch 块（line 55/94/117/131）
-- ❌ **Mock 降级代码** — 多处运行时降级（recognition.service mockRecognize, textgen.service generateFallback, authStore mockAuth），生产环境需清理
-- ❌ **类型断言** — apps/game1/h5-weapp/src/app.tsx 多处 `as` 断言，dashboard ThemeClasses `as Record<string, unknown>`
-- ❌ **占位注释** — apps/tavern/server/src/routes/chat.ts line 149 `// Clean up if needed` 无实际逻辑
-- ❌ **错误日志缺失** — apps/game1/server/src/routes/players.ts catch 块仅 `sendError` 无日志
-- ❌ **硬编码密钥** — `.sisyphus/aliyun-mysql-clear.js` 含明文阿里云 AK ID/SECRET，需迁移到环境变量
-- ❌ **缺失 ESLint 配置** — tavern-server 和 dashboard 无 ESLint 配置（其他项目均有）
-- ❌ **console.log 残留** — game1/h5-weapp 多个文件（app.tsx、AchievementEngine、SaveManager、PendingEventEngine）使用 console.log 而非日志框架
-- ❌ **result/index.tsx 假保存** — apps/ftg/h5-weapp/src/pages/result/index.tsx line 108 TODO 未实现，Toast "保存成功" 时无实际 API 调用
-- ❌ **`as any` 散布** — 全仓库约 10 处 `as any` 类型断言（gallery/DropEngine/chat/user.service/export.service 等）
-- ❌ **Prisma 版本分化** — ftg-server/dashboard v6.19、game1-server v5.22、tavern-server v5.10
-- ❌ **tavern-server 无路径别名** — apps/tavern/server 未配置 `@/*` 路径别名，使用相对路径 import
-- ❌ **tavern-server 无超时配置** — apps/tavern/server 未设置 keepAliveTimeout/headersTimeout/timeout
+## ANTI-PATTERNS (鏈」鐩?
+- 鉂?**闆舵祴璇曡鐩?* 鈥?鍏ㄩ」鐩棤娴嬭瘯妗嗘灦/鏂囦欢/鑴氭湰锛坓ame1-miniapp 鏈?vitest.config 浣嗘棤娴嬭瘯鏂囦欢锛?
+- 鉂?`textGenerate` 浜戝嚱鏁颁负鍗犱綅瀹炵幇锛堟湭鎺ュ叆娣峰厓 AI锛?
+- 鉂?`getUserStats` 浜戝嚱鏁拌繑鍥炵‖缂栫爜闆跺€?
+- 鉂?瀛樺湪鏃犲繀瑕佺殑 `eslint-disable` 娉ㄩ噴
+- 鉂?`cloud-functions/` 鏍圭洰褰曚负绌猴紝浜戝嚱鏁板疄闄呭湪 MiniApp 瀛愮洰褰曚笅
+- 鉂?Dashboard 鍐呰仈鏍峰紡杩囧 鈥?宸茶縼绉?Login/Dashboard/Layout 涓?CSS Modules锛屽叾浣欓〉闈㈠緟杩佺Щ
+- 鉂?MiniApp 璺ㄤ换鍔″苟琛屾墽琛屽彲鑳戒骇鐢熷鍏ュ啿绐?鈥?娉ㄦ剰 chart types/utils 闇€浠?`@/components/charts` 瀵煎叆
+- 鉂?**绌?catch 鍧?* 鈥?apps/ftg/client/src/app.ts 鏈?4 涓┖ catch 鍧楋紙line 55/94/117/131锛?
+- 鉂?**Mock 闄嶇骇浠ｇ爜** 鈥?澶氬杩愯鏃堕檷绾э紙recognition.service mockRecognize, textgen.service generateFallback, authStore mockAuth锛夛紝鐢熶骇鐜闇€娓呯悊
+- 鉂?**绫诲瀷鏂█** 鈥?apps/game1/client/src/app.tsx 澶氬 `as` 鏂█锛宒ashboard ThemeClasses `as Record<string, unknown>`
+- 鉂?**鍗犱綅娉ㄩ噴** 鈥?apps/tavern/server/src/routes/chat.ts line 149 `// Clean up if needed` 鏃犲疄闄呴€昏緫
+- 鉂?**閿欒鏃ュ織缂哄け** 鈥?apps/game1/server/src/routes/players.ts catch 鍧椾粎 `sendError` 鏃犳棩蹇?
+- 鉂?**纭紪鐮佸瘑閽?* 鈥?`.sisyphus/aliyun-mysql-clear.js` 鍚槑鏂囬樋閲屼簯 AK ID/SECRET锛岄渶杩佺Щ鍒扮幆澧冨彉閲?
+- 鉂?**缂哄け ESLint 閰嶇疆** 鈥?tavern-server 鍜?dashboard 鏃?ESLint 閰嶇疆锛堝叾浠栭」鐩潎鏈夛級
+- 鉂?**console.log 娈嬬暀** 鈥?game1/client 澶氫釜鏂囦欢锛坅pp.tsx銆丄chievementEngine銆丼aveManager銆丳endingEventEngine锛変娇鐢?console.log 鑰岄潪鏃ュ織妗嗘灦
+- 鉂?**result/index.tsx 鍋囦繚瀛?* 鈥?apps/ftg/client/src/pages/result/index.tsx line 108 TODO 鏈疄鐜帮紝Toast "淇濆瓨鎴愬姛" 鏃舵棤瀹為檯 API 璋冪敤
+- 鉂?**`as any` 鏁ｅ竷** 鈥?鍏ㄤ粨搴撶害 10 澶?`as any` 绫诲瀷鏂█锛坓allery/DropEngine/chat/user.service/export.service 绛夛級
+- 鉂?**Prisma 鐗堟湰鍒嗗寲** 鈥?ftg-server/dashboard v6.19銆乬ame1-server v5.22銆乼avern-server v5.10
+- 鉂?**tavern-server 鏃犺矾寰勫埆鍚?* 鈥?apps/tavern/server 鏈厤缃?`@/*` 璺緞鍒悕锛屼娇鐢ㄧ浉瀵硅矾寰?import
+- 鉂?**tavern-server 鏃犺秴鏃堕厤缃?* 鈥?apps/tavern/server 鏈缃?keepAliveTimeout/headersTimeout/timeout
 
 ## COMMANDS
 ```bash
-# MiniApp (Taro) — cd apps/ftg/h5-weapp
-npm run dev:weapp        # 开发模式 (watch)
-npm run build:weapp      # 生产构建
-npm run type-check       # TypeScript 类型检查
-npm run dev:h5           # H5 开发模式 (watch)
-npm run build:h5         # H5 生产构建
+# MiniApp (Taro) 鈥?cd apps/ftg/client
+npm run dev:weapp        # 寮€鍙戞ā寮?(watch)
+npm run build:weapp      # 鐢熶骇鏋勫缓
+npm run type-check       # TypeScript 绫诲瀷妫€鏌?
+npm run dev:h5           # H5 寮€鍙戞ā寮?(watch)
+npm run build:h5         # H5 鐢熶骇鏋勫缓
 
-# Game1 MiniApp (Taro) — cd apps/game1/h5-weapp
-npm run dev:weapp        # 开发模式 (watch)
-npm run build:weapp      # 生产构建
-npm run type-check       # TypeScript 类型检查
-npm run dev:h5           # H5 开发模式 (watch)
-npm run build:h5         # H5 生产构建
+# Game1 MiniApp (Taro) 鈥?cd apps/game1/client
+npm run dev:weapp        # 寮€鍙戞ā寮?(watch)
+npm run build:weapp      # 鐢熶骇鏋勫缓
+npm run type-check       # TypeScript 绫诲瀷妫€鏌?
+npm run dev:h5           # H5 寮€鍙戞ā寮?(watch)
+npm run build:h5         # H5 鐢熶骇鏋勫缓
 
-# Tavern MiniApp (Taro) — cd apps/tavern/h5-weapp
-npm run dev:weapp        # 开发模式 (watch)
-npm run build:weapp      # 生产构建
-npm run type-check       # TypeScript 类型检查
-npm run lint             # ESLint 代码检查
-npm run format           # Prettier 格式化
-npm run generate-icons   # 生成 tabBar 图标
-npm run dev:h5           # H5 开发模式 (watch)
-npm run build:h5         # H5 生产构建
+# Tavern MiniApp (Taro) 鈥?cd apps/tavern/client
+npm run dev:weapp        # 寮€鍙戞ā寮?(watch)
+npm run build:weapp      # 鐢熶骇鏋勫缓
+npm run type-check       # TypeScript 绫诲瀷妫€鏌?
+npm run lint             # ESLint 浠ｇ爜妫€鏌?
+npm run format           # Prettier 鏍煎紡鍖?
+npm run generate-icons   # 鐢熸垚 tabBar 鍥炬爣
+npm run dev:h5           # H5 寮€鍙戞ā寮?(watch)
+npm run build:h5         # H5 鐢熶骇鏋勫缓
 
-# Server (Express) — cd apps/ftg/server
-npm run dev              # tsx watch 开发 (端口 env.PORT)
-npm run build            # tsc 编译
+# Server (Express) 鈥?cd apps/ftg/server
+npm run dev              # tsx watch 寮€鍙?(绔彛 env.PORT)
+npm run build            # tsc 缂栬瘧
 npm run lint             # ESLint
-npm run db:migrate       # Prisma 数据库迁移
+npm run db:migrate       # Prisma 鏁版嵁搴撹縼绉?
 
-# Game1 Server (Express) — cd apps/game1/server
-npm run dev              # tsx watch 开发
-npm run build            # tsc 编译
-npm run type-check       # TypeScript 类型检查
+# Game1 Server (Express) 鈥?cd apps/game1/server
+npm run dev              # tsx watch 寮€鍙?
+npm run build            # tsc 缂栬瘧
+npm run type-check       # TypeScript 绫诲瀷妫€鏌?
 npm run lint             # ESLint
-npm run db:migrate       # Prisma 数据库迁移
+npm run db:migrate       # Prisma 鏁版嵁搴撹縼绉?
 
-# Tavern Server (Express) — cd apps/tavern/server
-npm run dev              # tsx watch 开发
-npm run build            # tsc 编译
-npm run type-check       # TypeScript 类型检查
-npm run start            # 生产启动
-npm run lint             # ESLint 检查
-npm run db:generate      # Prisma Client 生成
-npm run db:migrate       # 数据库迁移
-npm run db:seed          # 种子数据（内置角色）
+# Tavern Server (Express) 鈥?cd apps/tavern/server
+npm run dev              # tsx watch 寮€鍙?
+npm run build            # tsc 缂栬瘧
+npm run type-check       # TypeScript 绫诲瀷妫€鏌?
+npm run start            # 鐢熶骇鍚姩
+npm run lint             # ESLint 妫€鏌?
+npm run db:generate      # Prisma Client 鐢熸垚
+npm run db:migrate       # 鏁版嵁搴撹縼绉?
+npm run db:seed          # 绉嶅瓙鏁版嵁锛堝唴缃鑹诧級
 
-# Dashboard (Vite) — cd dashboard
-npm run dev              # Vite 开发 (5173端口)
-npm run build            # 生产构建
-npm run type-check       # TypeScript 类型检查
-npm run db:generate      # Prisma Client 生成
+# Dashboard (Vite) 鈥?cd dashboard
+npm run dev              # Vite 寮€鍙?(5173绔彛)
+npm run build            # 鐢熶骇鏋勫缓
+npm run type-check       # TypeScript 绫诲瀷妫€鏌?
+npm run db:generate      # Prisma Client 鐢熸垚
 
-# 部署
-bash deploy/scripts/deploy.sh   # 一键构建+部署到 ECS
-bash deploy/scripts/verify.sh   # 部署后健康检查
+# 閮ㄧ讲
+bash deploy/scripts/deploy.sh   # 涓€閿瀯寤?閮ㄧ讲鍒?ECS
+bash deploy/scripts/verify.sh   # 閮ㄧ讲鍚庡仴搴锋鏌?
 ```
 
 ## NOTES
-- **Dashboard 双进程**: Vite 前端(5173) + Express Admin API(3001) 独立运行
-- **Dashboard 暗色模式**: 通过 `themeStore` (Zustand) 控制，localStorage 持久化，ConfigProvider darkAlgorithm
-- **Dashboard UI 组件体系**: PageHeader (通用头部) + PageSkeleton (4种骨架屏) + 响应式宽度常量
-- **MiniApp 共享组件库**: AppButton (4变体) + AppCard + SectionHeader + EmptyState + Icon (18个SVG) + Skeleton (4类型)
-- **MiniApp 图表**: 原生 Canvas 2D 图表组件 (LineChart/PieChart/BarChart/CalendarHeatmap)
-- **MiniApp CSS 变量系统**: `app.scss` 定义了完整的颜色/字体/间距/阴影/z-index 变量
-- **多项目扩展**: 新增小程序项目时，在 `apps/` 下创建 `项目名/h5-weapp` + `项目名/server`，dashboard 自动管理
-- **MiniApp 认证流程**: wx.login() → POST /auth/login → JWT token → 本地持久化 → 自动校验(initialize)
-- **MiniApp 自定义 tabBar**: CustomTabBar 组件使用 Taro eventCenter 监听 tabChange 事件驱动高亮，替代原生 tabBar
-- **MiniApp HTTP 客户端**: HttpClient 类封装 Taro.request，支持超时检测和网络连接错误中文提示
-- **MiniApp 降级模式**: 开发时可通过 `TARO_APP_MOCK_AUTH=true` 启用 mock 登录绕过微信授权
-- **API 代理**: Dashboard `/api` 在开发时代理到 Server `localhost:3000`
-- **生产架构**: Nginx(80/443) → Dashboard SPA / FTG API(/api/ftl/) / Game1 API(/api/v1/game1/) / Tavern API(/api/tavern/) / Admin API(/api/v1/admin/) / 识别(/recognition/*)
-- **识别服务**: PP-ShiTuV2 独立容器，通过 HTTP API 调用，开发模式可用 `RECOGNITION_MOCK_MODE=true` 降级
-- **Dashboard Auth 初始化**: `authStore` 初始化时 `isAuthenticated` 同步设为 `!!getToken()`，`user` 为 `null`。`restoreSession()` 异步调用 `/admin/me` 获取用户信息。`ProtectedRoute` 订阅 `initialized` 标志，仅在 `restoreSession` 完成后才进行权限判断，避免竞态条件导致 403。
-- **Game1 CI 触发条件**: `.github/workflows/ci.yml` 使用 `paths` 过滤，仅 `apps/game1/server/**` 变化时触发，含 MySQL 8.0 服务容器
-- **FTG Server 部署流水线**: `deploy.yml` 的 SSH 部署步骤被注释，需手动启用
-- **Dashboard 和 MiniApp 无独立 CI** — 只有 ftg-server 和 game1-server 有 GitHub Actions 配置
+- **Dashboard 鍙岃繘绋?*: Vite 鍓嶇(5173) + Express Admin API(3001) 鐙珛杩愯
+- **Dashboard 鏆楄壊妯″紡**: 閫氳繃 `themeStore` (Zustand) 鎺у埗锛宭ocalStorage 鎸佷箙鍖栵紝ConfigProvider darkAlgorithm
+- **Dashboard UI 缁勪欢浣撶郴**: PageHeader (閫氱敤澶撮儴) + PageSkeleton (4绉嶉鏋跺睆) + 鍝嶅簲寮忓搴﹀父閲?
+- **MiniApp 鍏变韩缁勪欢搴?*: AppButton (4鍙樹綋) + AppCard + SectionHeader + EmptyState + Icon (18涓猄VG) + Skeleton (4绫诲瀷)
+- **MiniApp 鍥捐〃**: 鍘熺敓 Canvas 2D 鍥捐〃缁勪欢 (LineChart/PieChart/BarChart/CalendarHeatmap)
+- **MiniApp CSS 鍙橀噺绯荤粺**: `app.scss` 瀹氫箟浜嗗畬鏁寸殑棰滆壊/瀛椾綋/闂磋窛/闃村奖/z-index 鍙橀噺
+- **澶氶」鐩墿灞?*: 鏂板灏忕▼搴忛」鐩椂锛屽湪 `apps/` 涓嬪垱寤?`椤圭洰鍚?client` + `椤圭洰鍚?server`锛宒ashboard 鑷姩绠＄悊
+- **MiniApp 璁よ瘉娴佺▼**: wx.login() 鈫?POST /auth/login 鈫?JWT token 鈫?鏈湴鎸佷箙鍖?鈫?鑷姩鏍￠獙(initialize)
+- **MiniApp 鑷畾涔?tabBar**: CustomTabBar 缁勪欢浣跨敤 Taro eventCenter 鐩戝惉 tabChange 浜嬩欢椹卞姩楂樹寒锛屾浛浠ｅ師鐢?tabBar
+- **MiniApp HTTP 瀹㈡埛绔?*: HttpClient 绫诲皝瑁?Taro.request锛屾敮鎸佽秴鏃舵娴嬪拰缃戠粶杩炴帴閿欒涓枃鎻愮ず
+- **MiniApp 闄嶇骇妯″紡**: 寮€鍙戞椂鍙€氳繃 `TARO_APP_MOCK_AUTH=true` 鍚敤 mock 鐧诲綍缁曡繃寰俊鎺堟潈
+- **API 浠ｇ悊**: Dashboard `/api` 鍦ㄥ紑鍙戞椂浠ｇ悊鍒?Server `localhost:3000`
+- **鐢熶骇鏋舵瀯**: Nginx(80/443) 鈫?Dashboard SPA / FTG API(/api/ftl/) / Game1 API(/api/v1/game1/) / Tavern API(/api/tavern/) / Admin API(/api/v1/admin/) / 璇嗗埆(/recognition/*)
+- **璇嗗埆鏈嶅姟**: PP-ShiTuV2 鐙珛瀹瑰櫒锛岄€氳繃 HTTP API 璋冪敤锛屽紑鍙戞ā寮忓彲鐢?`RECOGNITION_MOCK_MODE=true` 闄嶇骇
+- **Dashboard Auth 鍒濆鍖?*: `authStore` 鍒濆鍖栨椂 `isAuthenticated` 鍚屾璁句负 `!!getToken()`锛宍user` 涓?`null`銆俙restoreSession()` 寮傛璋冪敤 `/admin/me` 鑾峰彇鐢ㄦ埛淇℃伅銆俙ProtectedRoute` 璁㈤槄 `initialized` 鏍囧織锛屼粎鍦?`restoreSession` 瀹屾垚鍚庢墠杩涜鏉冮檺鍒ゆ柇锛岄伩鍏嶇珵鎬佹潯浠跺鑷?403銆?
+- **Game1 CI 瑙﹀彂鏉′欢**: `.github/workflows/ci.yml` 浣跨敤 `paths` 杩囨护锛屼粎 `apps/game1/server/**` 鍙樺寲鏃惰Е鍙戯紝鍚?MySQL 8.0 鏈嶅姟瀹瑰櫒
+- **FTG Server 閮ㄧ讲娴佹按绾?*: `deploy.yml` 鐨?SSH 閮ㄧ讲姝ラ琚敞閲婏紝闇€鎵嬪姩鍚敤
+- **Dashboard 鍜?MiniApp 鏃犵嫭绔?CI** 鈥?鍙湁 ftg-server 鍜?game1-server 鏈?GitHub Actions 閰嶇疆

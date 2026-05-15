@@ -40,6 +40,20 @@ const FLASH_LABELS: Record<FlashMode, string> = {
 /* ==================== 组件 ==================== */
 
 export default function CameraPage() {
+  /* ---------- 平台检查 ---------- */
+  // H5 平台不支持原生相机，显示友好提示
+  if (process.env.TARO_ENV !== 'weapp') {
+    return (
+      <View className="camera-page">
+        <View className="camera-h5-fallback">
+          <Text className="camera-h5-icon">📷</Text>
+          <Text className="camera-h5-title">相机功能仅支持微信小程序</Text>
+          <Text className="camera-h5-desc">请在微信中打开小程序使用拍照功能</Text>
+        </View>
+      </View>
+    );
+  }
+
   /* ---------- 状态 ---------- */
   const [pageState, setPageState] = useState<PageState>('camera');
   const [flashMode, setFlashMode] = useState<FlashMode>('auto');

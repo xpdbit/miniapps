@@ -45,6 +45,30 @@ const REQUEST_TIMEOUT = 5000;
  * @throws 云函数调用失败或返回失败时抛出错误
  */
 export async function getIPLocation(): Promise<IPLocationResult> {
+  // Taro.cloud 仅在小程序环境可用，H5 环境使用 HTTP IP 定位 API
+  if (process.env.TARO_ENV !== 'weapp') {
+    try {
+      const response = await Taro.request({
+        url: 'https://ipwho.cn/json',
+        method: 'GET',
+        timeout: 5000,
+      });
+      const data = response.data as { country?: string; region?: string; city?: string; ISP?: string };
+      if (data && data.country) {
+        return {
+          ip: '',
+          country: data.country || '',
+          province: data.region || '',
+          city: data.city || '',
+          ISP: data.ISP || '',
+        };
+      }
+    } catch (httpErr) {
+      console.warn('[LocationService] HTTP IP 定位失败:', httpErr);
+    }
+    throw new Error('IP 定位在当前平台不可用');
+  }
+
   try {
     const result = await Taro.cloud.callFunction({
       name: CLOUD_FUNCTIONS.GET_LOCATION_BY_IP,
@@ -78,6 +102,11 @@ export async function getIPLocation(): Promise<IPLocationResult> {
  * @throws 权限被拒绝或定位失败时抛出错误
  */
 export async function getGPSLocation(): Promise<GeoPoint> {
+  // H5 环境不支持 getLocation，抛出错误由调用方处理降级
+  if (process.env.TARO_ENV !== 'weapp') {
+    throw new Error('GPS 定位在小程序环境可用，H5 环境不支持');
+  }
+
   try {
     const location = await Taro.getLocation({
       type: 'gcj02',

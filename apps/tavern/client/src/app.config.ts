@@ -52,7 +52,6 @@ const config = {
     // 导航组件
     't-navbar': 'tdesign-miniprogram/navbar/navbar',
     't-tabs': 'tdesign-miniprogram/tabs/tabs',
-    't-tab-panel': 'tdesign-miniprogram/tab-panel/tab-panel',
     // 展示组件
     't-avatar': 'tdesign-miniprogram/avatar/avatar',
     't-badge': 'tdesign-miniprogram/badge/badge',
@@ -68,7 +67,6 @@ const config = {
     't-toast': 'tdesign-miniprogram/toast/toast',
     't-dialog': 'tdesign-miniprogram/dialog/dialog',
     't-popup': 'tdesign-miniprogram/popup/popup',
-    't-action-sheet': 'tdesign-miniprogram/action-sheet/action-sheet',
   },
   permission: {
     'scope.userLocation': {
