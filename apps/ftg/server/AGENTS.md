@@ -5,7 +5,7 @@ Express 后端 API 服务，Prisma ORM 数据层，提供 RESTful API 和 AI 食
 
 ## STRUCTURE
 ```
-servers/ftg-server/
+apps/ftg/server/
 ├── src/
 │   ├── app.ts           # Express 应用入口
 │   ├── routes/          # 15 个路由模块 (RESTful)
