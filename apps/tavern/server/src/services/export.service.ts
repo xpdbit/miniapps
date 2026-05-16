@@ -49,7 +49,7 @@ export async function exportToV2(cardId: string): Promise<V2CharacterData> {
       description: card.description,
       personality: card.personality || '',
       scenario: card.scenario || '',
-      first_mes: card.firstMsg,
+      first_mes: card.firstMsg ?? '',
       mes_example: parseMesExample(card.exampleDialogs as any[]),
       creator_notes: '',
       system_prompt: card.systemPrompt || '',

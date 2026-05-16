@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Input, Button } from '@tarojs/components'
+import { View, Text, ScrollView, Input, Button, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -45,7 +45,6 @@ export default function ChatPage() {
   useDidShow(() => {
     loadSessions()
     Taro.eventCenter.trigger('tabChange', 1)
-    Taro.eventCenter.trigger('tavernSubTab', 'main')
     // 确保卡片数据已加载
     syncedStore.restoreFromStorage()
     localStore.restoreFromStorage()
@@ -132,7 +131,25 @@ export default function ChatPage() {
         <View className='page-chat-header-icon' onClick={() => setShowSessions(true)}>
           <Icon name='menu' size={44} color='#666' />
         </View>
-        <Text className='page-chat-header-title'>AI 酒馆</Text>
+        {selectedCard ? (
+          <View className='page-chat-header-center'>
+            <View className='page-chat-header-avatar'>
+              {selectedCard.avatar ? (
+                <Image src={selectedCard.avatar} mode='aspectFill' className='page-chat-header-avatar-img' />
+              ) : (
+                <Text className='page-chat-header-avatar-text'>{selectedCard.name.charAt(0)}</Text>
+              )}
+            </View>
+            <View className='page-chat-header-info'>
+              <Text className='page-chat-header-title'>{selectedCard.name}</Text>
+            </View>
+          </View>
+        ) : (
+          <View className='page-chat-header-center'>
+            <Icon name='chat' size={36} color='#C49A6C' />
+            <Text className='page-chat-header-title'>AI 酒馆</Text>
+          </View>
+        )}
         <View className='page-chat-header-icon' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>
           <Icon name='settings' size={44} color='#666' />
         </View>
@@ -185,9 +202,22 @@ export default function ChatPage() {
       >
         <View className='page-chat-messages-inner'>
           {!selectedCard && (
-            <View className='page-chat-empty'>
-              <Text className='page-chat-empty-title'>选择一位角色开始对话</Text>
-              <Text className='page-chat-empty-desc'>从上方选择角色，或创建新角色</Text>
+            <View className='page-chat-greeting'>
+              <View className='page-chat-greeting-icon'>
+                <Icon name='chat' size={72} color='#C49A6C' />
+              </View>
+              <Text className='page-chat-greeting-title'>欢迎来到 AI 酒馆</Text>
+              <Text className='page-chat-greeting-subtitle'>选择一位角色，开启奇妙的对话之旅</Text>
+              <View className='page-chat-greeting-hints'>
+                <View className='page-chat-greeting-hint'>
+                  <Icon name='sparkle' size={28} color='#C49A6C' />
+                  <Text className='page-chat-greeting-hint-text'>从上方选择角色</Text>
+                </View>
+                <View className='page-chat-greeting-hint'>
+                  <Icon name='plus' size={28} color='#7BADBF' />
+                  <Text className='page-chat-greeting-hint-text'>或创建新角色</Text>
+                </View>
+              </View>
             </View>
           )}
           {selectedCard && messages.length === 0 && (
@@ -237,7 +267,10 @@ export default function ChatPage() {
               </View>
             ))}
             {sessions.length === 0 && (
-              <Text className='page-chat-sessions-empty'>暂无历史会话</Text>
+              <View className='page-chat-sessions-empty'>
+                <Icon name='history' size={48} color='#C4BFB8' />
+                <Text className='page-chat-sessions-empty-text'>暂无历史会话</Text>
+              </View>
             )}
           </View>
         </View>

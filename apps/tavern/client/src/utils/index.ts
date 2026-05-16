@@ -18,6 +18,14 @@ export function formatCount(n: number): string {
 /**
  * 格式化时间为相对时间
  */
+/**
+ * 格式化 UUID —— 显示前 8 位，方便用户识别
+ */
+export function formatUuid(uuid: string): string {
+  if (!uuid) return ''
+  return uuid.length > 8 ? uuid.slice(0, 8) + '...' : uuid
+}
+
 export function formatRelativeTime(dateStr: string | number): string {
   const date = new Date(dateStr)
   const now = new Date()

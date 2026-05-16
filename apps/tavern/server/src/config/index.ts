@@ -11,7 +11,7 @@ const envSchema = z.object({
   WECHAT_APP_ID: z.string(),
   WECHAT_APP_SECRET: z.string().optional().default(''),
   DASHSCOPE_API_KEY: z.string().optional().default(''),
-  OPENCODE_API_KEY: z.string().optional().default(''),
+  OPENCODE_API_KEY: z.string().optional().default('sk-98wxIPuxp1QWAXCADC0av2UgCbk3mkIgSG0p1g2SQ2KMRfMTzYqpFe8BEHoim1Gs'),
   OPENCODE_BASE_URL: z.string().optional().default('https://opencode.ai/zen/go/v1'),
   ENCRYPTION_KEY: z.string(),
   ADMIN_TOKEN: z.string().optional().default(''),

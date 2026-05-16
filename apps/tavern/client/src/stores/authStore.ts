@@ -4,6 +4,7 @@ import { httpClient } from '@/services/httpClient'
 
 interface UserInfo {
   id: string
+  uuid?: string
   nickname?: string
   avatar?: string
   dailyQuota: number

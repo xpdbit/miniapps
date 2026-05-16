@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import axios from 'axios';
+import crypto from 'crypto';
 import prisma from '../utils/prisma';
 import { config } from '../config';
 import { signToken } from '../lib/jwt';
@@ -41,8 +42,9 @@ router.post('/login', async (req: AuthenticatedRequest, res: Response) => {
 
     // Find or create user
     const user = await prisma.sharedUser.upsert({
-      where: { openid },
+      where: { openid: openid! },
       create: {
+        uuid: crypto.randomUUID(),
         openid,
         nickname: '用户_' + openid.slice(-6),
         dailyQuota: 20,
@@ -53,7 +55,7 @@ router.post('/login', async (req: AuthenticatedRequest, res: Response) => {
     });
 
     // Sign JWT
-    const token = signToken({ userId: user.id, role: user.role });
+    const token = signToken({ userId: user.id, role: user.role as 'USER' | 'ADMIN' });
 
     res.json({
       code: 0,
@@ -83,6 +85,7 @@ router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) 
       where: { id: req.user!.userId },
       select: {
         id: true,
+        uuid: true,
         nickname: true,
         avatar: true,
         dailyQuota: true,

@@ -295,7 +295,9 @@ router.get('/dashboard/stats', async (_req: AuthenticatedRequest, res: Response)
       prisma.tavernChatSession.count(),
       prisma.sharedUser.count({
         where: {
-          chats: { some: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 3600_000) } } },
+          chatSessions: {
+            some: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 3600_000) } },
+          },
         },
       }),
       prisma.tavernCard.count({ where: { status: 'PENDING' } }),

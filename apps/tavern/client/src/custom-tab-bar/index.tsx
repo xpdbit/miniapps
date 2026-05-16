@@ -64,7 +64,6 @@ function getSelectedIndex(): number {
 
 export default function CustomTabBar() {
   const [selected, setSelected] = useState(getSelectedIndex());
-  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     // 监听页面切换事件（由各 tab 页面在 componentDidShow 中触发）
@@ -73,18 +72,11 @@ export default function CustomTabBar() {
     };
     Taro.eventCenter.on('tabChange', tabHandler);
 
-    // 监听酒馆子 tab 栏切换（main=显示主tab, sub=隐藏主tab显示子tab）
-    const subTabHandler = (mode: string) => {
-      setVisible(mode === 'main');
-    };
-    Taro.eventCenter.on('tavernSubTab', subTabHandler);
-
     // 组件挂载时读取一次当前路由
     setSelected(getSelectedIndex());
 
     return () => {
       Taro.eventCenter.off('tabChange', tabHandler);
-      Taro.eventCenter.off('tavernSubTab', subTabHandler);
     };
   }, []);
 
@@ -95,8 +87,6 @@ export default function CustomTabBar() {
       Taro.switchTab({ url: `/${tab.pagePath}` });
     }
   };
-
-  if (!visible) return null
 
   return (
     <View className='custom-tab-bar'>

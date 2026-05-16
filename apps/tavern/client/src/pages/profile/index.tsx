@@ -2,7 +2,7 @@ import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useAuthStore } from '@/stores/authStore'
 import { Icon } from '@/components'
-import { cn } from '@/utils'
+import { cn, formatUuid } from '@/utils'
 import './index.scss'
 
 interface MenuItem {
@@ -16,17 +16,16 @@ const MENU_ITEMS: MenuItem[] = [
   { icon: 'user', label: '我的角色', url: '/pages/character/index' },
   { icon: 'plus', label: '创建角色', url: '/pages/creator/index' },
   { icon: 'persona', label: '人设管理', url: '/pages/persona/index' },
-  { icon: 'settings', label: '设置', url: '/pages/settings/index' },
 ]
 
 export default function ProfilePage() {
   useDidShow(() => {
     Taro.eventCenter.trigger('tabChange', 2)
-    Taro.eventCenter.trigger('tavernSubTab', 'main')
   })
 
   const { user } = useAuthStore()
   const nickname = user?.nickname || '酒馆旅人'
+  const userUuid = user?.uuid || ''
   const dailyQuota = user?.dailyQuota ?? 20
   const usedQuota = user?.usedQuota ?? 0
   const remaining = Math.max(0, dailyQuota - usedQuota)
@@ -51,6 +50,11 @@ export default function ProfilePage() {
           )}
         </View>
         <Text className='page-profile-name'>{nickname}</Text>
+
+        {/* UUID 身份标识 */}
+        {userUuid && (
+          <Text className='page-profile-uuid'>{formatUuid(userUuid)}</Text>
+        )}
 
         {/* 配额信息 */}
         <View className='page-profile-quota'>
@@ -90,7 +94,7 @@ export default function ProfilePage() {
             onClick={() => handleNavigate(item)}
           >
             <View className='page-profile-menu-item-left'>
-              <Icon name={item.icon as 'user' | 'plus' | 'persona' | 'settings'} size={36} color='#FF6B35' />
+              <Icon name={item.icon as 'user' | 'plus' | 'persona' | 'settings'} size={36} color='#C49A6C' />
               <Text className='page-profile-menu-item-label'>{item.label}</Text>
             </View>
             <Text className='page-profile-menu-item-arrow'>›</Text>

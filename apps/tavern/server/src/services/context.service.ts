@@ -42,7 +42,7 @@ export async function createSession(params: CreateSessionParams) {
     data: {
       sessionId: session.id,
       role: 'character',
-      content: character.firstMsg,
+      content: character.firstMsg ?? '',
     },
   })
 
@@ -106,7 +106,7 @@ export async function deleteSession(sessionId: string, userId: string) {
 
 export async function saveMessage(sessionId: string, role: string, content: string, tokens?: number) {
   const msg = await prisma.tavernChatMessage.create({
-    data: { sessionId, role, content, tokens },
+    data: { sessionId, role: role as 'user' | 'character' | 'system', content, tokens },
   })
   await prisma.tavernChatSession.update({
     where: { id: sessionId },

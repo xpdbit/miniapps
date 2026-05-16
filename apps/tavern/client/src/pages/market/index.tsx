@@ -28,9 +28,7 @@ const SUB_TABS: { key: SubTabType; label: string; icon: IconName }[] = [
   { key: 'create', label: '创建', icon: 'plus' },
 ]
 
-function showMainTabBar(show: boolean) {
-  Taro.eventCenter.trigger('tavernSubTab', show ? 'main' : 'sub')
-}
+
 
 export default function MarketPage() {
   const [subTab, setSubTab] = useState<SubTabType>('character')
@@ -42,7 +40,6 @@ export default function MarketPage() {
 
   useDidShow(() => {
     Taro.eventCenter.trigger('tabChange', 0)
-    showMainTabBar(true)
     syncedStore.syncCards()
   })
 
@@ -172,7 +169,7 @@ export default function MarketPage() {
           <View className='market-sub-create-bar'>
             <View className='market-create-card' onClick={() => handleCreateCard('MECHANISM')}>
               <View className='market-create-card-inner'>
-                <Icon name='plus' size={40} color='#FF6B35' />
+                <Icon name='plus' size={40} color='#C49A6C' />
                 <Text className='market-create-card-label'>创建机制卡</Text>
               </View>
             </View>
@@ -193,7 +190,7 @@ export default function MarketPage() {
           <View className='market-sub-create-bar'>
             <View className='market-create-card' onClick={() => handleCreateCard('MAP')}>
               <View className='market-create-card-inner'>
-                <Icon name='plus' size={40} color='#FF6B35' />
+                <Icon name='plus' size={40} color='#C49A6C' />
                 <Text className='market-create-card-label'>创建地图卡</Text>
               </View>
             </View>
@@ -214,7 +211,7 @@ export default function MarketPage() {
           <View className='market-sub-create-bar'>
             <View className='market-create-card' onClick={() => handleCreateCard('BACKGROUND')}>
               <View className='market-create-card-inner'>
-                <Icon name='plus' size={40} color='#FF6B35' />
+                <Icon name='plus' size={40} color='#C49A6C' />
                 <Text className='market-create-card-label'>创建背景卡</Text>
               </View>
             </View>
@@ -232,7 +229,7 @@ export default function MarketPage() {
                 <View className='market-create-option-icon'>
                   <Icon
                     name={type === 'CHARACTER' ? 'user' : type === 'MECHANISM' ? 'settings' : type === 'MAP' ? 'gallery' : 'photo'}
-                    size={48} color='#FF6B35'
+                    size={48} color='#C49A6C'
                   />
                 </View>
                 <Text className='market-create-option-label'>{CARD_TYPE_LABELS[type]}卡</Text>
@@ -264,13 +261,23 @@ export default function MarketPage() {
       )}
 
       <View className='market-sub-tabs'>
+        {/* 返回按钮 — 回到开始页面 */}
+        <View
+          className='market-sub-tab market-sub-tab--back'
+          onClick={() => Taro.switchTab({ url: '/pages/chat/index' })}
+        >
+          <Icon name='arrow-left' size={40} color='#999' />
+          <Text className='market-sub-tab-label'>返回</Text>
+        </View>
+        {/* 分割线 */}
+        <View className='market-sub-tabs-divider' />
         {SUB_TABS.map(tab => (
           <View
             key={tab.key}
             className={`market-sub-tab ${subTab === tab.key ? 'market-sub-tab--active' : ''}`}
             onClick={() => setSubTab(tab.key)}
           >
-            <Icon name={tab.icon} size={40} color={subTab === tab.key ? '#FF6B35' : '#999'} />
+            <Icon name={tab.icon} size={40} color={subTab === tab.key ? '#FFFFFF' : '#999'} />
             <Text className='market-sub-tab-label'>{tab.label}</Text>
           </View>
         ))}

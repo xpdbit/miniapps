@@ -1,5 +1,7 @@
 // ============================================================
-// AI-Tavern Server Prisma Schema — miniapps DB (UUID v7)
+// AI-Tavern Server Prisma Schema — miniapps DB
+// 使用 camelCase 模型字段（兼容现有代码）
+// @map 映射到 snake_case 数据库列名（兼容统一 DB 架构）
 // ============================================================
 
 generator client {
@@ -15,6 +17,11 @@ datasource db {
 // ============================================================
 // 枚举
 // ============================================================
+
+enum UserRole {
+  USER
+  ADMIN
+}
 
 enum CardStatus {
   DRAFT
@@ -38,14 +45,20 @@ enum MessageRole {
 }
 
 // ============================================================
-// 1. shared_users — 统一用户身份（跨项目共享代理模型）
+// 1. shared_users — 统一用户身份
 // ============================================================
 model SharedUser {
-  id         String @id @default(uuid())
-  uuid       String @unique
-  nickname   String?
-  avatar_url String?
-  role       String @default("USER")
+  id            String    @id @default(uuid())
+  uuid          String    @unique
+  openid        String?   @unique
+  nickname      String?
+  avatar        String?
+  dailyQuota    Int       @default(20)
+  usedQuota     Int       @default(0)
+  quotaDate     DateTime  @default(now())
+  role          String    @default("USER")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   tavernCards          TavernCard[]
   personas             TavernPersona[]
@@ -63,74 +76,63 @@ model SharedUser {
 // ============================================================
 model TavernCard {
   id               String     @id @default(uuid())
-  creator_id       String
+  creatorId        String     @map("creator_id")
   name             String
   description      String     @db.VarChar(2000)
-  avatar_url       String?
-  card_type        CardType   @default(CHARACTER)
+  avatar           String?    @map("avatar_url")
+  cardType         CardType   @default(CHARACTER) @map("card_type")
+  personality      String?    @db.Text
+  scenario         String?    @db.Text
+  firstMsg         String?    @map("first_msg")
+  lore             String?    @db.Text
+  systemPrompt     String?    @map("system_prompt")
+  exampleDialogs   Json?      @map("example_dialogs")
+  tags             Json
   nsfw             Boolean    @default(false)
-  is_official      Boolean    @default(false)
+  isOfficial       Boolean    @default(false) @map("is_official")
   status           CardStatus @default(DRAFT)
   locked           Boolean    @default(false)
-  view_count       Int        @default(0)
-  chat_count       Int        @default(0)
-  like_count       Int        @default(0)
-  fav_count        Int        @default(0)
-  card_spec        Json
-  model_preference String?
+  viewCount        Int        @default(0) @map("view_count")
+  chatCount        Int        @default(0) @map("chat_count")
+  likeCount        Int        @default(0) @map("like_count")
+  favCount         Int        @default(0) @map("fav_count")
+  cardSpec         Json       @default("{}") @map("card_spec")
+  modelPreference  String?    @map("model_preference")
   temperature      Float?
   version          Int        @default(1)
-  last_published_at DateTime?
-  deleted_at       DateTime?
-  created_at       DateTime   @default(now())
-  updated_at       DateTime   @updatedAt
+  lastPublishedAt  DateTime?  @map("last_published_at")
+  deletedAt        DateTime?  @map("deleted_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
 
-  creator   SharedUser          @relation(fields: [creator_id], references: [id])
-  tags      TavernCardTag[]
+  creator   SharedUser          @relation(fields: [creatorId], references: [id])
   likes     TavernCardLike[]
   favs      TavernCardFav[]
   chats     TavernChatSession[]
   revisions TavernCardRevision[]
 
-  @@index([creator_id, status, card_type])
-  @@index([status, card_type, like_count(sort: Desc)])
-  @@index([status, card_type, chat_count(sort: Desc)])
-  @@index([status, card_type, created_at(sort: Desc)])
+  @@index([creatorId, status, cardType])
+  @@index([status, cardType, likeCount(sort: Desc)])
+  @@index([status, cardType, chatCount(sort: Desc)])
+  @@index([status, cardType, createdAt(sort: Desc)])
   @@index([name])
   @@map("tavern_cards")
 }
 
 // ============================================================
-// 3. tavern_card_tags — 标签关联表
-// ============================================================
-model TavernCardTag {
-  id         String   @id @default(uuid())
-  card_id    String
-  tag        String   @db.VarChar(30)
-  created_at DateTime @default(now())
-
-  card TavernCard @relation(fields: [card_id], references: [id], onDelete: Cascade)
-
-  @@unique([card_id, tag])
-  @@index([tag, card_id])
-  @@index([card_id])
-  @@map("tavern_card_tags")
-}
-
-// ============================================================
-// 4. tavern_card_likes — 点赞
+// 3. tavern_card_likes — 点赞
 // ============================================================
 model TavernCardLike {
-  id         String   @id @default(uuid())
-  card_id    String
-  user_id    String
-  created_at DateTime @default(now())
+  id        String   @id @default(uuid())
+  cardId    String   @map("card_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  card TavernCard @relation(fields: [card_id], references: [id], onDelete: Cascade)
-  user SharedUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  card TavernCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([card_id, user_id])
-  @@index([card_id, created_at(sort: Desc)])
+  @@unique([cardId, userId])
+  @@index([cardId, createdAt(sort: Desc)])
   @@map("tavern_card_likes")
 }
 
@@ -138,16 +140,16 @@ model TavernCardLike {
 // 5. tavern_card_favs — 收藏
 // ============================================================
 model TavernCardFav {
-  id         String   @id @default(uuid())
-  card_id    String
-  user_id    String
-  created_at DateTime @default(now())
+  id        String   @id @default(uuid())
+  cardId    String   @map("card_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  card TavernCard @relation(fields: [card_id], references: [id], onDelete: Cascade)
-  user SharedUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  card TavernCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([card_id, user_id])
-  @@index([user_id, created_at(sort: Desc)])
+  @@unique([cardId, userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("tavern_card_favs")
 }
 
@@ -156,21 +158,21 @@ model TavernCardFav {
 // ============================================================
 model TavernPersona {
   id          String   @id @default(uuid())
-  user_id     String
+  userId      String   @map("user_id")
   name        String
   description String?  @db.Text
-  avatar_url  String?
+  avatar      String?  @map("avatar_url")
   personality String?  @db.Text
   scenario    String?  @db.Text
   lore        String?  @db.Text
-  is_default  Boolean  @default(false)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  user          SharedUser          @relation(fields: [user_id], references: [id])
-  chatSessions  TavernChatSession[]
+  user         SharedUser          @relation(fields: [userId], references: [id])
+  chatSessions TavernChatSession[]
 
-  @@index([user_id])
+  @@index([userId])
   @@map("tavern_personas")
 }
 
@@ -178,27 +180,28 @@ model TavernPersona {
 // 7. tavern_chat_sessions — 聊天会话
 // ============================================================
 model TavernChatSession {
-  id              String   @id @default(uuid())
-  user_id         String
-  card_id         String
-  persona_id      String?
-  title           String?
-  model_key       String?
-  config          Json?
-  message_count   Int      @default(0)
-  token_count     Int      @default(0)
-  pinned          Boolean  @default(false)
-  last_message_at DateTime?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  characterId   String   @map("card_id")
+  personaId     String?  @map("persona_id")
+  title         String?
+  modelKey      String?  @map("model_key")
+  temperature   Float?
+  config        Json?
+  messageCount  Int      @default(0) @map("message_count")
+  tokenCount    Int      @default(0) @map("token_count")
+  pinned        Boolean  @default(false)
+  lastMessageAt DateTime? @map("last_message_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  user     SharedUser        @relation(fields: [user_id], references: [id])
-  card     TavernCard        @relation(fields: [card_id], references: [id])
-  persona  TavernPersona?    @relation(fields: [persona_id], references: [id])
+  user     SharedUser        @relation(fields: [userId], references: [id])
+  character TavernCard      @relation(fields: [characterId], references: [id])
+  persona  TavernPersona?    @relation(fields: [personaId], references: [id])
   messages TavernChatMessage[]
 
-  @@index([user_id, last_message_at(sort: Desc)])
-  @@index([user_id, pinned, updated_at(sort: Desc)])
+  @@index([userId, lastMessageAt(sort: Desc)])
+  @@index([userId, pinned, updatedAt(sort: Desc)])
   @@map("tavern_chat_sessions")
 }
 
@@ -206,16 +209,16 @@ model TavernChatSession {
 // 8. tavern_chat_messages — 聊天消息
 // ============================================================
 model TavernChatMessage {
-  id         String   @id @default(uuid())
-  session_id String
-  role       MessageRole @default(user)
-  content    String   @db.Text
-  tokens     Int?
-  created_at DateTime @default(now())
+  id        String      @id @default(uuid())
+  sessionId String      @map("session_id")
+  role      MessageRole @default(user)
+  content   String      @db.Text
+  tokens    Int?
+  createdAt DateTime    @default(now()) @map("created_at")
 
-  session TavernChatSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  session TavernChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@index([session_id, created_at])
+  @@index([sessionId, createdAt])
   @@map("tavern_chat_messages")
 }
 
@@ -223,20 +226,20 @@ model TavernChatMessage {
 // 9. tavern_moderation_logs — 审核日志
 // ============================================================
 model TavernModerationLog {
-  id          String   @id @default(uuid())
-  target_type String
-  target_id   String
-  action      String
-  reason      String?
-  operator_id String?
-  meta        Json?
-  created_at  DateTime @default(now())
+  id         String   @id @default(uuid())
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  action     String
+  reason     String?
+  operatorId String?  @map("operator_id")
+  meta       Json?
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  operator SharedUser? @relation(fields: [operator_id], references: [id])
+  operator SharedUser? @relation(fields: [operatorId], references: [id])
 
-  @@index([target_type, target_id])
-  @@index([operator_id, created_at(sort: Desc)])
-  @@index([created_at(sort: Desc)])
+  @@index([targetType, targetId])
+  @@index([operatorId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
   @@map("tavern_moderation_logs")
 }
 
@@ -244,18 +247,18 @@ model TavernModerationLog {
 // 10. tavern_card_revisions — 卡片版本历史
 // ============================================================
 model TavernCardRevision {
-  id             String   @id @default(uuid())
-  card_id        String
-  revision       Int
-  snapshot       Json
-  change_summary String?
-  created_by     String
-  created_at     DateTime @default(now())
+  id            String   @id @default(uuid())
+  cardId        String   @map("card_id")
+  revision      Int
+  snapshot      Json
+  changeSummary String?  @map("change_summary")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  card TavernCard @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  card TavernCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
-  @@index([card_id, revision(sort: Desc)])
-  @@index([card_id, created_at(sort: Desc)])
+  @@index([cardId, revision(sort: Desc)])
+  @@index([cardId, createdAt(sort: Desc)])
   @@map("tavern_card_revisions")
 }
 
@@ -263,17 +266,17 @@ model TavernCardRevision {
 // 11. tavern_api_keys — 用户 AI Provider 密钥
 // ============================================================
 model TavernApiKey {
-  id           String   @id @default(uuid())
-  user_id      String
-  provider     String
-  key_value    String
-  is_active    Boolean  @default(true)
-  last_used_at DateTime?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  provider   String
+  keyValue   String    @map("key_value")
+  isActive   Boolean   @default(true) @map("is_active")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  user SharedUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, provider])
+  @@unique([userId, provider])
   @@map("tavern_api_keys")
 }
