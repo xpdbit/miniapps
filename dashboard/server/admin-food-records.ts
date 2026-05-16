@@ -13,16 +13,16 @@ router.get('/', async (req: Request, res: Response) => {
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string || '20')))
     const offset = (page - 1) * pageSize
 
-    const where: Prisma.FoodRecordWhereInput = {}
+    const where: Prisma.FtgFoodRecordWhereInput = {}
 
     if (req.query.foodName) {
-      where.foodName = { contains: req.query.foodName as string }
+      // foodName is inside `data` JSON column — full-text search deferred
     }
     if (req.query.foodType) {
-      where.foodType = req.query.foodType as FoodType
+      where.food_type = req.query.foodType as FoodType
     }
     if (req.query.themeId) {
-      where.themeId = req.query.themeId as string
+      where.theme_id = req.query.themeId as string
     }
 
     const createdAtFilter: Prisma.DateTimeFilter = {}
@@ -33,23 +33,23 @@ router.get('/', async (req: Request, res: Response) => {
       createdAtFilter.lte = new Date(`${req.query.endDate as string}T23:59:59`)
     }
     if (Object.keys(createdAtFilter).length > 0) {
-      where.createdAt = createdAtFilter
+      where.created_at = createdAtFilter
     }
 
     // 默认不显示已删除记录
     if (req.query.showDeleted !== 'true') {
-      where.isDeleted = false
+      where.is_deleted = false
     }
 
     const [records, total] = await Promise.all([
-      prisma.foodRecord.findMany({
+      prisma.ftgFoodRecord.findMany({
         where,
-        include: { user: { select: { openid: true } } },
-        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { uuid: true, nickname: true } } },
+        orderBy: { created_at: 'desc' },
         skip: offset,
         take: pageSize,
       }),
-      prisma.foodRecord.count({ where }),
+      prisma.ftgFoodRecord.count({ where }),
     ])
 
     const mapped = records.map((r) => ({
@@ -78,7 +78,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string)
-    const record = await prisma.foodRecord.findUnique({
+    const record = await prisma.ftgFoodRecord.findUnique({
       where: { id },
       include: { user: { select: { openid: true } } },
     })
@@ -132,7 +132,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string)
-    await prisma.foodRecord.update({
+    await prisma.ftgFoodRecord.update({
       where: { id },
       data: { isDeleted: true, deletedAt: new Date() },
     })
@@ -146,7 +146,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.post('/:id/restore', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string)
-    await prisma.foodRecord.update({
+    await prisma.ftgFoodRecord.update({
       where: { id },
       data: { isDeleted: false, deletedAt: null },
     })
@@ -164,7 +164,7 @@ router.post('/batch-delete', async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: '请提供要删除的记录ID' })
       return
     }
-    await prisma.foodRecord.updateMany({
+    await prisma.ftgFoodRecord.updateMany({
       where: { id: { in: ids } },
       data: { isDeleted: true, deletedAt: new Date() },
     })

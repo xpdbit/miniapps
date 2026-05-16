@@ -7,7 +7,7 @@ const router = Router()
 // GET /api/admin/api-keys — 列表
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const keys = await prisma.apiKey.findMany({
+    const keys = await prisma.ftgApiKey.findMany({
       orderBy: { createdAt: 'desc' },
     })
     res.json({
@@ -39,7 +39,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // 使用固定的 userId=0 表示系统级 API Key（管理后台创建）
-    const key = await prisma.apiKey.create({
+    const key = await prisma.ftgApiKey.create({
       data: { userId: 0, serviceName, encryptedKey: keyValue, isActive: true },
     })
 
@@ -77,9 +77,9 @@ router.put('/:id', async (req: Request, res: Response) => {
       return
     }
 
-    await prisma.apiKey.update({ where: { id }, data })
+    await prisma.ftgApiKey.update({ where: { id }, data })
 
-    const key = await prisma.apiKey.findUniqueOrThrow({ where: { id } })
+    const key = await prisma.ftgApiKey.findUniqueOrThrow({ where: { id } })
 
     res.json({
       success: true,
@@ -104,7 +104,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string)
-    await prisma.apiKey.delete({ where: { id } })
+    await prisma.ftgApiKey.delete({ where: { id } })
     res.json({ success: true })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })

@@ -18,13 +18,13 @@ router.get('/stats', async (_req: Request, res: Response) => {
     monthStart.setHours(0, 0, 0, 0)
 
     const [totalUsers, totalFoodRecords, totalCheckIns, newUsersToday, recognitionsToday, checkInsToday, newUsersThisMonth] = await prisma.$transaction([
-      prisma.user.count(),
-      prisma.foodRecord.count(),
-      prisma.checkin.count(),
-      prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
-      prisma.foodRecord.count({ where: { createdAt: { gte: todayStart } } }),
-      prisma.checkin.count({ where: { createdAt: { gte: todayStart } } }),
-      prisma.user.count({ where: { createdAt: { gte: monthStart } } }),
+      prisma.sharedUser.count(),
+      prisma.ftgFoodRecord.count(),
+      prisma.ftgCheckin.count(),
+      prisma.sharedUser.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.ftgFoodRecord.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.ftgCheckin.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.sharedUser.count({ where: { createdAt: { gte: monthStart } } }),
     ])
     res.json({ success: true, data: { totalUsers, newUsersToday, newUsersThisMonth, totalFoodRecords, recognitionsToday, totalCheckIns, checkInsToday } })
   } catch (e) {
@@ -36,7 +36,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
 router.get('/stats/user-trend', async (_req: Request, res: Response) => {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    const users = await prisma.user.findMany({
+    const users = await prisma.sharedUser.findMany({
       where: { createdAt: { gte: thirtyDaysAgo } },
       select: { createdAt: true },
       orderBy: { createdAt: 'asc' },
@@ -57,7 +57,7 @@ router.get('/stats/user-trend', async (_req: Request, res: Response) => {
 router.get('/stats/recognition-trend', async (_req: Request, res: Response) => {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    const records = await prisma.foodRecord.findMany({
+    const records = await prisma.ftgFoodRecord.findMany({
       where: { createdAt: { gte: thirtyDaysAgo } },
       select: { createdAt: true },
       orderBy: { createdAt: 'asc' },
@@ -77,7 +77,7 @@ router.get('/stats/recognition-trend', async (_req: Request, res: Response) => {
 /** 食物类型分布 */
 router.get('/stats/food-type-distribution', async (_req: Request, res: Response) => {
   try {
-    const result = await prisma.foodRecord.groupBy({
+    const result = await prisma.ftgFoodRecord.groupBy({
       by: ['foodType'],
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
@@ -93,14 +93,14 @@ router.get('/stats/food-type-distribution', async (_req: Request, res: Response)
 /** 主题使用分布 */
 router.get('/stats/theme-usage-distribution', async (_req: Request, res: Response) => {
   try {
-    const themes = await prisma.theme.findMany({
+    const themes = await prisma.ftgTheme.findMany({
       take: 10,
       orderBy: { usageCount: 'desc' },
       select: { name: true, themeId: true },
     })
     const data = await Promise.all(
       themes.map((t) =>
-        prisma.foodRecord
+        prisma.ftgFoodRecord
           .count({ where: { themeId: t.themeId, isDeleted: false } })
           .then((count) => ({ type: t.name, value: count })),
       ),

@@ -282,7 +282,23 @@ model FtgFavorite {
 }
 
 // ============================================================
-// 11. dashboard_admin_users — 管理员账号
+// 11. ftg_api_keys — FTG 服务 API 密钥
+// ============================================================
+model FtgApiKey {
+  id           String   @id @default(uuid())
+  service_name String
+  encrypted_key String
+  is_active    Boolean  @default(true)
+  last_used_at DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@unique([service_name])
+  @@map("ftg_api_keys")
+}
+
+// ============================================================
+// 12. dashboard_admin_users — 管理员账号
 // ============================================================
 model DashboardAdminUser {
   id            String      @id @default(uuid())

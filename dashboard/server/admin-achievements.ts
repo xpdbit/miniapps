@@ -7,7 +7,7 @@ const router = Router()
 // GET /api/admin/achievements — 列表
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const achievements = await prisma.achievement.findMany({
+    const achievements = await prisma.ftgAchievement.findMany({
       orderBy: { createdAt: 'desc' },
     })
     const rows = achievements.map((r) => ({
@@ -32,16 +32,16 @@ router.get('/', async (_req: Request, res: Response) => {
 // GET /api/admin/achievements/stats — 统计面板
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
-    const totalUsers = await prisma.user.count()
+    const totalUsers = await prisma.sharedUser.count()
 
-    const unlockedUsers = await prisma.userAchievement.findMany({
+    const unlockedUsers = await prisma.ftgUserAchievement.findMany({
       where: { isUnlocked: true },
       distinct: ['userId'],
       select: { userId: true },
     })
     const unlockedUsersCount = unlockedUsers.length
 
-    const achievementRates = await prisma.achievement.findMany({
+    const achievementRates = await prisma.ftgAchievement.findMany({
       include: {
         _count: {
           select: {
@@ -64,7 +64,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
       }
     })
 
-    const recentUnlocks = await prisma.userAchievement.findMany({
+    const recentUnlocks = await prisma.ftgUserAchievement.findMany({
       where: { isUnlocked: true },
       include: {
         achievement: { select: { name: true } },
@@ -137,7 +137,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       return
     }
 
-    await prisma.achievement.update({
+    await prisma.ftgAchievement.update({
       where: { achievementId },
       data,
     })
@@ -152,7 +152,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.get('/:id/users', async (req: Request, res: Response) => {
   try {
     const achievementId = req.params.id as string
-    const records = await prisma.userAchievement.findMany({
+    const records = await prisma.ftgUserAchievement.findMany({
       where: { achievementId, isUnlocked: true },
       include: {
         user: { select: { openid: true, nickname: true } },
