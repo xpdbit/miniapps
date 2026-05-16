@@ -28,7 +28,7 @@ apps/ftg/server/
 | 任务 | 位置 | 说明 |
 |------|------|------|
 | API 入口 | `src/app.ts` | Express 应用启动，中间件注册 |
-| 路由定义 | `src/routes/` | 15 个路由模块，按功能域拆分 (新增 theme-classes/theme-render) |
+| 路由定义 | `src/routes/` | 16 个路由模块，按功能域拆分 (含 theme-classes/theme-render) |
 | 业务逻辑 | `src/services/` | AI 识别、数据处理、主题模板渲染等核心逻辑 |
 | 中间件 | `src/middleware/` | 鉴权、日志、错误处理等 |
 | 数据库 Schema | `prisma/schema.prisma` | 所有表的定义 (主 Schema) |
@@ -40,7 +40,7 @@ apps/ftg/server/
 - `no-non-null-assertion: error` — 禁止 `!` 断言
 - `strict-boolean-expressions: warn` — 布尔表达式检查
 - 路由无独立 controller 层 — route handler 直接调用 services
-- Prisma v5.22，数据库迁移通过 `prisma db push` 或 `prisma migrate`
+- Prisma v6.19，数据库迁移通过 `prisma db push` 或 `prisma migrate`
 
 ## ANTI-PATTERNS
 - ❌ 不得在路由中直接写数据库查询 — 需通过 services

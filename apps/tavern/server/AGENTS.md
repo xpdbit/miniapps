@@ -38,7 +38,7 @@ apps/tavern/server/
 
 # ANTI-PATTERNS
 - ❌ **占位注释** — `src/routes/chat.ts` line 149 `// Clean up if needed` — 客户端断开处理未实现
-- ❌ **无 CI** — 无 GitHub Actions workflow，手动 npm scripts 部署
+- ❌ **CI 路径过滤器错误** — `.github/workflows/ci.yml` 使用 `servers/tavern-server/**`，实际路径 `apps/tavern/server/`，CI 永不触发
 - ❌ **类型定义** — `no-explicit-any: off`，类型检查不如其他项目严格
 
 # COMMANDS
