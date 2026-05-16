@@ -1,3 +1,5 @@
+> 🚫 **废弃文档** — 路径已迁移。当前架构移至新路径: `docs/apps/ftg/server/API.md`，此旧文件不再更新。
+
 # servers/ftg-server — API 参考
 
 所有 API 挂载于 `/api/v1` 前缀（生产环境通过 Nginx 重写为 `/api/ftl/api/v1`）。

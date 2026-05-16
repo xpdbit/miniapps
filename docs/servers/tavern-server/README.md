@@ -1,3 +1,7 @@
+> 🚫 **废弃文档** — 本文档路径结构与项目实际目录不匹配。
+> 当前架构已迁移至新路径: `docs/apps/tavern/server/README.md`
+> 此旧文件保留作为归档参考，不再更新。
+
 # servers/tavern-server — AI-Tavern 后端 API
 
 **AI 角色聊天**后端服务，支持 SSE 流式聊天、多 AI Provider、角色卡市场与审核系统。

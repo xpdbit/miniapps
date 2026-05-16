@@ -1,3 +1,7 @@
+> 🚫 **废弃文档** — 本文档路径结构与项目实际目录不匹配。
+> 当前架构已迁移至新路径: `docs/apps/tavern/client/README.md`
+> 此旧文件保留作为归档参考，不再更新。
+
 # apps/tavern-miniapp — AI-Tavern 微信小程序
 
 **AI 角色聊天**小程序前端，基于 Taro 4.x + React 18，支持 SSE 流式聊天、角色卡市场、自定义人设。

@@ -1,3 +1,5 @@
+> 🚫 **废弃文档** — 路径已迁移。当前架构移至新路径: `docs/apps/game1/server/API.md`，此旧文件不再更新。
+
 # servers/game1-server — API 参考
 
 所有 API 挂载于 `/api/v1/game1` 前缀（生产环境通过 Nginx 代理）。

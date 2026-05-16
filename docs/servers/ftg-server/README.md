@@ -1,3 +1,7 @@
+> 🚫 **废弃文档** — 本文档路径结构与项目实际目录不匹配。
+> 当前架构已迁移至新路径: `docs/apps/ftg/server/README.md`
+> 此旧文件保留作为归档参考，不再更新。
+
 # servers/ftg-server — Express 后端 API
 
 **食物主题生成器 (FTG)** 的后端服务，提供 RESTful API。
