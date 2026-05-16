@@ -53,7 +53,7 @@ npm run dev:weapp
 
 - [DESIGN.md](./DESIGN.md) — 完整重构方案（架构/模块映射/里程碑）
 - [AGENTS.md](../../../apps/game1-miniapp/AGENTS.md) — AI Agent 知识库（代码地图/约定）
-- [game1-server 后端 API](../servers/game1-server/README.md)
+- [game1-server 后端 API](../../apps/game1/server/README.md)（旧路径已废弃）
 
 ---
 

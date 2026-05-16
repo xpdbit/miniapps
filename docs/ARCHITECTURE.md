@@ -18,7 +18,7 @@
      ▼                       ▼                       ▼
 ┌────────────┐      ┌────────────┐         ┌──────────────┐
 │ FTG MiniApp│      │Game1 MiniApp│        │ AI-Tavern    │
-│(ftg-miniapp)│     │(game1-miniapp)│       │(tavern-miniapp)│
+│(apps/ftg/client) │(apps/game1/client)   │(apps/tavern/client)│
 │ Taro+React  │      │ Taro+React  │         │ Taro+React   │
 └──────┬─────┘      └──────┬─────┘         └──────┬───────┘
        │                   │                       │
@@ -56,7 +56,7 @@
 └───────────────────────────┼───────────────────────────────────┘
                             │
 ┌───────────────────────────┼───────────────────────────────────┐
-│              servers/ftg-server (Express + TypeScript)         │
+│              apps/ftg/server (Express + TypeScript)            │
 │  ┌──────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
 │  │ Auth │  │ Middleware│  │ Routes   │  │ Services         │  │
 │  │ JWT  │  │ auth/    │  │ (16 mods)│  │ (recognition/    │  │
@@ -104,9 +104,9 @@
 
 | 层级 | 位置 | 职责 |
 |------|------|------|
-| **API 路由** | `servers/ftg-server/src/routes/` | 16 个路由模块 (含 auth/users/recognize/themes/theme-classes/theme-render 等) |
-| **服务层** | `servers/ftg-server/src/services/` | 业务逻辑 (theme-render/class/recognition) |
-| **中间件** | `servers/ftg-server/src/middleware/` | JWT 认证、RBAC 权限 |
+| **API 路由** | `apps/ftg/server/src/routes/` | 16 个路由模块 (含 auth/users/recognize/themes/theme-classes/theme-render 等) |
+| **服务层** | `apps/ftg/server/src/services/` | 业务逻辑 (theme-render/class/recognition) |
+| **中间件** | `apps/ftg/server/src/middleware/` | JWT 认证、RBAC 权限 |
 | **ORM** | Prisma (MySQL 8.0) | 数据库访问 (14 表) |
 | **外部 AI** | PP-ShiTuV2 (Docker) | 食物识别服务 |
 | **外部 AI** | DashScope (通义千问) | 文本生成 |
@@ -124,7 +124,7 @@ User takes/selects photo
         ▼
   ② Recognize → POST /recognition/recognize → sends image path
         │                        ┌──────────────────┐
-        ├─→ servers/ftg-server   │ PP-ShiTuV2 Docker│
+        ├─→ apps/ftg/server      │ PP-ShiTuV2 Docker│
         │   proxies request ────→│ (port 5000)      │
         │   ← returns result     │ food name/type/  │
         │                        │ calories         │
@@ -156,7 +156,7 @@ Check cached JWT token in storage
                   POST /auth/login { code }
                       │
                       ▼
-                  servers/ftg-server exchanges code via WeChat API
+                   apps/ftg/server exchanges code via WeChat API
                       │
                       ▼
                   Returns { token, user }
@@ -212,7 +212,7 @@ Check cached JWT token in storage
 Dashboard 创建模板 + Class
         │
         ▼
-servers/ftg-server 存储模板配置
+apps/ftg/server 存储模板配置
         │
         ├── theme.service.ts       — 主题 CRUD + 使用统计
         ├── theme-class.service.ts  — Class CRUD + CSS 白名单校验
@@ -280,7 +280,7 @@ T1(Prisma Schema扩展) — 新增 ThemeClass/ThemeUsageLog 表 + Theme 字段
 ### 架构
 
 ```
-Game1 MiniApp (game1-miniapp, Taro 4 + React 18)
+Game1 MiniApp (apps/game1/client, Taro 4 + React 18)
   │
   ├── engine/          # 纯 TS 游戏逻辑引擎 (18 子模块)
   │   ├── core/        # GameLoop/EventBus/SaveManager/TimeManager
@@ -306,7 +306,7 @@ Game1 MiniApp (game1-miniapp, Taro 4 + React 18)
   └── services/        # HTTP 客户端 + GameSyncManager
          │
          ▼
-Game1 Server (game1-server, Express + TypeScript)
+Game1 Server (apps/game1/server, Express + TypeScript)
   │
   ├── routes/          # 10 路由模块 (auth/players/save/pvp/achievements/config/social/admin)
   ├── services/        # 10 个服务 (auth/player/save/pvp/achievement/config/admin/share/event/message)
@@ -345,7 +345,7 @@ GameEngine 处理逻辑 (纯 TS，离线友好)
 ### 架构
 
 ```
-Tavern MiniApp (tavern-miniapp, Taro 4 + React 18)
+Tavern MiniApp (apps/tavern/client, Taro 4 + React 18)
   │
   ├── pages/           # 7 页面 (market/chat/character/creator/persona/profile/settings)
   ├── components/      # CharacterCard/ChatBubble/ModelSelector/Skeleton
@@ -354,7 +354,7 @@ Tavern MiniApp (tavern-miniapp, Taro 4 + React 18)
   └── hooks/           # useSSE (SSE 流式聊天 EventSource 封装)
          │
          ▼
-Tavern Server (tavern-server, Express + TypeScript)
+Tavern Server (apps/tavern/server, Express + TypeScript)
   │
   ├── routes/          # 10 路由模块 (auth/characters/chat/personas/keys/market/admin/builtin/export)
   ├── services/        # 10 个服务 (ai-proxy/character/context/export/key/market/moderation/persona/prompt-builder/social)

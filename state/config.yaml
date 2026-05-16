@@ -78,18 +78,18 @@ projects:
 - label: FTG 食物主题生成器
   name: ftg
   source_dirs:
-  - apps/ftg-miniapp/src/
-  - servers/ftg-server/src/
+  - apps/ftg/client/src/
+  - apps/ftg/server/src/
 - label: Game1 挂机放置游戏
   name: game1
   source_dirs:
-  - apps/game1-miniapp/src/
-  - servers/game1-server/src/
+  - apps/game1/client/src/
+  - apps/game1/server/src/
 - label: AI-Tavern 角色聊天
   name: tavern
   source_dirs:
-  - apps/tavern-miniapp/src/
-  - servers/tavern-server/src/
+  - apps/tavern/client/src/
+  - apps/tavern/server/src/
 - label: supertask 工具
   name: supertask 工具
   source_dirs: []

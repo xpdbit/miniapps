@@ -1,6 +1,6 @@
 # 开发指南
 
-> 🚫 **旧架构文档** — 本文档部分内容基于已弃用的 CloudBase 云函数架构 (2025)。
+> 🚫 **废弃文档** — 路径已迁移至 `docs/apps/ftg/client/README.md`。旧云函数架构已弃用，当前为 REST API 架构。本文档中所有 `servers/ftg-server` 引用已失效，项目当前路径为 `apps/ftg/server/`。
 > 当前开发环境已完全迁移至 `servers/ftg-server`（Express REST API）+ Taro 小程序。
 > 本文档中的云函数/CloudBase 相关内容已过时，仅保留供参考。
 > 如有冲突，以根目录 AGENTS.md 和具体项目代码为准。

@@ -48,5 +48,5 @@
 
 ## 相关文档
 
-- [tavern-server 后端 API](../servers/tavern-server/README.md)
+- [tavern-server 后端 API](../../apps/tavern/server/README.md)
 - [tavern-miniapp AGENTS.md](../../apps/tavern-miniapp/AGENTS.md)

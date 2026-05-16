@@ -57,3 +57,5 @@ deploy/
 
 # SuperTask Worktree 临时目录
 .worktrees/
+tmp_ecs_*.py
+temp_patch.py

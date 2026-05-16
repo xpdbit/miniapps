@@ -111,7 +111,7 @@ Nginx 容器内置 certbot，支持 Let's Encrypt 自动续期。
 添加新域名时同时更新：
 1. `deploy/.env` — 生产环境 CORS
 2. `deploy/.env.example` — 环境变量模板
-3. `servers/ftg-server/src/config/env.ts` — 开发环境默认值
+3. `apps/ftg/server/src/config/env.ts` — 开发环境默认值
 
 ## 微信小程序配置
 
