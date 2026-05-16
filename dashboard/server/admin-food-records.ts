@@ -1,5 +1,5 @@
 // 食物记录管理路由 — /api/admin/food-records/*
-// 查询 food_theme_generator 数据库，提供后台管理 CRUD
+// 查询 miniapps 数据库，提供后台管理 CRUD
 import { Router, type Request, type Response } from 'express'
 import type { Prisma, FoodType } from '@prisma/client'
 import prisma from './prisma'
@@ -54,15 +54,15 @@ router.get('/', async (req: Request, res: Response) => {
 
     const mapped = records.map((r) => ({
       id: r.id,
-      foodName: r.foodName,
-      foodType: r.foodType,
-      thumbnailUrl: r.imageUrl,
-      themeId: r.themeId,
+      foodName: (r.data as Record<string, unknown>)?.foodName || null,
+      foodType: r.food_type,
+      thumbnailUrl: (r.data as Record<string, unknown>)?.imageUrl || null,
+      themeId: r.theme_id,
       themeName: null,
-      userOpenId: r.user.openid,
-      calories: r.caloriesTotal,
-      createdAt: r.createdAt,
-      deletedAt: r.deletedAt,
+      userOpenId: r.user.uuid,
+      calories: (r.data as Record<string, unknown>)?.caloriesTotal || null,
+      createdAt: r.created_at,
+      deletedAt: r.deleted_at,
     }))
 
     res.json({
@@ -77,10 +77,10 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/admin/food-records/:id — 详情
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
     const record = await prisma.ftgFoodRecord.findUnique({
       where: { id },
-      include: { user: { select: { openid: true } } },
+      include: { user: { select: { uuid: true, nickname: true } } },
     })
 
     if (!record) {
@@ -88,35 +88,37 @@ router.get('/:id', async (req: Request, res: Response) => {
       return
     }
 
+    const d = record.data as Record<string, unknown>
+
     const result: Record<string, unknown> = {
       id: record.id,
-      foodName: record.foodName,
-      foodType: record.foodType,
-      thumbnailUrl: record.imageUrl,
-      originalImageUrl: record.imageUrl,
-      themeImageUrl: record.themeImageUrl,
-      themeId: record.themeId,
+      foodName: d.foodName || null,
+      foodType: record.food_type,
+      thumbnailUrl: d.imageUrl || null,
+      originalImageUrl: d.imageUrl || null,
+      themeImageUrl: d.themeImageUrl || null,
+      themeId: record.theme_id,
       themeName: null,
-      userOpenId: record.user.openid,
-      calories: record.caloriesTotal,
-      createdAt: record.createdAt,
-      deletedAt: record.deletedAt,
+      userOpenId: record.user.uuid,
+      calories: d.caloriesTotal || null,
+      createdAt: record.created_at,
+      deletedAt: record.deleted_at,
     }
 
     const aiDescription = {
-      short: record.aiDescShort || '',
-      gameStyle: record.aiDescGameStyle || '',
-      detail: record.aiDescDetail || '',
+      short: (d.aiDescShort as string) || '',
+      gameStyle: (d.aiDescGameStyle as string) || '',
+      detail: (d.aiDescDetail as string) || '',
     }
     const nutrition = {
-      protein: record.protein ?? 0,
-      fat: record.fat ?? 0,
-      carbs: record.carbs ?? 0,
+      protein: (d.protein as number) ?? 0,
+      fat: (d.fat as number) ?? 0,
+      carbs: (d.carbs as number) ?? 0,
     }
     const location = {
-      latitude: record.latitude ?? 0,
-      longitude: record.longitude ?? 0,
-      locationName: record.locationName || '',
+      latitude: (d.latitude as number) ?? 0,
+      longitude: (d.longitude as number) ?? 0,
+      locationName: (d.locationName as string) || '',
     }
 
     res.json({
@@ -131,10 +133,10 @@ router.get('/:id', async (req: Request, res: Response) => {
 // DELETE /api/admin/food-records/:id — 软删除
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
     await prisma.ftgFoodRecord.update({
       where: { id },
-      data: { isDeleted: true, deletedAt: new Date() },
+      data: { is_deleted: true, deleted_at: new Date() },
     })
     res.json({ success: true })
   } catch (e) {
@@ -145,10 +147,10 @@ router.delete('/:id', async (req: Request, res: Response) => {
 // POST /api/admin/food-records/:id/restore — 恢复软删除
 router.post('/:id/restore', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
     await prisma.ftgFoodRecord.update({
       where: { id },
-      data: { isDeleted: false, deletedAt: null },
+      data: { is_deleted: false, deleted_at: null },
     })
     res.json({ success: true })
   } catch (e) {
@@ -159,14 +161,14 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
 // POST /api/admin/food-records/batch-delete — 批量软删除
 router.post('/batch-delete', async (req: Request, res: Response) => {
   try {
-    const { ids } = req.body as { ids: number[] }
+    const { ids } = req.body as { ids: string[] }
     if (!Array.isArray(ids) || ids.length === 0) {
       res.status(400).json({ success: false, message: '请提供要删除的记录ID' })
       return
     }
     await prisma.ftgFoodRecord.updateMany({
       where: { id: { in: ids } },
-      data: { isDeleted: true, deletedAt: new Date() },
+      data: { is_deleted: true, deleted_at: new Date() },
     })
     res.json({ success: true })
   } catch (e) {

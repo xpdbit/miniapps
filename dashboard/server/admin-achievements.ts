@@ -8,20 +8,20 @@ const router = Router()
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const achievements = await prisma.ftgAchievement.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     })
     const rows = achievements.map((r) => ({
-      id: r.achievementId,
+      id: r.achievement_id,
       name: r.name,
       description: r.description,
-      icon: r.iconUrl,
-      conditionType: r.conditionType,
-      conditionValue: r.conditionValue,
-      themeId: r.themeId,
+      icon: r.icon_url,
+      conditionType: r.condition_type,
+      conditionValue: r.condition_value,
+      themeId: r.theme_id,
       themeName: null,
       isPreset: 1,
       sortOrder: 0,
-      createdAt: r.createdAt,
+      createdAt: r.created_at,
     }))
     res.json({ success: true, data: { achievements: rows } })
   } catch (e) {
@@ -35,9 +35,9 @@ router.get('/stats', async (_req: Request, res: Response) => {
     const totalUsers = await prisma.sharedUser.count()
 
     const unlockedUsers = await prisma.ftgUserAchievement.findMany({
-      where: { isUnlocked: true },
-      distinct: ['userId'],
-      select: { userId: true },
+      where: { is_unlocked: true },
+      distinct: ['user_id'],
+      select: { user_id: true },
     })
     const unlockedUsersCount = unlockedUsers.length
 
@@ -45,7 +45,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
       include: {
         _count: {
           select: {
-            userAchievements: { where: { isUnlocked: true } },
+            userAchievements: { where: { is_unlocked: true } },
           },
         },
       },
@@ -56,7 +56,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
         ? Math.round(unlockedCount * 1000 / totalUsers) / 10
         : 0
       return {
-        achievementId: a.achievementId,
+        achievementId: a.achievement_id,
         achievementName: a.name,
         unlockedCount,
         totalCount: totalUsers,
@@ -65,21 +65,21 @@ router.get('/stats', async (_req: Request, res: Response) => {
     })
 
     const recentUnlocks = await prisma.ftgUserAchievement.findMany({
-      where: { isUnlocked: true },
+      where: { is_unlocked: true },
       include: {
         achievement: { select: { name: true } },
-        user: { select: { openid: true, nickname: true } },
+        user: { select: { uuid: true, nickname: true } },
       },
-      orderBy: { unlockedAt: 'desc' },
+      orderBy: { unlocked_at: 'desc' },
       take: 20,
     })
     const unlocks = recentUnlocks.map((ua) => ({
       id: ua.id,
-      achievementId: ua.achievementId,
+      achievementId: ua.achievement_id,
       achievementName: ua.achievement.name,
-      userOpenId: ua.user.openid,
+      userOpenId: ua.user.uuid,
       userName: ua.user.nickname,
-      unlockedAt: ua.unlockedAt,
+      unlockedAt: ua.unlocked_at,
     }))
 
     const overallUnlockRate = totalUsers > 0
@@ -109,27 +109,27 @@ router.put('/:id', async (req: Request, res: Response) => {
       icon?: string
       description?: string
       conditionValue?: number
-      themeId?: number | null
+      themeId?: string | null
     }
 
     const data: {
-      iconUrl?: string
+      icon_url?: string
       description?: string
-      conditionValue?: number
-      themeId?: string | null
+      condition_value?: number
+      theme_id?: string | null
     } = {}
 
     if (icon !== undefined) {
-      data.iconUrl = icon
+      data.icon_url = icon
     }
     if (description !== undefined) {
       data.description = description
     }
     if (conditionValue !== undefined) {
-      data.conditionValue = conditionValue
+      data.condition_value = conditionValue
     }
     if (themeId !== undefined) {
-      data.themeId = themeId !== null ? String(themeId) : null
+      data.theme_id = themeId ?? null
     }
 
     if (Object.keys(data).length === 0) {
@@ -138,7 +138,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     await prisma.ftgAchievement.update({
-      where: { achievementId },
+      where: { achievement_id: achievementId },
       data,
     })
 
@@ -153,17 +153,17 @@ router.get('/:id/users', async (req: Request, res: Response) => {
   try {
     const achievementId = req.params.id as string
     const records = await prisma.ftgUserAchievement.findMany({
-      where: { achievementId, isUnlocked: true },
+      where: { achievement_id: achievementId, is_unlocked: true },
       include: {
-        user: { select: { openid: true, nickname: true } },
+        user: { select: { uuid: true, nickname: true } },
       },
-      orderBy: { unlockedAt: 'desc' },
+      orderBy: { unlocked_at: 'desc' },
     })
     const rows = records.map((ua) => ({
       id: ua.id,
-      userOpenId: ua.user.openid,
+      userOpenId: ua.user.uuid,
       userName: ua.user.nickname,
-      unlockedAt: ua.unlockedAt,
+      unlockedAt: ua.unlocked_at,
     }))
     res.json({ success: true, data: { users: rows } })
   } catch (e) {
@@ -175,7 +175,6 @@ router.get('/:id/users', async (req: Request, res: Response) => {
 router.post('/trigger', async (_req: Request, res: Response) => {
   try {
     // 占位实现 — 实际成就检测逻辑由云函数或定时任务执行
-    // 这里仅返回成功确认，未来可集成 achievement 服务
     res.json({ success: true, data: { unlocked: [] as string[] } })
   } catch (e) {
     res.status(500).json({ success: false, message: (e as Error).message })

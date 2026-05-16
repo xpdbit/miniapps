@@ -24,21 +24,21 @@ function getClientIp(req: Request): string {
 /** 记录审计日志（静默失败，不中断请求） */
 async function auditLog(params: {
   req: Request
-  adminId: number
+  adminId: string
   action: string
   targetType?: string
-  targetId?: string | number
+  targetId?: string
   details?: Record<string, unknown>
 }) {
   try {
-    await prisma.auditLog.create({
+    await prisma.dashboardAuditLog.create({
       data: {
-        adminId: params.adminId,
+        admin_id: params.adminId,
         action: params.action,
-        targetType: params.targetType ?? null,
-        targetId: params.targetId != null ? String(params.targetId) : null,
+        target_type: params.targetType ?? null,
+        target_id: params.targetId ?? null,
         details: params.details as any,
-        ipAddress: getClientIp(params.req),
+        ip_address: getClientIp(params.req),
       },
     })
   } catch (error) {
@@ -72,7 +72,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
 }
 
 interface AuthPayload {
-  adminId: number
+  adminId: string
   username: string
   role: string
 }
@@ -132,21 +132,21 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // 安全守卫：禁止在已有管理员时注册新管理员
-    const totalAdmins = await prisma.adminUser.count()
+    const totalAdmins = await prisma.dashboardAdminUser.count()
     if (totalAdmins > 0) {
       res.status(403).json({ success: false, message: '管理员注册已关闭。如需添加新管理员，请由现有管理员在后台创建。' })
       return
     }
 
-    const existing = await prisma.adminUser.findUnique({ where: { username } })
+    const existing = await prisma.dashboardAdminUser.findUnique({ where: { username } })
     if (existing) {
       res.status(409).json({ success: false, message: '用户名已存在' })
       return
     }
 
-    const passwordHash = await bcrypt.hash(password, 12)
-    const admin = await prisma.adminUser.create({
-      data: { username, passwordHash, role: 'super_admin' },
+    const password_hash_val = await bcrypt.hash(password, 12)
+    const admin = await prisma.dashboardAdminUser.create({
+      data: { username, password_hash: password_hash_val, role: 'super_admin' },
     })
 
     res.json({ success: true, data: { id: admin.id, username: admin.username, role: admin.role } })
@@ -164,7 +164,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return
     }
 
-    const admin = await prisma.adminUser.findUnique({ where: { username } })
+    const admin = await prisma.dashboardAdminUser.findUnique({ where: { username } })
     if (!admin) {
       console.error('[Login] 用户不存在: "' + username + '"')
       res.status(401).json({ success: false, message: '用户名或密码错误' })
@@ -176,7 +176,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return
     }
 
-    const valid = await bcrypt.compare(password, admin.passwordHash)
+    const valid = await bcrypt.compare(password, admin.password_hash)
     if (!valid) {
       console.error('[Login] 密码错误: "' + username + '" (id=' + admin.id + ')')
       res.status(401).json({ success: false, message: '用户名或密码错误' })
@@ -221,9 +221,9 @@ router.post('/login', async (req: Request, res: Response) => {
 // GET /api/admin/me — get current admin info
 router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const admin = await prisma.adminUser.findUnique({
+    const admin = await prisma.dashboardAdminUser.findUnique({
       where: { id: req.admin!.adminId },
-      select: { id: true, username: true, role: true, status: true, createdAt: true },
+      select: { id: true, username: true, role: true, status: true, created_at: true },
     })
 
     if (!admin) {
@@ -242,7 +242,7 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
   try {
     const { oldPassword, newPassword } = req.body
 
-    const admin = await prisma.adminUser.findUnique({ where: { id: req.admin!.adminId } })
+    const admin = await prisma.dashboardAdminUser.findUnique({ where: { id: req.admin!.adminId } })
     if (!admin) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
@@ -255,7 +255,7 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12)
-    await prisma.adminUser.update({
+    await prisma.dashboardAdminUser.update({
       where: { id: req.admin!.adminId },
       data: { passwordHash },
     })
@@ -278,9 +278,9 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
 // GET /api/admin/users — list all admin accounts
 router.get('/users', authenticate, requirePermission('admin_users'), async (req: AuthRequest, res: Response) => {
   try {
-    const users = await prisma.adminUser.findMany({
-      select: { id: true, username: true, role: true, status: true, createdAt: true, updatedAt: true },
-      orderBy: { createdAt: 'desc' },
+    const users = await prisma.dashboardAdminUser.findMany({
+      select: { id: true, username: true, role: true, status: true, created_at: true, updated_at: true },
+      orderBy: { created_at: 'desc' },
     })
 
     res.json({ success: true, data: { users } })
@@ -299,18 +299,18 @@ router.post('/users', authenticate, requirePermission('admin_users'), async (req
       return
     }
 
-    const existing = await prisma.adminUser.findUnique({ where: { username } })
+    const existing = await prisma.dashboardAdminUser.findUnique({ where: { username } })
     if (existing) {
       res.status(409).json({ success: false, message: '用户名已存在' })
       return
     }
 
-    const passwordHash = await bcrypt.hash(password, 12)
+    const password_hash_val = await bcrypt.hash(password, 12)
     const validRole = (role && ['super_admin', 'admin', 'viewer'].includes(role)) ? role : 'admin'
     
-    const admin = await prisma.adminUser.create({
-      data: { username, passwordHash, role: validRole },
-      select: { id: true, username: true, role: true, status: true, createdAt: true, updatedAt: true },
+    const admin = await prisma.dashboardAdminUser.create({
+      data: { username, password_hash: password_hash_val, role: validRole },
+      select: { id: true, username: true, role: true, status: true, created_at: true, updated_at: true },
     })
 
     await auditLog({
@@ -331,7 +331,7 @@ router.post('/users', authenticate, requirePermission('admin_users'), async (req
 // DELETE /api/admin/users/:id — delete an admin account (super_admin only)
 router.delete('/users/:id', authenticate, requirePermission('admin_users'), async (req: AuthRequest, res: Response) => {
   try {
-    const targetId = parseInt(req.params.id as string)
+    const targetId = req.params.id as string
 
     // MUST NOT delete self
     if (targetId === req.admin!.adminId) {
@@ -339,13 +339,13 @@ router.delete('/users/:id', authenticate, requirePermission('admin_users'), asyn
       return
     }
 
-    const target = await prisma.adminUser.findUnique({ where: { id: targetId } })
+    const target = await prisma.dashboardAdminUser.findUnique({ where: { id: targetId } })
     if (!target) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
     }
 
-    await prisma.adminUser.delete({ where: { id: targetId } })
+    await prisma.dashboardAdminUser.delete({ where: { id: targetId } })
 
     await auditLog({
       req,
@@ -365,7 +365,7 @@ router.delete('/users/:id', authenticate, requirePermission('admin_users'), asyn
 // PUT /api/admin/users/:id/role — change another admin's role (super_admin only)
 router.put('/users/:id/role', authenticate, requirePermission('admin_users'), async (req: AuthRequest, res: Response) => {
   try {
-    const targetId = parseInt(req.params.id as string)
+    const targetId = req.params.id as string
     const { role } = req.body
 
     if (!role || !['super_admin', 'admin', 'viewer'].includes(role)) {
@@ -379,16 +379,16 @@ router.put('/users/:id/role', authenticate, requirePermission('admin_users'), as
       return
     }
 
-    const target = await prisma.adminUser.findUnique({ where: { id: targetId } })
+    const target = await prisma.dashboardAdminUser.findUnique({ where: { id: targetId } })
     if (!target) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
     }
 
-    const updated = await prisma.adminUser.update({
+    const updated = await prisma.dashboardAdminUser.update({
       where: { id: targetId },
       data: { role },
-      select: { id: true, username: true, role: true, status: true, createdAt: true, updatedAt: true },
+      select: { id: true, username: true, role: true, status: true, created_at: true, updated_at: true },
     })
 
     // 记录角色变更日志
@@ -412,7 +412,7 @@ router.put('/users/:id/role', authenticate, requirePermission('admin_users'), as
 // GET /api/admin/projects — list all projects
 router.get('/projects', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
-    const projects = await prisma.project.findMany({ orderBy: { createdAt: 'desc' } })
+    const projects = await prisma.dashboardProject.findMany({ orderBy: { created_at: 'desc' } })
     res.json({ success: true, data: { projects } })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
@@ -423,8 +423,8 @@ router.get('/projects', authenticate, requirePermission('projects'), async (req:
 router.post('/projects', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
     const { name, apiBaseUrl, description } = req.body
-    const project = await prisma.project.create({
-      data: { name, apiBaseUrl, description: description || null },
+    const project = await prisma.dashboardProject.create({
+      data: { name, api_base_url: apiBaseUrl, description: description || null },
     })
 
     // 记录创建项目日志
@@ -446,15 +446,15 @@ router.post('/projects', authenticate, requirePermission('projects'), async (req
 // PUT /api/admin/projects/:id — update project
 router.put('/projects/:id', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
     const { name, apiBaseUrl, description, status } = req.body
 
     // 获取更新前的项目数据用于记录变更
-    const oldProject = await prisma.project.findUnique({ where: { id } })
+    const oldProject = await prisma.dashboardProject.findUnique({ where: { id } })
 
-    const project = await prisma.project.update({
+    const project = await prisma.dashboardProject.update({
       where: { id },
-      data: { name, apiBaseUrl, description, status },
+      data: { name, api_base_url: apiBaseUrl, description, status },
     })
 
     // 记录更新项目日志
@@ -467,7 +467,7 @@ router.put('/projects/:id', authenticate, requirePermission('projects'), async (
       details: {
         changes: {
           name: { from: oldProject?.name, to: name },
-          apiBaseUrl: { from: oldProject?.apiBaseUrl, to: apiBaseUrl },
+          apiBaseUrl: { from: oldProject?.api_base_url, to: apiBaseUrl },
           description: { from: oldProject?.description, to: description },
           status: { from: oldProject?.status, to: status },
         },
@@ -483,12 +483,12 @@ router.put('/projects/:id', authenticate, requirePermission('projects'), async (
 // DELETE /api/admin/projects/:id
 router.delete('/projects/:id', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
 
     // 获取删除前的项目数据用于记录
-    const deletedProject = await prisma.project.findUnique({ where: { id } })
+    const deletedProject = await prisma.dashboardProject.findUnique({ where: { id } })
 
-    await prisma.project.delete({ where: { id } })
+    await prisma.dashboardProject.delete({ where: { id } })
 
     // 记录删除项目日志
     await auditLog({
@@ -498,7 +498,7 @@ router.delete('/projects/:id', authenticate, requirePermission('projects'), asyn
       targetType: 'project',
       targetId: id,
       details: deletedProject
-        ? { name: deletedProject.name, apiBaseUrl: deletedProject.apiBaseUrl }
+        ? { name: deletedProject.name, apiBaseUrl: deletedProject.api_base_url }
         : undefined,
     })
 
@@ -511,8 +511,8 @@ router.delete('/projects/:id', authenticate, requirePermission('projects'), asyn
 // POST /api/admin/projects/:id/test — test health connection
 router.post('/projects/:id/test', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
-    const project = await prisma.project.findUnique({ where: { id } })
+    const id = req.params.id as string
+    const project = await prisma.dashboardProject.findUnique({ where: { id } })
     if (!project) {
       res.status(404).json({ success: false, message: '项目不存在' })
       return
@@ -521,11 +521,11 @@ router.post('/projects/:id/test', authenticate, requirePermission('projects'), a
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const axios = require('axios')
-      const response = await axios.get(`${project.apiBaseUrl}/health`, { timeout: 5000 })
-      await prisma.project.update({ where: { id }, data: { status: 'active' } })
+      const response = await axios.get(`${project.api_base_url}/health`, { timeout: 5000 })
+      await prisma.dashboardProject.update({ where: { id }, data: { status: 'active' } })
       res.json({ success: true, message: '连接成功', data: { status: response.status, data: response.data } })
     } catch (err) {
-      await prisma.project.update({ where: { id }, data: { status: 'inactive' } })
+      await prisma.dashboardProject.update({ where: { id }, data: { status: 'inactive' } })
       res.json({ success: false, message: '连接失败: ' + (err as Error).message, data: { status: 'inactive' } })
     }
   } catch (error) {
@@ -614,16 +614,16 @@ router.get('/audit-logs', authenticate, async (req: AuthRequest, res: Response) 
     const where: Record<string, unknown> = {}
 
     if (adminId) {
-      where.adminId = parseInt(adminId)
+      where.admin_id = adminId
     }
     if (action) {
       where.action = action
     }
     if (startDate || endDate) {
-      const createdAt: Record<string, Date> = {}
-      if (startDate) createdAt.gte = new Date(startDate)
-      if (endDate) createdAt.lte = new Date(endDate + 'T23:59:59.999Z')
-      where.createdAt = createdAt
+      const created_at_filter: Record<string, Date> = {}
+      if (startDate) created_at_filter.gte = new Date(startDate)
+      if (endDate) created_at_filter.lte = new Date(endDate + 'T23:59:59.999Z')
+      where.created_at = created_at_filter
     }
 
     const currentPage = Math.max(1, parseInt(page || '1'))
@@ -631,16 +631,16 @@ router.get('/audit-logs', authenticate, async (req: AuthRequest, res: Response) 
     const skip = (currentPage - 1) * currentPageSize
 
     const [list, total] = await Promise.all([
-      prisma.auditLog.findMany({
+      prisma.dashboardAuditLog.findMany({
         where: where as never,
         include: {
           admin: { select: { id: true, username: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
         skip,
         take: currentPageSize,
       }),
-      prisma.auditLog.count({ where: where as never }),
+      prisma.dashboardAuditLog.count({ where: where as never }),
     ])
 
     res.json({ success: true, data: { list, total } })
@@ -653,7 +653,7 @@ router.get('/audit-logs', authenticate, async (req: AuthRequest, res: Response) 
 router.get('/audit-logs/actions', authenticate, async (_req: AuthRequest, res: Response) => {
   try {
     // Query distinct action values using raw query since Prisma doesn't support `distinct` on specific fields easily
-    const result = await prisma.auditLog.findMany({
+    const result = await prisma.dashboardAuditLog.findMany({
       select: { action: true },
       distinct: ['action'],
       orderBy: { action: 'asc' },
