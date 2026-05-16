@@ -148,14 +148,14 @@ function generateMockOnlineUsers(baseCount: number, count: number) {
  */
 router.get('/health', async (_req: Request, res: Response) => {
   try {
-    const projects = await prisma.project.findMany({
+    const projects = await prisma.dashboardProject.findMany({
       where: { status: 'active' },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     })
 
     const results: ProjectHealth[] = await Promise.all(
       projects.map(async (project) => {
-        const healthResult = await probeProjectHealth(project.apiBaseUrl)
+        const healthResult = await probeProjectHealth(project.api_base_url)
         const status = healthResult.ok
           ? healthResult.responseTime < 1000
             ? ('healthy' as const)

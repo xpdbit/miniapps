@@ -52,7 +52,7 @@ app.use('/api/admin', tavernRoutes)
 app.get('/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
-    const adminCount = await prisma.adminUser.count()
+    const adminCount = await prisma.dashboardAdminUser.count()
     res.json({ status: 'ok', service: 'dashboard-admin', db: 'connected', admins: adminCount })
   } catch {
     res.status(503).json({ status: 'degraded', service: 'dashboard-admin', db: 'disconnected' })

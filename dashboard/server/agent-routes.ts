@@ -43,7 +43,7 @@ router.get('/health', agentAuth, async (_req: Request, res: Response) => {
     let adminUsersCount = 0
     if (dbConnected) {
       try {
-        adminUsersCount = await prisma.adminUser.count()
+        adminUsersCount = await prisma.dashboardAdminUser.count()
       } catch {
         adminUsersCount = -1
       }
@@ -70,7 +70,7 @@ router.get('/db-status', agentAuth, async (_req: Request, res: Response) => {
   try {
     const connected = await checkDbConnection()
 
-    const tableNames = ['admin_users', 'projects', 'audit_logs', '_prisma_migrations'] as const
+    const tableNames = ['dashboard_admin_users', 'dashboard_projects', 'dashboard_audit_logs', '_prisma_migrations'] as const
     const tables: Record<string, { exists: boolean; row_count: number }> = {}
 
     for (const name of tableNames) {
@@ -106,9 +106,9 @@ router.get('/db-status', agentAuth, async (_req: Request, res: Response) => {
 
 router.get('/admin-users', agentAuth, async (_req: Request, res: Response) => {
   try {
-    const users = await prisma.adminUser.findMany({
-      select: { id: true, username: true, role: true, status: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
+    const users = await prisma.dashboardAdminUser.findMany({
+      select: { id: true, username: true, role: true, status: true, created_at: true },
+      orderBy: { created_at: 'desc' },
     })
 
     res.json({ users, count: users.length })
@@ -125,7 +125,7 @@ router.post('/seed-admin', agentAuth, async (_req: Request, res: Response) => {
     const seedUsername = process.env.ADMIN_SEED_USERNAME || 'admin'
     const seedPassword = process.env.ADMIN_SEED_PASSWORD || 'Admin123!'
 
-    const existing = await prisma.adminUser.findUnique({ where: { username: seedUsername } })
+    const existing = await prisma.dashboardAdminUser.findUnique({ where: { username: seedUsername } })
     if (existing) {
       res.json({
         success: true,
@@ -138,9 +138,9 @@ router.post('/seed-admin', agentAuth, async (_req: Request, res: Response) => {
     const bcrypt = await import('bcrypt')
     const passwordHash = await bcrypt.hash(seedPassword, 12)
 
-    const admin = await prisma.adminUser.create({
-      data: { username: seedUsername, passwordHash, role: 'super_admin' },
-      select: { id: true, username: true, role: true, status: true, createdAt: true },
+    const admin = await prisma.dashboardAdminUser.create({
+      data: { username: seedUsername, password_hash: passwordHash, role: 'super_admin' },
+      select: { id: true, username: true, role: true, status: true, created_at: true },
     })
 
     res.status(201).json({

@@ -5,22 +5,22 @@ import prisma from './prisma'
 const router = Router()
 
 // GET /api/admin/api-keys — 列表
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   try {
     const keys = await prisma.ftgApiKey.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     })
     res.json({
       success: true,
       data: {
         keys: keys.map((k) => ({
           id: k.id,
-          serviceName: k.serviceName,
-          keyValue: k.encryptedKey,
-          status: k.isActive ? 'active' : 'inactive',
-          active: k.isActive,
-          createdAt: k.createdAt,
-          lastUsedAt: k.lastUsedAt,
+          serviceName: k.service_name,
+          keyValue: k.encrypted_key,
+          status: k.is_active ? 'active' : 'inactive',
+          active: k.is_active,
+          createdAt: k.created_at,
+          lastUsedAt: k.last_used_at,
         })),
       },
     })
@@ -38,9 +38,8 @@ router.post('/', async (req: Request, res: Response) => {
       return
     }
 
-    // 使用固定的 userId=0 表示系统级 API Key（管理后台创建）
     const key = await prisma.ftgApiKey.create({
-      data: { userId: 0, serviceName, encryptedKey: keyValue, isActive: true },
+      data: { service_name: serviceName, encrypted_key: keyValue, is_active: true },
     })
 
     res.status(201).json({
@@ -48,12 +47,12 @@ router.post('/', async (req: Request, res: Response) => {
       data: {
         key: {
           id: key.id,
-          serviceName: key.serviceName,
-          keyValue: key.encryptedKey,
+          serviceName: key.service_name,
+          keyValue: key.encrypted_key,
           status: 'active',
           active: true,
-          createdAt: key.createdAt,
-          lastUsedAt: key.lastUsedAt,
+          createdAt: key.created_at,
+          lastUsedAt: key.last_used_at,
         },
       },
     })
@@ -65,12 +64,12 @@ router.post('/', async (req: Request, res: Response) => {
 // PUT /api/admin/api-keys/:id — 更新（启用/禁用/修改服务名）
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
     const { active, serviceName } = req.body as { active?: boolean; serviceName?: string }
 
-    const data: { isActive?: boolean; serviceName?: string } = {}
-    if (active !== undefined) data.isActive = active
-    if (serviceName !== undefined) data.serviceName = serviceName
+    const data: { is_active?: boolean; service_name?: string } = {}
+    if (active !== undefined) data.is_active = active
+    if (serviceName !== undefined) data.service_name = serviceName
 
     if (Object.keys(data).length === 0) {
       res.status(400).json({ success: false, message: '没有提供更新字段' })
@@ -86,12 +85,12 @@ router.put('/:id', async (req: Request, res: Response) => {
       data: {
         key: {
           id: key.id,
-          serviceName: key.serviceName,
-          keyValue: key.encryptedKey,
-          status: key.isActive ? 'active' : 'inactive',
-          active: key.isActive,
-          createdAt: key.createdAt,
-          lastUsedAt: key.lastUsedAt,
+          serviceName: key.service_name,
+          keyValue: key.encrypted_key,
+          status: key.is_active ? 'active' : 'inactive',
+          active: key.is_active,
+          createdAt: key.created_at,
+          lastUsedAt: key.last_used_at,
         },
       },
     })
@@ -103,7 +102,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 // DELETE /api/admin/api-keys/:id — 删除
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id as string)
+    const id = req.params.id as string
     await prisma.ftgApiKey.delete({ where: { id } })
     res.json({ success: true })
   } catch (e) {
