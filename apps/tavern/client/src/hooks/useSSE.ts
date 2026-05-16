@@ -23,6 +23,14 @@ export function useSSE(options?: UseSSEOptions) {
     sessionId?: string
     model?: string
     temperature?: number
+    cardData?: {
+      name?: string
+      description?: string
+      firstMsg?: string
+      personality?: string
+      scenario?: string
+      lore?: string
+    }
   }) => {
     const token = useAuthStore.getState().token
     if (!token) {
@@ -54,6 +62,7 @@ export function useSSE(options?: UseSSEOptions) {
           message: params.message,
           model: params.model || 'tongyi',
           temperature: params.temperature ?? 0.8,
+          cardData: params.cardData,
         },
         header: {
           'Content-Type': 'application/json',

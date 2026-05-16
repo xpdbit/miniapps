@@ -1,1 +1,0 @@
-const props={cancelBtn:{type:String,value:"\u53d6\u6d88"},confirmBtn:{type:String,value:"\u786e\u8ba4"},title:{type:String,value:""},value:{type:Array},visible:{type:Boolean,value:!1}};export default props;

@@ -1,1 +1,0 @@
-.t-float-left{float:left}.t-float-right{float:right}@keyframes tdesign-fade-out{from{opacity:1}to{opacity:0}}.t-image__mask{align-items:center;background-color:#f2f2f2;color:#ccc;display:flex;justify-content:center}.t-image--loading-text{height:0;width:0}.t-image__common{height:100%;width:100%}

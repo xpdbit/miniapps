@@ -128,3 +128,142 @@
     border-top: 1px solid var(--color-border-subtle);
   }
 }
+
+/* ── 创建按钮 ── */
+.page-persona-create-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+  border: none !important;
+  border-radius: var(--radius-md);
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── 头像替换 ── */
+.page-persona-item-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.page-persona-item-avatar-text {
+  font-size: var(--font-body-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-foreground);
+}
+
+/* ── 自定义 Modal ── */
+.page-persona-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg-overlay);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+}
+
+.page-persona-modal {
+  width: 100%;
+  max-width: 640rpx;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: scale-in var(--duration-normal) var(--ease-out);
+}
+
+.page-persona-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.page-persona-modal-title {
+  font-size: var(--font-body-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.page-persona-modal-close {
+  font-size: var(--font-body-lg);
+  color: var(--color-text-tertiary);
+  padding: var(--spacing-xs);
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-persona-modal-body {
+  padding: var(--spacing-lg);
+}
+
+.page-persona-modal-field {
+  margin-bottom: var(--spacing-md);
+}
+
+.page-persona-modal-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+.page-persona-modal-input {
+  height: 72rpx;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-body-sm);
+  color: var(--color-text);
+}
+
+.page-persona-modal-textarea {
+  width: 100%;
+  min-height: 140rpx;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-body-sm);
+  color: var(--color-text);
+}
+
+.page-persona-modal-footer {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.page-persona-modal-cancel-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: var(--color-bg-elevated) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border-subtle) !important;
+  border-radius: var(--radius-md);
+  font-size: var(--font-body);
+}
+
+.page-persona-modal-confirm-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+  border: none !important;
+  border-radius: var(--radius-md);
+  font-size: var(--font-body);
+}

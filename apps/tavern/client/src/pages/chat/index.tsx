@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from '@tarojs/components'
+import { View, Text, ScrollView, Input, Button } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -6,20 +6,27 @@ import ChatBubble from '@/components/ChatBubble'
 import ModelSelector from '@/components/ModelSelector'
 import { useSSE } from '@/hooks/useSSE'
 import { useChatStore } from '@/stores/chatStore'
-import { httpClient } from '@/services/httpClient'
+import { useSyncedCardsStore } from '@/stores/syncedCardsStore'
+import { useLocalCardsStore } from '@/stores/localCardsStore'
+import type { CharacterCard, LocalCard, CardType } from '@/types/character'
+import { CARD_TYPE_LABELS } from '@/types/character'
+import { Icon } from '@/components'
 import './index.scss'
 
-interface BuiltinCharacter {
+type CardItem = CharacterCard | LocalCard
+
+interface SelectableCard {
   id: string
   name: string
-  avatar: string | null
   description: string
-  personality: string | null
-  firstMsg: string
-  scenario: string | null
-  tags: string[]
-  chatCount: number
-  likeCount: number
+  avatar?: string | null
+  firstMsg?: string
+  personality?: string
+  scenario?: string
+  lore?: string
+  tags?: string[]
+  cardType: CardType
+  isOfficial: boolean
 }
 
 export default function ChatPage() {
@@ -27,34 +34,56 @@ export default function ChatPage() {
   const { messages, isStreaming, sendMessage, clearMessages } = useSSE()
   const [input, setInput] = useState('')
   const [showSessions, setShowSessions] = useState(false)
-  const [characters, setCharacters] = useState<BuiltinCharacter[]>([])
-  const [selectedCharacter, setSelectedCharacter] = useState<BuiltinCharacter | null>(null)
-  const [, setLoadingBuiltin] = useState(false)
+  const [selectedCard, setSelectedCard] = useState<SelectableCard | null>(null)
+  const [, setLoadingCards] = useState(false)
   const [scrollIntoViewId, setScrollIntoViewId] = useState('')
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
+  const syncedStore = useSyncedCardsStore()
+  const localStore = useLocalCardsStore()
+
   useDidShow(() => {
     loadSessions()
-    loadBuiltinCharacters()
+    Taro.eventCenter.trigger('tabChange', 1)
+    Taro.eventCenter.trigger('tavernSubTab', 'main')
+    // 确保卡片数据已加载
+    syncedStore.restoreFromStorage()
+    localStore.restoreFromStorage()
+    // 触发同步
+    syncedStore.syncCards()
   })
 
-  // Load built-in characters from API
-  const loadBuiltinCharacters = useCallback(async () => {
-    setLoadingBuiltin(true)
-    try {
-      const res = await httpClient.get<{ code: number; data: BuiltinCharacter[]; message: string }>('/builtin/characters')
-      if (res.code === 0 && res.data) {
-        setCharacters(res.data)
-      }
-    } catch {
-      // ignore
-    } finally {
-      setLoadingBuiltin(false)
-    }
-  }, [])
+  // 合并所有可用卡片（官方 + 本地）
+  const allCards: SelectableCard[] = [
+    ...syncedStore.cards.map(c => ({
+      id: c.id,
+      name: c.name,
+      description: c.description || '',
+      avatar: c.avatar,
+      firstMsg: c.firstMsg,
+      personality: c.personality,
+      scenario: c.scenario,
+      lore: c.lore,
+      tags: c.tags,
+      cardType: c.cardType || 'CHARACTER',
+      isOfficial: true,
+    })),
+    ...localStore.cards.map(c => ({
+      id: c.id,
+      name: c.name,
+      description: c.description || '',
+      avatar: c.avatar,
+      firstMsg: c.firstMsg,
+      personality: c.personality,
+      scenario: c.scenario,
+      lore: c.lore,
+      tags: c.tags,
+      cardType: c.cardType || 'CHARACTER',
+      isOfficial: false,
+    })),
+  ]
 
   useEffect(() => {
-    // Auto scroll to bottom on new messages（使用 scrollIntoView 替代 ref.scrollTo）
     if (messages.length > 0) {
       clearTimeout(scrollTimerRef.current)
       setScrollIntoViewId('chat-bottom-anchor')
@@ -65,18 +94,26 @@ export default function ChatPage() {
 
   const handleSend = async () => {
     const text = input.trim()
-    if (!text || isStreaming || !selectedCharacter) return
+    if (!text || isStreaming || !selectedCard) return
     setInput('')
 
     await sendMessage({
-      characterId: selectedCharacter.id,
+      characterId: selectedCard.id,
       message: text,
       model: useChatStore.getState().selectedModel,
+      cardData: selectedCard.isOfficial ? undefined : {
+        name: selectedCard.name,
+        description: selectedCard.description,
+        firstMsg: selectedCard.firstMsg,
+        personality: selectedCard.personality,
+        scenario: selectedCard.scenario,
+        lore: selectedCard.lore,
+      },
     })
   }
 
-  const handleSelectCharacter = (char: BuiltinCharacter) => {
-    setSelectedCharacter(char)
+  const handleSelectCharacter = (card: SelectableCard) => {
+    setSelectedCard(card)
     clearMessages()
   }
 
@@ -84,8 +121,7 @@ export default function ChatPage() {
     Taro.navigateTo({ url: '/pages/creator/index' })
   }
 
-  const handleSessionClick = (_session: typeof sessions[0]) => {
-    // For now just close the panel
+  const handleSessionClick = () => {
     setShowSessions(false)
   }
 
@@ -93,9 +129,13 @@ export default function ChatPage() {
     <View className='page-chat'>
       {/* Header */}
       <View className='page-chat-header'>
-        <Text className='page-chat-header-icon' onClick={() => setShowSessions(true)}>&#9776;</Text>
+        <View className='page-chat-header-icon' onClick={() => setShowSessions(true)}>
+          <Icon name='menu' size={44} color='#666' />
+        </View>
         <Text className='page-chat-header-title'>AI 酒馆</Text>
-        <Text className='page-chat-header-icon' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>&#9881;</Text>
+        <View className='page-chat-header-icon' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>
+          <Icon name='settings' size={44} color='#666' />
+        </View>
       </View>
 
       {/* 模型选择器 */}
@@ -109,20 +149,21 @@ export default function ChatPage() {
           scrollWithAnimation
           enableFlex
         >
-          {characters.map((char) => (
+          {allCards.map((card) => (
             <View
-              key={char.id}
-              className={`page-chat-card ${selectedCharacter?.id === char.id ? 'page-chat-card--active' : ''}`}
-              onClick={() => handleSelectCharacter(char)}
+              key={card.id}
+              className={`page-chat-card ${selectedCard?.id === card.id ? 'page-chat-card--active' : ''}`}
+              onClick={() => handleSelectCharacter(card)}
             >
               <View className='page-chat-card-avatar'>
-                {char.avatar ? (
-                  <View className='page-chat-card-avatar-img' style={{ backgroundImage: `url(${char.avatar})` }} />
+                {card.avatar ? (
+                  <View className='page-chat-card-avatar-img' style={{ backgroundImage: `url(${card.avatar})` }} />
                 ) : (
-                  <Text className='page-chat-card-avatar-text'>{char.name.charAt(0)}</Text>
+                  <Text className='page-chat-card-avatar-text'>{card.name.charAt(0)}</Text>
                 )}
               </View>
-              <Text className='page-chat-card-name'>{char.name}</Text>
+              <Text className='page-chat-card-name'>{card.name}</Text>
+              <Text className='page-chat-card-type'>{CARD_TYPE_LABELS[card.cardType] || card.cardType}</Text>
             </View>
           ))}
           {/* Create character card */}
@@ -142,18 +183,17 @@ export default function ChatPage() {
         scrollWithAnimation
         scrollIntoView={scrollIntoViewId}
       >
-        {/* 内层 padding 容器：避免在 scroll-view 上直接使用 padding */}
         <View className='page-chat-messages-inner'>
-          {!selectedCharacter && (
+          {!selectedCard && (
             <View className='page-chat-empty'>
               <Text className='page-chat-empty-title'>选择一位角色开始对话</Text>
-              <Text className='page-chat-empty-desc'>向左滑动选择内置角色，或创建新角色</Text>
+              <Text className='page-chat-empty-desc'>从上方选择角色，或创建新角色</Text>
             </View>
           )}
-          {selectedCharacter && messages.length === 0 && (
+          {selectedCard && messages.length === 0 && (
             <View className='page-chat-welcome'>
-              <Text className='page-chat-welcome-name'>{selectedCharacter.name}</Text>
-              <Text className='page-chat-welcome-msg'>{selectedCharacter.firstMsg}</Text>
+              <Text className='page-chat-welcome-name'>{selectedCard.name}</Text>
+              <Text className='page-chat-welcome-msg'>{selectedCard.firstMsg || '你好！让我们开始对话吧。'}</Text>
             </View>
           )}
           {messages.map((msg, i) => (
@@ -164,26 +204,25 @@ export default function ChatPage() {
               isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'character' && !msg.id}
             />
           ))}
-          {/* 滚动锚点：新消息时自动滚到底部 */}
           <View id='chat-bottom-anchor' />
         </View>
       </ScrollView>
 
       {/* Input area */}
       <View className='page-chat-input-area'>
-        <t-input
+        <Input
           className='page-chat-input'
           value={input}
-          onChange={(e) => setInput(e.detail.value)}
-          placeholder={selectedCharacter ? '输入消息...' : '请先选择角色'}
-          disabled={isStreaming || !selectedCharacter}
+          onInput={(e) => setInput(e.detail.value)}
+          placeholder={selectedCard ? '输入消息...' : '请先选择角色'}
+          disabled={isStreaming || !selectedCard}
         />
-        <t-button
+        <Button
           className='page-chat-send-btn'
-          onClick={isStreaming || !selectedCharacter ? undefined : handleSend}
+          onClick={isStreaming || !selectedCard ? undefined : handleSend}
         >
           {isStreaming ? '...' : '发送'}
-        </t-button>
+        </Button>
       </View>
 
       {/* Session list panel */}
@@ -192,7 +231,7 @@ export default function ChatPage() {
           <View className='page-chat-sessions' onClick={(e) => e.stopPropagation()}>
             <Text className='page-chat-sessions-title'>历史会话</Text>
             {sessions.map((s) => (
-              <View key={s.id} className='page-chat-session-item' onClick={() => handleSessionClick(s)}>
+              <View key={s.id} className='page-chat-session-item' onClick={() => handleSessionClick()}>
                 <Text className='page-chat-session-name'>{s.characterName || '对话'}</Text>
                 <Text className='page-chat-session-preview'>{s.lastMessage || ''}</Text>
               </View>

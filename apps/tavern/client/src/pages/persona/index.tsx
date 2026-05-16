@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, Textarea } from '@tarojs/components'
+import { View, Text, ScrollView, Textarea, Image, Input, Button } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
 
 import { personaService, type Persona } from '@/services/personaService'
+import { EmptyState, Icon } from '@/components'
 import './index.scss'
 
 interface PersonaForm {
@@ -133,14 +134,21 @@ export default function PersonaPage() {
           </View>
         ) : personas.length === 0 ? (
           <View className='page-persona-empty'>
-            <Text className='page-persona-empty-title'>还没有角色</Text>
-            <Text className='page-persona-empty-hint'>创建一个角色来开启对话</Text>
+            <EmptyState
+              icon={<Icon name='persona' size={64} color='#CCCCCC' />}
+              title='还没有角色'
+              description='创建一个角色来开启对话'
+            />
           </View>
         ) : (
           personas.map(persona => (
             <View key={persona.id} className='page-persona-item'>
               <View className='page-persona-item-avatar'>
-                <t-avatar image={persona.avatar || ''} size='medium' shape='circle' />
+                {persona.avatar ? (
+                  <Image src={persona.avatar} mode='aspectFill' className='page-persona-item-avatar-img' />
+                ) : (
+                  <Text className='page-persona-item-avatar-text'>{persona.name?.[0] || '?'}</Text>
+                )}
               </View>
               <View className='page-persona-item-info'>
                 <View className='page-persona-item-header'>
@@ -181,42 +189,52 @@ export default function PersonaPage() {
       </ScrollView>
 
       <View className='page-persona-footer'>
-        <t-button theme='primary' size='large' block onClick={openCreateModal}>
+        <Button className='page-persona-create-btn' onClick={openCreateModal}>
           创建新角色
-        </t-button>
+        </Button>
       </View>
 
-      {/* Modal — 使用 TDesign t-dialog */}
-      <t-dialog
-        visible={modalVisible}
-        title={editId ? '编辑角色' : '创建角色'}
-        confirmBtn={submitting ? '保存中...' : '保存'}
-        cancelBtn='取消'
-        onClose={closeModal}
-        onConfirm={handleSubmit}
-      >
-        <View className='page-persona-modal-field'>
-          <Text className='page-persona-modal-label'>角色名 *</Text>
-          <t-input
-            className='page-persona-modal-input'
-            value={form.name}
-            onChange={e => setForm(prev => ({ ...prev, name: e.detail.value }))}
-            placeholder='输入角色名'
-            maxlength={50}
-          />
+      {/* Modal */}
+      {modalVisible && (
+        <View className='page-persona-modal-overlay' onClick={closeModal}>
+          <View className='page-persona-modal' onClick={(e) => e.stopPropagation()}>
+            <View className='page-persona-modal-header'>
+              <Text className='page-persona-modal-title'>{editId ? '编辑角色' : '创建角色'}</Text>
+              <Text className='page-persona-modal-close' onClick={closeModal}>
+                <Icon name='close' size={32} color='#999' />
+              </Text>
+            </View>
+            <View className='page-persona-modal-body'>
+              <View className='page-persona-modal-field'>
+                <Text className='page-persona-modal-label'>角色名 *</Text>
+                <Input
+                  className='page-persona-modal-input'
+                  value={form.name}
+                  onInput={e => setForm(prev => ({ ...prev, name: e.detail.value }))}
+                  placeholder='输入角色名'
+                  maxlength={50}
+                />
+              </View>
+              <View className='page-persona-modal-field'>
+                <Text className='page-persona-modal-label'>描述（可选）</Text>
+                <Textarea
+                  className='page-persona-modal-textarea'
+                  value={form.description}
+                  onInput={e => setForm(prev => ({ ...prev, description: e.detail.value }))}
+                  placeholder='输入角色描述'
+                  maxlength={500}
+                />
+              </View>
+            </View>
+            <View className='page-persona-modal-footer'>
+              <Button className='page-persona-modal-cancel-btn' onClick={closeModal}>取消</Button>
+              <Button className='page-persona-modal-confirm-btn' onClick={handleSubmit} disabled={submitting}>
+                {submitting ? '保存中...' : '保存'}
+              </Button>
+            </View>
+          </View>
         </View>
-
-        <View className='page-persona-modal-field'>
-          <Text className='page-persona-modal-label'>描述（可选）</Text>
-          <Textarea
-            className='page-persona-modal-textarea'
-            value={form.description}
-            onInput={e => setForm(prev => ({ ...prev, description: e.detail.value }))}
-            placeholder='输入角色描述'
-            maxlength={500}
-          />
-        </View>
-      </t-dialog>
+      )}
     </View>
   )
 }

@@ -25,6 +25,8 @@ from .worktree_manager import WorktreeManager
 from .session_manager import SessionManager, SessionState
 from .prompt_orchestrator import PromptOrchestrator
 from .event_driven import create_event_system, WebhookServer, CronScheduler
+from .monitor_store import MonitorStore
+from .opencode_db_reader import OpencodeDBReader
 
 
 # ─── Agent 状态追踪数据结构 ──────────────────
@@ -451,6 +453,11 @@ class LoopManager(QThread):
         self.runner = OpencodeRunner(working_dir)
         self._terminal = None  # 可选：终端面板引用
         self._tracker = AgentTracker()  # Agent 状态追踪器
+
+        # 监控数据存储（基于 opencode SQLite + AgentTracker 实时数据）
+        self._monitor_store = MonitorStore(state_dir)
+        self._opencode_reader = OpencodeDBReader()
+
         self.signals = LoopSignals()
 
         # 提示词管理器（模板目录为 state/prompts/）
@@ -637,10 +644,11 @@ class LoopManager(QThread):
 
         # 加载 config.yaml 中内联定义的提示词模板（覆盖文件系统模板和默认值）
         # 支持的模板名: explore, execute, update_proposed, verify_deliverables,
-        #               check_fix, finish, update_task, execute_batch
+        #               check_fix, finish, update_task, execute_batch, evaluate, deploy
         _KNOWN_TEMPLATE_NAMES = {
             "explore", "execute", "update_proposed", "verify_deliverables",
             "check_fix", "finish", "update_task", "execute_batch",
+            "evaluate", "deploy",
         }
         for tmpl_name in _KNOWN_TEMPLATE_NAMES:
             inline_tmpl = prompts_cfg.get(tmpl_name, "")
@@ -1003,6 +1011,8 @@ class LoopManager(QThread):
             elif phase == "evaluate":
                 self._phase_evaluate()
         finally:
+            # 无论成功/失败，同步 OpenCode 监控数据
+            self._sync_opencode_db()
             with self._manual_lock:
                 self._manual_running.discard(phase)
 
@@ -1038,6 +1048,7 @@ class LoopManager(QThread):
                 self._log("error", msg)
                 self.fm.write_agent_log(phase_name, prompt, msg, False)
                 self._tracker.end_phase(False)
+                self._persist_tracker_to_monitor()
                 self._emit_agent_status_if_changed()
                 return False, msg
 
@@ -1048,6 +1059,7 @@ class LoopManager(QThread):
                 self._log("error", msg)
                 self.fm.write_agent_log(phase_name, prompt, msg, False)
                 self._tracker.end_phase(False)
+                self._persist_tracker_to_monitor()
                 self._emit_agent_status_if_changed()
                 return False, msg
 
@@ -1108,6 +1120,7 @@ class LoopManager(QThread):
                     output = "".join(output_parts)
                     self.fm.write_agent_log(phase_name, prompt, output, False)
                     self._tracker.end_phase(False)
+                    self._persist_tracker_to_monitor()
                     self._emit_agent_status_if_changed()
                     return False, "已中断"
 
@@ -1127,6 +1140,7 @@ class LoopManager(QThread):
                     self._log("error", msg)
                     self.fm.write_agent_log(phase_name, prompt, output, False)
                     self._tracker.end_phase(False)
+                    self._persist_tracker_to_monitor()
                     self._emit_agent_status_if_changed()
                     return False, msg
 
@@ -1200,6 +1214,7 @@ class LoopManager(QThread):
             success = signal_found
             self.fm.write_agent_log(phase_name, prompt, output, success)
             self._tracker.end_phase(success)
+            self._persist_tracker_to_monitor()
             self._emit_agent_status_if_changed()
             return success, output
         else:
@@ -1217,6 +1232,7 @@ class LoopManager(QThread):
             for line in output.split("\n"):
                 self._tracker.feed_line(line)
             self._tracker.end_phase(success)
+            self._persist_tracker_to_monitor()
             self._emit_agent_status_if_changed()
             return success, output
 
@@ -1232,6 +1248,52 @@ class LoopManager(QThread):
             status = self._tracker.get_status()
             self.signals.agent_status_changed.emit(status)
             self.fm.write_agent_status(status)
+
+    def _persist_tracker_to_monitor(self, tracker: Optional['AgentTracker'] = None):
+        """将 AgentTracker 中的已完成 agent 持久化到监控存储
+
+        Args:
+            tracker: 要持久化的 tracker 实例。None 时使用 self._tracker。
+        """
+        if tracker is None:
+            tracker = self._tracker
+        try:
+            status = tracker.get_status()
+            phase_name = status.get("phase", "")
+            now = time.time()
+            for agent in status.get("agents", []):
+                if agent.get("status") in ("done", "error"):
+                    self._monitor_store.record_real_time_agent(
+                        agent_id=agent.get("id", ""),
+                        agent_type=agent.get("type", ""),
+                        model=agent.get("model", ""),
+                        status=agent.get("status", "done"),
+                        phase_name=phase_name,
+                        preview=agent.get("preview", ""),
+                        parent_id=agent.get("parent_id", ""),
+                        start_time=now - agent.get("elapsed", 0),
+                        end_time=now,
+                    )
+        except Exception as e:
+            self._log("error", f"监控持久化失败: {e}")
+
+    def _sync_opencode_db(self):
+        """从 OpenCode 数据库同步最新会话数据到监控存储
+        
+        在主循环空闲时或操作完成后调用。
+        自动检测运行中 opencode 进程使用的实际 DB。
+        """
+        try:
+            if self._opencode_reader:
+                # 动态刷新 DB 路径（发现新启动的 opencode 进程）
+                changed = self._opencode_reader.refresh_db_path()
+                if changed:
+                    self._log("info", f"切换 OpenCode DB: {self._opencode_reader.db_path}")
+            if self._opencode_reader and self._opencode_reader.is_available():
+                self._monitor_store.sync_from_opencode_db(self._opencode_reader, days=14)
+                self._monitor_store.clean_real_time_agents()
+        except Exception as e:
+            self._log("warning", f"监控数据同步失败: {e}")
 
     # ─── 主循环 ────────────────────────────────
 
@@ -1352,6 +1414,10 @@ class LoopManager(QThread):
                         pass  # 快照失败不影响主循环
 
                 self.signals.state_changed.emit()
+
+                # 每轮次同步一次 opencode 监控数据
+                self._sync_opencode_db()
+
                 time.sleep(cycle_wait)
 
             except Exception as e:
@@ -1533,6 +1599,9 @@ class LoopManager(QThread):
                     evt["project"] = project_name
 
         group_tracker.end_phase(success)
+
+        # 持久化该组的 agent 追踪数据
+        self._persist_tracker_to_monitor(group_tracker)
 
         # 发送输出到 UI
         self.signals.agent_output.emit(output)
@@ -1944,7 +2013,7 @@ class LoopManager(QThread):
         merger.snapshot()
 
         success, output = self._run_prompt(
-            prompt, phase_name="二次评估提议",
+            prompt, phase_name="评估提议",
             completion_signal=self.COMPLETION_SIGNAL,
         )
         self.signals.agent_output.emit(output)

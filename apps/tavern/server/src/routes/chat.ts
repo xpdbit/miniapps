@@ -16,6 +16,14 @@ const sendSchema = z.object({
   message: z.string().min(1).max(2000),
   model: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
+  cardData: z.object({
+    name: z.string().optional(),
+    description: z.string().optional(),
+    firstMsg: z.string().optional(),
+    personality: z.string().optional(),
+    scenario: z.string().optional(),
+    lore: z.string().optional(),
+  }).optional(),
 })
 
 // POST /api/v1/chat/send - SSE streaming chat
@@ -56,9 +64,33 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
     sendEvent({ type: 'meta', sessionId: session.id, characterId: params.characterId })
 
     // Get character and persona for prompt building
-    const character = session.character
-      ? session.character
-      : await prisma.characterCard.findUnique({ where: { id: params.characterId } })
+    // Support cardData for local cards (not stored in DB)
+    let character: {
+      name: string; description: string; personality?: string | null
+      scenario?: string | null; lore?: string | null
+      firstMsg?: string | null; systemPrompt?: string | null
+      exampleDialogs?: unknown
+    } | null = null
+
+    if (params.cardData) {
+      // Local card: use provided cardData
+      character = {
+        name: params.cardData.name || '',
+        description: params.cardData.description || '',
+        personality: params.cardData.personality || null,
+        scenario: params.cardData.scenario || null,
+        lore: params.cardData.lore || null,
+        firstMsg: params.cardData.firstMsg || null,
+        systemPrompt: null,
+        exampleDialogs: null,
+      }
+    } else {
+      // Server card: look up from database
+      character = session.character
+        ? session.character
+        : await prisma.tavernCard.findUnique({ where: { id: params.characterId } })
+    }
+
     if (!character) {
       sendEvent({ type: 'error', code: 'CHARACTER_NOT_FOUND', message: '角色不存在' })
       res.end()
@@ -67,7 +99,7 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
     let persona = null
     if (params.personaId) {
-      persona = await prisma.persona.findUnique({ where: { id: params.personaId } })
+      persona = await prisma.tavernPersona.findUnique({ where: { id: params.personaId } })
     }
 
     // Get conversation history (from session if available, otherwise empty for new sessions)
@@ -79,7 +111,7 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       }))
     } else {
       // For new session, get existing messages from database
-      const messages = await prisma.chatMessage.findMany({
+      const messages = await prisma.tavernChatMessage.findMany({
         where: { sessionId: session.id },
         orderBy: { createdAt: 'asc' },
       })
@@ -99,7 +131,7 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         lore: character.lore,
         systemPrompt: character.systemPrompt,
         exampleDialogs: character.exampleDialogs,
-        firstMsg: character.firstMsg,
+        firstMsg: character.firstMsg || '',
       },
       persona: persona ? { name: persona.name, description: persona.description } : null,
       history,
@@ -125,11 +157,13 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         const msg = await contextService.saveMessage(session.id, 'character', fullResponse, result.tokens)
         sendEvent({ type: 'done', sessionId: session.id, messageId: msg.id, tokens: result.tokens })
 
-        // Update character chat count
-        await prisma.characterCard.update({
-          where: { id: params.characterId },
-          data: { chatCount: { increment: 1 } },
-        })
+        // Update character chat count (only for server-side/official cards)
+        if (!params.cardData) {
+          await prisma.tavernCard.update({
+            where: { id: params.characterId },
+            data: { chatCount: { increment: 1 } },
+          }).catch(() => {}) // 静默处理（本地卡片无对应记录）
+        }
 
         res.end()
       },
@@ -145,9 +179,14 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       },
     })
 
-    // Handle client disconnect
+    // Handle client disconnect — abort the AI request to free resources
+    let aborted = false
     req.on('close', () => {
-      // Clean up if needed
+      if (!aborted && !res.writableEnded) {
+        aborted = true
+        sendEvent({ type: 'error', code: 'CLIENT_DISCONNECT', message: '客户端已断开连接' })
+        res.end()
+      }
     })
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {

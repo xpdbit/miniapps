@@ -4,30 +4,30 @@ import { prisma } from './db';
 
 export async function wechatLogin(code: string): Promise<{
   token: string;
-  playerId: number;
+  playerId: string;
   isNewPlayer: boolean;
 }> {
   if (!code || typeof code !== 'string') {
     throw new AppError(2002, '缺少微信登录 code', 400);
   }
 
-  // 在开发/测试环境下，使用 mock openid
+  // 在开发/测试环境下，使用 mock uuid
   const isDev = process.env.NODE_ENV !== 'production';
-  const openid = isDev ? `mock_openid_dev` : await getWeChatOpenId(code);
+  const clientUuid = isDev ? `mock_uuid_dev` : await getWeChatOpenId(code);
 
   let isNewPlayer = false;
   const today = new Date();
 
   const existingPlayer = await prisma.game1Player.findUnique({
-    where: { openid },
-    select: { id: true, lastLoginDate: true, createdAt: true },
+    where: { uuid: clientUuid },
+    select: { id: true, last_login_date: true, created_at: true },
   });
 
   let loginDaysIncrement = 0;
   if (!existingPlayer) {
     loginDaysIncrement = 1;
-  } else if (existingPlayer.lastLoginDate) {
-    const lastDateStr = existingPlayer.lastLoginDate.toISOString().slice(0, 10);
+  } else if (existingPlayer.last_login_date) {
+    const lastDateStr = existingPlayer.last_login_date.toISOString().slice(0, 10);
     const todayStr = today.toISOString().slice(0, 10);
     if (lastDateStr !== todayStr) {
       loginDaysIncrement = 1;
@@ -37,19 +37,19 @@ export async function wechatLogin(code: string): Promise<{
   }
 
   const player = await prisma.game1Player.upsert({
-    where: { openid },
+    where: { uuid: clientUuid },
     update: {
-      lastLoginAt: today,
-      lastLoginDate: today,
-      lastSyncAt: today,
-      loginDays: loginDaysIncrement > 0 ? { increment: loginDaysIncrement } : undefined,
+      last_login_at: today,
+      last_login_date: today,
+      last_sync_at: today,
+      login_days: loginDaysIncrement > 0 ? { increment: loginDaysIncrement } : undefined,
     },
     create: {
-      openid,
-      lastLoginAt: today,
-      lastLoginDate: today,
-      lastSyncAt: today,
-      loginDays: 1,
+      uuid: clientUuid,
+      last_login_at: today,
+      last_login_date: today,
+      last_sync_at: today,
+      login_days: 1,
     },
   });
 
@@ -59,36 +59,36 @@ export async function wechatLogin(code: string): Promise<{
 
   const token = signToken({
     playerId: player.id,
-    openid: player.openid,
+    uuid: player.uuid,
     role: 'player',
   });
 
   return { token, playerId: player.id, isNewPlayer };
 }
 
-export async function getPlayerById(playerId: number) {
+export async function getPlayerById(playerId: string) {
   const player = await prisma.game1Player.findUnique({
     where: { id: playerId },
     select: {
       id: true,
       nickname: true,
-      avatarUrl: true,
+      avatar_url: true,
       level: true,
       exp: true,
       gold: true,
       gems: true,
-      totalMileage: true,
-      playTime: true,
-      prestigeCount: true,
-      loginDays: true,
-      lastLoginAt: true,
-      createdAt: true,
+      total_mileage: true,
+      play_time: true,
+      prestige_count: true,
+      login_days: true,
+      last_login_at: true,
+      created_at: true,
     },
   });
   if (!player) return null;
 
   // 游玩时间 = 当前UTC时间 - 注册UTC时间（秒）
-  const computedPlayTime = Math.floor((Date.now() - player.createdAt.getTime()) / 1000);
+  const computedPlayTime = Math.floor((Date.now() - player.created_at.getTime()) / 1000);
 
   return {
     ...player,

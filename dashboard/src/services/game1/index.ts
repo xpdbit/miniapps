@@ -72,6 +72,78 @@ export interface PvpLeaderboardResponse {
   items: PvpLeaderboardEntry[]
 }
 
+// ─── 玩家详情 Types ──────────────────────────────────────
+
+export interface Game1PlayerAchievement {
+  achievementId: string
+  title: string
+  unlocked: boolean
+  progress: number
+  unlockedAt: string
+}
+
+export interface Game1PlayerPvpRanking {
+  rating: number
+  rank: string
+  wins: number
+  losses: number
+  season: number
+}
+
+export interface Game1PlayerRecentMatch {
+  id: number
+  opponentId: number
+  result: string
+  ratingChange: number
+  season: number
+  playedAt: string
+}
+
+export interface Game1PlayerSaveData {
+  version: number
+  checksum: string | null
+  updatedAt: string
+}
+
+export interface Game1PlayerDetail {
+  player: Game1Player
+  achievements: Game1PlayerAchievement[]
+  pvpRanking: Game1PlayerPvpRanking | null
+  recentMatches: Game1PlayerRecentMatch[]
+  saveData: Game1PlayerSaveData | null
+}
+
+// ─── PVP 对战记录 Types ──────────────────────────────────
+
+export interface Game1PvpMatch {
+  id: number
+  playerId: number
+  playerName: string | null
+  opponentId: number
+  opponentName: string | null
+  result: string
+  ratingChange: number
+  playerRating: number
+  opponentRating: number
+  season: number
+  playedAt: string
+}
+
+export interface Game1PvpMatchListResponse {
+  items: Game1PvpMatch[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// ─── 成就趋势 Types ──────────────────────────────────────
+
+export interface Game1AchievementTrend {
+  dates: string[]
+  unlockCounts: number[]
+  totalUnlocks: number
+}
+
 /** 通用 API 响应包装 */
 interface ApiResponse<T> {
   success: boolean
@@ -115,6 +187,24 @@ export const game1AdminApi = {
   /** PVP 排行榜 */
   getPvpLeaderboard: async (params?: { limit?: number; offset?: number }) => {
     const res = await adminApiClient.get<ApiResponse<PvpLeaderboardResponse>>('/admin/game1/pvp/leaderboard', { params })
+    return res.data
+  },
+
+  /** 玩家详情（含成就/PVP/存档） */
+  getPlayerDetail: async (playerId: number) => {
+    const res = await adminApiClient.get<ApiResponse<Game1PlayerDetail>>(`/admin/game1/players/${playerId}/detail`)
+    return res.data
+  },
+
+  /** PVP 对战记录列表 */
+  getPvpMatches: async (params?: { page?: number; pageSize?: number; playerId?: number }) => {
+    const res = await adminApiClient.get<ApiResponse<Game1PvpMatchListResponse>>('/admin/game1/pvp/matches', { params })
+    return res.data
+  },
+
+  /** 成就解锁趋势 */
+  getAchievementTrend: async (params?: { days?: number }) => {
+    const res = await adminApiClient.get<ApiResponse<Game1AchievementTrend>>('/admin/game1/achievements/trend', { params })
     return res.data
   },
 }

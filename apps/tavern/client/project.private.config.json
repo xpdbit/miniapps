@@ -1,6 +1,6 @@
 {
   "libVersion": "3.15.2",
-  "projectname": "tavern-client",
+  "projectname": "client",
   "setting": {
     "urlCheck": false,
     "coverView": false,

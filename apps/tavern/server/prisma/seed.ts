@@ -46,8 +46,13 @@ async function main() {
         creatorId: systemUser.id,
         status: 'PUBLISHED',
         isPublic: true,
+        cardType: 'CHARACTER',
+        isOfficial: true,
       },
-      update: {},
+      update: {
+        isOfficial: true,
+        cardType: 'CHARACTER',
+      },
     })
     console.log(`Created built-in character: ${char.name}`)
   }

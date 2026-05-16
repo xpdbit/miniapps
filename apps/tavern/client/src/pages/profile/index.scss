@@ -1,12 +1,12 @@
 /* ============================================================
- *  Profile Page — 现代扁平个人中心
- *  风格: 头像卡片 + 配额指标 + 菜单列表
+ *  Profile Page — 温暖亮色个人中心
+ *  风格: 暖白卡片 / 柔和效果 / 精美排版
  * ============================================================ */
 
 .page-profile {
   min-height: 100vh;
   background: var(--color-bg);
-  padding-bottom: env(safe-area-inset-bottom, var(--spacing-2xl));
+  padding-bottom: calc(env(safe-area-inset-bottom, var(--spacing-2xl)) + 120rpx);
 
   /* ── 头部卡片 ── */
   &-header {
@@ -14,8 +14,20 @@
     flex-direction: column;
     align-items: center;
     padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-lg);
-    background: var(--color-bg-elevated);
+    background: linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg) 100%);
     border-bottom: 1px solid var(--color-border-subtle);
+    position: relative;
+  }
+
+  &-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rpx;
+    background: linear-gradient(90deg, transparent, var(--color-primary-glow), transparent);
+    opacity: 0.5;
   }
 
   &-avatar {
@@ -28,7 +40,19 @@
     align-items: center;
     justify-content: center;
     margin-bottom: var(--spacing-md);
-    border: 2px solid var(--color-primary);
+    border: 2rpx solid var(--color-primary);
+    box-shadow: 0 0 20px var(--color-primary-glow);
+  }
+
+  &-avatar-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  &-avatar-text {
+    font-size: var(--font-headline);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-inverse);
   }
 
   &-name {
@@ -80,13 +104,13 @@
   &-quota-bar {
     width: 240rpx;
     height: 4rpx;
-    background: var(--color-bg-input);
+    background: var(--color-bg-surface);
     border-radius: var(--radius-full);
     overflow: hidden;
 
     &-fill {
       height: 100%;
-      background: var(--color-primary);
+      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
       border-radius: var(--radius-full);
       transition: width var(--duration-slow) var(--ease-in-out);
     }
@@ -95,7 +119,7 @@
   /* ── 菜单列表 ── */
   &-menu {
     margin: var(--spacing-md);
-    background: var(--color-bg-surface);
+    background: var(--color-bg-elevated);
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 1px solid var(--color-border-subtle);
@@ -107,7 +131,7 @@
     justify-content: space-between;
     padding: var(--spacing-md) var(--spacing-lg);
     border-bottom: 1px solid var(--color-border-subtle);
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background var(--transition-fast);
 
     &:active {
       background: var(--color-bg-surface-hover);
@@ -121,12 +145,6 @@
       display: flex;
       align-items: center;
       gap: var(--spacing-sm);
-    }
-
-    &-icon {
-      font-size: var(--font-body-lg);
-      width: 36rpx;
-      text-align: center;
     }
 
     &-label {

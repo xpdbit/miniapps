@@ -1,4 +1,4 @@
-const config = {
+﻿const config = {
   pages: [
     'pages/market/index',
     'pages/chat/index',
@@ -11,25 +11,26 @@ const config = {
   ],
   window: {
     navigationBarTitleText: 'AI 酒馆',
-    navigationBarBackgroundColor: '#0A0A10',
-    navigationBarTextStyle: 'white',
-    backgroundColor: '#0A0A10',
+    navigationBarBackgroundColor: '#FFFFFF',
+    navigationBarTextStyle: 'black',
+    backgroundColor: '#F8F4EF',
   },
   tabBar: {
-    color: '#6C6C80',
-    selectedColor: '#7C5CFC',
-    backgroundColor: '#12121A',
-    borderStyle: 'black',
+    custom: true,
+    color: '#A8A39E',
+    selectedColor: '#C49A6C',
+    backgroundColor: '#FFFFFF',
+    borderStyle: 'white',
     list: [
       {
         pagePath: 'pages/market/index',
-        text: '市场',
+        text: '酒馆',
         iconPath: 'assets/icons/market.png',
         selectedIconPath: 'assets/icons/market-active.png',
       },
       {
         pagePath: 'pages/chat/index',
-        text: '聊天',
+        text: '开始',
         iconPath: 'assets/icons/chat.png',
         selectedIconPath: 'assets/icons/chat-active.png',
       },
@@ -41,7 +42,6 @@ const config = {
       },
     ],
   },
-  usingComponents: {},
   permission: {
     'scope.userLocation': {
       desc: '用于获取您的位置信息',

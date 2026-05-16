@@ -1,5 +1,5 @@
 import type { UserConfigExport } from '@tarojs/cli';
-import domain from '../../../domain.config.js';
+import domain from '../../../../domain.config.js';
 
 // 开发环境 API 基础地址
 // 构建时可通过环境变量覆盖：TARO_APP_API_BASE=http://your-ip:port/api/v1

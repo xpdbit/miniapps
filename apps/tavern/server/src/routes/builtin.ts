@@ -6,7 +6,7 @@ const router = Router()
 // GET /api/v1/builtin/characters - Get built-in characters
 router.get('/characters', async (_req: Request, res: Response) => {
   try {
-    const characters = await prisma.characterCard.findMany({
+    const characters = await prisma.tavernCard.findMany({
       where: { creator: { openid: 'builtin_system' } },
       select: {
         id: true, name: true, avatar: true, description: true,

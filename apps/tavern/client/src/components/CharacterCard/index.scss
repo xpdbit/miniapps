@@ -1,20 +1,16 @@
 /* ============================================================
- *  CharacterCard — 现代扁平角色卡片
- *  风格: 干净平面 / 网格布局 / 入场动画
+ *  CharacterCard — 5:3 现代化卡片
+ *  风格: 暖白卡面 / 柔和阴影 / 选中发光边框
  * ============================================================ */
 
 .character-card {
-  display: flex;
-  padding: var(--spacing-md);
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-subtle);
-  transition: background var(--duration-fast) var(--ease-out),
-              border-color var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
+  width: 100%;
   opacity: 0;
   transform: translateY(6rpx);
+  transition: all var(--transition-fast);
   margin-bottom: var(--spacing-sm);
+  border-radius: var(--radius-base);
+  overflow: hidden;
 
   /* ── 入场动画 ── */
   &--visible {
@@ -22,135 +18,83 @@
     transform: translateY(0);
   }
 
-  /* ── 高亮选中态 ── */
   &--active {
-    border-color: var(--color-primary);
-    background: var(--color-primary-bg);
+    box-shadow: 0 0 0 2rpx var(--color-primary), var(--shadow-md);
   }
 
-  /* ── 紧凑模式（横向列表） ── */
-  &--compact {
-    width: 260rpx;
-    flex-shrink: 0;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: var(--spacing-sm);
-    margin-right: var(--spacing-sm);
-    margin-bottom: 0;
-
-    .character-card-avatar {
-      margin-right: 0;
-      margin-bottom: var(--spacing-sm);
-    }
-    .character-card-desc {
-      -webkit-line-clamp: 1;
-    }
+  /* ── 选中状态：主色边框 + 柔和发光 ── */
+  &--selected {
+    box-shadow: 0 0 0 3rpx var(--color-primary), 0 0 16rpx var(--color-primary-glow);
   }
 
   &:active {
-    background: var(--color-bg-surface-hover);
+    transform: scale(0.96);
   }
 
-  /* ── 头像 ── */
-  &-avatar {
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    flex-shrink: 0;
-    margin-right: var(--spacing-md);
-  }
-
-  /* ── 信息区 ── */
-  &-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2xs);
-  }
-
-  &-header {
+  /* ── 卡面：5:3 暖白卡面 ── */
+  &-face {
+    width: 100%;
+    aspect-ratio: 5 / 3;
+    background: linear-gradient(145deg, #FFFFFF, #FCF9F6);
+    border: 1px solid var(--color-border);
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
+    justify-content: center;
+    padding: var(--spacing-sm);
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
   }
 
+  /* ── 装饰性顶部暖色光晕 ── */
+  &-face::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle at 30% 20%,
+      var(--color-primary-glow) 0%,
+      transparent 60%
+    );
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* ── 装饰底部线条 ── */
+  &-face::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 2rpx;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-primary) 50%,
+      transparent
+    );
+    opacity: 0.2;
+  }
+
+  /* ── 卡片名字 ── */
   &-name {
     font-size: var(--font-body);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text);
-  }
-
-  &-subtitle {
-    font-size: var(--font-caption);
-    color: var(--color-text-tertiary);
-    flex-shrink: 0;
-  }
-
-  &-status {
-    font-size: var(--font-caption);
-    padding: 2rpx 8rpx;
-    border-radius: var(--radius-xs);
-    flex-shrink: 0;
-
-    &--draft {
-      background: var(--color-text-tertiary);
-      color: var(--color-text-secondary);
-      opacity: 0.8;
-    }
-    &--pending {
-      background: var(--color-warning-bg);
-      color: var(--color-warning);
-    }
-    &--banned {
-      background: var(--color-error-bg);
-      color: var(--color-error);
-    }
-  }
-
-  &-desc {
-    font-size: var(--font-body-sm);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: var(--leading-normal);
-  }
-
-  /* ── 标签 ── */
-  &-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-2xs);
-  }
-
-  &-tag {
-    font-size: var(--font-caption);
-    color: var(--color-primary);
-    background: var(--color-primary-bg);
-    padding: 2rpx 8rpx;
-    border-radius: var(--radius-xs);
-    border: 1px solid transparent;
-
-    &--overflow {
-      background: var(--color-bg-elevated);
-      color: var(--color-text-tertiary);
-      border-color: var(--color-border-subtle);
-    }
-  }
-
-  /* ── 统计 ── */
-  &-stats {
-    display: flex;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-2xs);
-  }
-
-  &-stat {
-    font-size: var(--font-caption);
-    color: var(--color-text-tertiary);
+    word-break: break-word;
+    line-height: 1.3;
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.5px;
   }
 }

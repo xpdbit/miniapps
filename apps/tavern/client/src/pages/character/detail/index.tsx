@@ -1,8 +1,9 @@
-import { View, Text, ScrollView } from '@tarojs/components'
+﻿import { View, Text, ScrollView, Image, Button } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState, useEffect, useCallback } from 'react'
 
 import { marketService } from '@/services/marketService'
+import { Icon } from '@/components'
 import { formatCount } from '@/utils'
 import type { CharacterCard } from '@/types/character'
 import './index.scss'
@@ -88,8 +89,8 @@ export default function CharacterDetailPage() {
     lore,
     tags,
     status,
-    chats,
-    likes,
+    chatCount,
+    likeCount,
   } = character
 
   return (
@@ -97,25 +98,27 @@ export default function CharacterDetailPage() {
       {/* 头部：头像 + 名字 + 标签 */}
       <View className='page-character-detail-header'>
         <View className='page-character-detail-avatar'>
-          <t-avatar image={avatar || ''} size='extralarge' shape='circle' />
+          {avatar ? (
+            <Image src={avatar} mode='aspectFill' className='page-character-detail-avatar-img' />
+          ) : (
+            <View className='page-character-detail-avatar-placeholder'>
+              <Text>{name?.[0] || '?'}</Text>
+            </View>
+          )}
         </View>
 
         <Text className='page-character-detail-name'>{name}</Text>
 
         {status && status !== 'PUBLISHED' && (
-          <t-badge
-            content={STATUS_LABELS[status] || status}
-            shape='round'
-            size='medium'
-          />
+          <Text className='page-character-detail-status-badge'>
+            {STATUS_LABELS[status] || status}
+          </Text>
         )}
 
         {tags && tags.length > 0 && (
           <View className='page-character-detail-tags'>
             {tags.map((tag, i) => (
-              <t-tag key={i} theme='primary' variant='light' size='small'>
-                {tag}
-              </t-tag>
+              <Text key={i} className='page-character-detail-tag'>{tag}</Text>
             ))}
           </View>
         )}
@@ -123,10 +126,10 @@ export default function CharacterDetailPage() {
         {/* 统计 */}
         <View className='page-character-detail-stats'>
           <Text className='page-character-detail-stat'>
-            聊 {formatCount(chats)}
+            聊 {formatCount(chatCount || 0)}
           </Text>
           <Text className='page-character-detail-stat'>
-            &#9825; {formatCount(likes)}
+            <Icon name='heart' size={24} color='#E63946' /> {formatCount(likeCount || 0)}
           </Text>
         </View>
       </View>
@@ -182,15 +185,12 @@ export default function CharacterDetailPage() {
 
       {/* 操作按钮 */}
       <View className='page-character-detail-actions'>
-        <t-button className='page-character-detail-chat-btn' onClick={handleStartChat}>
+        <Button className='page-character-detail-chat-btn' onClick={handleStartChat}>
           开始对话
-        </t-button>
-        <t-button
-          className='page-character-detail-publish-btn'
-          onClick={handleEdit}
-        >
+        </Button>
+        <Button className='page-character-detail-publish-btn' onClick={handleEdit}>
           编辑角色
-        </t-button>
+        </Button>
       </View>
     </ScrollView>
   )

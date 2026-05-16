@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Typography, Table, Input, DatePicker, Button, Tag, Avatar, Drawer, Card,
-  Progress, Space, message, Modal, List, Statistic, Spin, Empty,
+  Progress, Space, message, Modal, List, Statistic, Spin, Empty, Tabs,
 } from 'antd'
 import useMobile from '@/hooks/useMobile'
-import { SearchOutlined, ReloadOutlined, EyeOutlined, StopOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { SearchOutlined, ReloadOutlined, EyeOutlined, StopOutlined, CheckCircleOutlined, TeamOutlined, RiseOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { usersAPI } from '@/services/ftg-api'
 import { game1AdminApi } from '@/services/game1'
@@ -13,12 +13,51 @@ import PageHeader from '@/components/PageHeader'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
+import type { TabsProps } from 'antd'
 
 const { Text } = Typography
 const { RangePicker } = DatePicker
 
 // ═══════════════════════════════════════════════════════════
-// FTG 用户管理（原有实现）
+// 全局统计
+// ═══════════════════════════════════════════════════════════
+
+const GlobalStats = () => {
+  const { data: ftgStats } = useQuery({
+    queryKey: ['ftg-user-summary'],
+    queryFn: async () => {
+      const res = await usersAPI.list({ page: 1, pageSize: 1 })
+      return (res.data as { total: number }).total
+    },
+    staleTime: 60_000,
+  })
+
+  const { data: game1Stats } = useQuery({
+    queryKey: ['game1-player-summary'],
+    queryFn: async () => {
+      const res = await game1AdminApi.getDashboard()
+      return res.data?.totalPlayers ?? 0
+    },
+    staleTime: 60_000,
+  })
+
+  return (
+    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+      <Card size="small" style={{ flex: 1 }}>
+        <Statistic title="FTG 用户" value={ftgStats ?? 0} prefix={<TeamOutlined />} />
+      </Card>
+      <Card size="small" style={{ flex: 1 }}>
+        <Statistic title="Game1 玩家" value={game1Stats ?? 0} prefix={<RiseOutlined />} />
+      </Card>
+      <Card size="small" style={{ flex: 1 }}>
+        <Statistic title="总计" value={(ftgStats ?? 0) + (game1Stats ?? 0)} prefix={<TeamOutlined />} valueStyle={{ color: '#1677ff' }} />
+      </Card>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// FTG 用户管理
 // ═══════════════════════════════════════════════════════════
 
 interface FtgUser {
@@ -246,19 +285,19 @@ const Game1PlayersView = () => {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Tavern 用户管理（占位）
+// Tavern 用户管理（占位说明）
 // ═══════════════════════════════════════════════════════════
 
 const TavernUsersView = () => (
   <Card>
     <Empty description={
-      <span>AI 酒馆用户管理<Text type="secondary" style={{ display: 'block' }}>Tavern Server 暂未开放管理员用户接口</Text></span>
+      <span>AI 酒馆用户管理<Text type="secondary" style={{ display: 'block' }}>Tavern 使用用户认证（非统一管理后台模型），暂不提供集中用户管理</Text></span>
     } />
   </Card>
 )
 
 // ═══════════════════════════════════════════════════════════
-// 主组件 — 项目感知用户管理
+// 获取当前项目类型
 // ═══════════════════════════════════════════════════════════
 
 const getProjectType = (name: string | undefined): 'ftg' | 'game1' | 'tavern' | null => {
@@ -270,33 +309,52 @@ const getProjectType = (name: string | undefined): 'ftg' | 'game1' | 'tavern' | 
   return null
 }
 
+// ═══════════════════════════════════════════════════════════
+// 主组件
+// ═══════════════════════════════════════════════════════════
+
 const Users = () => {
   const currentProject = useProjectStore((s) => s.currentProject)
   const projectType = getProjectType(currentProject?.name)
 
-  const title = projectType === 'ftg' ? 'FTG 用户管理'
-    : projectType === 'game1' ? 'Game1 玩家管理'
-    : projectType === 'tavern' ? 'AI 酒馆用户管理'
-    : '用户管理'
-
-  if (!projectType) {
-    return (
-      <div>
-        <PageHeader title="用户管理" />
-        <Card>
-          <Empty description="请先在顶部选择项目以查看对应的用户数据" />
-        </Card>
-      </div>
-    )
+  const getTitle = () => {
+    if (projectType === 'ftg') return 'FTG 用户管理'
+    if (projectType === 'game1') return 'Game1 玩家管理'
+    if (projectType === 'tavern') return 'AI 酒馆用户管理'
+    return '用户管理'
   }
+
+  // 构建 Tab 项（根据 projectType 过滤）
+  const tabItems: TabsProps['items'] = useMemo(() => {
+    const allTabs: { key: string; label: string; children: React.ReactNode }[] = [
+      { key: 'ftg', label: 'FTG 用户', children: <FtgUsersView /> },
+      { key: 'game1', label: 'Game1 玩家', children: <Game1PlayersView /> },
+      { key: 'tavern', label: 'AI 酒馆', children: <TavernUsersView /> },
+    ]
+
+    if (projectType === 'ftg') return allTabs.filter(t => t.key === 'ftg')
+    if (projectType === 'game1') return allTabs.filter(t => t.key === 'game1')
+    if (projectType === 'tavern') return allTabs.filter(t => t.key === 'tavern')
+    return allTabs // 无项目选中时显示所有
+  }, [projectType])
+
+  // 默认选中 tab
+  const defaultTab = useMemo(() => {
+    if (projectType === 'ftg') return 'ftg'
+    if (projectType === 'game1') return 'game1'
+    if (projectType === 'tavern') return 'tavern'
+    return 'ftg'
+  }, [projectType])
 
   return (
     <div>
-      <PageHeader title={title} />
+      <PageHeader title={getTitle()} />
 
-      {projectType === 'ftg' && <FtgUsersView />}
-      {projectType === 'game1' && <Game1PlayersView />}
-      {projectType === 'tavern' && <TavernUsersView />}
+      {/* 全局统计 */}
+      {!projectType && <GlobalStats />}
+
+      {/* Tab 视图 */}
+      <Tabs defaultActiveKey={defaultTab} items={tabItems} />
     </div>
   )
 }

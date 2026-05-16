@@ -1,10 +1,9 @@
 ﻿/* ============================================================
- *  ModelSelector — 现代扁平模型选择器
- *  风格: 内联触发器 + 弹出面板
+ *  ModelSelector — 移动端原生 Picker 风格
+ *  使用 Taro Picker 组件，符合手机操作习惯
  * ============================================================ */
 
 .model-selector {
-  position: relative;
   padding: var(--spacing-sm) var(--spacing-md);
   flex-shrink: 0;
 
@@ -15,9 +14,8 @@
     padding: 6rpx var(--spacing-sm);
     background: var(--color-bg-surface);
     border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-sm);
-    transition: background var(--duration-fast) var(--ease-out),
-                border-color var(--duration-fast) var(--ease-out);
+    border-radius: var(--radius-pill);
+    transition: all var(--transition-fast);
 
     &:active {
       background: var(--color-bg-surface-hover);
@@ -35,94 +33,23 @@
     gap: var(--spacing-2xs);
   }
 
-  &__current {
+  &__icon {
+    font-size: 28rpx;
+    line-height: 1;
+  }
+
+  &__name {
     font-size: var(--font-body-sm);
     color: var(--color-text);
     font-weight: var(--font-weight-medium);
   }
 
-  &__arrow {
-    font-size: var(--font-caption);
-    color: var(--color-text-tertiary);
-    transition: transform var(--duration-fast) var(--ease-out);
-    display: inline-block;
-
-    &--open {
-      transform: rotate(180deg);
-    }
-  }
-
-  /* ── 下拉面板 ── */
-  &__dropdown {
-    position: absolute;
-    top: calc(100% + var(--spacing-xs));
-    left: var(--spacing-md);
-    min-width: 440rpx;
-    background: var(--color-bg-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-dropdown);
-    z-index: var(--z-dropdown);
-    animation: slide-down var(--duration-fast) var(--ease-out);
-    overflow: hidden;
-  }
-
-  &__list {
-    padding: var(--spacing-2xs);
-  }
-
-  &__option {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-sm);
-    transition: background var(--duration-fast) var(--ease-out);
-
-    &:active {
-      background: var(--color-bg-surface-hover);
-    }
-
-    &--selected {
-      background: var(--color-primary-bg);
-    }
-  }
-
-  &__option-icon {
-    font-size: var(--font-caption);
-    color: var(--color-primary);
-    font-weight: var(--font-weight-semibold);
-    width: 40rpx;
-    height: 40rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-primary-bg);
+  &__badge {
+    font-size: 18rpx;
+    color: var(--color-success);
+    background: var(--color-success-bg, rgba(46, 196, 182, 0.1));
+    padding: 1rpx 8rpx;
     border-radius: var(--radius-xs);
-    text-transform: uppercase;
-  }
-
-  &__option-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2rpx;
-  }
-
-  &__option-name {
-    font-size: var(--font-body-sm);
-    color: var(--color-text);
-    font-weight: var(--font-weight-medium);
-  }
-
-  &__option-desc {
-    font-size: var(--font-caption);
-    color: var(--color-text-secondary);
-  }
-
-  &__check {
-    font-size: var(--font-body);
-    color: var(--color-primary);
-    font-weight: var(--font-weight-bold);
+    line-height: 1.4;
   }
 }

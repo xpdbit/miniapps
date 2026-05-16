@@ -1,1 +1,0 @@
-const props={externalClasses:{type:Array},loadFailed:{type:String,value:"default"},loading:{type:String,value:"default"},src:{type:String,value:""},mode:{type:String,value:"scaleToFill"},webp:{type:Boolean,value:!1},lazyLoad:{type:Boolean,value:!1},showMenuByLongpress:{type:Boolean,value:!1}};export default props;

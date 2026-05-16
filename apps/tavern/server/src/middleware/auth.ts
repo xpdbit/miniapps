@@ -55,6 +55,18 @@ export function requireAdmin(
   res: Response,
   next: NextFunction
 ): void {
+  // 1. 检查 shared admin token（用于仪表盘代理）
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    if (config.adminToken && token === config.adminToken) {
+      req.user = { userId: 'admin', role: 'ADMIN' };
+      next();
+      return;
+    }
+  }
+
+  // 2. 检查 JWT + ADMIN role
   requireAuth(req, res, () => {
     if (req.user?.role !== 'ADMIN') {
       res.status(403).json({ code: 403, message: '无权限', data: null });

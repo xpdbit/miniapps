@@ -38,7 +38,7 @@ function stringifyMesExample(text: string): Array<{ user: string; char: string }
 }
 
 export async function exportToV2(cardId: string): Promise<V2CharacterData> {
-  const card = await prisma.characterCard.findUnique({ where: { id: cardId } })
+  const card = await prisma.tavernCard.findUnique({ where: { id: cardId } })
   if (!card) throw new Error('NOT_FOUND')
 
   return {
@@ -64,7 +64,7 @@ export async function exportToV2(cardId: string): Promise<V2CharacterData> {
 
 export async function importFromV2(data: V2CharacterData, userId: string) {
   const d = data.data
-  const card = await prisma.characterCard.create({
+  const card = await prisma.tavernCard.create({
     data: {
       name: d.name,
       description: d.description,

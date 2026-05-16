@@ -1,8 +1,9 @@
-import { View, Text, ScrollView } from '@tarojs/components'
+﻿import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
 
 import CharacterCard from '@/components/CharacterCard'
+import { EmptyState, Icon } from '@/components'
 import { useCharacterStore } from '@/stores/characterStore'
 import './index.scss'
 
@@ -20,11 +21,6 @@ export default function CharacterListPage() {
     }
   }, [loading, hasMore, characters.length, loadCharacters])
 
-  const handleTabChange = useCallback((event: unknown) => {
-    const ev = event as { detail?: string }
-    setTab(ev.detail ?? 'all')
-  }, [])
-
   const handleCardClick = useCallback((id: string) => {
     Taro.navigateTo({ url: `/pages/character/detail/index?id=${id}` })
   }, [])
@@ -39,11 +35,17 @@ export default function CharacterListPage() {
 
   return (
     <View className='page-character-list'>
-      <t-tabs value={tab} onChange={handleTabChange}>
-        <t-tab-panel label='全部' value='all' />
-        <t-tab-panel label='草稿' value='draft' />
-        <t-tab-panel label='已发布' value='published' />
-      </t-tabs>
+      <View className='page-character-list-tabs'>
+        {(['all', 'draft', 'published'] as const).map((tabValue) => (
+          <View
+            key={tabValue}
+            className={`page-character-list-tab ${tab === tabValue ? 'page-character-list-tab--active' : ''}`}
+            onClick={() => setTab(tabValue)}
+          >
+            <Text>{tabValue === 'all' ? '全部' : tabValue === 'draft' ? '草稿' : '已发布'}</Text>
+          </View>
+        ))}
+      </View>
 
       <ScrollView
         className='page-character-list-content'
@@ -59,17 +61,18 @@ export default function CharacterListPage() {
             description={card.description}
             tags={card.tags}
             status={card.status}
-            chatCount={card.chats}
-            likeCount={card.likes}
+            chatCount={card.chatCount ?? 0}
+            likeCount={card.likeCount ?? 0}
             onClick={handleCardClick}
           />
         ))}
         {loading && <Text className='page-character-list-loading'>加载中...</Text>}
         {!loading && filtered.length === 0 && (
-          <View className='page-character-list-empty'>
-            <Text>还没有角色卡</Text>
-            <Text className='page-character-list-empty-hint'>前往&ldquo;创建&rdquo;页面开始创作</Text>
-          </View>
+          <EmptyState
+            icon={<Icon name='user' size={64} color='#CCCCCC' />}
+            title='还没有角色卡'
+            description='前往"创建"页面开始创作'
+          />
         )}
       </ScrollView>
     </View>

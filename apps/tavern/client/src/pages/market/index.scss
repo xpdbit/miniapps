@@ -1,119 +1,73 @@
-/* ============================================================
- *  Market Page — 现代扁平角色市场
- *  风格: 搜索 + 轮播 + 标签 + 排序 + 网格
+﻿/* ============================================================
+ *  Market Page — 温暖亮色角色市场
+ *  风格: 暖白主题 / 柔和阴影 / 卡片选中自动前置
  * ============================================================ */
 
 .page-market {
   background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  padding-bottom: env(safe-area-inset-bottom, var(--spacing-lg));
+}
+
+/* ── 选中状态栏 ── */
+.market-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-primary-bg);
+  border-bottom: 1px solid var(--color-primary);
+  animation: slide-down var(--duration-normal) var(--ease-out);
+
+  &-text {
+    font-size: var(--font-body-sm);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-clear {
+    font-size: var(--font-caption);
+    color: var(--color-text-secondary);
+    padding: var(--spacing-2xs) var(--spacing-xs);
+    border-radius: var(--radius-xs);
+
+    &:active {
+      background: var(--color-bg-muted);
+    }
+  }
 }
 
 /* ── 搜索栏 ── */
 .market-search {
-  padding: var(--spacing-md);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-xs);
   background: var(--color-bg);
+}
 
-  &-input {
-    background: var(--color-bg-input);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    color: var(--color-text);
-    font-size: var(--font-body-sm);
-    transition: border-color var(--duration-fast) var(--ease-out);
+.market-search-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0 var(--spacing-md);
+  gap: var(--spacing-xs);
+  transition: all var(--transition-fast);
 
-    &:focus-within {
-      border-color: var(--color-border-focus);
-    }
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
   }
 }
 
-/* ── 轮播图 ── */
-.market-carousel {
-  padding: 0 var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-
-  &-scroll {
-    display: flex;
-    gap: var(--spacing-sm);
-    overflow-x: auto;
-
-    &::-webkit-scrollbar { display: none; }
-  }
-
-  &-item {
-    position: relative;
-    width: 280rpx;
-    height: 160rpx;
-    flex-shrink: 0;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background: var(--color-bg-surface);
-  }
-
-  &-img {
-    width: 100%;
-    height: 100%;
-  }
-
-  &-placeholder {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--td-brand-color-8) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 56rpx;
-    color: var(--color-primary-foreground);
-    font-weight: var(--font-weight-bold);
-  }
-
-  &-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: var(--spacing-md);
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-  }
-
-  &-name {
-    font-size: var(--font-body);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary-foreground);
-  }
-
-  &-likes {
-    font-size: var(--font-caption);
-    color: var(--color-error);
-  }
-
-  &-dots {
-    display: flex;
-    justify-content: center;
-    gap: 6rpx;
-    margin-top: var(--spacing-sm);
-  }
-
-  &-dot {
-    width: 6rpx;
-    height: 6rpx;
-    border-radius: var(--radius-full);
-    background: var(--color-border);
-
-    &.active {
-      background: var(--color-primary);
-      width: 18rpx;
-      border-radius: 3rpx;
-    }
-  }
+.market-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm) 0;
+  color: var(--color-text);
+  font-size: var(--font-body-sm);
+  height: 64rpx;
 }
 
 /* ── 标签栏 ── */
@@ -125,7 +79,6 @@
     gap: var(--spacing-xs);
     padding: 0 var(--spacing-md);
     overflow-x: auto;
-
     &::-webkit-scrollbar { display: none; }
   }
 }
@@ -134,28 +87,36 @@
   padding: var(--spacing-xs) var(--spacing-md);
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   color: var(--color-text-secondary);
   font-size: var(--font-body-sm);
   white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: all var(--transition-fast);
 
   &.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
-    color: var(--color-primary-foreground);
+    color: var(--color-text-inverse);
   }
 
   &:active {
-    opacity: 0.8;
+    transform: scale(0.95);
   }
+}
+
+/* ── 角色卡内容区域（flex 撑满剩余空间） ── */
+.market-character-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom, 0));
 }
 
 /* ── 排序栏 ── */
 .market-sort {
   display: flex;
   padding: 0 var(--spacing-md);
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
 
   &-item {
@@ -163,7 +124,7 @@
     color: var(--color-text-secondary);
     font-size: var(--font-body-sm);
     border-radius: var(--radius-sm);
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: all var(--transition-fast);
 
     &.active {
       background: var(--color-primary-bg);
@@ -176,72 +137,58 @@
 /* ── 卡片网格 ── */
 .market-grid {
   padding: 0 var(--spacing-md);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.market-grid-item {
+  position: relative;
+}
+
+/* ── 选中标记（对勾徽标） ── */
+.market-grid-check {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(196, 154, 108, 0.4);
+  z-index: 10;
+  animation: scale-in var(--duration-fast) var(--ease-spring);
+}
+
+/* ── 查看详情按钮 ── */
+.market-grid-detail-btn {
+  position: absolute;
+  bottom: 8rpx;
+  right: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all var(--transition-fast);
+
+  &:active {
+    background: var(--color-bg-muted);
+    transform: scale(0.85);
+  }
 }
 
 /* ── 主内容区域 ── */
 .market-content {
-  height: calc(100vh - 200rpx);
-}
-
-/* ── 骨架屏 ── */
-.market-skeleton {
-  display: flex;
-  padding: var(--spacing-md);
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-sm);
-  border: 1px solid var(--color-border-subtle);
-
-  &-avatar {
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: var(--radius-sm);
-    background: linear-gradient(
-      90deg,
-      var(--color-bg-input) 25%,
-      var(--color-border-subtle) 50%,
-      var(--color-bg-input) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    flex-shrink: 0;
-    margin-right: var(--spacing-md);
-  }
-
-  &-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-  }
-
-  &-title {
-    height: 24rpx;
-    width: 55%;
-    border-radius: var(--radius-xs);
-    background: linear-gradient(
-      90deg,
-      var(--color-bg-input) 25%,
-      var(--color-border-subtle) 50%,
-      var(--color-bg-input) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  &-desc {
-    height: 40rpx;
-    width: 75%;
-    border-radius: var(--radius-xs);
-    background: linear-gradient(
-      90deg,
-      var(--color-bg-input) 25%,
-      var(--color-border-subtle) 50%,
-      var(--color-bg-input) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── 空状态 ── */
@@ -296,4 +243,257 @@
     height: 1rpx;
     background: var(--color-border-subtle);
   }
+}
+
+/* ── 酒馆子 tab 栏 ── */
+.market-sub-tabs {
+  position: fixed;
+  bottom: calc(120rpx + env(safe-area-inset-bottom, 0));
+  left: 0;
+  right: 0;
+  display: flex;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 200;
+  height: 100rpx;
+  align-items: center;
+  padding-bottom: 0;
+}
+
+.market-sub-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 2rpx;
+  -webkit-tap-highlight-color: transparent;
+  transition: all var(--transition-fast);
+
+  &:active {
+    background: var(--color-bg-surface-hover);
+  }
+}
+
+.market-sub-tab-label {
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
+}
+
+.market-sub-tab--active .market-sub-tab-label {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.market-sub-tab--back {
+  max-width: 80rpx;
+  border-right: 1px solid var(--color-border);
+}
+
+/* ── 子 tab 占位内容 ── */
+.market-sub-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200rpx;
+}
+
+.market-sub-placeholder-title {
+  font-size: var(--font-body-lg);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.market-sub-placeholder-desc {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-sm);
+}
+
+/* ── 创建卡片入口 ── */
+.market-create-card {
+  aspect-ratio: 5 / 3;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-surface);
+  transition: all var(--transition-fast);
+
+  &:active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+  }
+}
+
+.market-create-card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.market-create-card-label {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── 子 tab 面板 ── */
+.market-sub-panel {
+  flex: 1;
+  min-height: 0;
+  padding: var(--spacing-xl) var(--spacing-md);
+  padding-bottom: calc(320rpx + env(safe-area-inset-bottom, 0));
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 子面板底部创建栏 ── */
+.market-sub-create-bar {
+  margin-top: auto;
+  padding: var(--spacing-lg) var(--spacing-md) 0;
+}
+
+.market-sub-create-bar .market-create-card {
+  aspect-ratio: auto;
+  height: 120rpx;
+}
+
+/* ── 子面板内容区 ── */
+.market-sub-panel-content {
+  flex: 1;
+  min-height: 0;
+  padding: var(--spacing-md);
+  padding-bottom: calc(320rpx + env(safe-area-inset-bottom, 0));
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ── 区域标题 ── */
+.market-section-title {
+  padding: var(--spacing-sm) 0;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ── 创建面板 ── */
+.market-create-panel {
+  flex: 1;
+  padding: var(--spacing-lg) var(--spacing-md);
+  padding-bottom: calc(320rpx + env(safe-area-inset-bottom, 0));
+  overflow-y: auto;
+}
+
+.market-create-panel-title {
+  font-size: var(--font-body-lg);
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.market-create-panel-hint {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.market-create-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.market-create-option {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  transition: all var(--transition-fast);
+}
+
+.market-create-option:active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  transform: scale(0.97);
+}
+
+.market-create-option-icon {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-bg);
+  border-radius: var(--radius-full);
+}
+
+.market-create-option-label {
+  font-size: var(--font-body);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.market-create-option-desc {
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+/* ── 本地卡片列表 ── */
+.market-local-cards-section {
+  margin-top: var(--spacing-md);
+}
+
+.market-local-cards-list {
+  max-height: 500rpx;
+}
+
+.market-local-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-xs);
+  transition: all var(--transition-fast);
+}
+
+.market-local-card-item:active {
+  background: var(--color-bg-muted);
+}
+
+.market-local-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.market-local-card-name {
+  font-size: var(--font-body);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.market-local-card-type {
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
 }

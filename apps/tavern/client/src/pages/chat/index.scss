@@ -1,6 +1,6 @@
 /* ============================================================
- *  Chat Page — 现代扁平聊天界面
- *  风格: 全屏布局 / 水平角色选择器 / 输入栏
+ *  Chat Page — 温暖亮色聊天界面
+ *  风格: 暖白主题 / 柔和卡片 / 沉浸式对话
  * ============================================================ */
 
 .page-chat {
@@ -8,6 +8,7 @@
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
+  padding-bottom: 120rpx;
 
   /* ── 头部 ── */
   &-header {
@@ -15,7 +16,9 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--color-bg-elevated);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--color-border-subtle);
     flex-shrink: 0;
 
@@ -72,8 +75,7 @@
     background: var(--color-bg-surface);
     border-radius: var(--radius-md);
     border: 2px solid transparent;
-    transition: border-color var(--duration-fast) var(--ease-out),
-                background var(--duration-fast) var(--ease-out);
+    transition: all var(--transition-fast);
     flex-shrink: 0;
 
     &--active {
@@ -107,7 +109,7 @@
     &-avatar-text {
       font-size: var(--font-body-lg);
       font-weight: var(--font-weight-semibold);
-      color: var(--color-primary-foreground);
+      color: var(--color-text-inverse);
     }
 
     &-avatar-img {
@@ -132,6 +134,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    &-type {
+      font-size: 16rpx;
+      color: var(--color-text-tertiary);
+      text-align: center;
+      line-height: 1;
+      margin-top: 2rpx;
     }
   }
 
@@ -196,7 +206,9 @@
     align-items: center;
     padding: var(--spacing-sm) var(--spacing-md);
     padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom, 0));
-    background: var(--color-bg-elevated);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--color-border-subtle);
     flex-shrink: 0;
     gap: var(--spacing-sm);
@@ -205,15 +217,17 @@
   &-input {
     flex: 1;
     height: 72rpx;
-    background: var(--color-bg-input);
-    border-radius: var(--radius-md);
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-pill);
     padding: 0 var(--spacing-md);
     font-size: var(--font-body-sm);
     color: var(--color-text);
-    border: 1px solid transparent;
+    border: 1px solid var(--color-border-subtle);
+    transition: all var(--transition-fast);
 
     &:focus {
-      border-color: var(--color-border-focus);
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-glow);
     }
   }
 
@@ -223,13 +237,15 @@
     line-height: 72rpx;
     text-align: center;
     background: var(--color-primary) !important;
-    color: var(--color-primary-foreground) !important;
-    border-radius: var(--radius-md);
+    color: var(--color-text-inverse) !important;
+    border-radius: var(--radius-pill) !important;
     font-size: var(--font-body-sm);
     font-weight: var(--font-weight-medium);
     border: none !important;
+    transition: all var(--transition-fast);
 
     &:active {
+      transform: scale(0.95);
       opacity: 0.85;
     }
   }
@@ -243,6 +259,8 @@
     bottom: 0;
     background: var(--color-bg-overlay);
     z-index: var(--z-overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   /* ── 会话列表侧栏 ── */
@@ -256,6 +274,7 @@
     padding: var(--spacing-md);
     z-index: var(--z-modal);
     animation: slide-left var(--duration-normal) var(--ease-out);
+    border-right: 1px solid var(--color-border);
 
     &-title {
       font-size: var(--font-body-lg);
@@ -270,7 +289,7 @@
       padding: var(--spacing-md);
       border-bottom: 1px solid var(--color-border-subtle);
       border-radius: var(--radius-sm);
-      transition: background var(--duration-fast) var(--ease-out);
+      transition: background var(--transition-fast);
 
       &:active {
         background: var(--color-bg-surface-hover);

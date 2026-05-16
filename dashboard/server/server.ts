@@ -11,6 +11,7 @@ import foodRecordRoutes from './admin-food-records'
 import apiKeyRoutes from './admin-api-keys'
 import achievementRoutes from './admin-achievements'
 import agentRoutes from './agent-routes'
+import monitoringRoutes from './admin-monitoring'
 import game1Routes from './routes/game1-proxy'
 import tavernRoutes from './routes/tavern-proxy'
 
@@ -37,6 +38,9 @@ app.use('/api/admin/achievements', achievementRoutes)
 
 // 挂载 AGENT 调试通道（/api/admin/agent/*）
 app.use('/api/admin/agent', agentRoutes)
+
+// 挂载监控路由（/api/admin/monitoring/*）
+app.use('/api/admin/monitoring', monitoringRoutes)
 
 // 挂载 Game1 代理路由（/api/admin/game1/* → game1-server）
 app.use('/api/admin', game1Routes)

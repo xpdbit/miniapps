@@ -15,6 +15,7 @@ const createSchema = z.object({
   lore: z.string().max(5000).optional(),
   systemPrompt: z.string().max(2000).optional(),
   tags: z.array(z.string().max(20)).max(10).optional(),
+  cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
   exampleDialogs: z.any().optional(),
   nsfw: z.boolean().optional(),
 })

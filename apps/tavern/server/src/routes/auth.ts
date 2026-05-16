@@ -40,7 +40,7 @@ router.post('/login', async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Find or create user
-    const user = await prisma.user.upsert({
+    const user = await prisma.sharedUser.upsert({
       where: { openid },
       create: {
         openid,
@@ -79,7 +79,7 @@ router.post('/login', async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/v1/auth/me - Get current user info
 router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.sharedUser.findUnique({
       where: { id: req.user!.userId },
       select: {
         id: true,

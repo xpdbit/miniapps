@@ -1,4 +1,5 @@
 import adminApiClient from './adminApiClient'
+import axios from 'axios'
 
 interface LoginRequest {
   username: string
@@ -35,11 +36,19 @@ interface GetMeResponse {
 }
 
 export async function login(data: LoginRequest): Promise<LoginSuccessResponse['data']> {
-  const response = await adminApiClient.post<LoginResponse>('/admin/login', data)
-  if (!response.data.success) {
-    throw new Error(response.data.message)
+  try {
+    const response = await adminApiClient.post<LoginResponse>('/admin/login', data)
+    if (!response.data.success) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data
+  } catch (error) {
+    // 从 Axios 错误中提取服务端返回的错误信息
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw error
   }
-  return response.data.data
 }
 
 export async function getMe(): Promise<AdminUserInfo> {

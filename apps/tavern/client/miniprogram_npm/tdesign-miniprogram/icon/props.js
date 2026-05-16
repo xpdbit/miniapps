@@ -1,1 +1,0 @@
-const props={customStyle:{type:String,value:""},color:{type:String,value:""},name:{type:String,value:"",required:!0},size:{type:String,value:void 0}};export default props;

@@ -1,0 +1,14 @@
+# SuperTask Prompt Template
+# 名称: 收尾-文档更新
+# 版本: 1.0
+# 支持变量替换: ${variable_name}
+---
+name: 收尾-文档更新
+version: '1.0'
+template: '请更新项目文档：
+
+  - 更新根目录 AGENTS.md（反映最新的项目结构和代码变更）
+
+  - 更新 docs/ 中相关文件
+
+  - 忽略 plan 文件夹'

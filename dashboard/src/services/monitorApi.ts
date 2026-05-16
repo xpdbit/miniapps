@@ -1,4 +1,4 @@
-import apiClient from './apiClient'
+import adminApiClient from './adminApiClient'
 
 // --- Types ---
 
@@ -65,18 +65,52 @@ export interface AlertRule {
   description: string
 }
 
+/** 系统资源指标 */
+export interface SystemMetrics {
+  cpu: {
+    model: string
+    cores: number
+    loadAvg1m: number
+    loadAvg5m: number
+    loadAvg15m: number
+    usagePercent: number
+  }
+  memory: {
+    total: number
+    used: number
+    free: number
+    percent: number
+  }
+  disk: {
+    total: number
+    used: number
+    free: number
+    percent: number
+  }
+  uptime: number
+  process: {
+    nodeVersion: string
+    pid: number
+    memoryUsage: number
+  }
+}
+
 // --- API ---
 
 export const monitorApi = {
   /** 获取所有项目的健康状态 */
   getProjectsHealth: () =>
-    apiClient.get<ProjectHealth[]>('/monitoring/health'),
+    adminApiClient.get<{ success: boolean; data: ProjectHealth[] }>('/admin/monitoring/health'),
 
   /** 获取指定项目的详细指标 */
   getProjectMetrics: (projectId: number) =>
-    apiClient.get<MonitorMetrics>(`/monitoring/metrics/${projectId}`),
+    adminApiClient.get<{ success: boolean; data: MonitorMetrics }>(`/admin/monitoring/metrics/${projectId}`),
 
   /** 获取告警规则 */
   getAlertRules: () =>
-    apiClient.get<AlertRule[]>('/monitoring/alert-rules'),
+    adminApiClient.get<{ success: boolean; data: AlertRule[] }>('/admin/monitoring/alert-rules'),
+
+  /** 获取系统资源指标 */
+  getSystemMetrics: () =>
+    adminApiClient.get<{ success: boolean; data: SystemMetrics }>('/admin/monitoring/system-metrics'),
 }

@@ -15,12 +15,12 @@ interface SendMessageParams {
 }
 
 export async function createSession(params: CreateSessionParams) {
-  const character = await prisma.characterCard.findUnique({
+  const character = await prisma.tavernCard.findUnique({
     where: { id: params.characterId },
   })
   if (!character) throw new Error('CHARACTER_NOT_FOUND')
 
-  const session = await prisma.chatSession.create({
+  const session = await prisma.tavernChatSession.create({
     data: {
       userId: params.userId,
       characterId: params.characterId,
@@ -38,7 +38,7 @@ export async function createSession(params: CreateSessionParams) {
   })
 
   // Save the character's firstMsg as initial AI message
-  await prisma.chatMessage.create({
+  await prisma.tavernChatMessage.create({
     data: {
       sessionId: session.id,
       role: 'character',
@@ -50,7 +50,7 @@ export async function createSession(params: CreateSessionParams) {
 }
 
 export async function getSession(sessionId: string, userId: string) {
-  const session = await prisma.chatSession.findUnique({
+  const session = await prisma.tavernChatSession.findUnique({
     where: { id: sessionId },
     include: {
       character: true,
@@ -67,7 +67,7 @@ export async function getSession(sessionId: string, userId: string) {
 export async function getMySessions(userId: string, page = 1, pageSize = 20) {
   const skip = (page - 1) * pageSize
   const [items, total] = await Promise.all([
-    prisma.chatSession.findMany({
+    prisma.tavernChatSession.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
       skip,
@@ -77,7 +77,7 @@ export async function getMySessions(userId: string, page = 1, pageSize = 20) {
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
     }),
-    prisma.chatSession.count({ where: { userId } }),
+    prisma.tavernChatSession.count({ where: { userId } }),
   ])
 
   return {
@@ -98,17 +98,17 @@ export async function getMySessions(userId: string, page = 1, pageSize = 20) {
 }
 
 export async function deleteSession(sessionId: string, userId: string) {
-  const session = await prisma.chatSession.findUnique({ where: { id: sessionId } })
+  const session = await prisma.tavernChatSession.findUnique({ where: { id: sessionId } })
   if (!session || session.userId !== userId) throw new Error('FORBIDDEN')
-  await prisma.chatMessage.deleteMany({ where: { sessionId } })
-  await prisma.chatSession.delete({ where: { id: sessionId } })
+  await prisma.tavernChatMessage.deleteMany({ where: { sessionId } })
+  await prisma.tavernChatSession.delete({ where: { id: sessionId } })
 }
 
 export async function saveMessage(sessionId: string, role: string, content: string, tokens?: number) {
-  const msg = await prisma.chatMessage.create({
+  const msg = await prisma.tavernChatMessage.create({
     data: { sessionId, role, content, tokens },
   })
-  await prisma.chatSession.update({
+  await prisma.tavernChatSession.update({
     where: { id: sessionId },
     data: {
       messageCount: { increment: 1 },

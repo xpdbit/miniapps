@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
-"""agent_status_interface.py — Agent 状态监控面板（当前阶段 + sub-agent 列表 + 耗时）"""
+"""agent_status_interface.py — Agent 状态监控面板（当前阶段 + agent 列表 + 耗时）"""
 import time
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QTableWidgetItem, QHeaderView, QFrame,
-                               QComboBox)
+                                QTableWidgetItem, QHeaderView, QFrame)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QBrush
-from qfluentwidgets import TableWidget, BodyLabel, CaptionLabel, StrongBodyLabel
+from qfluentwidgets import (
+    TableWidget, BodyLabel, CaptionLabel, StrongBodyLabel,
+    PushButton, FluentIcon as FIF,
+)
 
+
+# FIF 图标版本兼容
+_FIF_PAUSE = getattr(FIF, 'PAUSE', None) or getattr(FIF, 'PAUSE_BADGE', None) or FIF.SYNC
+_FIF_PLAY = getattr(FIF, 'PLAY', None) or getattr(FIF, 'PLAY_BADGE', None) or FIF.SYNC
 
 STATUS_COLORS = {
     "running": "#3fb950",
@@ -150,8 +156,8 @@ class PhaseStatusBar(QFrame):
             self._model_label.setText(model)
             self._model_hint.setText("模型")
         else:
-            self._model_label.setText("—")
-            self._model_hint.setText("模型未识别")
+            self._model_label.setText("")
+            self._model_hint.setText("")
 
     def clear(self):
         """重置为空闲状态"""
@@ -162,16 +168,13 @@ class PhaseStatusBar(QFrame):
 
 
 class AgentStatusInterface(QWidget):
-    """Agent 状态监控页面 — 实时显示 agent/sub-agent 运行状态"""
-
-    # 分隔符行标记（内部使用，不为 None）
-    _SEPARATOR = object()
+    """Agent 状态监控页面 — 实时显示 agent 运行状态"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._last_status: dict = {}
         self._agent_start_times: dict[str, dict] = {}
-        # 内部存储：当前渲染的原始 agent 列表（含 None 分隔符）
+        # 内部存储：当前渲染的 agent 列表
         self._display_items: list = []
 
         self._elapsed_timer = QTimer(self)
@@ -191,47 +194,15 @@ class AgentStatusInterface(QWidget):
         title_row.addWidget(self._agent_count_label)
         layout.addLayout(title_row)
 
-        # ── Agent 类型筛选 ──
-        filter_row = QHBoxLayout()
-        filter_label = BodyLabel("主 Agent 类型:")
-        filter_label.setStyleSheet("color: #e6edf3; font-size: 13px;")
-        self._type_combo = QComboBox(self)
-        self._type_combo.addItem("All")
-        self._type_combo.setStyleSheet("""
-            QComboBox {
-                background-color: #0d1117;
-                color: #e6edf3;
-                border: 1px solid #30363d;
-                border-radius: 4px;
-                padding: 4px 8px;
-                min-width: 100px;
-            }
-            QComboBox::drop-down {
-                border: none;
-                padding-right: 8px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #161b22;
-                color: #e6edf3;
-                border: 1px solid #30363d;
-                selection-background-color: #1f6feb;
-            }
-        """)
-        self._type_combo.currentIndexChanged.connect(self._on_filter_changed)
-        filter_row.addWidget(filter_label)
-        filter_row.addWidget(self._type_combo)
-        filter_row.addStretch()
-        layout.addLayout(filter_row)
-
         # ── 阶段状态指示条 ──
         self._phase_bar = PhaseStatusBar(self)
         layout.addWidget(self._phase_bar)
 
-        # ── Sub-agent 表格（6 列） ──
+        # ── Agent 表格（5 列） ──
         self._table = TableWidget(self)
-        self._table.setColumnCount(6)
+        self._table.setColumnCount(5)
         self._table.setHorizontalHeaderLabels(
-            ["Agent / Sub-agent", "类型", "模型", "状态", "Preview", "耗时"]
+            ["Agent", "模型", "状态", "Preview", "耗时"]
         )
         self._table.setBorderRadius(8)
         self._table.horizontalHeader().setStretchLastSection(False)
@@ -240,16 +211,53 @@ class AgentStatusInterface(QWidget):
         self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self._table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self._table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        self._table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
         self._table.setEditTriggers(TableWidget.EditTrigger.NoEditTriggers)
         self._table.setSelectionMode(TableWidget.SelectionMode.NoSelection)
-        self._table.setSortingEnabled(False)  # 关闭排序以保持分组视图
+        self._table.setSortingEnabled(False)
         layout.addWidget(self._table)
 
         # ── 底部提示 ──
         self._hint_label = CaptionLabel("启动循环后，这里将实时显示 agent 运行状态")
         self._hint_label.setStyleSheet("color: #484f58; font-size: 11px;")
         layout.addWidget(self._hint_label)
+
+        # ════════════════════════════════════════
+        # Agent 控制栏（暂停/继续切换开关）
+        # ════════════════════════════════════════
+        ctrl_bar = QHBoxLayout()
+        ctrl_bar.setSpacing(8)
+
+        self._agent_ctrl_btn = PushButton(_FIF_PAUSE, "暂停")
+        self._agent_ctrl_btn.setToolTip("未开始 — Agent 未运行")
+        self._agent_ctrl_btn.setEnabled(False)
+        self._agent_ctrl_btn.setStyleSheet("""
+            PushButton {
+                background-color: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 8px 20px;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            PushButton:hover {
+                border-color: #58a6ff;
+                background-color: #1c2433;
+            }
+            PushButton:pressed {
+                background-color: #0d419d;
+            }
+            PushButton:disabled {
+                color: #484f58;
+                border-color: #21262d;
+                background-color: #0d1117;
+            }
+        """)
+
+        ctrl_bar.addWidget(BodyLabel("Agent 控制:"))
+        ctrl_bar.addWidget(self._agent_ctrl_btn)
+        ctrl_bar.addStretch()
+
+        layout.addLayout(ctrl_bar)
 
     # ── 实时耗时刷新 ─────────────────────────
 
@@ -260,128 +268,64 @@ class AgentStatusInterface(QWidget):
         now = time.time()
         for i in range(self._table.rowCount()):
             display = self._display_items[i] if i < len(self._display_items) else None
-            if display is None or display is self._SEPARATOR:
+            if display is None:
                 continue
             agent_id = display.get("id", "")
             info = self._agent_start_times.get(agent_id)
             if info:
                 elapsed = info["base"] + (now - info["at"])
-                dur_item = self._table.item(i, 5)
+                dur_item = self._table.item(i, 4)
                 if dur_item:
                     dur_item.setText(_format_duration(elapsed))
 
-    # ── 筛选交互 ─────────────────────────────
-
-    def _on_filter_changed(self):
-        """筛选下拉框变化时重新渲染表格"""
-        agents = self._last_status.get("agents", [])
-        self._render_table(agents, self._type_combo.currentText())
-
-        # 刷新底部提示中的活跃计数
-        self._update_hint_from_current()
-
     # ── 表格渲染 ─────────────────────────────
 
-    def _render_table(self, agents: list, filter_type: str):
-        """按筛选条件构建分组表格，支持 main/sub-agent 层级"""
-        # 1. 筛选
-        if filter_type != "All":
-            # 如果筛选类型是主编排器类型，显示所有 agent（因为主编排器不是子 agent 的类型）
-            main_type = self._last_status.get("main_agent_type", "")
-            if filter_type == main_type:
-                pass  # 不过滤，显示全部
-            else:
-                agents = [a for a in agents if a.get("type") == filter_type]
-
-        # 2. 按 type 分组
-        by_type: dict[str, list] = {}
-        for a in agents:
-            t = a.get("type", "?")
-            by_type.setdefault(t, []).append(a)
-
-        sorted_types = sorted(by_type.keys())
-
-        # 3. 构建显示行列表（agent dict | None=分隔符）
-        display_rows: list = []
-        for idx, t in enumerate(sorted_types):
-            group = by_type[t]
-            # 主 agent（无 parent_id）排前面，sub-agent 排后面
-            main_agents = [a for a in group if not a.get("parent_id")]
-            sub_agents = [a for a in group if a.get("parent_id")]
-            display_rows.extend(main_agents)
-            display_rows.extend(sub_agents)
-            # 类型组之间的分隔符
-            if idx < len(sorted_types) - 1:
-                display_rows.append(None)
-
+    def _render_table(self, agents: list):
+        """构建纯平铺表格，列出所有 agent 状态"""
+        display_rows: list = list(agents)
         self._display_items = display_rows
         self._table.setRowCount(len(display_rows))
 
-        # 4. 追踪运行中的 agent（用于实时耗时刷新）
+        # 追踪运行中的 agent（用于实时耗时刷新）
         now = time.time()
         new_times: dict[str, dict] = {}
         has_running = False
 
-        for i, item in enumerate(display_rows):
-            if item is None:
-                # ── 分隔符行 ──
-                for col in range(6):
-                    sep = QTableWidgetItem("")
-                    sep.setFlags(
-                        sep.flags()
-                        & ~Qt.ItemFlag.ItemIsSelectable
-                        & ~Qt.ItemFlag.ItemIsEnabled
-                    )
-                    sep.setBackground(QColor("#1c2128"))
-                    self._table.setItem(i, col, sep)
-                self._table.setRowHeight(i, 6)
-                continue
-
-            agent = item
-            has_parent = bool(agent.get("parent_id"))
-
-            # Col 0: Agent / Sub-agent
+        for i, agent in enumerate(display_rows):
+            # Col 0: Agent
             agent_id = agent.get("id", "?")
-            display_name = ("└─ " if has_parent else "") + agent_id
-            id_item = QTableWidgetItem(display_name)
-            name_color = "#58a6ff" if not has_parent else "#8b949e"
-            id_item.setForeground(QBrush(QColor(name_color)))
+            id_item = QTableWidgetItem(agent_id)
+            id_item.setForeground(QBrush(QColor("#58a6ff")))
             self._table.setItem(i, 0, id_item)
 
-            # Col 1: 类型
-            agent_type = agent.get("type", "?")
-            type_item = QTableWidgetItem(agent_type)
-            type_item.setForeground(QBrush(QColor("#8b949e")))
-            self._table.setItem(i, 1, type_item)
-
-            # Col 2: 模型
+            # Col 1: 模型
             model = agent.get("model", "")
             model_text = model if model else "—"
             model_item = QTableWidgetItem(model_text)
             model_item.setForeground(QBrush(QColor("#bc8cff")))
-            self._table.setItem(i, 2, model_item)
+            self._table.setItem(i, 1, model_item)
 
-            # Col 3: 状态
+            # Col 2: 状态
             agent_status = agent.get("status", "running")
             sc = STATUS_COLORS.get(agent_status, "#8b949e")
             icon = STATUS_ICONS.get(agent_status, "?")
             status_item = QTableWidgetItem(f"{icon} {agent_status}")
             status_item.setForeground(QBrush(QColor(sc)))
-            self._table.setItem(i, 3, status_item)
+            self._table.setItem(i, 2, status_item)
 
-            # Col 4: Preview
+            # Col 3: Preview
             preview = agent.get("preview", "")
             preview_text = preview[:40] + "…" if len(preview) > 40 else preview
             prev_item = QTableWidgetItem(preview_text)
             prev_item.setForeground(QBrush(QColor("#484f58")))
-            self._table.setItem(i, 4, prev_item)
+            self._table.setItem(i, 3, prev_item)
 
-            # Col 5: 耗时
+            # Col 4: 耗时
             agent_elapsed = agent.get("elapsed", 0)
             dur_text = _format_duration(agent_elapsed)
             dur_item = QTableWidgetItem(dur_text)
             dur_item.setForeground(QBrush(QColor("#e6edf3")))
-            self._table.setItem(i, 5, dur_item)
+            self._table.setItem(i, 4, dur_item)
 
             # 追踪运行中 agent 的耗时基准
             if agent_status == "running":
@@ -397,33 +341,25 @@ class AgentStatusInterface(QWidget):
         else:
             self._elapsed_timer.stop()
 
-    def _update_hint_from_current(self):
-        """根据当前筛选后的状态更新底部提示"""
+    def _update_hint(self):
+        """更新底部提示"""
         phase_status = self._last_status.get("phase_status", "idle")
         phase = self._last_status.get("phase", "")
 
-        # 获取当前表格中的 agent（排除分隔符）
-        agents_in_view = [
-            d for d in self._display_items
-            if d is not None and d is not self._SEPARATOR
-        ]
+        agents_in_view = [d for d in self._display_items if d is not None]
         running_count = sum(
             1 for a in agents_in_view if a.get("status") == "running"
         )
         agent_count = len(agents_in_view)
-        filter_type = self._type_combo.currentText()
 
         if phase_status == "idle":
             self._hint_label.setText("启动循环后，这里将实时显示 agent 运行状态")
         elif phase_status == "paused":
             self._hint_label.setText(f"已暂停: {phase}  —  Agent 进程已挂起")
         elif phase_status == "running":
-            main_type = self._last_status.get("main_agent_type", "")
-            type_info = f" [{main_type}]" if main_type else ""
             if running_count > 0:
-                tag = f" [{filter_type}]" if filter_type != "All" else ""
                 self._hint_label.setText(
-                    f"正在运行: {phase}{type_info}{tag}  —  {running_count}/{agent_count} 活跃"
+                    f"正在运行: {phase}  —  {running_count}/{agent_count} 活跃"
                 )
             else:
                 self._hint_label.setText(f"正在运行: {phase}  —  {agent_count} 个 agent")
@@ -431,6 +367,38 @@ class AgentStatusInterface(QWidget):
             self._hint_label.setText(f"已完成: {phase}  —  共 {agent_count} 个 agent")
         elif phase_status == "error":
             self._hint_label.setText(f"出错: {phase}")
+
+    # ── Agent 控制按钮状态管理 ────────────────
+
+    def set_agent_running(self, running: bool, suspended: bool = False):
+        """更新 Agent 控制按钮状态：根据当前 agent 进程状态调整按钮文本和启用状态。
+        
+        Args:
+            running: Agent 进程是否正在运行
+            suspended: Agent 进程是否处于暂停状态
+        """
+        if not running:
+            # 未开始：禁用
+            self._agent_ctrl_btn.setEnabled(False)
+            self._agent_ctrl_btn.setText("暂停")
+            self._agent_ctrl_btn.setIcon(_FIF_PAUSE)
+            self._agent_ctrl_btn.setToolTip("未开始 — Agent 未运行")
+        elif suspended:
+            # 已暂停：显示「继续」
+            self._agent_ctrl_btn.setEnabled(True)
+            self._agent_ctrl_btn.setText("继续")
+            self._agent_ctrl_btn.setIcon(_FIF_PLAY)
+            self._agent_ctrl_btn.setToolTip("点击恢复已暂停的 Agent 进程")
+        else:
+            # 运行中：显示「暂停」
+            self._agent_ctrl_btn.setEnabled(True)
+            self._agent_ctrl_btn.setText("暂停")
+            self._agent_ctrl_btn.setIcon(_FIF_PAUSE)
+            self._agent_ctrl_btn.setToolTip("点击挂起当前运行的 Agent 进程")
+
+    def get_agent_ctrl_btn(self):
+        """返回 Agent 控制按钮引用（供 app.py 连接信号）"""
+        return self._agent_ctrl_btn
 
     # ── 外部接口 ─────────────────────────────
 
@@ -446,31 +414,12 @@ class AgentStatusInterface(QWidget):
         self._phase_bar.update_model(status.get("global_model", ""))
 
         agents = status.get("agents", [])
-        main_type = status.get("main_agent_type", "")
 
         # 更新 agent 计数
-        self._agent_count_label.setText(f"({len(agents)} 个 sub-agent)")
-
-        # 更新类型筛选框（保留当前选中）
-        current_type = self._type_combo.currentText()
-        self._type_combo.blockSignals(True)
-        self._type_combo.clear()
-        self._type_combo.addItem("All")
-        # 添加主编排器类型（若存在）
-        if main_type:
-            self._type_combo.addItem(main_type)
-        # 添加子 agent 类型
-        types = sorted(set(a.get("type", "?") for a in agents))
-        for t in types:
-            self._type_combo.addItem(t)
-        # 恢复之前选中的项
-        idx = self._type_combo.findText(current_type)
-        if idx >= 0:
-            self._type_combo.setCurrentIndex(idx)
-        self._type_combo.blockSignals(False)
+        self._agent_count_label.setText(f"({len(agents)} 个 agent)")
 
         # 渲染表格
-        self._render_table(agents, self._type_combo.currentText())
+        self._render_table(agents)
 
         # 更新底部提示
-        self._update_hint_from_current()
+        self._update_hint()

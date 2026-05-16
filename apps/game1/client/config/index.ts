@@ -3,7 +3,7 @@ import path from 'path';
 
 import devConfig from './dev';
 import prodConfig from './prod';
-import domain from '../../../domain.config.js';
+import domain from '../../../../domain.config.js';
 
 const baseConfig = {
   projectName: 'game1-miniapp',

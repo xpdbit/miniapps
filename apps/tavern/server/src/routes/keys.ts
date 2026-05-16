@@ -6,7 +6,7 @@ import * as keyService from '../services/key.service';
 const router = Router();
 
 const addSchema = z.object({
-  provider: z.enum(['openai', 'deepseek', 'openrouter']),
+  provider: z.enum(['opencode', 'openai', 'anthropic', 'google', 'zhipu', 'deepseek', 'moonshot', 'minimax', 'openrouter']),
   keyValue: z.string().min(1),
 });
 

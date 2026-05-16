@@ -23,7 +23,9 @@ from gui.ui_pyqt.task_interface import TaskInterface
 from gui.ui_pyqt.agent_status_interface import AgentStatusInterface
 from gui.ui_pyqt.config_interface import ConfigInterface
 from gui.ui_pyqt.task_plan_interface import TaskPlanInterface
+from gui.ui_pyqt.monitor_interface import MonitorInterface
 from gui.core.loop_manager import LoopManager
+from gui.core.process_monitor import ProcessMonitor
 
 
 class SuperTaskWindow(FluentWindow):
@@ -56,6 +58,10 @@ class SuperTaskWindow(FluentWindow):
         self.config_interface = ConfigInterface()
         self.config_interface.setObjectName("configInterface")
 
+        # 监控仪表盘（在 LoopManager 创建前初始化，在创建后连接数据源）
+        self.monitor_interface = MonitorInterface()
+        self.monitor_interface.setObjectName("monitorInterface")
+
         self.task_plan_interface = TaskPlanInterface()
         self.task_plan_interface.setObjectName("taskPlanInterface")
         # 注册导航
@@ -79,6 +85,17 @@ class SuperTaskWindow(FluentWindow):
         self._loop.signals.terminal_output.connect(self.terminal_interface.append_output)
         self._loop.signals.terminal_output.connect(self.control_interface.append_terminal_output)
         self._loop.signals.agent_status_changed.connect(self._on_agent_status)
+
+        # 创建实时进程监控器并连接监控仪表盘
+        self._process_monitor = ProcessMonitor(
+            opencode_reader=self._loop._opencode_reader,
+        )
+        self.monitor_interface.set_data_sources(
+            monitor_store=self._loop._monitor_store,
+            opencode_reader=self._loop._opencode_reader,
+            process_monitor=self._process_monitor,
+        )
+        self.monitor_interface.start_auto_refresh()
 
         # 加载配置并应用
         config = self._loop.fm.load_config()
@@ -145,6 +162,9 @@ class SuperTaskWindow(FluentWindow):
         self.addSubInterface(self.agent_status_interface, _FIF_AGENT_ICON, "Agent 状态")
         self.addSubInterface(self.log_terminal_interface, FIF.COMMAND_PROMPT, "日志与终端")
         self.addSubInterface(self.config_interface, FIF.SETTING, "配置")
+        _FIF_MONITOR = getattr(FIF, 'STATISTICS', None) or getattr(FIF, 'CHART', FIF.DATE_TIME)
+        self.addSubInterface(self.monitor_interface, _FIF_MONITOR, "监控与统计",
+                             position=NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.history_interface, FIF.HISTORY, "历史",
                              position=NavigationItemPosition.BOTTOM)
 
@@ -502,13 +522,12 @@ def create_app(working_dir: str, state_dir: str, logs_dir: str) -> int:
 
     window = SuperTaskWindow(working_dir, state_dir, logs_dir)
 
-    # 在鼠标所在屏幕最大化（pre-show 设置几何体，确保 showMaximized 在正确屏幕上最大化）
+    # 在鼠标所在屏幕最大化（避免覆盖任务栏）
     cursor_pos = QCursor.pos()
     screen = app.screenAt(cursor_pos)
     if screen:
-        # 将窗口的 restore geometry 设为目标屏幕可用区域
-        # showMaximized 会根据此位置在正确屏幕上全屏
-        window.setGeometry(screen.availableGeometry())
+        # 设置目标屏幕，让 showMaximized 在该屏幕上正确最大化（Windows 自动保留任务栏空间）
+        window.setScreen(screen)
     else:
         # 回退：确保窗口有合理默认尺寸
         window.resize(1400, 900)

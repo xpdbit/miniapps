@@ -1,0 +1,21 @@
+# SuperTask Prompt Template
+# 名称: 批量执行任务
+# 版本: 1.0
+# 支持变量替换: ${variable_name}
+---
+name: 批量执行任务
+version: '1.0'
+template: "/ulw-loop\n请按顺序执行以下 **同一项目** 的多个开发任务：\n\n${task_list}\n\n## 时间管理（本次超时限制约\
+  \ 20 分钟）\n1. 按任务顺序依次执行，每完成一个立即更新 YAML\n2. 每 5 分钟检查剩余时间 — 如果只剩 3 分钟，立即收尾并标记未完成任务\n\
+  3. 不要把时间花在过度探索上：读取 3-5 个关键文件足够理解上下文即可\n\n## 执行步骤\n1. 快速浏览所有任务，理解整体目标（Read 关键文件，不超过\
+  \ 1 分钟）\n2. 按顺序执行每个任务，每完成一个：\n   - 修改 state/approved_queue.yaml 中对应项的 status 为 done\n\
+  \   - 继续下一个任务\n3. 若某个任务无法自动完成，将其 status 改为 error，在 error 字段中附加原因\n4. 若需追加新任务，写入\
+  \ proposed_tasks.yaml（status: proposed，待人工审批）\n5. 忽略 plan 文件夹\n\n## 后台子任务追踪标记\n\
+  当你使用 task() 启动后台子任务时，请在同一行或下一行输出以下结构化标记，\n以便 SuperTask 系统追踪子任务状态：\n\n子任务启动时: [SUPERTASK:agent_start\
+  \ id=<task_id> type=<agent_type> preview=\"<简短描述>\"]\n子任务完成时: [SUPERTASK:agent_done\
+  \ id=<task_id>]\n子任务失败时: [SUPERTASK:agent_error id=<task_id>]\n\n示例:\n  task(subagent_type=\"\
+  explore\", ...)  # [SUPERTASK:agent_start id=abc123 type=explore preview=\"搜索认证模式\"\
+  ]\n\n注意：id 使用 opencode 返回的实际 task_id。\n\n## 后台子任务等待策略\n如果你派出了后台子任务，必须用 background_output\
+  \ 轮询，而不是输出等待文本：\n- 正确：直接调用 background_output(task_id=\"xxx\") 检查结果\n- 如果结果尚未就绪，立即做其他有用的\
+  \ tool call（Read/Glob/Grep）\n- 错误：输出 \"waiting...\"、\"正在等待...\" 等纯文本\n\n## 严禁事项\n\
+  - 不要输出纯文本等待消息\n- 每一条文本输出之后，必须立即跟随至少一个 tool call\n\n完成后请输出 ===TASK_DONE==="

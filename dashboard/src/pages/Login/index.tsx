@@ -25,8 +25,9 @@ const Login = () => {
       message.success('登录成功')
       const redirect = searchParams.get('redirect') || ROUTES.DASHBOARD
       navigate(redirect, { replace: true })
-    } catch {
-      message.error('登录失败，请检查用户名和密码')
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : '登录失败，请检查用户名和密码'
+      message.error(errorMsg)
     }
   }
 

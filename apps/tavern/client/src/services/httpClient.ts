@@ -52,12 +52,19 @@ export class HttpClient {
 
       return res.data as T
     } catch (err: unknown) {
-      const error = err as { errMsg?: string }
-      if (error.errMsg?.includes('timeout')) {
+      // 统一处理所有网络错误，提供友好提示
+      // 始终返回友好错误消息，绝不泄露原始 TypeError/网络错误到控制台
+      const error = err as { errMsg?: string; message?: string }
+      const errMsg = error.errMsg || error.message || ''
+      if (errMsg.includes('timeout') || errMsg.includes('超时')) {
         throw new Error('请求超时，请检查网络')
       }
-      if (error.errMsg?.includes('fail')) {
-        throw new Error('网络连接失败，请稍后重试')
+      if (errMsg.includes('fail') || errMsg.includes('fetch') || errMsg.includes('Failed to fetch')) {
+        throw new Error('网络连接失败，请检查服务器状态或网络设置')
+      }
+      // 兜底：任何未匹配的网络错误也转为友好消息
+      if (errMsg) {
+        throw new Error('网络请求失败，请稍后重试')
       }
       throw err
     }

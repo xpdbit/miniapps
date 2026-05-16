@@ -1,371 +1,280 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-import Taro from '@tarojs/taro'
-import { marketService } from '@/services/marketService'
+﻿import { useState, useEffect, useCallback } from 'react'
+import { View, Text, ScrollView, Input } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
 import CharacterCard from '@/components/CharacterCard'
-import type { CharacterCard as CharacterCardType } from '@/types/character'
-import type { ApiResponse } from '@/types/common'
+import { useSyncedCardsStore } from '@/stores/syncedCardsStore'
+import { useLocalCardsStore } from '@/stores/localCardsStore'
+import type { CharacterCard as CharacterCardType, CardType, LocalCard } from '@/types/character'
+import { CARD_TYPE_LABELS } from '@/types/character'
+import { EmptyState, Icon, Skeleton } from '@/components'
+import type { IconName } from '@/components/Icon'
 import './index.scss'
 
-type SortType = 'latest' | 'popular' | 'mostLiked' | 'mostFaved'
+type SubTabType = 'character' | 'mechanism' | 'map' | 'background' | 'create'
 
-interface Tag {
-  id: string
-  name: string
-  count: number
+const CARD_TYPE_MAP: Record<SubTabType, CardType | null> = {
+  character: 'CHARACTER',
+  mechanism: 'MECHANISM',
+  map: 'MAP',
+  background: 'BACKGROUND',
+  create: null,
 }
 
-interface CarouselItem {
-  id: string
-  name: string
-  avatar?: string | null
-  description: string
-  likes: number
+const SUB_TABS: { key: SubTabType; label: string; icon: IconName }[] = [
+  { key: 'character', label: '角色', icon: 'user' },
+  { key: 'mechanism', label: '机制', icon: 'settings' },
+  { key: 'map', label: '地图', icon: 'gallery' },
+  { key: 'background', label: '背景', icon: 'photo' },
+  { key: 'create', label: '创建', icon: 'plus' },
+]
+
+function showMainTabBar(show: boolean) {
+  Taro.eventCenter.trigger('tavernSubTab', show ? 'main' : 'sub')
 }
 
 export default function MarketPage() {
-  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([])
-  const [tags, setTags] = useState<Tag[]>([])
-  const [selectedTag, setSelectedTag] = useState<string>('')
-  const [sortType, setSortType] = useState<SortType>('latest')
-  const [characters, setCharacters] = useState<CharacterCardType[]>([])
+  const [subTab, setSubTab] = useState<SubTabType>('character')
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const [currentCarousel, setCurrentCarousel] = useState(0)
 
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const syncedStore = useSyncedCardsStore()
+  const localStore = useLocalCardsStore()
 
-  // 获取轮播图
-  const fetchCarousel = useCallback(async () => {
-    try {
-      const res = await marketService.featured<{ data: CarouselItem[] }>()
-      setCarouselItems(res.data?.slice(0, 5) ?? [])
-    } catch {
-      // 静默处理
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabChange', 0)
+    showMainTabBar(true)
+    syncedStore.syncCards()
+  })
+
+  useEffect(() => {
+    if (!syncedStore.loading) {
+      setLoading(false)
     }
+  }, [syncedStore.loading])
+
+  useEffect(() => {
+    syncedStore.restoreFromStorage()
+    localStore.restoreFromStorage()
   }, [])
 
-  // 获取标签
-  const fetchTags = useCallback(async () => {
-    try {
-      const res = await marketService.tags<{ data: Tag[] }>()
-      setTags(res.data ?? [])
-    } catch {
-      // 静默处理
-    }
-  }, [])
+  const officialCards = (() => {
+    const cardType = CARD_TYPE_MAP[subTab]
+    if (!cardType) return []
+    return syncedStore.getCardsByType(cardType)
+  })()
 
-  // 获取角色列表
-  const fetchCharacters = useCallback(async (pageNum: number, isRefresh = false) => {
-    try {
-      const params = {
-        page: pageNum,
-        pageSize: 20,
-        sort: sortType,
-        tag: selectedTag || undefined,
-      }
-      const res = await marketService.list<ApiResponse<{ items: CharacterCardType[]; hasMore: boolean }>>(params)
-      if (isRefresh) {
-        setCharacters(res.data?.items ?? [])
-      } else {
-        setCharacters(prev => [...prev, ...(res.data?.items ?? [])])
-      }
-      setHasMore(res.data?.hasMore ?? false)
-    } catch {
-      // 静默处理
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [sortType, selectedTag])
+  const localCards = (() => {
+    const cardType = CARD_TYPE_MAP[subTab]
+    if (!cardType) return []
+    return localStore.getCardsByType(cardType)
+  })()
 
-  // 搜索
-  const fetchSearch = useCallback(async (query: string, pageNum: number, isRefresh = false) => {
-    try {
-      const res = await marketService.search<ApiResponse<{ items: CharacterCardType[]; hasMore: boolean }>>(query, pageNum)
-      if (isRefresh) {
-        setCharacters(res.data?.items ?? [])
-      } else {
-        setCharacters(prev => [...prev, ...(res.data?.items ?? [])])
-      }
-      setHasMore(res.data?.hasMore ?? false)
-    } catch {
-      // 静默处理
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [])
+  const filteredOfficialCards = searchQuery
+    ? officialCards.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : officialCards
 
-  // 初始化
-  useEffect(() => {
-    setLoading(true)
-    Promise.all([fetchCarousel(), fetchTags()]).finally(() => {
-      setLoading(false)
-    })
-  }, [fetchCarousel, fetchTags])
-
-  // 排序或标签变化时刷新
-  useEffect(() => {
-    setLoading(true)
-    setPage(1)
-    if (searchQuery) {
-      fetchSearch(searchQuery, 1, true)
-    } else {
-      fetchCharacters(1, true)
-    }
-  }, [sortType, selectedTag, fetchCharacters, fetchSearch])
-
-  // 搜索防抖
-  useEffect(() => {
-    if (searchTimerRef.current) {
-      clearTimeout(searchTimerRef.current)
-    }
-    if (searchQuery) {
-      searchTimerRef.current = setTimeout(() => {
-        setLoading(true)
-        setPage(1)
-        fetchSearch(searchQuery, 1, true)
-      }, 300)
-    } else {
-      setLoading(true)
-      setPage(1)
-      fetchCharacters(1, true)
-    }
-    return () => {
-      if (searchTimerRef.current) {
-        clearTimeout(searchTimerRef.current)
-      }
-    }
-  }, [searchQuery, fetchCharacters, fetchSearch])
-
-  // 下拉刷新
-  const onRefresh = useCallback(() => {
-    setRefreshing(true)
-    setPage(1)
-    if (searchQuery) {
-      fetchSearch(searchQuery, 1, true).finally(() => setRefreshing(false))
-    } else {
-      Promise.all([fetchCarousel(), fetchTags()]).finally(() => {
-        fetchCharacters(1, true).finally(() => setRefreshing(false))
-      })
-    }
-  }, [searchQuery, fetchCarousel, fetchTags, fetchCharacters, fetchSearch])
-
-  // 上拉加载更多
-  const onLoadMore = useCallback(() => {
-    if (loading || !hasMore) return
-    const nextPage = page + 1
-    setPage(nextPage)
-    if (searchQuery) {
-      fetchSearch(searchQuery, nextPage, false)
-    } else {
-      fetchCharacters(nextPage, false)
-    }
-  }, [loading, hasMore, page, searchQuery, fetchSearch, fetchCharacters])
-
-  // 轮播自动播放
-  useEffect(() => {
-    if (carouselItems.length <= 1) return
-    const timer = setInterval(() => {
-      setCurrentCarousel(prev => (prev + 1) % carouselItems.length)
-    }, 4000)
-    return () => clearInterval(timer)
-  }, [carouselItems.length])
-
-  // 点击角色卡片
   const handleCardClick = useCallback((id: string) => {
     Taro.navigateTo({ url: `/pages/character/detail/index?id=${id}` })
   }, [])
 
-  // 选择标签
-  const handleTagSelect = useCallback((tag: string) => {
-    setSelectedTag(tag === selectedTag ? '' : tag)
-  }, [selectedTag])
-
-  // 排序选择
-  const handleSortChange = useCallback((type: SortType) => {
-    setSortType(type)
+  const handleCreateCard = useCallback((cardType: CardType) => {
+    Taro.navigateTo({ url: `/pages/creator/index?cardType=${cardType}` })
   }, [])
 
-  // 搜索输入
-  const handleSearchInput = useCallback((event: unknown) => {
-    const ev = event as { detail: { value: string } }
-    setSearchQuery(ev.detail.value)
+  const handleSearchInput = useCallback((e: { detail: { value: string } }) => {
+    setSearchQuery(e.detail.value)
   }, [])
 
-  // 空状态
-  const showEmpty = !loading && characters.length === 0
+  const showEmpty = !loading && filteredOfficialCards.length === 0 && localCards.length === 0
+
+  const renderCardGrid = (cards: (CharacterCardType | LocalCard)[], isOfficial: boolean) => (
+    <View className='market-grid'>
+      {cards.map(card => (
+        <View key={card.id} className='market-grid-item'>
+          <CharacterCard
+            id={card.id}
+            name={card.name}
+            avatar={card.avatar}
+            description={card.description}
+            tags={card.tags}
+            onClick={() => {
+              if (isOfficial) {
+                Taro.navigateTo({ url: `/pages/character/detail/index?id=${card.id}` })
+              } else {
+                Taro.navigateTo({ url: `/pages/chat/index?characterId=${card.id}&local=true` })
+              }
+            }}
+          />
+          {isOfficial && (
+            <View
+              className='market-grid-detail-btn'
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCardClick(card.id)
+              }}
+            >
+              <Icon name='arrow-right' size={28} color='#C49A6C' />
+            </View>
+          )}
+        </View>
+      ))}
+    </View>
+  )
 
   return (
     <View className='page-market'>
-      {/* 搜索栏 */}
-      <View className='market-search'>
-        <t-input
-          className='market-search-input'
-          placeholder='搜索角色...'
-          value={searchQuery}
-          onChange={handleSearchInput}
-        />
-      </View>
-
-      {/* 轮播图 */}
-      {carouselItems.length > 0 && (
-        <View className='market-carousel'>
-          <ScrollView
-            scrollX
-            scrollWithAnimation
-            className='market-carousel-scroll'
-            scrollLeft={currentCarousel * 300}
-            enableFlex
-          >
-            {carouselItems.map((item) => (
-              <View
-                key={item.id}
-                className='market-carousel-item'
-                onClick={() => handleCardClick(item.id)}
-              >
-                {item.avatar ? (
-                  <Image src={item.avatar} mode='aspectFill' className='market-carousel-img' />
-                ) : (
-                  <View className='market-carousel-placeholder'>{item.name[0]}</View>
-                )}
-                <View className='market-carousel-overlay'>
-                  <Text className='market-carousel-name'>{item.name}</Text>
-                  <Text className='market-carousel-likes'>&#9825; {item.likes}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-          <View className='market-carousel-dots'>
-            {carouselItems.map((_, index) => (
-              <View
-                key={index}
-                className={`market-carousel-dot ${currentCarousel === index ? 'active' : ''}`}
+      {subTab === 'character' && (
+        <View className='market-character-area'>
+          <View className='market-search'>
+            <View className='market-search-wrapper'>
+              <Icon name='search' size={40} color='#999' />
+              <Input
+                className='market-search-input'
+                placeholder='搜索角色...'
+                value={searchQuery}
+                onInput={handleSearchInput}
               />
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* 标签栏 */}
-      {tags.length > 0 && (
-        <ScrollView scrollX className='market-tags' enableFlex>
-          <View className='market-tags-row'>
-            <View
-              className={`market-tag ${selectedTag === '' ? 'active' : ''}`}
-              onClick={() => handleTagSelect('')}
-            >
-              <Text>全部</Text>
             </View>
-            {tags.map(tag => (
-              <View
-                key={tag.id}
-                className={`market-tag ${selectedTag === tag.name ? 'active' : ''}`}
-                onClick={() => handleTagSelect(tag.name)}
-              >
-                <Text>{tag.name}</Text>
-              </View>
-            ))}
           </View>
-        </ScrollView>
+          <ScrollView scrollY className='market-content' lowerThreshold={100}>
+            {loading && syncedStore.cards.length === 0 && (
+              <View className='market-grid'>
+                <Skeleton type='list' count={6} />
+              </View>
+            )}
+            {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
+            {localCards.length > 0 && (
+              <>
+                <View className='market-section-title'><Text>我的卡片</Text></View>
+                {renderCardGrid(localCards, false)}
+              </>
+            )}
+            {showEmpty && (
+              <EmptyState icon={<Icon name='user' size={64} color='#CCCCCC' />} title='暂无角色' description={searchQuery ? '换个关键词试试吧' : '稍后再来看看'} />
+            )}
+          </ScrollView>
+        </View>
       )}
 
-      {/* 排序栏 */}
-      <View className='market-sort'>
-        <View
-          className={`market-sort-item ${sortType === 'latest' ? 'active' : ''}`}
-          onClick={() => handleSortChange('latest')}
-        >
-          <Text>最新</Text>
+      {subTab === 'mechanism' && (
+        <View className='market-sub-panel-content'>
+          {loading && <Skeleton type='list' count={4} />}
+          {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
+          {localCards.length > 0 && (
+            <><View className='market-section-title'><Text>我的卡片</Text></View>{renderCardGrid(localCards, false)}</>
+          )}
+          {showEmpty && (
+            <EmptyState icon={<Icon name='settings' size={64} color='#CCCCCC' />} title='暂无机制卡' description='官方机制卡同步后将在此显示' />
+          )}
+          <View className='market-sub-create-bar'>
+            <View className='market-create-card' onClick={() => handleCreateCard('MECHANISM')}>
+              <View className='market-create-card-inner'>
+                <Icon name='plus' size={40} color='#FF6B35' />
+                <Text className='market-create-card-label'>创建机制卡</Text>
+              </View>
+            </View>
+          </View>
         </View>
-        <View
-          className={`market-sort-item ${sortType === 'popular' ? 'active' : ''}`}
-          onClick={() => handleSortChange('popular')}
-        >
-          <Text>最热</Text>
-        </View>
-        <View
-          className={`market-sort-item ${sortType === 'mostLiked' ? 'active' : ''}`}
-          onClick={() => handleSortChange('mostLiked')}
-        >
-          <Text>最多点赞</Text>
-        </View>
-      </View>
+      )}
 
-      {/* 主内容区域 - 使用 ScrollView 实现下拉刷新和无限滚动 */}
-      <ScrollView
-        scrollY
-        className='market-content'
-        refresherEnabled
-        refresherTriggered={refreshing}
-        onRefresherRefresh={onRefresh}
-        onScrollToLower={onLoadMore}
-        lowerThreshold={100}
-      >
-        {/* 加载骨架屏 */}
-        {loading && characters.length === 0 && (
-          <View className='market-grid'>
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <View key={i} className='market-skeleton'>
-                <View className='market-skeleton-avatar' />
-                <View className='market-skeleton-info'>
-                  <View className='market-skeleton-title' />
-                  <View className='market-skeleton-desc' />
+      {subTab === 'map' && (
+        <View className='market-sub-panel-content'>
+          {loading && <Skeleton type='list' count={4} />}
+          {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
+          {localCards.length > 0 && (
+            <><View className='market-section-title'><Text>我的卡片</Text></View>{renderCardGrid(localCards, false)}</>
+          )}
+          {showEmpty && (
+            <EmptyState icon={<Icon name='gallery' size={64} color='#CCCCCC' />} title='暂无地图卡' description='官方地图卡同步后将在此显示' />
+          )}
+          <View className='market-sub-create-bar'>
+            <View className='market-create-card' onClick={() => handleCreateCard('MAP')}>
+              <View className='market-create-card-inner'>
+                <Icon name='plus' size={40} color='#FF6B35' />
+                <Text className='market-create-card-label'>创建地图卡</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {subTab === 'background' && (
+        <View className='market-sub-panel-content'>
+          {loading && <Skeleton type='list' count={4} />}
+          {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
+          {localCards.length > 0 && (
+            <><View className='market-section-title'><Text>我的卡片</Text></View>{renderCardGrid(localCards, false)}</>
+          )}
+          {showEmpty && (
+            <EmptyState icon={<Icon name='photo' size={64} color='#CCCCCC' />} title='暂无背景卡' description='官方背景卡同步后将在此显示' />
+          )}
+          <View className='market-sub-create-bar'>
+            <View className='market-create-card' onClick={() => handleCreateCard('BACKGROUND')}>
+              <View className='market-create-card-inner'>
+                <Icon name='plus' size={40} color='#FF6B35' />
+                <Text className='market-create-card-label'>创建背景卡</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {subTab === 'create' && (
+        <View className='market-create-panel'>
+          <Text className='market-create-panel-title'>创建新卡片</Text>
+          <Text className='market-create-panel-hint'>选择你要创建的卡片类型（本地保存）</Text>
+          <View className='market-create-options'>
+            {(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND'] as CardType[]).map(type => (
+              <View key={type} className='market-create-option' onClick={() => handleCreateCard(type)}>
+                <View className='market-create-option-icon'>
+                  <Icon
+                    name={type === 'CHARACTER' ? 'user' : type === 'MECHANISM' ? 'settings' : type === 'MAP' ? 'gallery' : 'photo'}
+                    size={48} color='#FF6B35'
+                  />
                 </View>
+                <Text className='market-create-option-label'>{CARD_TYPE_LABELS[type]}卡</Text>
+                <Text className='market-create-option-desc'>
+                  {type === 'CHARACTER' ? '创建角色设定与对话' : type === 'MECHANISM' ? '定义游戏规则与交互' : type === 'MAP' ? '设计探索场景与地图' : '设定世界观与故事背景'}
+                </Text>
               </View>
             ))}
           </View>
-        )}
+          {localStore.cards.length > 0 && (
+            <View className='market-local-cards-section'>
+              <View className='market-section-title'><Text>我的本地卡片 ({localStore.cards.length})</Text></View>
+              <ScrollView scrollY className='market-local-cards-list'>
+                {localStore.cards.map(card => (
+                  <View key={card.id} className='market-local-card-item' onClick={() => {
+                    Taro.navigateTo({ url: `/pages/creator/index?cardType=${card.cardType}&edit=${card.id}` })
+                  }}>
+                    <View className='market-local-card-info'>
+                      <Text className='market-local-card-name'>{card.name}</Text>
+                      <Text className='market-local-card-type'>{CARD_TYPE_LABELS[card.cardType] || card.cardType}卡</Text>
+                    </View>
+                    <Icon name='arrow-right' size={28} color='#999' />
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      )}
 
-        {/* 角色卡片网格 */}
-        {!loading && characters.length > 0 && (
-          <View className='market-grid'>
-            {characters.map(character => (
-              <CharacterCard
-                key={character.id}
-                id={character.id}
-                name={character.name}
-                avatar={character.avatar}
-                description={character.description}
-                tags={character.tags}
-                status={character.status}
-                chatCount={character.chats}
-                likeCount={character.likes}
-                onClick={handleCardClick}
-              />
-            ))}
+      <View className='market-sub-tabs'>
+        {SUB_TABS.map(tab => (
+          <View
+            key={tab.key}
+            className={`market-sub-tab ${subTab === tab.key ? 'market-sub-tab--active' : ''}`}
+            onClick={() => setSubTab(tab.key)}
+          >
+            <Icon name={tab.icon} size={40} color={subTab === tab.key ? '#FF6B35' : '#999'} />
+            <Text className='market-sub-tab-label'>{tab.label}</Text>
           </View>
-        )}
-
-        {/* 空状态 */}
-        {showEmpty && (
-          <View className='market-empty'>
-            <Text className='market-empty-icon'>?</Text>
-            <Text className='market-empty-text'>暂无角色</Text>
-            <Text className='market-empty-hint'>
-              {searchQuery ? '换个关键词试试吧' : '稍后再来看看'}
-            </Text>
-          </View>
-        )}
-
-        {/* 加载更多 */}
-        {!loading && hasMore && characters.length > 0 && (
-          <View className='market-load-more'>
-            <Text>加载更多...</Text>
-          </View>
-        )}
-
-        {/* 没有更多了 */}
-        {!loading && !hasMore && characters.length > 0 && (
-          <View className='market-no-more'>
-            <Text>没有更多了</Text>
-          </View>
-        )}
-      </ScrollView>
+        ))}
+      </View>
     </View>
   )
 }

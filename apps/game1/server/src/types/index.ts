@@ -8,14 +8,14 @@ export interface ApiResponse<T = unknown> {
 
 // ─── JWT Payload ───
 export interface JwtPayload {
-  playerId: number;
-  openid: string;
+  playerId: string;
+  uuid: string;
   role: 'player' | 'admin';
 }
 
 // ─── 玩家 ───
 export interface PlayerProfile {
-  id: number;
+  id: string;
   nickname: string | null;
   avatarUrl: string | null;
   level: number;
@@ -34,15 +34,15 @@ export interface CloudSaveData {
 
 // ─── PVP ───
 export interface PvpMatchResult {
-  playerId: number;
-  opponentId: number;
+  playerId: string;
+  opponentId: string;
   result: 'victory' | 'defeat' | 'draw';
   battleLog?: Record<string, unknown>;
 }
 
 export interface PvpRankingEntry {
   rank: number;
-  playerId: number;
+  playerId: string;
   nickname: string | null;
   rating: number;
   wins: number;
@@ -52,7 +52,7 @@ export interface PvpRankingEntry {
 // ─── 排行榜 ───
 export interface LeaderboardEntry {
   rank: number;
-  playerId: number;
+  playerId: string;
   nickname: string | null;
   avatarUrl: string | null;
   value: number;

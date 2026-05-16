@@ -93,12 +93,38 @@
   &-key-detail {
     display: flex;
     flex-direction: column;
+    gap: 2rpx;
+  }
+
+  &-key-header-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
   }
 
   &-key-name {
     font-size: var(--font-body);
     color: var(--color-text);
     font-weight: var(--font-weight-medium);
+  }
+
+  /* ── 免费/已配置标签 ── */
+  &-key-badge {
+    font-size: 18rpx;
+    padding: 1rpx 8rpx;
+    border-radius: var(--radius-xs);
+    font-weight: var(--font-weight-medium);
+
+    &--free {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+    }
+  }
+
+  &-key-desc {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    line-height: var(--leading-tight);
   }
 
   &-key-masked {
@@ -190,5 +216,83 @@
     margin-top: var(--spacing-md);
     font-size: var(--font-caption);
     color: var(--color-text-tertiary);
+  }
+
+  /* ── 自定义 Modal ── */
+  &-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-bg-overlay);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+  }
+
+  &-modal {
+    width: 100%;
+    max-width: 640rpx;
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    animation: scale-in var(--duration-normal) var(--ease-out);
+  }
+
+  &-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  &-modal-title {
+    font-size: var(--font-body-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+
+  &-modal-close {
+    font-size: var(--font-body-lg);
+    color: var(--color-text-tertiary);
+    padding: var(--spacing-xs);
+  }
+
+  &-modal-body {
+    padding: var(--spacing-lg);
+  }
+
+  &-modal-footer {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--color-border-subtle);
+    padding-bottom: env(safe-area-inset-bottom, var(--spacing-md));
+  }
+
+  &-modal-cancel-btn {
+    flex: 1;
+    height: 80rpx;
+    line-height: 80rpx;
+    background: var(--color-bg-elevated) !important;
+    color: var(--color-text) !important;
+    border: 1px solid var(--color-border-subtle) !important;
+    border-radius: var(--radius-md);
+    font-size: var(--font-body);
+  }
+
+  &-modal-confirm-btn {
+    flex: 1;
+    height: 80rpx;
+    line-height: 80rpx;
+    background: var(--color-primary) !important;
+    color: var(--color-primary-foreground) !important;
+    border: none !important;
+    border-radius: var(--radius-md);
+    font-size: var(--font-body);
   }
 }

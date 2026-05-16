@@ -11,7 +11,10 @@ const envSchema = z.object({
   WECHAT_APP_ID: z.string(),
   WECHAT_APP_SECRET: z.string().optional().default(''),
   DASHSCOPE_API_KEY: z.string().optional().default(''),
+  OPENCODE_API_KEY: z.string().optional().default(''),
+  OPENCODE_BASE_URL: z.string().optional().default('https://opencode.ai/zen/go/v1'),
   ENCRYPTION_KEY: z.string(),
+  ADMIN_TOKEN: z.string().optional().default(''),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 });
 
@@ -30,6 +33,9 @@ export const config = {
   wechatAppId: parsed.data.WECHAT_APP_ID,
   wechatAppSecret: parsed.data.WECHAT_APP_SECRET,
   dashscopeApiKey: parsed.data.DASHSCOPE_API_KEY,
+  opencodeApiKey: parsed.data.OPENCODE_API_KEY,
+  opencodeBaseUrl: parsed.data.OPENCODE_BASE_URL,
   encryptionKey: parsed.data.ENCRYPTION_KEY,
+  adminToken: parsed.data.ADMIN_TOKEN,
   corsOrigin: parsed.data.CORS_ORIGIN,
 };

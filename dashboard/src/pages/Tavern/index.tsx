@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Table, Tag, Card, Row, Col, Statistic, Button, Space, message, Popconfirm } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { CommentOutlined, ReloadOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { CommentOutlined, ReloadOutlined, AppstoreOutlined, UserOutlined, KeyOutlined, FileTextOutlined } from '@ant-design/icons'
+import { ROUTES } from '@/constants/routes'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { tavernAdminApi } from '@/services/tavern'
@@ -54,6 +56,7 @@ const tavernApi = {
 }
 
 export default function TavernPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
 
@@ -123,6 +126,27 @@ export default function TavernPage() {
           </Button>
         }
       />
+
+      {/* ── 子页面导航 ── */}
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Button icon={<AppstoreOutlined />} onClick={() => navigate(ROUTES.TAVERN)} type="primary" ghost>
+            概览
+          </Button>
+          <Button icon={<FileTextOutlined />} onClick={() => navigate(ROUTES.TAVERN_CARDS)}>
+            卡片管理
+          </Button>
+          <Button icon={<UserOutlined />} onClick={() => navigate(ROUTES.TAVERN_CHARACTERS)}>
+            角色管理
+          </Button>
+          <Button icon={<CommentOutlined />} onClick={() => navigate(ROUTES.TAVERN_CHATS)}>
+            聊天监控
+          </Button>
+          <Button icon={<KeyOutlined />} onClick={() => navigate(ROUTES.TAVERN_KEYS)}>
+            Key 管理
+          </Button>
+        </Space>
+      </Card>
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>

@@ -1,1 +1,0 @@
-const props={current:{type:String,optionalTypes:[Number]},externalClasses:{type:Array},layout:{type:String,value:"horizontal"},readonly:{type:Boolean,value:!1},theme:{type:String,value:"default"}};export default props;

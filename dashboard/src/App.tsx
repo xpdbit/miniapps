@@ -23,11 +23,16 @@ const Monitoring = lazy(() => import('@/pages/Monitoring'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const AuditLogs = lazy(() => import('@/pages/AuditLogs'))
 const Projects = lazy(() => import('@/pages/Projects'))
+const Game1Dashboard = lazy(() => import('@/pages/Game1Dashboard'))
 const Game1Players = lazy(() => import('@/pages/Game1Players'))
 const Game1Config = lazy(() => import('@/pages/Game1Config'))
 const Game1Achievements = lazy(() => import('@/pages/Game1Achievements'))
 const Game1Pvp = lazy(() => import('@/pages/Game1Pvp'))
 const Tavern = lazy(() => import('@/pages/Tavern'))
+const TavernCharacters = lazy(() => import('@/pages/Tavern/TavernCharacters'))
+const TavernCards = lazy(() => import('@/pages/Tavern/TavernCards'))
+const TavernChats = lazy(() => import('@/pages/Tavern/TavernChats'))
+const TavernKeys = lazy(() => import('@/pages/Tavern/TavernKeys'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // ─── 全局加载态 ──────────────────────────────────────
@@ -185,7 +190,47 @@ const App = () => {
                   </Suspense>
                 }
               />
+              <Route
+                path={ROUTES.TAVERN_CHARACTERS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernCharacters />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_CARDS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernCards />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_CHATS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernChats />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_KEYS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernKeys />
+                  </Suspense>
+                }
+              />
               {/* ── Game1 页面 ── */}
+              <Route
+                path={ROUTES.GAME1_DASHBOARD}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <Game1Dashboard />
+                  </Suspense>
+                }
+              />
               <Route
                 path={ROUTES.GAME1_PLAYERS}
                 element={

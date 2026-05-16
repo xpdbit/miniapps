@@ -1,1 +1,0 @@
-const props={animation:{type:Boolean,value:!0},background:{type:String,value:""},delta:{type:Number,value:1},externalClasses:{type:Array},fixed:{type:Boolean,value:!0},homeIcon:{type:String},leftIcon:{type:String},title:{type:String},titleMaxLength:{type:Number},visible:{type:Boolean,value:!0}};export default props;

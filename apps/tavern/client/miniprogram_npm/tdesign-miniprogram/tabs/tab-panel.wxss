@@ -1,1 +1,0 @@
-.t-float-left{float:left}.t-float-right{float:right}@keyframes tdesign-fade-out{from{opacity:1}to{opacity:0}}:host{box-sizing:border-box;flex-shrink:0;height:100%;width:100%}.t-tab-panel{height:inherit;width:inherit}

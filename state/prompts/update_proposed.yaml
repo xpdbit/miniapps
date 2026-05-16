@@ -1,0 +1,41 @@
+# SuperTask Prompt Template
+# 名称: 更新待审批列表
+# 版本: 1.0
+# 支持变量替换: ${variable_name}
+---
+name: 更新待审批列表
+version: '1.0'
+template: '/ulw-loop
+
+  以下是当前待审批任务列表：
+
+
+  ${content}
+
+
+  请根据项目最新状态逐一检查每项：
+
+  - 已完成的任务标记 status: done
+
+  - 不再有效的任务标记 status: cancelled
+
+  - 需要调整描述的更新 description
+
+  - 可补充新任务（粗粒度：至少涉及多个文件或一项完整功能）
+
+
+  将更新后的完整列表写回 state/proposed_tasks.yaml（保持 YAML 格式）。
+
+  注意：仅更新 YAML 文件，不要执行任务。
+
+  不要修改或添加 proposed_at 字段（时间由系统脚本自动管理）。
+
+
+  ## 严禁事项
+
+  - 不要输出纯文本等待消息
+
+  - 每一条文本输出之后，必须立即跟随至少一个 tool call
+
+
+  完成后请输出 ===TASK_DONE==='

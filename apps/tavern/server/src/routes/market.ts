@@ -5,15 +5,16 @@ import * as socialService from '../services/social.service'
 
 const router = Router()
 
-// GET /api/v1/market - Market listing
+// GET /api/v1/market - Market listing (official cards only)
 router.get('/', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1
     const pageSize = parseInt(req.query.pageSize as string) || 20
     const sort = (req.query.sort as string) as 'latest' | 'popular' | 'mostLiked' | 'mostFaved' || 'latest'
     const tag = req.query.tag as string | undefined
+    const cardType = req.query.cardType as string | undefined
 
-    const result = await marketService.listMarket({ page, pageSize, sort, tag })
+    const result = await marketService.listMarket({ page, pageSize, sort, tag, cardType })
     res.json({ code: 0, message: 'ok', data: result })
   } catch (err: any) {
     res.status(500).json({ code: 500, message: err.message, data: null })

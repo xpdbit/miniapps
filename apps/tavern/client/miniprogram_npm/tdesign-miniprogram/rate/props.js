@@ -1,1 +1,0 @@
-const props={allowHalf:{type:Boolean,value:!1},color:{type:String,optionalTypes:[String,Array],value:"#ED7B2F"},count:{type:Number,value:5},disabled:{type:Boolean,value:!1},gap:{type:Number,value:6},showText:{type:Boolean,value:!1},size:{type:String,value:""},texts:{type:Array,value:[]},value:{type:Number,value:0},variant:{type:String,value:"outline"}};export default props;

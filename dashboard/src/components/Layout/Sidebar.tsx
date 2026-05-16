@@ -15,6 +15,8 @@ import {
   TeamOutlined,
   SlidersOutlined,
   ThunderboltOutlined,
+  IdcardOutlined,
+  ContainerOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES, MENU_ITEMS, type ProjectScope } from '@/constants/routes'
@@ -38,6 +40,10 @@ interface MenuItemConfig {
 const ICON_MAP: Record<string, React.ReactNode> = {
   [ROUTES.DASHBOARD]: <DashboardOutlined />,
   [ROUTES.TAVERN]: <CommentOutlined />,
+  [ROUTES.TAVERN_CHARACTERS]: <IdcardOutlined />,
+  [ROUTES.TAVERN_CHATS]: <ContainerOutlined />,
+  [ROUTES.TAVERN_KEYS]: <KeyOutlined />,
+  [ROUTES.TAVERN_CARDS]: <AppstoreOutlined />,
   [ROUTES.USERS]: <UserOutlined />,
   [ROUTES.FOOD_RECORDS]: <FileTextOutlined />,
   [ROUTES.THEMES]: <SkinOutlined />,
@@ -74,6 +80,10 @@ const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
   [ROUTES.API_KEYS]: PERMISSIONS.KEYS,
   [ROUTES.MONITORING]: PERMISSIONS.MONITORING,
   [ROUTES.TAVERN]: PERMISSIONS.TAVERN,
+  [ROUTES.TAVERN_CHARACTERS]: PERMISSIONS.TAVERN_CHARACTERS,
+  [ROUTES.TAVERN_CHATS]: PERMISSIONS.TAVERN_CHATS,
+  [ROUTES.TAVERN_KEYS]: PERMISSIONS.TAVERN_KEYS,
+  [ROUTES.TAVERN_CARDS]: PERMISSIONS.TAVERN_CARDS,
   [ROUTES.GAME1_PLAYERS]: PERMISSIONS.GAME1_PLAYERS,
   [ROUTES.GAME1_CONFIG]: PERMISSIONS.GAME1_CONFIG,
   [ROUTES.GAME1_ACHIEVEMENTS]: PERMISSIONS.GAME1_ACHIEVEMENTS,

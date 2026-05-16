@@ -1,6 +1,7 @@
-import { View, Text } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import { View, Text, Image } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { useAuthStore } from '@/stores/authStore'
+import { Icon } from '@/components'
 import { cn } from '@/utils'
 import './index.scss'
 
@@ -12,13 +13,18 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { icon: '\u263A', label: '我的角色', url: '/pages/character/index' },
-  { icon: '\uFF0B', label: '创建角色', url: '/pages/creator/index' },
-  { icon: '\u266D', label: '人设管理', url: '/pages/persona/index' },
-  { icon: '\u2699', label: '设置', url: '/pages/settings/index' },
+  { icon: 'user', label: '我的角色', url: '/pages/character/index' },
+  { icon: 'plus', label: '创建角色', url: '/pages/creator/index' },
+  { icon: 'persona', label: '人设管理', url: '/pages/persona/index' },
+  { icon: 'settings', label: '设置', url: '/pages/settings/index' },
 ]
 
 export default function ProfilePage() {
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabChange', 2)
+    Taro.eventCenter.trigger('tavernSubTab', 'main')
+  })
+
   const { user } = useAuthStore()
   const nickname = user?.nickname || '酒馆旅人'
   const dailyQuota = user?.dailyQuota ?? 20
@@ -38,11 +44,11 @@ export default function ProfilePage() {
       {/* 用户信息卡片 */}
       <View className='page-profile-header'>
         <View className='page-profile-avatar'>
-          <t-avatar
-            image={user?.avatar || ''}
-            size='extralarge'
-            shape='circle'
-          />
+          {user?.avatar ? (
+            <Image src={user.avatar} mode='aspectFill' className='page-profile-avatar-img' />
+          ) : (
+            <Text className='page-profile-avatar-text'>{nickname?.[0] || '?'}</Text>
+          )}
         </View>
         <Text className='page-profile-name'>{nickname}</Text>
 
@@ -84,7 +90,7 @@ export default function ProfilePage() {
             onClick={() => handleNavigate(item)}
           >
             <View className='page-profile-menu-item-left'>
-              <Text className='page-profile-menu-item-icon'>{item.icon}</Text>
+              <Icon name={item.icon as 'user' | 'plus' | 'persona' | 'settings'} size={36} color='#FF6B35' />
               <Text className='page-profile-menu-item-label'>{item.label}</Text>
             </View>
             <Text className='page-profile-menu-item-arrow'>›</Text>

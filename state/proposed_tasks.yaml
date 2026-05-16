@@ -1,1 +1,623 @@
-[]
+- id: 31
+  description: FTG server - lib/jwt.ts JWT_SECRET 为空时使用空字符串签名（line 9），添加启动时校验防止空密钥风险
+  priority: fix P1
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: quick
+- id: 32
+  description: Game1 miniapp - pages/combat/index.tsx 独立实现战斗逻辑（硬编码敌人/自建 TICK_INTERVAL），完全绕过
+    CombatEngine，需重构页面为仅 UI 层
+  priority: fix P1
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: heavy
+- id: 33
+  description: AI-Tavern miniapp - hooks/useSSE.ts 使用 Taro.request enableChunked 非 EventSource，缺少组件卸载时的请求终止（abort）
+    和断线重连机制，可能导致连接泄漏
+  priority: fix P1
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+- id: 34
+  description: AI-Tavern server - app.ts express.json() 无请求体大小限制（line 23），添加限流配置防止超大请求攻击
+  priority: fix P1
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: quick
+- id: 36
+  description: FTG server - routes/themes.ts 和 routes/theme-classes.ts 列表端点缺少分页支持，数据量增长后性能下降
+  priority: fix P3
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: normal
+- id: 37
+  description: FTG server - services/apikey.service.ts line 110 deleteApiKey 静默返回
+    false 无日志，需区分"不存在"和"删除失败"
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: quick
+- id: 38
+  description: Game1 miniapp - engine/travel/TravelEngine.ts line 555 progress >=
+    1 浮点数比较精度问题，改用 1 - 1e-9 或 Math.round 防止旅行无法完成
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: quick
+- id: 39
+  description: Game1 miniapp - engine/core/SaveManager.ts line 127-131 applyMigration
+    为空实现（仅 console.log），版本升级迁移逻辑空白
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: normal
+- id: 40
+  description: 'Game1 server - routes/admin.ts 直接 new PrismaClient()（line 6-8），应统一使用
+    services/db.ts 单例；已确认 service 文件均使用共享单例，仅 route 层存在独立实例'
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: quick
+- id: 42
+  description: AI-Tavern miniapp - services/marketService.ts 所有方法（list/featured/search/tags
+    等）返回类型均为隐式 any，需定义 ApiResponse<T> 返回类型
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+- id: 43
+  description: AI-Tavern miniapp - pages/creator/index.tsx 步骤导航（Step 2→3, 3→4）无字段校验，可跳过必填项直接提交
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+- id: 45
+  description: AI-Tavern server - routes/characters.ts line 18 createSchema 使用 z.any().optional()
+    导致 exampleDialogs 无类型校验，应定义明确数组 schema
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: quick
+- id: 46
+  description: AI-Tavern server - middleware/validate.ts 已定义 validate 中间件但从未被任何路由使用，各路由手动调用
+    schema.parse(req.body)，需统一接入中间件
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+- id: 47
+  description: AI-Tavern server - routes/keys.ts line 41 POST /:id/verify 始终返回 valid:true，需实现实际验证逻辑或删除端点
+  priority: fix P1
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+- id: 48
+  description: FTG miniapp - services/themeApi.ts 独立实现 taroRequest 封装（含重试/超时判断/isTimeoutError），应统一使用
+    services/httpClient.ts 避免重复
+  priority: fix P3
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: normal
+- id: 50
+  description: FTG server - services/auth.service.ts（line 130-138）和 user.service.ts（line
+    221-228）avatarUrl 转换逻辑完全重复，提取共享工具函数
+  priority: fix P3
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: quick
+- id: 51
+  description: AI-Tavern miniapp - stores/characterStore.ts line 5-11 重复定义 PaginatedResult
+    接口，types/common.ts line 7-13 已有相同定义
+  priority: fix P3
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: quick
+- id: 52
+  description: Game1 server - middleware/auth.ts requireAuth 和 optionalAuth 有重复 Bearer
+    token 解析和 JWT 验证逻辑，提取为共享 extractBearerToken 函数
+  priority: fix P3
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: quick
+
+# === 合并条目 ===
+# 以下条目由二次评估合并，保留较高优先级/较早日期的原始 ID
+
+# 合并源：id:35(main) + id:59 + id:100 → FTG server 空 catch 块统一修复
+- id: 35
+  description: 'FTG server - 修复 routes/share.ts(routes)、auth.ts、services/textgen.service.ts、
+    services/theme-render.service.ts(line 120) 中空 catch 块或缺失错误日志的 catch 块，
+    添加 logger.warn/error 记录；注：location.service.ts 已正确记录日志，无需修改'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:66(main) + id:67 → Game1 server catch 块统一修复
+- id: 66
+  description: 'Game1 server - 为所有路由 catch 块添加 logger.error() 记录错误详情，
+    并为空 catch 块添加 sendError 响应（players/save/auth/pvp/config/social/admin 约 10 处）'
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:44(main) + id:73 → Tavern server catch err:any 统一修复
+- id: 44
+  description: 'AI-Tavern server - 修复 routes/market.ts/admin.ts/builtin.ts/export.ts/auth.ts
+    中所有 catch (err: any) 为 catch (err: unknown) + instanceof Error 模式（约 20 处），
+    并添加统一错误日志'
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:75(main) + id:78 → Tavern miniapp catch 块 + useSSE 错误传递
+- id: 75
+  description: 'AI-Tavern miniapp - 修复 pages/market/index.tsx 4 处空 catch 块添加 Toast 用户提示；
+    修复 hooks/useSSE.ts catch 块传递实际错误信息给 onError 回调（当前硬编码"网络连接失败"）'
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:118(main) + id:121 → Dashboard 空 catch 块
+- id: 118
+  description: 'Dashboard - 修复 pages/Projects/index.tsx handleSubmit 和 handleDelete 空
+    catch 块静默忽略 API 错误，添加 message.error 用户提示；
+    修复 server/server.ts health check 空 catch 块添加 logger.error'
+  priority: fix P2
+  status: proposed
+  project: Dashboard
+  verified: true
+  estimated_effort: quick
+
+# 合并源：id:58(main) + id:57 → FTG as any 统一修复
+- id: 58
+  description: 'FTG - 移除 gallery/index.tsx 中 tab.icon 的 `as any` 类型断言；
+    修复 user.service.ts 中 2 处 `where as any` Prisma 类型断言为正确类型'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:76(main) + id:77 → Tavern miniapp as any 统一修复
+- id: 76
+  description: 'AI-Tavern miniapp - 为 marketService.ts 添加正确返回类型（ApiResponse<T>）；
+    修复 market/index.tsx、chatStore.ts、characterStore.ts 中约 6 处 `as any` 类型断言，
+    定义 API 响应接口消除显式断言'
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:116(main) + id:89 → Game1 miniapp as any 统一修复
+- id: 116
+  description: 'Game1 miniapp - 修复 app.tsx/engine 中约 28 处 `as` 类型断言
+    （Record<string,unknown>/as number/as any 等），定义 PlayerSaveData/DropRarityFilter 等具体接口类型消除；
+    具体包括：app.tsx ~27处、DropEngine.ts:266 rarities as any'
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: heavy
+
+# 合并源：id:94(main) + id:109 → parseInt NaN 校验统一修复
+- id: 94
+  description: 'Game1 server(players.ts/admin.ts) + Tavern server(market.ts) 中多处 parseInt
+    未验证 NaN，添加 isNaN 校验并返回 400；market.ts 另需 Zod schema 验证查询参数'
+  priority: fix P2
+  status: proposed
+  project: 全部项目
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:80(main) + id:117 + id:119 + id:122 → React key 统一修复
+- id: 80
+  description: '修复 React key 使用数组索引的问题：Tavern miniapp profile/index.tsx 改用唯一标识、
+    chat/index.tsx(line 163 key={i}) 改用消息唯一 ID、
+    Dashboard Monitoring/index.tsx(line 408 key={idx}) 改用规则 name/id、
+    Dashboard Game1Pvp/index.tsx(line 101 rank) 改用玩家 ID'
+  priority: fix P3
+  status: proposed
+  project: 全部项目
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:49(main) + id:61 + id:65 + id:82 + id:108 → 硬编码值/魔法数字统一清理
+- id: 49
+  description: '跨项目硬编码值清理：FTG miniapp locationService.ts QQ_MAP_KEY 改为环境变量，
+    stats/index.tsx 版本号 ''1.0.0'' 读取 package.json；
+    FTG server textgen.service.ts/recognition.service.ts 硬编码 API URL/超时/重试参数提取到 env.ts；
+    Game1 miniapp app.tsx 魔法数字（自动存档 30000ms、离线收益 28800s、衰减系数）提取为命名常量；
+    Dashboard 硬编码 URL/pageSize/魔法颜色值提取为配置常量；
+    Tavern miniapp ModelSelector MODEL_OPTIONS 和 chatStore selectedModel 等默认值迁移至 constants/'
+  priority: fix P3
+  status: proposed
+  project: 全部项目
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:53(main) + id:64 + id:88 → console.log 统一替换
+- id: 53
+  description: '统一日志：Tavern server routes/auth.ts line 74 console.error 改为 logger.error；
+    Game1 miniapp SaveManager.ts console.log 和 GameSyncManager.ts line 466 console.log 改为 console.warn；
+    SuperTask worktree_manager.py print 输出改为统一日志系统'
+  priority: fix P3
+  status: proposed
+  project: 全部项目
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:99(main) + id:114 → FTG server Zod 校验统一
+- id: 99
+  description: 'FTG server - 为 routes/records.ts/favorites.ts/checkins.ts 的 POST/PUT 请求添加 Zod 字段校验；
+    修复 themes.ts POST/PUT/usage 使用手动 if 校验而非 Zod schema 的问题，
+    统一为 Zod schema + validate 中间件模式'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  verified: true
+  estimated_effort: normal
+
+# 合并源：id:68(main) + id:96 → Game1 server Zod 校验统一
+- id: 68
+  description: 'Game1 server - 在路由中应用已有 Zod 校验中间件（players/save/pvp/config 共 4 条路由）；
+    为 routes/config.ts POST /config/batch 添加 z.array().max(50) keys 长度限制防止资源耗尽'
+  priority: fix P1
+  status: proposed
+  project: Game1 挂机放置游戏
+  verified: true
+  estimated_effort: normal
+
+# === 以下为独立条目（无需合并） ===
+
+- id: 54
+  description: Dashboard - 批量迁移内联样式：pages/FoodRecords（35处）, pages/Monitoring（33处）,
+    pages/Users（23处）等高密度内联样式页面逐步迁移为 CSS Modules
+  priority: fix P3
+  status: proposed
+  project: Dashboard
+  verified: true
+  estimated_effort: heavy
+- id: 55
+  description: 'FTG MiniApp: 修复 app.ts 中 4 处空 catch 块，添加 console.warn 错误日志'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 56
+  description: 'FTG MiniApp: 修复 result/index.tsx 假保存 — 移除虚假"保存成功"Toast 或实现真实 API 调用'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 60
+  description: 'FTG Server: 修复 recognize.ts、textgen.ts 中 `catch (error: any)` 为 `catch
+    (error: unknown)` + 类型守卫'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 62
+  description: 'FTG Server: 为 themes.ts POST/PUT/DELETE 和 checkins.ts POST 添加速率限制中间件'
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 63
+  description: 'Game1 MiniApp: 修复 app.tsx 空 catch 块 + 4 处 console.log 替换为 console.warn/error'
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 69
+  description: 'Game1 Server: 修复 admin.ts 中 2 处 `where as any` Prisma 类型断言'
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 41
+  description: 'Game1 Server: 替换 auth.service.ts(line 100-101) 中动态 require(''axios'') 和 require(''../config'') 为文件顶部 ES module import'
+  priority: fix P2
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 71
+  description: 'Tavern Server: 修复 keys.ts POST /:id/verify 伪实现 — 实际调用 keyService.verifyKey()'
+  priority: fix P1
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 72
+  description: 'Tavern Server: 实现 chat.ts SSE 断连实际清理逻辑（取消 AI 请求、释放资源）替换占位注释'
+  priority: fix P1
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 74
+  description: 'Tavern Server: 修复 export.service.ts 中 2 处 `as any` 类型断言为具体接口类型'
+  priority: fix P3
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 79
+  description: 'Tavern MiniApp: 修复 market/index.tsx 标签比较 BUG（tag.id vs tag.name 混乱）'
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 81
+  description: 'Dashboard: 为 Achievements 和 Themes 页面 mutation 的 onError 添加 message.error
+    用户反馈'
+  priority: fix P2
+  status: proposed
+  project: Dashboard
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 83
+  description: 'SuperTask: 将 terminal_interface 和 control_interface 中 subprocess.run
+    替换为 QProcess 异步执行避免 UI 阻塞'
+  priority: fix P2
+  status: proposed
+  project: supertask 工具
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 84
+  description: 'SuperTask: 修复 EventDriven.py WebhookHandler 类变量线程安全问题，改为实例变量'
+  priority: fix P1
+  status: proposed
+  project: supertask 工具
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 85
+  description: 'SuperTask: 修复 terminal_interface QProcess.write/start 缺失错误处理，连接 errorOccurred
+    信号'
+  priority: fix P2
+  status: proposed
+  project: supertask 工具
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: normal
+- id: 86
+  description: 'SuperTask: 修复 event_driven.py cron 解析缺少 try/except 输入校验'
+  priority: fix P2
+  status: proposed
+  project: supertask 工具
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 87
+  description: 'SuperTask: 修复 session_manager._load_one 返回 None 无法区分"不存在"和"损坏"的问题'
+  priority: fix P3
+  status: proposed
+  project: supertask 工具
+  proposed_at: '2026-05-14 23:45:31'
+  verified: true
+  estimated_effort: quick
+- id: 90
+  description: Game1 miniapp - engine 模块 moduleId 命名不统一（combat/TravelEngine/PetEngine），统一为
+    kebab-case 格式
+  priority: fix P3
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: normal
+- id: 91
+  description: Game1 miniapp - 将 AchievementEngine/CardEngine/PrestigeEngine 中硬编码的成就/卡牌/天赋数据迁移至
+    config JSON 文件
+  priority: fix P3
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: heavy
+- id: 92
+  description: Game1 miniapp - TravelEngine.ts (718行) 单文件职责过重，拆分为 TravelStateMachine
+    + TravelRewardsCalculator 子模块
+  priority: fix P3
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: heavy
+- id: 95
+  description: Game1 server - services/auth.service.ts mock openid 未做生产环境防护，NODE_ENV=production
+    时启动报错禁止使用
+  priority: fix P1
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: quick
+- id: 97
+  description: Game1 server - services/sync.service.ts GROWTH_LIMITS/OFFLINE_REWARDS
+    硬编码阈值迁移至 game1Config 数据库表通过 configService 动态读取
+  priority: idea
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: heavy
+- id: 98
+  description: FTG server - records/favorites/checkins 路由硬编码 errCode 数值（7000/1001/1003），统一迁移至
+    ErrorCode 枚举
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: normal
+- id: 101
+  description: FTG server - routes/themes.ts POST 创建主题 shortName 重复时 Prisma 抛 500，捕获唯一约束错误返回
+    409 Conflict
+  priority: fix P2
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: normal
+- id: 102
+  description: FTG miniapp - stores/authStore.ts TARO_APP_MOCK_AUTH mock 登录分支可绕过微信认证，添加
+    NODE_ENV 守卫或移除
+  priority: fix P1
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: quick
+- id: 103
+  description: FTG - 云函数 textGenerate 为占位实现（未接入混元 AI），getUserStats 返回硬编码零值，实现或标记废弃
+  priority: fix P3
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: normal
+- id: 104
+  description: FTG miniapp - pages/camera(555行)/gallery(649行)/stats(447行) 三个页面组件过大，提取
+    useImageUpload hook 和子组件
+  priority: fix P3
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: heavy
+- id: 105
+  description: Tavern miniapp - pages/market/index.tsx (369行) 页面过大，拆分为 MarketHeader/MarketGrid/MarketEmpty
+    子组件
+  priority: fix P3
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: heavy
+- id: 106
+  description: Tavern miniapp - hooks/useSSE.ts options 回调（onError/onMessage/onDone）应存
+    useRef 防止闭包陈旧
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: quick
+- id: 107
+  description: Tavern miniapp - pages/chat/index.tsx handleSessionClick 仅关闭面板未加载历史消息，实现会话恢复功能
+  priority: fix P2
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: normal
+- id: 110
+  description: Tavern server - services/ai-proxy.service.ts provider 参数无白名单校验，添加合法
+    provider 列表检查返回 400
+  priority: fix P1
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: quick
+- id: 111
+  description: Tavern server - 统一所有路由响应 JSON 字段顺序为 {code, message, data}（admin.ts
+    使用 {code, data, message}）
+  priority: fix P3
+  status: proposed
+  project: AI-Tavern 角色聊天
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: quick
+- id: 112
+  description: Game1 server - middleware/auth.ts requireAdmin 中 adminToken 与 JWT role
+    检查顺序优化为互斥分支避免误判
+  priority: fix P3
+  status: proposed
+  project: Game1 挂机放置游戏
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: quick
+- id: 113
+  description: 全部项目 - 全项目零自动化测试覆盖，为各项目（ftg-server/game1-server/tavern-server）添加 Jest
+    基础和首个冒烟测试
+  priority: idea
+  status: proposed
+  project: 全部项目
+  proposed_at: '2026-05-14 23:55:48'
+  verified: true
+  estimated_effort: heavy
+- id: 115
+  description: FTG server - middleware/auth.ts JWT 失败时未区分 TokenExpiredError 和 JsonWebTokenError，返回相同错误信息不利于调试
+  priority: fix P3
+  status: proposed
+  project: FTG 食物主题生成器
+  proposed_at: '2026-05-14 23:59:56'
+  verified: true
+  estimated_effort: quick
+- id: 120
+  description: Dashboard - pages/Tavern/index.tsx 运行时动态 import('axios') 回退模式（line
+    18/33/46）生产构建可能被 tree-shaking 移除，应移除回退或做静态 import
+  priority: fix P2
+  status: proposed
+  project: Dashboard
+  proposed_at: '2026-05-14 23:59:56'
+  verified: true
+  estimated_effort: normal
+- id: 123
+  description: 全部项目 - tavern-server 和 dashboard 无 ESLint 配置（其他项目均有），game1-miniapp
+    lint 脚本指向缺失文件，统一标准化
+  priority: fix P3
+  status: proposed
+  project: 全部项目
+  proposed_at: '2026-05-14 23:59:56'
+  verified: true
+  estimated_effort: normal

@@ -1,1 +1,0 @@
-const props={align:{type:String,value:"center"},border:{type:Boolean,optionalTypes:[Object],value:!1},column:{type:Number,value:4},externalClasses:{type:Array},gutter:{type:Number},hover:{type:Boolean,value:!1}};export default props;

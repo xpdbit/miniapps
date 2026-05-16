@@ -1,1 +1,0 @@
-const props={appear:{type:Boolean,value:!1},customClass:{type:String,value:""},destoryOnClose:{type:Boolean,value:!1},duration:{type:Number},name:{type:String,value:"t-transition"},visible:{type:Boolean,value:!1}};export default props;

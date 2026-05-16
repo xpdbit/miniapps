@@ -1,9 +1,10 @@
-import { View, Text } from '@tarojs/components'
+import { View, Text, Input, Button } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
 
 import { useAuthStore } from '@/stores/authStore'
 import { httpClient } from '@/services/httpClient'
+import { Icon } from '@/components'
 import './index.scss'
 
 interface ApiKey {
@@ -27,9 +28,14 @@ interface AddKeyResponse {
 }
 
 const PROVIDERS = [
-  { key: 'openai', name: 'OpenAI', icon: 'AI' },
-  { key: 'deepseek', name: 'DeepSeek', icon: 'DS' },
-  { key: 'openrouter', name: 'OpenRouter', icon: 'OR' },
+  { key: 'opencode', name: 'OpenCode Go', icon: 'OC', free: true, desc: '免费AI · Big Pickle / MiniMax M2.5' },
+  { key: 'openai', name: 'OpenAI', icon: 'OA', free: false, desc: 'GPT-4o / GPT-4 Turbo' },
+  { key: 'anthropic', name: 'Anthropic', icon: 'AN', free: false, desc: 'Claude 3.5 Sonnet / Opus' },
+  { key: 'google', name: 'Google', icon: 'GG', free: false, desc: 'Gemini 2.5 Pro / Flash' },
+  { key: 'zhipu', name: '智谱AI', icon: 'ZP', free: false, desc: 'GLM-4 / ChatGLM' },
+  { key: 'deepseek', name: 'DeepSeek', icon: 'DS', free: false, desc: 'DeepSeek-V3 / R1' },
+  { key: 'moonshot', name: '月之暗面', icon: 'MS', free: false, desc: 'Kimi / Moonshot-v1' },
+  { key: 'minimax', name: 'MiniMax', icon: 'MM', free: false, desc: 'abab6.5s / abab7' },
 ] as const
 
 export default function SettingsPage() {
@@ -38,7 +44,7 @@ export default function SettingsPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<string>('')
   const [keyValue, setKeyValue] = useState('')
-  const [, setVerifying] = useState(false)
+  const [verifying, setVerifying] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const loadKeys = useCallback(async () => {
@@ -61,11 +67,6 @@ export default function SettingsPage() {
     (provider: string) => keys.find(k => k.provider === provider),
     [keys],
   )
-
-  const maskKey = useCallback((key: string) => {
-    if (key.length <= 8) return '****'
-    return `${key.slice(0, 4)}****${key.slice(-4)}`
-  }, [])
 
   const handleAddKey = useCallback(async () => {
     if (!selectedProvider || !keyValue.trim()) {
@@ -160,11 +161,19 @@ export default function SettingsPage() {
                 <View className='page-settings-key-info'>
                   <Text className='page-settings-key-icon'>{provider.icon}</Text>
                   <View className='page-settings-key-detail'>
-                    <Text className='page-settings-key-name'>{provider.name}</Text>
+                    <View className='page-settings-key-header-row'>
+                      <Text className='page-settings-key-name'>{provider.name}</Text>
+                      {provider.free && (
+                        <Text className='page-settings-key-badge page-settings-key-badge--free'>免费</Text>
+                      )}
+                    </View>
+                    <Text className='page-settings-key-desc'>{provider.desc}</Text>
                     {existKey ? (
-                      <Text className='page-settings-key-masked'>{maskKey(existKey.id)}</Text>
+                      <Text className='page-settings-key-masked'>
+                        {existKey.createdAt ? `配置于 ${new Date(existKey.createdAt).toLocaleDateString('zh-CN')}` : '已配置'}
+                      </Text>
                     ) : (
-                      <Text className='page-settings-key-unconfigured'>未配置</Text>
+                      <Text className='page-settings-key-unconfigured'>{provider.free ? '默认可用' : '未配置'}</Text>
                     )}
                   </View>
                 </View>
@@ -187,7 +196,7 @@ export default function SettingsPage() {
                         setShowModal(true)
                       }}
                     >
-                      添加
+                      {provider.free ? '启用' : '添加'}
                     </Text>
                   )}
                 </View>
@@ -197,46 +206,62 @@ export default function SettingsPage() {
         </View>
       </View>
 
-      {/* 添加 Key 弹窗 — 使用 TDesign t-dialog */}
-      <t-dialog
-        visible={showModal}
-        title='添加 API Key'
-        confirmBtn='添加并验证'
-        cancelBtn='取消'
-        onClose={() => setShowModal(false)}
-        onConfirm={handleAddKey}
-      >
-        <View className='page-settings-modal-form'>
-          <View className='page-settings-modal-field'>
-            <Text className='page-settings-modal-label'>服务商</Text>
-            <View className='page-settings-modal-provider'>
-              {PROVIDERS.map(p => (
-                <Text
-                  key={p.key}
-                  className={`page-settings-modal-provider-option ${selectedProvider === p.key ? 'active' : ''}`}
-                  onClick={() => setSelectedProvider(p.key)}
-                >
-                  {p.icon} {p.name}
-                </Text>
-              ))}
-            </View>
-          </View>
-          <View className='page-settings-modal-field'>
-            <Text className='page-settings-modal-label'>API Key</Text>
-            <t-input
-              className='page-settings-modal-input'
-              type='text'
-              password
-              placeholder='sk-...'
-              value={keyValue}
-              onChange={e => setKeyValue(e.detail.value)}
-            />
-          </View>
-        </View>
-        <View className='page-settings-modal-hint'>
-          <Text>输入你的 API Key，系统会自动验证有效性</Text>
-        </View>
-      </t-dialog>
+      {/* 添加 Key 弹窗 */}
+      {showModal && (
+              <View className='page-settings-modal-overlay' onClick={() => setShowModal(false)}>
+                <View className='page-settings-modal' onClick={(e) => e.stopPropagation()}>
+                  <View className='page-settings-modal-header'>
+                    <Text className='page-settings-modal-title'>添加 API Key</Text>
+                    <Text className='page-settings-modal-close' onClick={() => setShowModal(false)}>
+                      <Icon name='close' size={32} color='#999' />
+                    </Text>
+                  </View>
+                  <View className='page-settings-modal-body'>
+                    <View className='page-settings-modal-form'>
+                      <View className='page-settings-modal-field'>
+                        <Text className='page-settings-modal-label'>服务商</Text>
+                        <View className='page-settings-modal-provider'>
+                          {PROVIDERS.map(p => (
+                            <Text
+                              key={p.key}
+                              className={`page-settings-modal-provider-option ${selectedProvider === p.key ? 'active' : ''}`}
+                              onClick={() => setSelectedProvider(p.key)}
+                            >
+                              {p.icon} {p.name}
+                            </Text>
+                          ))}
+                        </View>
+                      </View>
+                      <View className='page-settings-modal-field'>
+                        <Text className='page-settings-modal-label'>API Key</Text>
+                        <Input
+                          className='page-settings-modal-input'
+                          type='text'
+                          password
+                          placeholder='sk-...'
+                          value={keyValue}
+                          onInput={e => setKeyValue(e.detail.value)}
+                        />
+                      </View>
+                    </View>
+                    <View className='page-settings-modal-hint'>
+                      <Text>输入你的 API Key，系统会自动验证有效性</Text>
+                    </View>
+                  </View>
+                  <View className='page-settings-modal-footer'>
+                    <Button className='page-settings-modal-cancel-btn' onClick={() => setShowModal(false)}>取消</Button>
+                    <Button
+                      className='page-settings-modal-confirm-btn'
+                      onClick={handleAddKey}
+                      disabled={verifying}
+                    >
+                      {verifying ? '验证中...' : '添加并验证'}
+                    </Button>
+                  </View>
+                </View>
+              </View>
+            )}
+
     </View>
   )
 }

@@ -1,1 +1,0 @@
-const props={disabled:{type:Boolean,value:!1},max:{type:Number,value:void 0},name:{type:String,value:""},options:{type:Array,value:[]},value:{type:Array,value:[]}};export default props;

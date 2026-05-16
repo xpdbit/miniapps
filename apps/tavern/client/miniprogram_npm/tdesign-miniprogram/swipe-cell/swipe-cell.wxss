@@ -1,1 +1,0 @@
-.t-float-left{float:left}.t-float-right{float:right}@keyframes tdesign-fade-out{from{opacity:1}to{opacity:0}}.t-swipe-cell{overflow:hidden;position:relative}.t-swipe-cell__left,.t-swipe-cell__right{height:100%;position:absolute;top:0}.t-swipe-cell__left{left:0;transform:translate3d(-100%,0,0)}.t-swipe-cell__right{right:0;transform:translate3d(100%,0,0)}

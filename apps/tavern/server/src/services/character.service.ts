@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client'
 export async function listMyCharacters(userId: string, page: number = 1, pageSize: number = 20) {
   const skip = (page - 1) * pageSize
   const [items, total] = await Promise.all([
-    prisma.characterCard.findMany({
+    prisma.tavernCard.findMany({
       where: { creatorId: userId },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -13,17 +13,18 @@ export async function listMyCharacters(userId: string, page: number = 1, pageSiz
       select: {
         id: true, name: true, avatar: true, description: true,
         tags: true, status: true, chatCount: true, likeCount: true, favCount: true,
+        cardType: true, isOfficial: true,
         createdAt: true, updatedAt: true,
       },
     }),
-    prisma.characterCard.count({ where: { creatorId: userId } }),
+    prisma.tavernCard.count({ where: { creatorId: userId } }),
   ])
   return { items, total, page, pageSize, hasMore: skip + items.length < total }
 }
 
 // Get character detail
 export async function getCharacterDetail(id: string) {
-  const card = await prisma.characterCard.findUnique({
+  const card = await prisma.tavernCard.findUnique({
     where: { id },
     include: {
       creator: { select: { id: true, nickname: true, avatar: true } },
@@ -38,8 +39,9 @@ export async function createCharacter(data: {
   avatar?: string; personality?: string; scenario?: string
   lore?: string; systemPrompt?: string; tags?: string[]
   exampleDialogs?: unknown; nsfw?: boolean
+  cardType?: string
 }, userId: string) {
-  const card = await prisma.characterCard.create({
+  const card = await prisma.tavernCard.create({
     data: {
       name: data.name,
       description: data.description,
@@ -50,6 +52,7 @@ export async function createCharacter(data: {
       lore: data.lore,
       systemPrompt: data.systemPrompt,
       tags: data.tags ?? [],
+      cardType: (data.cardType as Prisma.EnumCardTypeFilter['equals']) || 'CHARACTER',
       exampleDialogs: data.exampleDialogs != null ? data.exampleDialogs as Prisma.InputJsonValue : undefined,
       nsfw: data.nsfw ?? false,
       creatorId: userId,
@@ -65,22 +68,26 @@ export async function updateCharacter(id: string, userId: string, data: {
   avatar?: string; personality?: string; scenario?: string
   lore?: string; systemPrompt?: string; tags?: string[]
   exampleDialogs?: unknown; nsfw?: boolean
+  cardType?: string
 }) {
-  const card = await prisma.characterCard.findUnique({ where: { id } })
+  const card = await prisma.tavernCard.findUnique({ where: { id } })
   if (!card) throw new Error('NOT_FOUND')
   if (card.creatorId !== userId) throw new Error('FORBIDDEN')
 
-  const updateData: Prisma.CharacterCardUpdateInput = {
+  const updateData: Prisma.TavernCardUpdateInput = {
     name: data.name, description: data.description, firstMsg: data.firstMsg,
     avatar: data.avatar, personality: data.personality, scenario: data.scenario,
     lore: data.lore, systemPrompt: data.systemPrompt, tags: data.tags,
     nsfw: data.nsfw,
   }
+  if (data.cardType) {
+    updateData.cardType = data.cardType as Prisma.EnumCardTypeFilter['equals']
+  }
   if (data.exampleDialogs !== undefined) {
     updateData.exampleDialogs = data.exampleDialogs != null ? data.exampleDialogs as Prisma.InputJsonValue : undefined
   }
 
-  const updated = await prisma.characterCard.update({
+  const updated = await prisma.tavernCard.update({
     where: { id },
     data: updateData,
   })
@@ -89,20 +96,20 @@ export async function updateCharacter(id: string, userId: string, data: {
 
 // Delete character
 export async function deleteCharacter(id: string, userId: string) {
-  const card = await prisma.characterCard.findUnique({ where: { id } })
+  const card = await prisma.tavernCard.findUnique({ where: { id } })
   if (!card) throw new Error('NOT_FOUND')
   if (card.creatorId !== userId) throw new Error('FORBIDDEN')
-  await prisma.characterCard.delete({ where: { id } })
+  await prisma.tavernCard.delete({ where: { id } })
 }
 
 // Publish character (submit for review)
 export async function publishCharacter(id: string, userId: string) {
-  const card = await prisma.characterCard.findUnique({ where: { id } })
+  const card = await prisma.tavernCard.findUnique({ where: { id } })
   if (!card) throw new Error('NOT_FOUND')
   if (card.creatorId !== userId) throw new Error('FORBIDDEN')
   if (card.status !== 'DRAFT') throw new Error('INVALID_STATUS')
 
-  return prisma.characterCard.update({
+  return prisma.tavernCard.update({
     where: { id },
     data: { status: 'PENDING' },
   })

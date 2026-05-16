@@ -7,6 +7,14 @@ const server = createServer();
 
 server.listen(config.port, () => {
   logger.info(`服务器运行在端口 ${config.port}`);
+
+  // 启动时配置验证
+  if (!config.dashscopeApiKey) {
+    logger.warn('⚠ DASHSCOPE_API_KEY 未配置 — 通义千问（免费默认）将不可用');
+  }
+  if (!config.opencodeApiKey) {
+    logger.warn('⚠ OPENCODE_API_KEY 未配置 — OpenCode Go（免费默认）将不可用');
+  }
 });
 
 // 优雅关闭

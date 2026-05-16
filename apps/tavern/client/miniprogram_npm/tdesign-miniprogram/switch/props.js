@@ -1,1 +1,0 @@
-const props={colors:{type:Array},customValue:{type:Array,value:[!0,!1]},disabled:{type:Boolean,value:!1},label:{type:String,value:""},loading:{type:Boolean,value:!1},size:{type:String,value:"medium"},value:{type:String,optionalTypes:[Number,Boolean],value:!1}};export default props;

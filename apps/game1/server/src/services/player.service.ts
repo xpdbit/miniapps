@@ -2,28 +2,28 @@ import { NotFoundError } from '../utils/errors';
 import { validateSyncGrowth } from './sync.service';
 import { prisma } from './db';
 
-export async function getPlayer(playerId: number) {
+export async function getPlayer(playerId: string) {
   const player = await prisma.game1Player.findUnique({
     where: { id: playerId },
     select: {
       id: true,
       nickname: true,
-      avatarUrl: true,
+      avatar_url: true,
       level: true,
       exp: true,
       gold: true,
       gems: true,
-      totalMileage: true,
-      playTime: true,
-      prestigeCount: true,
-      loginDays: true,
-      lastLoginAt: true,
-      createdAt: true,
+      total_mileage: true,
+      play_time: true,
+      prestige_count: true,
+      login_days: true,
+      last_login_at: true,
+      created_at: true,
     },
   });
   if (!player) throw new NotFoundError('玩家不存在');
 
-  const computedPlayTime = Math.floor((Date.now() - player.createdAt.getTime()) / 1000);
+  const computedPlayTime = Math.floor((Date.now() - player.created_at.getTime()) / 1000);
 
   return {
     ...player,

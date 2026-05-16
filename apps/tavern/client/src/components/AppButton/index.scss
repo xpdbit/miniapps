@@ -1,0 +1,164 @@
+/* ============================================================
+   AppButton - 通用按钮组件
+   使用全局 CSS 变量系统（Tavern 新系统）
+   ============================================================ */
+
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  border: none;
+  outline: none;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-tight);
+  border-radius: var(--radius-md);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ============================================================
+   Variants
+   ============================================================ */
+
+.app-btn--primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+
+  &:active {
+    background-color: var(--color-primary-dark);
+  }
+}
+
+.app-btn--secondary {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+
+  &:active {
+    background-color: var(--color-bg-surface-hover);
+  }
+}
+
+.app-btn--ghost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px dashed var(--color-primary);
+  opacity: 0.85;
+
+  &:active {
+    opacity: 1;
+    background-color: var(--color-primary-bg);
+  }
+}
+
+.app-btn--danger {
+  background-color: var(--color-error);
+  color: var(--color-text-inverse);
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+/* ============================================================
+   Sizes
+   ============================================================ */
+
+.app-btn--sm {
+  height: 60rpx;
+  padding: 0 var(--spacing-sm);
+  font-size: var(--font-body-sm);
+  border-radius: var(--radius-sm);
+  min-width: 120rpx;
+}
+
+.app-btn--md {
+  height: 80rpx;
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-body);
+  border-radius: var(--radius-md);
+  min-width: 160rpx;
+}
+
+.app-btn--lg {
+  height: 96rpx;
+  padding: 0 var(--spacing-lg);
+  font-size: var(--font-body-lg);
+  border-radius: var(--radius-md);
+  min-width: 200rpx;
+}
+
+/* ============================================================
+   Block
+   ============================================================ */
+
+.app-btn--block {
+  display: flex;
+  width: 100%;
+}
+
+/* ============================================================
+   Disabled
+   ============================================================ */
+
+.app-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+
+  &:active {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   Loading
+   ============================================================ */
+
+.app-btn--loading {
+  cursor: not-allowed;
+
+  &:active {
+    transform: none;
+  }
+}
+
+.app-btn__spinner {
+  width: 28rpx;
+  height: 28rpx;
+  border: 3px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: app-btn-spin 0.6s linear infinite;
+}
+
+@keyframes app-btn-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   Icon & Text
+   ============================================================ */
+
+.app-btn__icon {
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.app-btn__text {
+  line-height: 1;
+}

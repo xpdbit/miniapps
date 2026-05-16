@@ -11,7 +11,7 @@
   "scripts": {
     "build:weapp": "taro build --type weapp --mode development",
     "build:weapp:prod": "taro build --type weapp --mode production",
-    "predev": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});fs.cpSync('src/assets/icons','dist/assets/icons',{recursive:true});console.log('cleaned dist, pre-copied icons')\"",
+    "predev": "node -e \"fs.rmSync('dist',{recursive:true,force:true});console.log('cleaned dist')\"",
     "dev:weapp": "taro build --type weapp --watch --mode development",
     "build:h5": "taro build --type h5 --mode development",
     "dev:h5": "taro build --type h5 --watch --mode development",

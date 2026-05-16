@@ -13,6 +13,7 @@ import {
   Empty,
   Tag,
   Spin,
+  Progress,
 } from 'antd'
 import { TeamOutlined } from '@ant-design/icons'
 import PageHeader from '@/components/PageHeader'
@@ -22,7 +23,7 @@ import { Line, Gauge } from '@ant-design/charts'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
 import { monitorApi } from '@/services/monitorApi'
-import type { ProjectHealth, AlertRule } from '@/services/monitorApi'
+import type { ProjectHealth, AlertRule, SystemMetrics } from '@/services/monitorApi'
 
 const { Text } = Typography
 
@@ -81,7 +82,7 @@ const Monitoring = () => {
     isLoading: healthLoading,
   } = useQuery({
     queryKey: ['monitoring', 'health'],
-    queryFn: () => monitorApi.getProjectsHealth().then((res) => res.data),
+    queryFn: () => monitorApi.getProjectsHealth().then((res) => res.data.data),
     refetchInterval: REFETCH_INTERVAL,
   })
 
@@ -99,7 +100,7 @@ const Monitoring = () => {
     queryKey: ['monitoring', 'metrics', effectiveProjectId],
     queryFn: () => {
       if (effectiveProjectId == null) return Promise.reject(new Error('未选择项目'))
-      return monitorApi.getProjectMetrics(effectiveProjectId).then((res) => res.data)
+      return monitorApi.getProjectMetrics(effectiveProjectId).then((res) => res.data.data)
     },
     enabled: effectiveProjectId != null,
     refetchInterval: REFETCH_INTERVAL,
@@ -108,8 +109,15 @@ const Monitoring = () => {
   // --- 查询: 告警规则 ---
   const { data: alertRules = [] } = useQuery({
     queryKey: ['monitoring', 'alert-rules'],
-    queryFn: () => monitorApi.getAlertRules().then((res) => res.data),
+    queryFn: () => monitorApi.getAlertRules().then((res) => res.data.data),
     staleTime: 5 * 60 * 1000,
+  })
+
+  // --- 查询: 系统资源指标 ---
+  const { data: systemMetrics, isLoading: sysMetricsLoading } = useQuery<SystemMetrics>({
+    queryKey: ['monitoring', 'system-metrics'],
+    queryFn: () => monitorApi.getSystemMetrics().then((res) => res.data.data),
+    refetchInterval: REFETCH_INTERVAL,
   })
 
   // --- 默认告警规则 (API 无数据时回退) ---
@@ -525,6 +533,91 @@ const Monitoring = () => {
       {/* 告警规则 */}
       {renderAlertRules()}
 
+      {/* ── 系统资源监控 ── */}
+      {systemMetrics && (
+        <Card title="系统资源" style={{ marginTop: 24 }}>
+          <Spin spinning={sysMetricsLoading}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="CPU 使用率"
+                    value={systemMetrics.cpu.usagePercent}
+                    suffix="%"
+                    valueStyle={{ color: systemMetrics.cpu.usagePercent > 80 ? '#ff4d4f' : '#52c41a' }}
+                  />
+                  <Progress
+                    percent={systemMetrics.cpu.usagePercent}
+                    showInfo={false}
+                    strokeColor={systemMetrics.cpu.usagePercent > 80 ? '#ff4d4f' : '#1677ff'}
+                    style={{ marginTop: 8 }}
+                  />
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {systemMetrics.cpu.cores} 核 · Load: {systemMetrics.cpu.loadAvg1m}
+                  </Text>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="内存使用率"
+                    value={systemMetrics.memory.percent}
+                    suffix="%"
+                    valueStyle={{ color: systemMetrics.memory.percent > 85 ? '#ff4d4f' : '#1677ff' }}
+                  />
+                  <Progress
+                    percent={systemMetrics.memory.percent}
+                    showInfo={false}
+                    strokeColor={systemMetrics.memory.percent > 85 ? '#ff4d4f' : '#52c41a'}
+                    style={{ marginTop: 8 }}
+                  />
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {formatBytes(systemMetrics.memory.used)} / {formatBytes(systemMetrics.memory.total)}
+                  </Text>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="磁盘使用率"
+                    value={systemMetrics.disk.percent || 0}
+                    suffix="%"
+                    valueStyle={{ color: (systemMetrics.disk.percent || 0) > 85 ? '#ff4d4f' : '#1677ff' }}
+                  />
+                  <Progress
+                    percent={systemMetrics.disk.percent || 0}
+                    showInfo={false}
+                    strokeColor={(systemMetrics.disk.percent || 0) > 85 ? '#ff4d4f' : '#52c41a'}
+                    style={{ marginTop: 8 }}
+                  />
+                  {systemMetrics.disk.total > 0 ? (
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {formatBytes(systemMetrics.disk.used)} / {formatBytes(systemMetrics.disk.total)}
+                    </Text>
+                  ) : (
+                    <Text type="secondary" style={{ fontSize: 12 }}>未获取到磁盘信息</Text>
+                  )}
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="运行时间"
+                    value={formatUptime(systemMetrics.uptime)}
+                    valueStyle={{ fontSize: 20 }}
+                  />
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      Node {systemMetrics.process.nodeVersion} · PID {systemMetrics.process.pid}
+                    </Text>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+          </Spin>
+        </Card>
+      )}
+
       {/* 服务详情抽屉 */}
       {renderDrawer()}
     </div>
@@ -532,6 +625,25 @@ const Monitoring = () => {
 }
 
 // ---- 内联辅助组件 ----
+
+/** 格式化字节为人类可读格式 */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+/** 格式化运行时间 */
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / 86400)
+  const h = Math.floor((seconds % 86400) / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (d > 0) return `${d}d ${h}h`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
 
 /**
  * 弹性行内两端对齐，常用于标题行

@@ -3,7 +3,7 @@ import path from 'path';
 
 import devConfig from './dev';
 import prodConfig from './prod';
-import domain from '../../../domain.config.js';
+import domain from '../../../../domain.config.js';
 
 // ─── 基础配置（开发/生产共享部分） ────────────────────────
 const baseConfig = {
@@ -85,6 +85,16 @@ const baseConfig = {
           generateScopedName: '[name]__[local]___[hash:base64:5]',
         },
       },
+    },
+    webpackChain(chain) {
+      chain.resolve.alias
+        .set('@', path.resolve(__dirname, '..', 'src'))
+        .set('@utils', path.resolve(__dirname, '..', 'src/utils'))
+        .set('@components', path.resolve(__dirname, '..', 'src/components'))
+        .set('@services', path.resolve(__dirname, '..', 'src/services'))
+        .set('@types', path.resolve(__dirname, '..', 'src/types'))
+        .set('@constants', path.resolve(__dirname, '..', 'src/constants'))
+        .set('@stores', path.resolve(__dirname, '..', 'src/stores'));
     },
   },
 };

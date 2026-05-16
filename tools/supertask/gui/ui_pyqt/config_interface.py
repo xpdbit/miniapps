@@ -107,6 +107,117 @@ _DEFAULT_EXECUTE = """/ulw-loop
 完成后请输出 ===TASK_DONE===
 """
 
+_DEFAULT_EVALUATE = """/ulw-loop
+你是一个高级代码审查专家。请对以下 AI 生成的待审批任务提议进行二次评估。
+
+{content}
+
+## 评估标准
+
+对每条提议逐一评估：
+
+### 1. 真实性验证
+- 提议描述的问题是否在代码库中真实存在？
+- 引用的文件路径和行号是否准确？
+- 如果无法确认，标注为"待验证"
+
+### 2. 优先级重评
+- 原优先级是否合理？请根据实际影响重新判断
+- fix P0: 安全漏洞、数据丢失、线上崩溃
+- fix P1: 功能缺陷、用户体验严重受损
+- fix P2: 类型错误、轻微功能问题
+- fix P3: 代码风格、轻微优化、注释缺失
+- idea: 新功能提议
+
+### 3. 同类合并
+- 如果多条提议本质上是同一类问题，合并为一条
+- 合并后的提议描述应汇总所有涉及的文件
+
+### 4. 修复难度预估
+- 为每条保留的提议添加 estimated_effort 字段: quick(<5min) / normal(5-20min) / heavy(>20min)
+
+## 输出要求
+将评估结果写回 state/proposed_tasks.yaml：
+- 移除确认为假阳性的提议
+- 合并同类项
+- 调整优先级
+- 添加 verified: true/false/unknown 字段
+
+注意：仅更新 YAML 文件，不要执行任何任务，不要修改代码文件。
+
+完成后请输出 ===TASK_DONE===
+"""
+
+_DEFAULT_VERIFY = """/ulw-loop
+你是一个代码审查专家。请检查以下已完成任务的成果实现情况：
+
+{tasks}
+
+## 检查步骤
+对每项已完成的任务：
+1. 阅读任务的 description 字段，准确理解任务的原始要求
+2. 在代码库中搜索任务描述涉及的模块、文件、功能或修复
+3. 仔细验证该功能/修复是否已实际存在于代码库中
+4. 判断实现是否完整、有无遗漏、是否存在缺陷或漏洞
+
+## 判定标准
+- 已验证通过: 任务描述的功能已完整、正确地实现在代码库中
+- 需要修补: 实现不完整、有严重遗漏、存在缺陷或安全漏洞
+
+## 修补任务要求
+对于标记为"需要修补"的任务，请在 state/approved_queue.yaml 中新增修补任务项：
+- description 格式: "【修补】{原任务描述摘要} — {发现的具体问题}"
+- status: "pending"
+- priority: "fix P1"
+
+注意：仅更新 YAML 文件，不要执行任何任务，不要修改代码文件。
+
+完成后请输出 ===TASK_DONE===
+"""
+
+_DEFAULT_CHECK_FIX = """/ulw-loop
+你是一个代码质量专家。请对 {project_label} 项目进行全面检查和自动修复：
+
+源目录: {source_dirs}
+排除: {exclude_dirs}
+
+## 检查项目
+1. TypeScript 类型检查 — 对每个目录运行 npm run type-check，修复所有错误
+2. ESLint 检查 — 对每个目录运行 npm run lint，修复所有错误
+3. 空 catch 块 — 搜索并修复所有空的 catch(e) {} 块
+4. 硬编码密钥 — 搜索 .env、密码、API Key 等敏感信息
+5. console.log 残留 — 将调试用的 console.log 替换为日志框架
+6. as any 类型断言 — 搜索并修复所有 as any 类型断言
+7. 未使用的 import — 清理未使用的 import 语句
+8. Prettier 格式化 — 确保代码格式一致
+
+## 输出要求
+完成后输出简短总结：检查了多少文件 / 修复了多少问题 / 有哪些无法自动修复
+
+然后输出 ===TASK_DONE===
+"""
+
+_DEFAULT_DEPLOY = """/ulw-loop
+请执行部署操作：将当前项目部署到远程服务器（ECS）。
+
+执行部署脚本 deploy/scripts/deploy.sh 或 deploy_remote.bat（取决于平台）。
+
+## 要求
+1. 确认部署脚本存在于项目根目录
+2. 执行部署命令
+3. 等待部署完成（流式输出部署日志）
+4. 报告部署结果（成功/失败）
+
+完成后请输出 ===TASK_DONE===
+"""
+
+_DEFAULT_FINISH = """请更新项目文档：
+- 更新根目录 AGENTS.md（反映最新的项目结构和代码变更）
+- 更新 docs/ 中相关文件
+- 忽略 plan 文件夹
+
+然后执行 Git 推送（如配置了自动推送）。"""
+
 
 class ConfigInterface(QWidget):
     """配置页面 — 管理 SuperTask 所有可配置项"""
@@ -187,96 +298,7 @@ class ConfigInterface(QWidget):
         self._tabs = QTabWidget(self)
         self._tabs.setStyleSheet(_TAB_STYLE)
 
-        # ── Tab 1: 提示词 ──
-        prompt_tab = QWidget()
-        prompt_layout = QVBoxLayout(prompt_tab)
-        prompt_layout.setContentsMargins(16, 16, 16, 16)
-        prompt_layout.setSpacing(8)
-
-        prompt_hint = CaptionLabel(
-            "自定义各阶段的 prompt。内容留空时使用代码内置默认值。"
-        )
-        prompt_hint.setStyleSheet("color: #484f58; font-size: 11px;")
-        prompt_layout.addWidget(prompt_hint)
-
-        _PROMPT_STYLE = """
-            TextEdit {
-                background-color: #0d1117; color: #c9d1d9;
-                border: 1px solid #30363d; border-radius: 6px;
-                padding: 8px;
-                font-family: Consolas, "Microsoft YaHei", monospace;
-                font-size: 11px;
-            }
-        """
-
-        # ── 孙 tab 样式（略小于父级 pill tab） ──
-        _SUB_TAB_STYLE = """
-            QTabWidget::pane {
-                border: 1px solid #21262d; border-radius: 8px;
-                background: #0d1117; padding: 4px;
-                top: -1px;
-            }
-            QTabBar::tab {
-                color: #8b949e; background: transparent;
-                border: 1px solid transparent; border-radius: 16px;
-                padding: 6px 18px; margin: 0px 2px;
-                font-size: 12px; font-weight: 500;
-            }
-            QTabBar::tab:hover {
-                color: #c9d1d9; background: #21262d;
-                border-color: #30363d;
-            }
-            QTabBar::tab:selected {
-                color: #e6edf3; background: #30363d;
-                border-color: #484f58;
-            }
-        """
-
-        # 嵌套 Tab 控件（孙 tab）
-        self._prompt_sub_tabs = QTabWidget(prompt_tab)
-        self._prompt_sub_tabs.setStyleSheet(_SUB_TAB_STYLE)
-
-        # 探索提议
-        explore_tab = QWidget()
-        explore_layout = QVBoxLayout(explore_tab)
-        explore_layout.setContentsMargins(8, 8, 8, 8)
-        self._prompt_explore = TextEdit(self)
-        self._prompt_explore.setPlaceholderText(
-            "默认：浏览仓库生成粗粒度任务提议 → 写入 proposed_tasks.yaml"
-        )
-        self._prompt_explore.setStyleSheet(_PROMPT_STYLE)
-        explore_layout.addWidget(self._prompt_explore)
-        self._prompt_sub_tabs.addTab(explore_tab, "探索提议")
-
-        # 更新待审批
-        update_tab = QWidget()
-        update_layout = QVBoxLayout(update_tab)
-        update_layout.setContentsMargins(8, 8, 8, 8)
-        self._prompt_update = TextEdit(self)
-        self._prompt_update.setPlaceholderText(
-            "默认：检查待审批列表，标记 done/cancelled，补充新任务"
-        )
-        self._prompt_update.setStyleSheet(_PROMPT_STYLE)
-        update_layout.addWidget(self._prompt_update)
-        self._prompt_sub_tabs.addTab(update_tab, "更新待审批")
-
-        # 执行任务
-        execute_tab = QWidget()
-        execute_layout = QVBoxLayout(execute_tab)
-        execute_layout.setContentsMargins(8, 8, 8, 8)
-        self._prompt_execute = TextEdit(self)
-        self._prompt_execute.setPlaceholderText(
-            "默认：执行开发任务，完成后更新 approved_queue.yaml（{desc} 占位符）"
-        )
-        self._prompt_execute.setStyleSheet(_PROMPT_STYLE)
-        execute_layout.addWidget(self._prompt_execute)
-        self._prompt_sub_tabs.addTab(execute_tab, "执行任务")
-
-        prompt_layout.addWidget(self._prompt_sub_tabs)
-
-        self._tabs.addTab(prompt_tab, "提示词")
-
-        # ── Tab 2: 通用设置 ──
+        # ── Tab 1: 通用设置 ──
         settings_tab = QWidget()
         settings_layout = QVBoxLayout(settings_tab)
         settings_layout.setContentsMargins(16, 16, 16, 16)
@@ -587,7 +609,156 @@ class ConfigInterface(QWidget):
         settings_layout.addStretch()
         self._tabs.addTab(settings_tab, "通用设置")
 
-        # ── Tab 3: 项目 ──
+        # ── Tab 2: 提示词 ──
+        prompt_tab = QWidget()
+        prompt_layout = QVBoxLayout(prompt_tab)
+        prompt_layout.setContentsMargins(16, 16, 16, 16)
+        prompt_layout.setSpacing(8)
+
+        prompt_hint = CaptionLabel(
+            "自定义各阶段的 prompt。内容留空时使用代码内置默认值。"
+        )
+        prompt_hint.setStyleSheet("color: #484f58; font-size: 11px;")
+        prompt_layout.addWidget(prompt_hint)
+
+        _PROMPT_STYLE = """
+            TextEdit {
+                background-color: #0d1117; color: #c9d1d9;
+                border: 1px solid #30363d; border-radius: 6px;
+                padding: 8px;
+                font-family: Consolas, "Microsoft YaHei", monospace;
+                font-size: 11px;
+            }
+        """
+
+        # ── 孙 tab 样式（略小于父级 pill tab） ──
+        _SUB_TAB_STYLE = """
+            QTabWidget::pane {
+                border: 1px solid #21262d; border-radius: 8px;
+                background: #0d1117; padding: 4px;
+                top: -1px;
+            }
+            QTabBar::tab {
+                color: #8b949e; background: transparent;
+                border: 1px solid transparent; border-radius: 16px;
+                padding: 6px 18px; margin: 0px 2px;
+                font-size: 12px; font-weight: 500;
+            }
+            QTabBar::tab:hover {
+                color: #c9d1d9; background: #21262d;
+                border-color: #30363d;
+            }
+            QTabBar::tab:selected {
+                color: #e6edf3; background: #30363d;
+                border-color: #484f58;
+            }
+        """
+
+        # 嵌套 Tab 控件（孙 tab）
+        self._prompt_sub_tabs = QTabWidget(prompt_tab)
+        self._prompt_sub_tabs.setStyleSheet(_SUB_TAB_STYLE)
+
+        # 探索提议
+        explore_tab = QWidget()
+        explore_layout = QVBoxLayout(explore_tab)
+        explore_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_explore = TextEdit(self)
+        self._prompt_explore.setPlaceholderText(
+            "默认：浏览仓库生成粗粒度任务提议 → 写入 proposed_tasks.yaml"
+        )
+        self._prompt_explore.setStyleSheet(_PROMPT_STYLE)
+        explore_layout.addWidget(self._prompt_explore)
+        self._prompt_sub_tabs.addTab(explore_tab, "探索提议")
+
+        # 更新任务（原更新待审批）
+        update_tab = QWidget()
+        update_layout = QVBoxLayout(update_tab)
+        update_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_update = TextEdit(self)
+        self._prompt_update.setPlaceholderText(
+            "默认：重新检查项目，更新任务项内容（描述、预期成果、约束等）"
+        )
+        self._prompt_update.setStyleSheet(_PROMPT_STYLE)
+        update_layout.addWidget(self._prompt_update)
+        self._prompt_sub_tabs.addTab(update_tab, "更新任务")
+
+        # 执行任务
+        execute_tab = QWidget()
+        execute_layout = QVBoxLayout(execute_tab)
+        execute_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_execute = TextEdit(self)
+        self._prompt_execute.setPlaceholderText(
+            "默认：执行开发任务，完成后更新 approved_queue.yaml（{desc} 占位符）"
+        )
+        self._prompt_execute.setStyleSheet(_PROMPT_STYLE)
+        execute_layout.addWidget(self._prompt_execute)
+        self._prompt_sub_tabs.addTab(execute_tab, "执行任务")
+
+        # 二次评估
+        evaluate_tab = QWidget()
+        evaluate_layout = QVBoxLayout(evaluate_tab)
+        evaluate_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_evaluate = TextEdit(self)
+        self._prompt_evaluate.setPlaceholderText(
+            "默认：用高级模型重新评估待审批提议的实用性和优先级"
+        )
+        self._prompt_evaluate.setStyleSheet(_PROMPT_STYLE)
+        evaluate_layout.addWidget(self._prompt_evaluate)
+        self._prompt_sub_tabs.addTab(evaluate_tab, "二次评估")
+
+        # 检查成果
+        verify_tab = QWidget()
+        verify_layout = QVBoxLayout(verify_tab)
+        verify_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_verify = TextEdit(self)
+        self._prompt_verify.setPlaceholderText(
+            "默认：检查已完成任务的代码实现率，发现遗漏时自动生成修补提议"
+        )
+        self._prompt_verify.setStyleSheet(_PROMPT_STYLE)
+        verify_layout.addWidget(self._prompt_verify)
+        self._prompt_sub_tabs.addTab(verify_tab, "检查成果")
+
+        # 检查修复
+        check_fix_tab = QWidget()
+        check_fix_layout = QVBoxLayout(check_fix_tab)
+        check_fix_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_check_fix = TextEdit(self)
+        self._prompt_check_fix.setPlaceholderText(
+            "默认：对项目运行代码检查（类型/lint）并自动修复常见问题"
+        )
+        self._prompt_check_fix.setStyleSheet(_PROMPT_STYLE)
+        check_fix_layout.addWidget(self._prompt_check_fix)
+        self._prompt_sub_tabs.addTab(check_fix_tab, "检查修复")
+
+        # 部署云端
+        deploy_tab = QWidget()
+        deploy_layout = QVBoxLayout(deploy_tab)
+        deploy_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_deploy = TextEdit(self)
+        self._prompt_deploy.setPlaceholderText(
+            "默认：将当前项目部署到远程服务器（ECS）"
+        )
+        self._prompt_deploy.setStyleSheet(_PROMPT_STYLE)
+        deploy_layout.addWidget(self._prompt_deploy)
+        self._prompt_sub_tabs.addTab(deploy_tab, "部署云端")
+
+        # 更新文档并推送
+        finish_tab = QWidget()
+        finish_layout = QVBoxLayout(finish_tab)
+        finish_layout.setContentsMargins(8, 8, 8, 8)
+        self._prompt_finish = TextEdit(self)
+        self._prompt_finish.setPlaceholderText(
+            "默认：更新项目文档并推送代码到 Github 仓库"
+        )
+        self._prompt_finish.setStyleSheet(_PROMPT_STYLE)
+        finish_layout.addWidget(self._prompt_finish)
+        self._prompt_sub_tabs.addTab(finish_tab, "更新文档并推送")
+
+        prompt_layout.addWidget(self._prompt_sub_tabs)
+
+        self._tabs.addTab(prompt_tab, "提示词")
+
+        # ── Tab 3: 项目名称 ──
         projects_tab = QWidget()
         projects_layout = QVBoxLayout(projects_tab)
         projects_layout.setContentsMargins(16, 16, 16, 16)
@@ -648,7 +819,99 @@ class ConfigInterface(QWidget):
         op_row.addStretch()
         projects_layout.addLayout(op_row)
 
-        self._tabs.addTab(projects_tab, "项目")
+        self._tabs.addTab(projects_tab, "项目名称")
+
+        # ── Tab 4: 使用说明 ──
+        help_tab = QWidget()
+        help_layout = QVBoxLayout(help_tab)
+        help_layout.setContentsMargins(16, 16, 16, 16)
+        help_layout.setSpacing(12)
+
+        help_title = StrongBodyLabel("SuperTask 使用说明")
+        help_title.setStyleSheet("font-size: 18px; color: #e6edf3;")
+        help_layout.addWidget(help_title)
+
+        _HELP_LABEL_STYLE = "color: #c9d1d9; font-size: 13px; line-height: 1.6;"
+
+        intro = CaptionLabel(
+            "SuperTask 是 AI 自主开发监督系统，通过循环驱动 AI 代理（opencode）自动探索项目、提出任务，"
+            "经人工审批后执行开发、文档、推送等操作。"
+        )
+        intro.setStyleSheet(_HELP_LABEL_STYLE)
+        intro.setWordWrap(True)
+        help_layout.addWidget(intro)
+
+        # ── 制表符 раздел ──
+        def _help_section(text: str) -> StrongBodyLabel:
+            lbl = StrongBodyLabel(text)
+            lbl.setStyleSheet("font-size: 14px; color: #58a6ff; margin-top: 8px;")
+            return lbl
+
+        def _help_content(text: str) -> CaptionLabel:
+            lbl = CaptionLabel(text)
+            lbl.setStyleSheet(_HELP_LABEL_STYLE + "padding-left: 16px;")
+            lbl.setWordWrap(True)
+            return lbl
+
+        # ── 导航栏 ──
+        help_layout.addWidget(_help_section("📌 导航栏"))
+        help_layout.addWidget(_help_content(
+            "控制面板 — 仪表盘：任务统计、操作按钮、运行日志、队列检视\n"
+            "提议与工作 — 查看/审批提议、管理工作队列\n"
+            "任务规划 — AI 驱动的任务细化与规划\n"
+            "Agent 状态 — 监控 agent 运行状态与性能\n"
+            "日志与终端 — 系统日志 + 交互式终端\n"
+            "配置 — 全局设置、提示词编辑、项目管理\n"
+            "历史 — 已完成/已拒绝任务记录"
+        ))
+
+        # ── 控制面板操作按钮 ──
+        help_layout.addWidget(_help_section("⚡ 控制面板按钮"))
+        help_layout.addWidget(_help_content(
+            "持续探索 — AI 持续遍历项目发现改进领域，直到手动停止或达到目标提议数量\n"
+            "执行队列 — 按顺序执行工作队列中的待处理任务\n"
+            "更新任务 — 重新检查项目，更新任务项内容（描述、预期成果、约束等）\n"
+            "检查成果 — 检查已完成任务的代码实现率，发现遗漏时自动生成修补提议\n"
+            "检查修复 — 对项目运行代码检查（类型/lint）并自动修复常见问题\n"
+            "部署云端 — 将项目部署到远程 ECS 服务器\n"
+            "更新文档并推送 — 更新项目文档并推送代码到 Github"
+        ))
+
+        # ── 提示词编辑 ──
+        help_layout.addWidget(_help_section("✏️ 提示词编辑（配置 → 提示词）"))
+        help_layout.addWidget(_help_content(
+            "探索提议 — 浏览仓库生成粗粒度任务提议的 prompt 模板\n"
+            "更新任务 — 重新检查项目状态，更新所有任务项的 prompt 模板\n"
+            "执行任务 — 执行开发任务时使用的 prompt 模板（支持 {desc} 占位符）\n"
+            "二次评估 — 用高级模型重新评估提议真实性和优先级的 prompt 模板\n"
+            "检查成果 — 验证已完成任务实现率的 prompt 模板\n"
+            "检查修复 — 代码检查与自动修复的 prompt 模板\n"
+            "部署云端 — 部署操作相关的 prompt 模板\n"
+            "更新文档并推送 — 文档更新和 Git 推送的 prompt 模板"
+        ))
+
+        # ── 通用设置 ──
+        help_layout.addWidget(_help_section("⚙️ 通用设置（配置 → 通用设置）"))
+        help_layout.addWidget(_help_content(
+            "主题 — 切换深色/浅色显示模式\n"
+            "超时时间 — Agent 执行超时限制（秒）\n"
+            "默认/分阶段模型 — 指定各阶段使用的 AI 模型（留空跟随 opencode 自动选择）\n"
+            "自动推送 — 完成后自动执行 git push\n"
+            "轮次间隔 — 主循环各轮次间的等待时间\n"
+            "最大重试 — Agent 失败后的最大重试次数\n"
+            "提议目标 — 持续探索达到该提议数量后自动停止"
+        ))
+
+        # ── 项目名称 ──
+        help_layout.addWidget(_help_section("📁 项目名称（配置 → 项目名称）"))
+        help_layout.addWidget(_help_content(
+            "管理控制面板「项目选择」下拉菜单中的项目列表。\n"
+            "添加/删除项目以限定 AI 探索和执行的范围。\n"
+            "「全部」选项始终保留，选择后操作覆盖所有项目。"
+        ))
+
+        help_layout.addStretch()
+        self._tabs.addTab(help_tab, "使用说明")
 
         layout.addWidget(self._tabs)
 
@@ -661,6 +924,11 @@ class ConfigInterface(QWidget):
         self._prompt_explore.textChanged.connect(lambda: self._mark_dirty())
         self._prompt_update.textChanged.connect(lambda: self._mark_dirty())
         self._prompt_execute.textChanged.connect(lambda: self._mark_dirty())
+        self._prompt_evaluate.textChanged.connect(lambda: self._mark_dirty())
+        self._prompt_verify.textChanged.connect(lambda: self._mark_dirty())
+        self._prompt_check_fix.textChanged.connect(lambda: self._mark_dirty())
+        self._prompt_deploy.textChanged.connect(lambda: self._mark_dirty())
+        self._prompt_finish.textChanged.connect(lambda: self._mark_dirty())
         # 通用设置
         self._theme_combo.currentIndexChanged.connect(lambda: self._mark_dirty())
         self._timeout_spin.valueChanged.connect(lambda: self._mark_dirty())
@@ -693,6 +961,21 @@ class ConfigInterface(QWidget):
         )
         self._prompt_execute.setPlainText(
             prompts.get("execute") or _DEFAULT_EXECUTE
+        )
+        self._prompt_evaluate.setPlainText(
+            prompts.get("evaluate") or _DEFAULT_EVALUATE
+        )
+        self._prompt_verify.setPlainText(
+            prompts.get("verify_deliverables") or _DEFAULT_VERIFY
+        )
+        self._prompt_check_fix.setPlainText(
+            prompts.get("check_fix") or _DEFAULT_CHECK_FIX
+        )
+        self._prompt_deploy.setPlainText(
+            prompts.get("deploy") or _DEFAULT_DEPLOY
+        )
+        self._prompt_finish.setPlainText(
+            prompts.get("finish") or _DEFAULT_FINISH
         )
 
         # UI
@@ -744,11 +1027,21 @@ class ConfigInterface(QWidget):
         explore = self._prompt_explore.toPlainText().strip()
         update = self._prompt_update.toPlainText().strip()
         execute = self._prompt_execute.toPlainText().strip()
+        evaluate = self._prompt_evaluate.toPlainText().strip()
+        verify = self._prompt_verify.toPlainText().strip()
+        check_fix = self._prompt_check_fix.toPlainText().strip()
+        deploy = self._prompt_deploy.toPlainText().strip()
+        finish = self._prompt_finish.toPlainText().strip()
         return {
             "prompts": {
                 "explore": "" if explore == _DEFAULT_EXPLORE else explore,
                 "update_proposed": "" if update == _DEFAULT_UPDATE else update,
                 "execute": "" if execute == _DEFAULT_EXECUTE else execute,
+                "evaluate": "" if evaluate == _DEFAULT_EVALUATE else evaluate,
+                "verify_deliverables": "" if verify == _DEFAULT_VERIFY else verify,
+                "check_fix": "" if check_fix == _DEFAULT_CHECK_FIX else check_fix,
+                "deploy": "" if deploy == _DEFAULT_DEPLOY else deploy,
+                "finish": "" if finish == _DEFAULT_FINISH else finish,
             },
             "ui": {
                 "theme": "dark" if self._theme_combo.currentIndex() == 0 else "light",

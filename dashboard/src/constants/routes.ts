@@ -24,7 +24,12 @@ export const ROUTES = {
   AUDIT_LOGS: '/audit-logs',
   PROJECTS: '/projects',
   TAVERN: '/tavern',
+  TAVERN_CHARACTERS: '/tavern/characters',
+  TAVERN_CHATS: '/tavern/chats',
+  TAVERN_KEYS: '/tavern/keys',
+  TAVERN_CARDS: '/tavern/cards',
   // Game1 路由
+  GAME1_DASHBOARD: '/game1/dashboard',
   GAME1_PLAYERS: '/game1/players',
   GAME1_CONFIG: '/game1/config',
   GAME1_ACHIEVEMENTS: '/game1/achievements',
@@ -38,6 +43,10 @@ export const ROUTES = {
 export const MENU_ITEMS: RouteItem[] = [
   { path: ROUTES.DASHBOARD, scope: null, label: '仪表盘' },
   { path: ROUTES.TAVERN, scope: 'tavern', label: 'AI 酒馆' },
+  { path: ROUTES.TAVERN_CHARACTERS, scope: 'tavern', label: '角色管理' },
+  { path: ROUTES.TAVERN_CARDS, scope: 'tavern', label: '卡片管理' },
+  { path: ROUTES.TAVERN_CHATS, scope: 'tavern', label: '聊天监控' },
+  { path: ROUTES.TAVERN_KEYS, scope: 'tavern', label: 'Key 管理' },
   { path: ROUTES.USERS, scope: null, label: '用户管理' },
   // ── FTG 专属 ──
   { path: ROUTES.FOOD_RECORDS, scope: 'ftg', label: '食物记录' },
@@ -46,6 +55,7 @@ export const MENU_ITEMS: RouteItem[] = [
   { path: ROUTES.ACHIEVEMENTS, scope: 'ftg', label: '成就管理' },
   { path: ROUTES.API_KEYS, scope: 'ftg', label: 'API 密钥' },
   // ── Game1 专属 ──
+  { path: ROUTES.GAME1_DASHBOARD, scope: 'game1', label: '运营概览' },
   { path: ROUTES.GAME1_PLAYERS, scope: 'game1', label: '玩家管理' },
   { path: ROUTES.GAME1_CONFIG, scope: 'game1', label: '游戏配置' },
   { path: ROUTES.GAME1_ACHIEVEMENTS, scope: 'game1', label: '成就管理' },

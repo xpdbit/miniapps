@@ -2,6 +2,8 @@ import { Router, Response } from 'express'
 import { requireAdmin } from '../middleware/auth'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import * as moderationService from '../services/moderation.service'
+import prisma from '../utils/prisma'
+import { z } from 'zod'
 
 const router = Router()
 
@@ -61,6 +63,249 @@ router.get('/logs/:cardId', async (req: AuthenticatedRequest, res: Response) => 
   try {
     const logs = await moderationService.getLogs(req.params.cardId)
     res.json({ code: 0, data: logs, message: 'ok' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// ─── Dashboard 综合管理端点 ──────────────────────────────────────────
+
+// GET /api/v1/admin/characters - 列出所有角色卡（管理员视图）
+router.get('/characters', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1
+    const pageSize = parseInt(req.query.pageSize as string) || 20
+    const cardType = req.query.cardType as string | undefined
+    const status = req.query.status as string | undefined
+    const search = req.query.search as string | undefined
+    const skip = (page - 1) * pageSize
+
+    const where: Record<string, unknown> = {}
+    if (cardType) where.cardType = cardType
+    if (status) where.status = status
+    if (search) where.name = { contains: search }
+
+    const [items, total] = await Promise.all([
+      prisma.tavernCard.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+        include: {
+          creator: { select: { id: true, nickname: true } },
+        },
+      }),
+      prisma.tavernCard.count({ where }),
+    ])
+
+    res.json({ code: 0, data: { items, total, page, pageSize }, message: 'ok' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// POST /api/v1/admin/characters - 管理员创建角色卡
+const createCardSchema = z.object({
+  name: z.string().min(1).max(50),
+  description: z.string().optional().default(''),
+  tags: z.array(z.string()).optional().default([]),
+  avatar: z.string().optional(),
+  personality: z.string().optional(),
+  scenario: z.string().optional(),
+  firstMsg: z.string().optional().default(''),
+  cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
+})
+
+router.post('/characters', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = createCardSchema.parse(req.body)
+    const card = await prisma.tavernCard.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        tags: data.tags,
+        avatar: data.avatar,
+        personality: data.personality,
+        scenario: data.scenario,
+        firstMsg: data.firstMsg,
+        cardType: data.cardType,
+        isOfficial: true, // 管理员创建的都是官方卡片
+        creatorId: req.user!.userId,
+        status: 'PUBLISHED',
+      },
+    })
+    res.status(201).json({ code: 0, data: card, message: '创建成功' })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    res.status(500).json({ code: 500, message: (err as Error).message, data: null })
+  }
+})
+
+// PUT /api/v1/admin/characters/:id - 管理员更新角色卡
+const updateCardSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  avatar: z.string().optional(),
+  personality: z.string().optional(),
+  scenario: z.string().optional(),
+  firstMsg: z.string().optional(),
+  cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional(),
+})
+
+router.put('/characters/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = updateCardSchema.parse(req.body)
+    const card = await prisma.tavernCard.update({
+      where: { id: req.params.id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.tags !== undefined && { tags: data.tags }),
+        ...(data.avatar !== undefined && { avatar: data.avatar }),
+        ...(data.personality !== undefined && { personality: data.personality }),
+        ...(data.scenario !== undefined && { scenario: data.scenario }),
+        ...(data.firstMsg !== undefined && { firstMsg: data.firstMsg }),
+        ...(data.cardType !== undefined && { cardType: data.cardType }),
+      },
+    })
+    res.json({ code: 0, data: card, message: '更新成功' })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    res.status(500).json({ code: 500, message: (err as Error).message, data: null })
+  }
+})
+
+// POST /api/v1/admin/batch-approve - 批量批准角色卡
+router.post('/batch-approve', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { ids } = req.body as { ids: string[] }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ code: 400, message: '请提供要批准的卡片 ID 列表', data: null })
+    }
+
+    let count = 0
+    for (const id of ids) {
+      try {
+        await moderationService.approve(id, req.user!.userId)
+        count++
+      } catch {
+        // 跳过无法批准的卡片
+      }
+    }
+
+    res.json({ code: 0, data: { approved: count, total: ids.length }, message: `已批准 ${count}/${ids.length} 张卡片` })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// POST /api/v1/admin/export - 导出角色卡为 JSON
+router.post('/export', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { ids } = req.body as { ids: string[] }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ code: 400, message: '请提供要导出的卡片 ID 列表', data: null })
+    }
+
+    const cards = await prisma.tavernCard.findMany({
+      where: { id: { in: ids } },
+      include: {
+        creator: { select: { id: true, nickname: true } },
+      },
+    })
+
+    res.json({
+      code: 0,
+      data: cards,
+      message: `成功导出 ${cards.length} 张卡片`,
+    })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// DELETE /api/v1/admin/characters/:id - 删除角色卡（锁定卡片不可删除）
+router.delete('/characters/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const card = await prisma.tavernCard.findUnique({ where: { id: req.params.id } })
+    if (!card) return res.status(404).json({ code: 404, message: '角色卡不存在', data: null })
+    if (card.locked) return res.status(403).json({ code: 403, message: '卡片已锁定，无法删除', data: null })
+
+    // 级联删除关联数据
+    await prisma.$transaction([
+      prisma.tavernCardLike.deleteMany({ where: { cardId: req.params.id } }),
+      prisma.tavernCardFav.deleteMany({ where: { cardId: req.params.id } }),
+      prisma.tavernChatMessage.deleteMany({ where: { session: { characterId: req.params.id } } }),
+      prisma.tavernChatSession.deleteMany({ where: { characterId: req.params.id } }),
+      prisma.tavernCard.delete({ where: { id: req.params.id } }),
+    ])
+
+    res.json({ code: 0, data: null, message: '已删除' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// POST /api/v1/admin/characters/:id/lock - 锁定卡片
+router.post('/characters/:id/lock', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const card = await prisma.tavernCard.findUnique({ where: { id: req.params.id } })
+    if (!card) return res.status(404).json({ code: 404, message: '角色卡不存在', data: null })
+    if (card.locked) return res.json({ code: 0, data: null, message: '卡片已锁定' })
+
+    await prisma.tavernCard.update({
+      where: { id: req.params.id },
+      data: { locked: true },
+    })
+
+    res.json({ code: 0, data: null, message: '已锁定' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// POST /api/v1/admin/characters/:id/unlock - 解锁卡片
+router.post('/characters/:id/unlock', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const card = await prisma.tavernCard.findUnique({ where: { id: req.params.id } })
+    if (!card) return res.status(404).json({ code: 404, message: '角色卡不存在', data: null })
+    if (!card.locked) return res.json({ code: 0, data: null, message: '卡片未锁定' })
+
+    await prisma.tavernCard.update({
+      where: { id: req.params.id },
+      data: { locked: false },
+    })
+
+    res.json({ code: 0, data: null, message: '已解锁' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// GET /api/v1/admin/dashboard/stats - 仪表盘统计
+router.get('/dashboard/stats', async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const [totalCharacters, totalChats, activeUsers, pendingReviews] = await Promise.all([
+      prisma.tavernCard.count(),
+      prisma.tavernChatSession.count(),
+      prisma.sharedUser.count({
+        where: {
+          chats: { some: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 3600_000) } } },
+        },
+      }),
+      prisma.tavernCard.count({ where: { status: 'PENDING' } }),
+    ])
+
+    res.json({
+      code: 0,
+      data: { totalCharacters, totalChats, activeUsers, pendingReviews },
+      message: 'ok',
+    })
   } catch (err: any) {
     res.status(500).json({ code: 500, message: err.message, data: null })
   }

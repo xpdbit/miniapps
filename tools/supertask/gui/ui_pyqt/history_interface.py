@@ -10,6 +10,8 @@ from PyQt6.QtCore import Qt, QItemSelectionModel
 from PyQt6.QtGui import QColor, QBrush
 from qfluentwidgets import TableWidget, BodyLabel, TabWidget, PushButton, CaptionLabel
 
+from .task_plan_interface import build_prompt_preview
+
 
 class HistoryTableWidget(TableWidget):
     """带统一样式的历史子表格（原生 MultiSelection + Shift 多选）"""
@@ -30,12 +32,28 @@ class HistoryTableWidget(TableWidget):
         "rejected": "#f85149",
         "pending": "#58a6ff",
     }
+    PRIORITY_COLORS = {
+        "fix P0": "#f85149",
+        "fix P1": "#f0883e",
+        "fix P2": "#d29922",
+        "fix P3": "#8b949e",
+        "idea": "#58a6ff",
+        "high": "#bc8cff",
+    }
+    PRIORITY_LABELS = {
+        "fix P0": "P0 紧急",
+        "fix P1": "P1 高",
+        "fix P2": "P2 中",
+        "fix P3": "P3 低",
+        "idea": "点子",
+        "high": "高",
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # 列：描述 | 状态 | 完成时间
-        self.setColumnCount(3)
-        self.setHorizontalHeaderLabels(["描述", "状态", "完成时间"])
+        # 列：描述 | 状态 | 优先级 | 完成时间
+        self.setColumnCount(4)
+        self.setHorizontalHeaderLabels(["描述", "状态", "优先级", "完成时间"])
         self.setBorderRadius(8)
         self.horizontalHeader().setStretchLastSection(False)
         self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -54,8 +72,9 @@ class HistoryTableWidget(TableWidget):
         for i, t in enumerate(tasks):
             # 第 0 列：描述（ID 存入 UserRole）
             desc = t.get("desc", t.get("description", "?"))
-            item = QTableWidgetItem(str(desc))
-            item.setToolTip(str(desc))
+            desc_text = str(desc)
+            item = QTableWidgetItem(desc_text)
+            item.setToolTip(build_prompt_preview(task_desc=desc_text))
             item.setData(Qt.ItemDataRole.UserRole, t.get("id", 0))
             self.setItem(i, 0, item)
 
@@ -67,11 +86,26 @@ class HistoryTableWidget(TableWidget):
             status_item.setForeground(QBrush(QColor(color)))
             self.setItem(i, 1, status_item)
 
-            # 第 2 列：时间
+            # 第 2 列：优先级
+            priority = t.get("priority", "")
+            if priority:
+                p_label = self.PRIORITY_LABELS.get(priority, priority)
+                p_color = self.PRIORITY_COLORS.get(priority, "#8b949e")
+            else:
+                p_label = "—"
+                p_color = "#484f58"
+            prio_item = QTableWidgetItem(p_label)
+            prio_item.setForeground(QBrush(QColor(p_color)))
+            self.setItem(i, 2, prio_item)
+
+            # 第 3 列：时间
             resolved_at = t.get("resolved_at", "")
+            # 过滤无效时间（0000-00-00 等）
+            if not resolved_at or resolved_at.startswith("0000-") or resolved_at.startswith("0001-"):
+                resolved_at = "—"
             time_item = QTableWidgetItem(resolved_at)
             time_item.setForeground(QBrush(QColor("#8b949e")))
-            self.setItem(i, 2, time_item)
+            self.setItem(i, 3, time_item)
 
         self._last_clicked_row = -1  # 重置 Shift 多选锚点
 

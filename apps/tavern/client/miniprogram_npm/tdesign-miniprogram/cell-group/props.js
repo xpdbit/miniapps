@@ -1,1 +1,0 @@
-const props={bordered:{type:Boolean},externalClasses:{type:Array},title:{type:String,value:"",required:!0}};export default props;

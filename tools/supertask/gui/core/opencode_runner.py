@@ -4,15 +4,108 @@ opencode_runner.py — 调用 opencode CLI 子进程
 发送指令，捕获输出，支持超时和错误处理
 """
 
+import json
 import os
 import subprocess
 import sys
 import threading
 import time
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 import psutil
 from PyQt6.QtCore import QObject, pyqtSignal
+
+
+# ─── 模型列表缓存 ──────────────────────────────
+
+_AVAILABLE_MODELS_CACHE: Optional[List[str]] = None
+
+
+def get_available_models(force_refresh: bool = False) -> List[str]:
+    """获取 opencode 当前可用的所有模型列表（provider/model-id 格式）。
+    
+    读取策略：
+    1. 优先调用 `opencode models` CLI（最完整，含免费模型）
+    2. 回退到解析 ~/.config/opencode/opencode.json 的 provider 段
+    3. 缓存结果，force_refresh=True 强制重新读取
+    
+    Returns:
+        模型名列表，如 ['deepseek/deepseek-v4-pro', 'opencode-go/deepseek-v4-flash', ...]
+    """
+    global _AVAILABLE_MODELS_CACHE
+    if _AVAILABLE_MODELS_CACHE is not None and not force_refresh:
+        return _AVAILABLE_MODELS_CACHE
+
+    models = _fetch_models_via_cli()
+    if not models:
+        models = _parse_opencode_json_models()
+    
+    _AVAILABLE_MODELS_CACHE = models
+    return models
+
+
+def _parse_opencode_json_models() -> List[str]:
+    """从 opencode.json 的 provider 段解析所有可用模型。
+    
+    opencode.json 结构:
+    {
+      "provider": {
+        "provider-name": {
+          "models": {
+            "model-id": { "name": "...", ... }
+          }
+        }
+      }
+    }
+    """
+    config_dir = os.environ.get("OPENCODE_CONFIG_DIR", "")
+    if not config_dir:
+        config_dir = os.path.join(os.path.expanduser("~"), ".config", "opencode")
+    
+    config_path = os.path.join(config_dir, "opencode.json")
+    if not os.path.isfile(config_path):
+        return []
+    
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
+    
+    providers = config.get("provider", {})
+    if not isinstance(providers, dict):
+        return []
+    
+    models: List[str] = []
+    for provider_name, provider_cfg in providers.items():
+        if not isinstance(provider_cfg, dict):
+            continue
+        provider_models = provider_cfg.get("models", {})
+        if not isinstance(provider_models, dict):
+            continue
+        for model_id in provider_models:
+            models.append(f"{provider_name}/{model_id}")
+    
+    models.sort()
+    return models
+
+
+def _fetch_models_via_cli() -> List[str]:
+    """通过 `opencode models` CLI 命令获取可用模型列表（回退方案）。"""
+    try:
+        result = subprocess.run(
+            ["opencode", "models"],
+            capture_output=True, text=True, timeout=15,
+            shell=True,
+        )
+        if result.returncode != 0:
+            return []
+        lines = result.stdout.strip().split("\n")
+        models = [line.strip() for line in lines if line.strip() and "/" in line]
+        models.sort()
+        return models
+    except Exception:
+        return []
 
 
 def _kill_process_tree(proc: subprocess.Popen, timeout: int = 5):
@@ -59,6 +152,7 @@ class OpencodeRunner(QObject):
         self._process: Optional[subprocess.Popen] = None
         self._exit_code: Optional[int] = None   # 最后退出的进程 exit code
         self._suspended: bool = False           # 手动暂停标志（进程树）
+        self._model: str = ""                   # 当前模型名（通过 --model 传递给 opencode）
         # 后台读取线程（解决 Windows select.select 不支持管道的问题）
         self._reader_thread: Optional[threading.Thread] = None
         self._reader_lock = threading.Lock()
@@ -75,11 +169,23 @@ class OpencodeRunner(QObject):
         """恢复到构造时的工作目录"""
         self.working_dir = self._original_working_dir
 
+    def set_model(self, model: str):
+        """设置当前模型名（通过 --model 传递给 opencode CLI）"""
+        self._model = model.strip() if model else ""
+
+    def _build_cmd(self) -> list[str]:
+        """构建 opencode 命令列表，根据 _model 决定是否插入 --model 参数"""
+        cmd = ["opencode"]
+        if self._model:
+            cmd.extend(["--model", self._model])
+        cmd.append("run")
+        return cmd
+
     def run(self, prompt: str) -> Tuple[bool, str]:
         """同步调用 opencode（通过 stdin 传递 prompt），返回 (success, output)"""
         try:
             result = subprocess.run(
-                ["opencode", "run"],
+                self._build_cmd(),
                 cwd=self.working_dir,
                 input=prompt,
                 capture_output=True,
@@ -108,7 +214,7 @@ class OpencodeRunner(QObject):
 
         try:
             self._process = subprocess.Popen(
-                ["opencode", "run"],
+                self._build_cmd(),
                 cwd=self.working_dir,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -283,7 +389,7 @@ class OpencodeRunner(QObject):
         Windows 兼容：使用后台线程读取而非 select.select（避免 pipe 不可 select 问题）。"""
         try:
             process = subprocess.Popen(
-                ["opencode", "run"],
+                self._build_cmd(),
                 cwd=self.working_dir,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,

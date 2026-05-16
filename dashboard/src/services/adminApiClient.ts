@@ -36,9 +36,11 @@ adminApiClient.interceptors.response.use(
       const { status, data } = error.response
       switch (status) {
         case 401:
-          removeToken()
-          message.error(data?.message || '登录已过期，请重新登录')
-          if (window.location.pathname !== '/login') {
+          // 当在登录页面时，401 可能是密码错误而非 token 过期
+          // 此时不清除 token，避免登录错误导致已登录用户被登出
+          if (!window.location.pathname.startsWith('/login')) {
+            removeToken()
+            message.error(data?.message || '登录已过期，请重新登录')
             window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
           }
           break

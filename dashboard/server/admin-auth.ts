@@ -67,7 +67,7 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 /** Role → Permission mapping — '*' means all permissions */
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   super_admin: ['*'],
-  admin: ['dashboard', 'users', 'records', 'themes', 'achievements', 'api_keys', 'monitoring'],
+  admin: ['dashboard', 'users', 'records', 'themes', 'achievements', 'api_keys', 'monitoring', 'projects'],
   viewer: ['dashboard', 'monitoring'],
 }
 
@@ -84,7 +84,7 @@ interface AuthRequest extends Request {
 // ─── Middleware ──────────────────────────────────────────────────────
 
 /** Extract & verify JWT, attach admin info to request */
-function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
+export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ success: false, message: '未登录' })

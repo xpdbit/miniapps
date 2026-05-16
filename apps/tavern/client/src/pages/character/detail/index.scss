@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
  *  Character Detail Page — 现代扁平角色详情
  *  风格: 头部展示 + 信息分区 + 底部操作
  * ============================================================ */
@@ -124,4 +124,41 @@
     line-height: 88rpx;
     font-size: var(--font-body);
   }
+}
+
+
+.page-character-detail-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.page-character-detail-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-size: var(--font-headline);
+  font-weight: var(--font-weight-bold);
+}
+
+.page-character-detail-status-badge {
+  font-size: var(--font-caption);
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-xs);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+}
+
+.page-character-detail-tag {
+  font-size: var(--font-caption);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-xs);
+  border: 1px solid transparent;
 }

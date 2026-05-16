@@ -8,6 +8,7 @@
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
+  padding-bottom: 140rpx;
 
   &-content {
     flex: 1;
@@ -35,5 +36,45 @@
   &-empty-hint {
     font-size: var(--font-body-sm);
     margin-top: var(--spacing-sm);
+  }
+}
+
+
+/* ── 自定义 Tab 栏 ── */
+.page-character-list-tabs {
+  display: flex;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: 0 var(--spacing-md);
+}
+
+.page-character-list-tab {
+  flex: 1;
+  text-align: center;
+  padding: var(--spacing-md) 0;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  position: relative;
+  transition: color var(--duration-fast) var(--ease-out);
+
+  &--active {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40rpx;
+      height: 4rpx;
+      background: var(--color-primary);
+      border-radius: var(--radius-full);
+    }
+  }
+
+  &:active {
+    opacity: 0.7;
   }
 }

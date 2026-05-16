@@ -7,7 +7,7 @@ import chatRoutes from './chat';
 import marketRoutes from './market';
 import keyRoutes from './keys';
 import adminRoutes from './admin';
-import builtinRoutes from './builtin';
+import officialRoutes from './official';
 
 const router = Router();
 
@@ -37,7 +37,7 @@ router.use('/api/v1/keys', keyRoutes);
 // Admin routes
 router.use('/api/v1/admin', adminRoutes);
 
-// Built-in character routes
-router.use('/api/v1/builtin', builtinRoutes);
+// Official cards sync route (replaces built-in)
+router.use('/api/v1/official', officialRoutes);
 
 export default router;

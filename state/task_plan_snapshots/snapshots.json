@@ -1,0 +1,152 @@
+{
+  "current_index": 11,
+  "snapshots": [
+    {
+      "timestamp": "2026-05-14 14:11:19",
+      "task_desc": "",
+      "expected": "",
+      "constraints": "",
+      "qa_history": []
+    },
+    {
+      "timestamp": "2026-05-14 14:11:22",
+      "task_desc": "FTG 小程序 — 提取共享工具函数（formatTime 去重 + ApiResponse 接口统一）",
+      "expected": "",
+      "constraints": "",
+      "qa_history": []
+    },
+    {
+      "timestamp": "2026-05-14 14:11:40",
+      "task_desc": "tavern-server SSE 流式聊天完善 — 当前 chat.ts 在客户端断开连接时只有空注释 `// Clean up if needed` 无实际清理逻辑， ai-proxy.service.ts 的 SSE 流解析不完整（DONE 信号未处理、deepseek 流格式未适配）， 且缺少 keepAliveTimeout/headersTimeout 等服务器超时配置。 需要实现完整的断开清理、流解析增强和服务器配置优化。",
+      "expected": "",
+      "constraints": "",
+      "qa_history": []
+    },
+    {
+      "timestamp": "2026-05-14 14:12:23",
+      "task_desc": "tavern-server SSE 流式聊天完善 — 当前 chat.ts 在客户端断开连接时只有空注释 `// Clean up if needed` 无实际清理逻辑， ai-proxy.service.ts 的 SSE 流解析不完整（DONE 信号未处理、deepseek 流格式未适配）， 且缺少 keepAliveTimeout/headersTimeout 等服务器超时配置。 需要实现完整的断开清理、流解析增强和服务器配置优化。",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 14:12:36",
+      "task_desc": "跨项目工程规范统一与 CI/CD 补齐 — （1）Prisma 版本三角化：ftg-server/dashboard v6.19、game1-server v5.22、tavern-server v5.10 —— 统一到一个版本；（2）给 tavern-server、tavern-miniapp、game1-miniapp、dashboard 添加 ESLint 配置； （3）给 tavern-server 和 dashboard 添加 GitHub Actions CI workflow； （4）给 tavern-server tsconfig 添加完整 strict 配置项。 目标是消除四个项目的配置差异，确保代码质量门禁一致。",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 14:12:39",
+      "task_desc": "tavern-server SSE 流式聊天完善 — 当前 chat.ts 在客户端断开连接时只有空注释 `// Clean up if needed` 无实际清理逻辑， ai-proxy.service.ts 的 SSE 流解析不完整（DONE 信号未处理、deepseek 流格式未适配）， 且缺少 keepAliveTimeout/headersTimeout 等服务器超时配置。 需要实现完整的断开清理、流解析增强和服务器配置优化。",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 14:46:24",
+      "task_desc": "FTG 小程序 — 提取共享工具函数（formatTime 去重 + ApiResponse 接口统一）",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 16:08:47",
+      "task_desc": "代码质量清理 —— 修复 app.ts 中 4 个空 catch 块添加错误日志，修复 gallery/index.tsx line 348 as any 类型断言",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 17:29:35",
+      "task_desc": "[Game1 Server] 将已定义的 Zod validators 接入路由 — validators/index.ts 定义了 loginSchema/updateProfileSchema/syncStatsSchema/uploadSaveSchema/matchResultSchema 等， 但 0 个路由实际导入使用。需为每个路由添加 validate 中间件，替代手动类型校验。",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 17:42:34",
+      "task_desc": "合并 4 处重复的错误分类/超时判断逻辑 —— httpClient.ts/themeApi.ts/userService.ts/camera/index.tsx 各自实现了 isTimeoutError / classifyUploadError，逻辑实质相同",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 18:31:51",
+      "task_desc": "合并 4 处重复的错误分类/超时判断逻辑",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-14 22:34:38",
+      "task_desc": "AI-Tavern miniapp - 将 ModelSelector 中的硬编码模型列表改为从 API 动态获取，支持后端扩展新模型而无需更新小程序代码",
+      "expected": "",
+      "constraints": "",
+      "qa_history": [
+        {
+          "question": "三个优化方向中，哪个优先级最高？或者是否需要分阶段实现？",
+          "answer": [
+            "\"先完善 SSE 流解析（DONE 信号 + DeepSeek 格式），这是核心功能修复\""
+          ]
+        }
+      ]
+    }
+  ]
+}

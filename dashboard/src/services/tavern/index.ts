@@ -10,14 +10,29 @@ import adminApiClient from '@/services/adminApiClient'
 export interface TavernCharacter {
   id: string
   name: string
-  creator: {
+  creator?: {
     id: string
     nickname: string
   }
   status: string
+  locked: boolean
   chatCount: number
   likeCount: number
   createdAt: string
+  updatedAt: string
+  // 编辑/创建表单所需的扩展字段
+  tags?: string[]
+  description?: string
+  avatar?: string
+  personality?: string
+  scenario?: string
+  firstMsg?: string
+  cardType?: string
+  isOfficial?: boolean
+  nsfw?: boolean
+  systemPrompt?: string
+  exampleDialogs?: unknown
+  lore?: string
 }
 
 export interface TavernStats {
@@ -40,12 +55,92 @@ export interface ModerationLog {
   createdAt: string
 }
 
+// ─── 聊天监控 Types ───────────────────────────────────────
+
+export interface TavernChatItem {
+  id: string
+  userId: string
+  userName: string
+  characterId: string
+  characterName: string
+  messageCount: number
+  createdAt: string
+  lastMessageAt: string
+}
+
+export interface TavernChatStats {
+  totalChatsToday: number
+  activeConversations: number
+  totalMessages: number
+  averageSessionLength: number
+}
+
+export interface TavernChatMessage {
+  id: string
+  role: string
+  content: string
+  tokens: number | null
+  createdAt: string
+}
+
+export interface TavernChatListResponse {
+  items: TavernChatItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface TavernChatMessagesResponse {
+  items: TavernChatMessage[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// ─── Key 管理 Types ────────────────────────────────────────
+
+export interface TavernApiKeyItem {
+  id: string
+  userId: string
+  userName: string
+  provider: string
+  isActive: boolean
+  createdAt: string
+}
+
+export interface TavernApiKeyListResponse {
+  items: TavernApiKeyItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 // ─── Admin API ─────────────────────────────────────────────
 
 export const tavernAdminApi = {
   /** 获取角色卡列表 */
-  getCharacters: (params?: { page?: number; pageSize?: number }) =>
+  getCharacters: (params?: { page?: number; pageSize?: number; cardType?: string; status?: string; search?: string }) =>
     adminApiClient.get<CharactersResponse>('/admin/tavern/characters', { params }),
+
+  /** 删除角色卡 */
+  deleteCharacter: (id: string) =>
+    adminApiClient.delete(`/admin/tavern/characters/${id}`),
+
+  /** 锁定卡片 */
+  lockCharacter: (id: string) =>
+    adminApiClient.post(`/admin/tavern/characters/${id}/lock`),
+
+  /** 解锁卡片 */
+  unlockCharacter: (id: string) =>
+    adminApiClient.post(`/admin/tavern/characters/${id}/unlock`),
+
+  /** 管理员更新角色卡 */
+  updateCharacter: (id: string, data: Record<string, unknown>) =>
+    adminApiClient.put(`/admin/tavern/characters/${id}`, data),
+
+  /** 管理员创建角色卡 */
+  createCharacter: (data: Record<string, unknown>) =>
+    adminApiClient.post('/admin/tavern/characters', data),
 
   /** 获取仪表盘统计 */
   getStats: () =>
@@ -70,4 +165,26 @@ export const tavernAdminApi = {
   /** 获取审核日志 */
   getModerationLogs: (cardId: string) =>
     adminApiClient.get<ModerationLog[]>(`/admin/tavern/logs/${cardId}`),
+
+  // ── 聊天监控 ──
+  /** 获取聊天会话列表 */
+  getChats: (params?: { page?: number; pageSize?: number; characterId?: string; userId?: string; startDate?: string; endDate?: string }) =>
+    adminApiClient.get<TavernChatListResponse>('/admin/tavern/chats', { params }),
+
+  /** 获取聊天统计 */
+  getChatStats: () =>
+    adminApiClient.get<TavernChatStats>('/admin/tavern/chats/stats'),
+
+  /** 获取聊天消息列表 */
+  getChatMessages: (chatId: string, params?: { page?: number; pageSize?: number }) =>
+    adminApiClient.get<TavernChatMessagesResponse>(`/admin/tavern/chats/${chatId}/messages`, { params }),
+
+  // ── Key 管理 ──
+  /** 获取用户 API Key 列表 */
+  getApiKeys: (params?: { page?: number; pageSize?: number; userId?: string }) =>
+    adminApiClient.get<TavernApiKeyListResponse>('/admin/tavern/keys', { params }),
+
+  /** 吊销 API Key */
+  revokeApiKey: (keyId: string) =>
+    adminApiClient.post(`/admin/tavern/keys/${keyId}/revoke`),
 }
