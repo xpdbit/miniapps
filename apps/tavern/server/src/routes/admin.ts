@@ -10,26 +10,20 @@ let cachedSystemUserId: string | null = null
 
 async function resolveAdminUserId(): Promise<string> {
   if (cachedSystemUserId) return cachedSystemUserId
-  const sysUser = await prisma.sharedUser.findFirst({
+  const sysUser = await prisma.sharedUser.upsert({
     where: { openid: 'builtin_system' },
-    select: { id: true },
-  })
-  if (sysUser) {
-    cachedSystemUserId = sysUser.id
-    return sysUser.id
-  }
-  // 系统用户不存在时自动创建
-  const newUser = await prisma.sharedUser.create({
-    data: {
+    create: {
       uuid: 'builtin_system_uuid',
       openid: 'builtin_system',
       nickname: '酒馆系统',
       dailyQuota: 99999,
       role: 'ADMIN',
     },
+    update: {}, // 已存在则无需修改
+    select: { id: true },
   })
-  cachedSystemUserId = newUser.id
-  return newUser.id
+  cachedSystemUserId = sysUser.id
+  return sysUser.id
 }
 
 /** 将 adminToken 认证的虚拟 userId 解析为真实 DB 用户 ID */
