@@ -232,6 +232,13 @@ const EMPTY_FORM: CardFormData = {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // 文件大小校验（超过 5MB 警告，防止浏览器卡顿）
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      message.error(`文件过大（${(file.size / 1024 / 1024).toFixed(1)}MB），请拆分后分批导入（单次最大 5MB）`)
+      return
+    }
+
     setImporting(true)
     try {
       const text = await file.text()
@@ -247,14 +254,20 @@ const EMPTY_FORM: CardFormData = {
       const res = await tavernAdminApi.importCards(cards)
       const result = unwrapTavernResponse<{ created: number; failed: number; errors: string[] }>(res.data)
       if (result.failed > 0) {
-        message.warning(`导入完成：成功 ${result.created} 张，失败 ${result.failed} 张`)
+        // 显示错误详情（前 5 条）
+        const detailText = result.errors?.length
+          ? `\n${result.errors.slice(0, 5).map((err) => `· ${err}`).join('\n')}${result.errors.length > 5 ? `\n· ...及其他 ${result.errors.length - 5} 条错误` : ''}`
+          : ''
+        message.warning(`导入完成：成功 ${result.created} 张，失败 ${result.failed} 张${detailText}`, 8)
       } else {
         message.success(`成功导入 ${result.created} 张卡片`)
       }
       invalidate()
     } catch (err) {
       if (err instanceof SyntaxError) {
-        message.error('JSON 解析失败，请检查文件格式')
+        message.error('JSON 解析失败，请检查文件格式（参考导出按钮获取模板）')
+      } else if ((err as { response?: { status?: number } }).response?.status === 413) {
+        message.error('文件过大，超出服务器限制，请拆分后分批导入')
       } else {
         message.error('导入失败，请稍后重试')
       }

@@ -18,7 +18,20 @@ import tavernRoutes from './routes/tavern-proxy'
 const app = express()
 const PORT = parseInt(process.env.ADMIN_PORT || '3001', 10)
 
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '10mb' }))
+
+// 请求日志中间件 — 记录每个请求的 method/path/status，用于线上问题诊断
+app.use((req, res, next) => {
+  const start = Date.now()
+  res.on('finish', () => {
+    const duration = Date.now() - start
+    // 仅记录 /api/admin 路径的请求，避免 SPA 静态文件噪音
+    if (req.path.startsWith('/api/admin') || req.path.startsWith('/health')) {
+      console.log(`[REQ] ${req.method} ${req.path} → ${res.statusCode} (${duration}ms)`)
+    }
+  })
+  next()
+})
 
 // 挂载管理员认证路由
 app.use('/api/admin', adminAuth)
@@ -43,10 +56,11 @@ app.use('/api/admin/agent', agentRoutes)
 app.use('/api/admin/monitoring', monitoringRoutes)
 
 // 挂载 Game1 代理路由（/api/admin/game1/* → game1-server）
-app.use('/api/admin', game1Routes)
+// 使用独立子路径挂载点，防止 Express5 多 Router 共享 /api/admin 触发 405 机制
+app.use('/api/admin/game1', game1Routes)
 
 // 挂载 Tavern 代理路由（/api/admin/tavern/* → tavern-server）
-app.use('/api/admin', tavernRoutes)
+app.use('/api/admin/tavern', tavernRoutes)
 
 // 健康检查端点
 app.get('/health', async (_req, res) => {
