@@ -5,6 +5,39 @@ import * as moderationService from '../services/moderation.service'
 import prisma from '../utils/prisma'
 import { z } from 'zod'
 
+// ─── adminToken 认证时 userId 被硬编码为 'admin'，需解析为真实 DB 用户 ID ───
+let cachedSystemUserId: string | null = null
+
+async function resolveAdminUserId(): Promise<string> {
+  if (cachedSystemUserId) return cachedSystemUserId
+  const sysUser = await prisma.sharedUser.findFirst({
+    where: { openid: 'builtin_system' },
+    select: { id: true },
+  })
+  if (sysUser) {
+    cachedSystemUserId = sysUser.id
+    return sysUser.id
+  }
+  // 系统用户不存在时自动创建
+  const newUser = await prisma.sharedUser.create({
+    data: {
+      uuid: 'builtin_system_uuid',
+      openid: 'builtin_system',
+      nickname: '酒馆系统',
+      dailyQuota: 99999,
+      role: 'ADMIN',
+    },
+  })
+  cachedSystemUserId = newUser.id
+  return newUser.id
+}
+
+/** 将 adminToken 认证的虚拟 userId 解析为真实 DB 用户 ID */
+async function resolveRealUserId(req: AuthenticatedRequest): Promise<string> {
+  if (req.user!.userId === 'admin') return resolveAdminUserId()
+  return req.user!.userId
+}
+
 const router = Router()
 
 // All admin routes require admin authentication
@@ -24,7 +57,7 @@ router.get('/pending', async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/v1/admin/approve/:id
 router.post('/approve/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    await moderationService.approve(req.params.id, req.user!.userId)
+    await moderationService.approve(req.params.id, await resolveRealUserId(req))
     res.json({ code: 0, data: null, message: '已通过' })
   } catch (err: any) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ code: 404, message: '角色卡不存在', data: null })
@@ -37,7 +70,7 @@ router.post('/approve/:id', async (req: AuthenticatedRequest, res: Response) => 
 router.post('/reject/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const reason = req.body.reason || '未通过审核'
-    await moderationService.reject(req.params.id, req.user!.userId, reason)
+    await moderationService.reject(req.params.id, await resolveRealUserId(req), reason)
     res.json({ code: 0, data: null, message: '已拒绝' })
   } catch (err: any) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ code: 404, message: '角色卡不存在', data: null })
@@ -50,7 +83,7 @@ router.post('/reject/:id', async (req: AuthenticatedRequest, res: Response) => {
 router.post('/ban/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const reason = req.body.reason || '违规内容'
-    await moderationService.ban(req.params.id, req.user!.userId, reason)
+    await moderationService.ban(req.params.id, await resolveRealUserId(req), reason)
     res.json({ code: 0, data: null, message: '已封禁' })
   } catch (err: any) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ code: 404, message: '角色卡不存在', data: null })
@@ -120,6 +153,7 @@ const createCardSchema = z.object({
 router.post('/characters', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = createCardSchema.parse(req.body)
+    const creatorId = await resolveRealUserId(req)
     const card = await prisma.tavernCard.create({
       data: {
         name: data.name,
@@ -131,7 +165,7 @@ router.post('/characters', async (req: AuthenticatedRequest, res: Response) => {
         firstMsg: data.firstMsg,
         cardType: data.cardType,
         isOfficial: true, // 管理员创建的都是官方卡片
-        creatorId: req.user!.userId,
+        creatorId,
         status: 'PUBLISHED',
       },
     })
@@ -192,7 +226,7 @@ router.post('/batch-approve', async (req: AuthenticatedRequest, res: Response) =
     let count = 0
     for (const id of ids) {
       try {
-        await moderationService.approve(id, req.user!.userId)
+        await moderationService.approve(id, await resolveRealUserId(req))
         count++
       } catch {
         // 跳过无法批准的卡片
@@ -332,7 +366,7 @@ router.get('/chats', async (req: AuthenticatedRequest, res: Response) => {
     const [items, total] = await Promise.all([
       prisma.tavernChatSession.findMany({
         where,
-        orderBy: { lastMessageAt: 'desc' },
+        orderBy: { updatedAt: 'desc' },
         skip,
         take: pageSize,
         include: {
@@ -354,7 +388,7 @@ router.get('/chats', async (req: AuthenticatedRequest, res: Response) => {
           characterName: s.character.name,
           messageCount: s.messageCount,
           createdAt: s.createdAt,
-          lastMessageAt: s.lastMessageAt,
+          lastMessageAt: s.updatedAt,
         })),
         total,
         page,
@@ -376,7 +410,7 @@ router.get('/chats/stats', async (_req: AuthenticatedRequest, res: Response) => 
     const [totalChatsToday, activeConversations, totalMessages, sessionCount] = await Promise.all([
       prisma.tavernChatSession.count({ where: { createdAt: { gte: today } } }),
       prisma.tavernChatSession.count({
-        where: { lastMessageAt: { gte: new Date(Date.now() - 24 * 3600_000) } },
+        where: { updatedAt: { gte: new Date(Date.now() - 24 * 3600_000) } },
       }),
       prisma.tavernChatMessage.count(),
       prisma.tavernChatSession.count(),
@@ -501,6 +535,7 @@ const importSchema = z.object({
 router.post('/import', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { cards } = importSchema.parse(req.body)
+    const creatorId = await resolveRealUserId(req)
     let created = 0
     let failed = 0
     const errors: string[] = []
@@ -522,7 +557,7 @@ router.post('/import', async (req: AuthenticatedRequest, res: Response) => {
             exampleDialogs: cardData.exampleDialogs ?? undefined,
             nsfw: cardData.nsfw ?? false,
             isOfficial: true,
-            creatorId: req.user!.userId,
+            creatorId,
             status: 'PUBLISHED',
           },
         })
