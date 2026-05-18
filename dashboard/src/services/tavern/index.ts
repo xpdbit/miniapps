@@ -5,6 +5,17 @@
  */
 import adminApiClient from '@/services/adminApiClient'
 
+// ─── 响应展开工具 ─────────────────────────────────────────────
+
+/**
+ * 展开 Tavern API 统一响应格式 { code, data, message } → data
+ * Tavern Server 所有管理接口均返回此格式，前端需展开后使用
+ */
+export function unwrapTavernResponse<T>(responseData: unknown): T {
+  const body = responseData as { code?: number; data?: T }
+  return body?.data as T
+}
+
 // ─── Types ──────────────────────────────────────────────────
 
 export interface TavernCharacter {

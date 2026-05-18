@@ -24,8 +24,8 @@ import {
   MessageOutlined,
 } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { tavernAdminApi } from '@/services/tavern'
-import type { TavernChatItem, TavernChatMessage } from '@/services/tavern'
+import { tavernAdminApi, unwrapTavernResponse } from '@/services/tavern'
+import type { TavernChatItem, TavernChatMessage, TavernChatListResponse, TavernChatStats, TavernChatMessagesResponse } from '@/services/tavern'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { useResponsiveWidth } from '@/hooks/useResponsiveWidth'
@@ -48,7 +48,7 @@ const TavernChats = () => {
     queryKey: ['tavern-chats', page],
     queryFn: async () => {
       const res = await tavernAdminApi.getChats({ page, pageSize: 20 })
-      return res.data
+      return unwrapTavernResponse<TavernChatListResponse>(res.data)
     },
   })
 
@@ -57,7 +57,7 @@ const TavernChats = () => {
     queryKey: ['tavern-chat-stats'],
     queryFn: async () => {
       const res = await tavernAdminApi.getChatStats()
-      return res.data
+      return unwrapTavernResponse<TavernChatStats>(res.data)
     },
   })
 
@@ -70,7 +70,7 @@ const TavernChats = () => {
     queryFn: async () => {
       if (!selectedChat) return null
       const res = await tavernAdminApi.getChatMessages(selectedChat.id, { page: 1, pageSize: 100 })
-      return res.data
+      return unwrapTavernResponse<TavernChatMessagesResponse>(res.data)
     },
     enabled: messagesOpen && !!selectedChat,
   })

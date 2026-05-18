@@ -17,7 +17,7 @@ import {
   ImportOutlined, InboxOutlined,
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { tavernAdminApi } from '@/services/tavern'
+import { tavernAdminApi, unwrapTavernResponse } from '@/services/tavern'
 import type { TavernCharacter } from '@/services/tavern'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
@@ -47,14 +47,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   PENDING: { label: '待审核', color: 'orange' },
   PUBLISHED: { label: '已发布', color: 'green' },
   BANNED: { label: '已封禁', color: 'red' },
-}
-
-// ─── 工具函数 ──────────────────────────────────────────────────────────
-
-/** 展开 Tavern API 响应：{ code, data, message } → data */
-function unwrapTavernResponse<T>(responseData: unknown): T {
-  const body = responseData as { code?: number; data?: T }
-  return body?.data as T
 }
 
 // ─── 组件 ──────────────────────────────────────────────────────────────
@@ -234,7 +226,7 @@ export default function TavernCards() {
     setImportResult(null)
     try {
       const res = await tavernAdminApi.importCards(importPreview)
-      const result = res.data
+      const result = unwrapTavernResponse<{ created: number; failed: number; errors: string[] }>(res.data)
       setImportResult(result)
       if (result.created > 0) {
         message.success(`成功导入 ${result.created} 张卡片${result.failed > 0 ? `，${result.failed} 张失败` : ''}`)

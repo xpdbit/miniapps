@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
-import { tavernAdminApi } from '@/services/tavern'
+import { tavernAdminApi, unwrapTavernResponse } from '@/services/tavern'
 import type { TavernCharacter } from '@/services/tavern'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
@@ -105,7 +105,7 @@ const TavernCharacters = () => {
       if (typeFilter) params.cardType = typeFilter
       if (statusFilter) params.status = statusFilter
       const res = await tavernAdminApi.getCharacters(params)
-      return res.data
+      return unwrapTavernResponse<{ items: TavernCharacter[]; total: number }>(res.data)
     },
   })
 

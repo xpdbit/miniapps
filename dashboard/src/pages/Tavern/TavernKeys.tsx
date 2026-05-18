@@ -22,8 +22,8 @@ import {
   StopOutlined,
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { tavernAdminApi } from '@/services/tavern'
-import type { TavernApiKeyItem } from '@/services/tavern'
+import { tavernAdminApi, unwrapTavernResponse } from '@/services/tavern'
+import type { TavernApiKeyItem, TavernApiKeyListResponse } from '@/services/tavern'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import dayjs from 'dayjs'
@@ -41,7 +41,7 @@ const TavernKeys = () => {
     queryKey: ['tavern-keys', page],
     queryFn: async () => {
       const res = await tavernAdminApi.getApiKeys({ page, pageSize: 20 })
-      return res.data
+      return unwrapTavernResponse<TavernApiKeyListResponse>(res.data)
     },
   })
 

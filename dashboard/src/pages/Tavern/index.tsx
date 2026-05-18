@@ -6,7 +6,7 @@ import { CommentOutlined, ReloadOutlined, AppstoreOutlined, UserOutlined, KeyOut
 import { ROUTES } from '@/constants/routes'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
-import { tavernAdminApi } from '@/services/tavern'
+import { tavernAdminApi, unwrapTavernResponse } from '@/services/tavern'
 import type { TavernCharacter, TavernStats, CharactersResponse } from '@/services/tavern'
 
 // 兼容旧版直接 API 调用（在 tavern proxy 未到位时用）
@@ -14,7 +14,7 @@ const tavernApi = {
   getCharacters: async (params?: { page?: number; pageSize?: number }): Promise<CharactersResponse> => {
     try {
       const res = await tavernAdminApi.getCharacters(params)
-      return res.data
+      return unwrapTavernResponse<CharactersResponse>(res.data)
     } catch {
       // Fallback: 直接调用 tavern-server（通过 nginx 代理）
       const axios = (await import('axios')).default
@@ -30,7 +30,7 @@ const tavernApi = {
   getStats: async (): Promise<TavernStats> => {
     try {
       const res = await tavernAdminApi.getStats()
-      return res.data
+      return unwrapTavernResponse<TavernStats>(res.data)
     } catch {
       const axios = (await import('axios')).default
       const { getToken } = await import('@/utils/token')
