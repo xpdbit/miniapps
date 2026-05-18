@@ -1,8 +1,8 @@
 /**
  * TavernCharacters — 角色卡片全面管理页面
- * 支持：列表/搜索/筛选/编辑/创建/批量操作/导出
+ * 支持：列表/搜索/筛选/编辑/创建/批量操作/导出/JSON导入
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import {
   Table, Button, Card, Space, Tag, Input, Select, Popconfirm,
   message, Drawer, Descriptions, Empty, Alert, Modal, Form, Row, Col,
@@ -10,7 +10,7 @@ import {
 import {
   SearchOutlined, ReloadOutlined, CheckCircleOutlined,
   CloseCircleOutlined, StopOutlined, EyeOutlined,
-  PlusOutlined, ExportOutlined, EditOutlined,
+  PlusOutlined, ExportOutlined, EditOutlined, ImportOutlined,
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
@@ -74,8 +74,9 @@ const EMPTY_FORM: CardFormData = {
  *  组件
  *  ================================================================ */
 
-const TavernCharacters = () => {
+  const TavernCharacters = () => {
   const qc = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
@@ -92,8 +93,9 @@ const TavernCharacters = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form] = Form.useForm<CardFormData>()
 
-  // 导出中
+  // 导出/导入中
   const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   /* ============================================================
    *  数据查询 — 传递所有筛选参数
@@ -222,6 +224,47 @@ const TavernCharacters = () => {
     }
   }, [selectedRowKeys, data])
 
+  const handleImport = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImporting(true)
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+
+      // 支持两种格式：{ cards: [...] } 或纯数组 [...]
+      const cards = Array.isArray(parsed) ? parsed : parsed.cards
+      if (!Array.isArray(cards) || cards.length === 0) {
+        message.error('JSON 格式无效：需要包含 cards 数组')
+        return
+      }
+
+      const res = await tavernAdminApi.importCards(cards)
+      const result = unwrapTavernResponse<{ created: number; failed: number; errors: string[] }>(res.data)
+      if (result.failed > 0) {
+        message.warning(`导入完成：成功 ${result.created} 张，失败 ${result.failed} 张`)
+      } else {
+        message.success(`成功导入 ${result.created} 张卡片`)
+      }
+      invalidate()
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        message.error('JSON 解析失败，请检查文件格式')
+      } else {
+        message.error('导入失败，请稍后重试')
+      }
+    } finally {
+      setImporting(false)
+      // 重置 file input，允许重复选择同一文件
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }, [invalidate])
+
   /* ============================================================
    *  表格列定义
    *  ============================================================ */
@@ -323,6 +366,9 @@ const TavernCharacters = () => {
           <Space>
             <Button icon={<PlusOutlined />} type="primary" onClick={handleCreate}>
               创建卡片
+            </Button>
+            <Button icon={<ImportOutlined />} loading={importing} onClick={handleImport}>
+              导入JSON
             </Button>
             <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>
               导出
@@ -478,6 +524,14 @@ const TavernCharacters = () => {
           </Form.Item>
         </Form>
       </Modal>
+      {/* ── 隐藏文件输入：JSON 导入 ── */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        style={{ display: 'none' }}
+        onChange={(e) => { void handleFileChange(e) }}
+      />
     </div>
   )
 }
