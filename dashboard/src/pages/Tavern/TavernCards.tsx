@@ -8,11 +8,13 @@ import { useState, useCallback, useMemo } from 'react'
 import {
   Button, Card, Input, Select, Space, Tag, Typography, Popconfirm, message,
   Modal, Form, Empty, Alert, Tooltip, Checkbox, Descriptions,
+  Upload, Divider,
 } from 'antd'
 import {
   SearchOutlined, PlusOutlined,
   LockOutlined, UnlockOutlined, DeleteOutlined,
   EditOutlined, FileTextOutlined,
+  ImportOutlined, InboxOutlined,
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tavernAdminApi } from '@/services/tavern'
@@ -69,6 +71,13 @@ export default function TavernCards() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form] = Form.useForm()
+
+  // JSON 导入
+  const [importOpen, setImportOpen] = useState(false)
+  const [importJson, setImportJson] = useState('')
+  const [importPreview, setImportPreview] = useState<Record<string, unknown>[] | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ created: number; failed: number; errors: string[] } | null>(null)
 
   // ─── 数据查询 ──────────────────────────────────────────────────────
 
@@ -189,12 +198,108 @@ export default function TavernCards() {
     }
   }, [editingId, form, invalidate])
 
+  // ─── JSON 导入处理 ───────────────────────────────────────────────
+
+  /** 解析 JSON 文本，显示预览 */
+  const handleParseJson = useCallback(() => {
+    setImportResult(null)
+    if (!importJson.trim()) {
+      setImportPreview(null)
+      return
+    }
+    try {
+      const parsed = JSON.parse(importJson)
+      const cards = Array.isArray(parsed) ? parsed : [parsed]
+      if (cards.length === 0) {
+        message.warning('JSON 数组为空')
+        setImportPreview(null)
+        return
+      }
+      if (!cards.every((c: unknown) => typeof c === 'object' && c !== null && typeof (c as Record<string, unknown>).name === 'string')) {
+        message.warning('JSON 格式不正确：每张卡片必须包含 name 字段')
+        setImportPreview(null)
+        return
+      }
+      setImportPreview(cards as Record<string, unknown>[])
+    } catch {
+      message.error('JSON 解析失败，请检查格式')
+      setImportPreview(null)
+    }
+  }, [importJson])
+
+  /** 执行导入 */
+  const handleImport = useCallback(async () => {
+    if (!importPreview || importPreview.length === 0) return
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const res = await tavernAdminApi.importCards(importPreview)
+      const result = res.data
+      setImportResult(result)
+      if (result.created > 0) {
+        message.success(`成功导入 ${result.created} 张卡片${result.failed > 0 ? `，${result.failed} 张失败` : ''}`)
+        invalidate()
+      } else {
+        message.error('导入失败：' + (result.errors?.[0] || '未知错误'))
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      message.error(axiosErr.response?.data?.message || '导入请求失败')
+    } finally {
+      setImporting(false)
+    }
+  }, [importPreview, invalidate])
+
+  /** 关闭导入弹窗时清理状态 */
+  const handleCloseImport = useCallback(() => {
+    setImportOpen(false)
+    setImportJson('')
+    setImportPreview(null)
+    setImportResult(null)
+  }, [])
+
+  // 从导出文件格式中提取卡片数组
+  const handleFileRead = useCallback((file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const raw = e.target?.result as string
+        const parsed = JSON.parse(raw)
+        // 支持两种格式：直接卡片数组 或 导出包装格式 { cards: [...] }
+        const cards = Array.isArray(parsed) ? parsed : parsed.cards || parsed.data || [parsed]
+        setImportJson(JSON.stringify(cards, null, 2))
+        setImportPreview(cards as Record<string, unknown>[])
+        message.success(`已加载 ${cards.length} 张卡片`)
+      } catch {
+        message.error('文件解析失败，请确认是有效的 JSON 文件')
+      }
+    }
+    reader.readAsText(file)
+    return false // 阻止 Upload 自动上传
+  }, [])
+
   // ─── 选中卡片详情（实时同步最新数据） ──────────────────────────────
 
   const detailCard = useMemo(() => {
     if (!selectedCard) return null
     return items.find((c) => c.id === selectedCard.id) ?? selectedCard
   }, [selectedCard, items])
+
+  /** 额外 JSON 字段（不在主界面显示的） */
+  const extraFields = useMemo(() => {
+    if (!detailCard) return []
+    const dc = detailCard as unknown as Record<string, unknown>
+    return [
+      { label: 'lore', value: dc.lore },
+      { label: 'systemPrompt', value: dc.systemPrompt },
+      { label: 'exampleDialogs', value: dc.exampleDialogs },
+      { label: 'cardSpec', value: dc.cardSpec },
+      { label: 'modelPreference', value: dc.modelPreference },
+      { label: 'temperature', value: dc.temperature },
+      { label: 'nsfw', value: dc.nsfw },
+      { label: 'version', value: dc.version },
+    ].filter(f => f.value !== undefined && f.value !== null && f.value !== '')
+  }, [detailCard])
 
   // ─── 渲染 ──────────────────────────────────────────────────────────
 
@@ -219,6 +324,9 @@ export default function TavernCards() {
             )}
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
               新建卡片
+            </Button>
+            <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>
+              导入 JSON
             </Button>
           </Space>
         }
@@ -420,10 +528,10 @@ export default function TavernCards() {
                 </Descriptions.Item>
               </Descriptions>
 
-              {/* JSON 详情 */}
+              {/* JSON 详情 — 完整字段 + 原始 JSON */}
               <Card
                 size="small"
-                title="JSON 数据"
+                title="JSON 数据（完整字段）"
                 type="inner"
                 extra={
                   <Button
@@ -438,22 +546,57 @@ export default function TavernCards() {
                   </Button>
                 }
               >
-                <pre
-                  style={{
-                    fontSize: 11,
-                    lineHeight: 1.5,
-                    maxHeight: 400,
-                    overflow: 'auto',
-                    background: '#f6f8fa',
-                    padding: 12,
-                    borderRadius: 6,
-                    margin: 0,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {JSON.stringify(detailCard, null, 2)}
-                </pre>
+                <div style={{ maxHeight: 420, overflow: 'auto' }}>
+                  {/* 隐藏/附加字段 */}
+                  {extraFields.length > 0 ? (
+                    <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginBottom: 8 }}>
+                      <thead>
+                        <tr style={{ background: '#f6f8fa' }}>
+                          <th style={{ padding: '4px 8px', textAlign: 'left', borderBottom: '2px solid #e8e8e8', width: 120 }}>字段</th>
+                          <th style={{ padding: '4px 8px', textAlign: 'left', borderBottom: '2px solid #e8e8e8' }}>值</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {extraFields.map(f => (
+                          <tr key={f.label} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                            <td style={{ padding: '3px 8px', fontWeight: 600, color: '#666', verticalAlign: 'top' }}>{f.label}</td>
+                            <td style={{ padding: '3px 8px', wordBreak: 'break-all' }}>
+                              {typeof f.value === 'object'
+                                ? <pre style={{ margin: 0, fontSize: 10, lineHeight: 1.4, maxHeight: 120, overflow: 'auto', background: '#f6f8fa', padding: 4, borderRadius: 4 }}>{JSON.stringify(f.value, null, 2)}</pre>
+                                : String(f.value)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#999', padding: '8px 0', fontSize: 12 }}>无附加字段</div>
+                  )}
+
+                  {/* 原始 JSON */}
+                  <details>
+                    <summary style={{ cursor: 'pointer', fontSize: 12, color: '#1677ff', marginBottom: 8 }}>
+                      查看原始 JSON
+                    </summary>
+                    <pre
+                      style={{
+                        fontSize: 11,
+                        lineHeight: 1.5,
+                        maxHeight: 300,
+                        overflow: 'auto',
+                        background: '#1e1e1e',
+                        color: '#d4d4d4',
+                        padding: 12,
+                        borderRadius: 6,
+                        margin: 0,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {JSON.stringify(detailCard, null, 2)}
+                    </pre>
+                  </details>
+                </div>
               </Card>
             </Card>
           ) : (
@@ -467,6 +610,128 @@ export default function TavernCards() {
           )}
         </div>
       </div>
+
+      {/* ─── JSON 导入模态框 ────────────────────────────────────────── */}
+      <Modal
+        title="导入卡片 JSON"
+        open={importOpen}
+        onCancel={handleCloseImport}
+        footer={null}
+        width={720}
+        destroyOnClose
+      >
+        {/* 文件上传 */}
+        <Upload.Dragger
+          accept=".json"
+          showUploadList={false}
+          beforeUpload={handleFileRead}
+          style={{ marginBottom: 16 }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">点击或拖拽 JSON 文件到此处</p>
+          <p className="ant-upload-hint">支持 .json 文件，自动识别卡片数组或导出格式</p>
+        </Upload.Dragger>
+
+        <Divider plain>或手动粘贴 JSON</Divider>
+
+        <Input.TextArea
+          rows={10}
+          placeholder={`粘贴卡片 JSON 数组，例如：
+[
+  {
+    "name": "示例角色",
+    "description": "角色描述...",
+    "cardType": "CHARACTER",
+    "personality": "性格特征...",
+    "firstMsg": "开场白...",
+    "tags": ["科幻", "治愈"]
+  }
+]`}
+          value={importJson}
+          onChange={(e) => setImportJson(e.target.value)}
+          style={{ fontFamily: 'monospace', fontSize: 12 }}
+        />
+
+        <Space style={{ marginTop: 12, marginBottom: 12 }}>
+          <Button onClick={handleParseJson} icon={<SearchOutlined />}>
+            解析 JSON
+          </Button>
+          <Button
+            type="primary"
+            icon={<ImportOutlined />}
+            loading={importing}
+            disabled={!importPreview || importPreview.length === 0}
+            onClick={handleImport}
+          >
+            导入 {importPreview ? `${importPreview.length} 张卡片` : ''}
+          </Button>
+        </Space>
+
+        {/* 导入进度 */}
+        {importResult && (
+          <Alert
+            type={importResult.failed === 0 ? 'success' : 'warning'}
+            showIcon
+            message={
+              <span>
+                导入完成：成功 {importResult.created} 张
+                {importResult.failed > 0 && `，失败 ${importResult.failed} 张`}
+              </span>
+            }
+            description={
+              importResult.errors.length > 0 ? (
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {importResult.errors.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              ) : undefined
+            }
+            style={{ marginBottom: 12 }}
+          />
+        )}
+
+        {/* 预览表格 */}
+        {importPreview && importPreview.length > 0 && (
+          <div style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #f0f0f0', borderRadius: 6 }}>
+            <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#fafafa', position: 'sticky', top: 0 }}>
+                  <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>名称</th>
+                  <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>类型</th>
+                  <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>描述</th>
+                  <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>标签</th>
+                </tr>
+              </thead>
+              <tbody>
+                {importPreview.map((card, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '4px 12px' }}>{card.name as string}</td>
+                    <td style={{ padding: '4px 12px' }}>
+                      <Tag style={{ margin: 0, fontSize: 11 }}>{(card.cardType as string) || 'CHARACTER'}</Tag>
+                    </td>
+                    <td style={{ padding: '4px 12px', maxWidth: 200 }}>
+                      <Text ellipsis style={{ fontSize: 11 }}>{(card.description as string) || '-'}</Text>
+                    </td>
+                    <td style={{ padding: '4px 12px' }}>
+                      {Array.isArray(card.tags) && (card.tags as string[]).length > 0
+                        ? (card.tags as string[]).slice(0, 3).map((t) => (
+                          <Tag key={t} style={{ margin: 1, fontSize: 10 }}>{t}</Tag>
+                        ))
+                        : <Text type="secondary" style={{ fontSize: 11 }}>-</Text>}
+                      {Array.isArray(card.tags) && (card.tags as string[]).length > 3 && (
+                        <Text type="secondary" style={{ fontSize: 10 }}> +{(card.tags as string[]).length - 3}</Text>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
 
       {/* ─── 创建/编辑模态框 ────────────────────────────────────────── */}
       <Modal

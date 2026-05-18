@@ -100,7 +100,8 @@ router.get('/characters', async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({ code: 0, data: { items, total, page, pageSize }, message: 'ok' })
   } catch (err: any) {
-    res.status(500).json({ code: 500, message: err.message, data: null })
+    console.error('[Admin] GET /characters failed:', err)
+    res.status(500).json({ code: 500, message: err.message || '数据库查询失败', data: null })
   }
 })
 
@@ -310,6 +311,238 @@ router.get('/dashboard/stats', async (_req: AuthenticatedRequest, res: Response)
     })
   } catch (err: any) {
     res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// ─── 聊天监控端点 ────────────────────────────────────────────────────
+
+// GET /api/v1/admin/chats - 聊天会话列表（管理员视图）
+router.get('/chats', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1
+    const pageSize = parseInt(req.query.pageSize as string) || 20
+    const characterId = req.query.characterId as string | undefined
+    const userId = req.query.userId as string | undefined
+    const skip = (page - 1) * pageSize
+
+    const where: Record<string, unknown> = {}
+    if (characterId) where.characterId = characterId
+    if (userId) where.userId = userId
+
+    const [items, total] = await Promise.all([
+      prisma.tavernChatSession.findMany({
+        where,
+        orderBy: { lastMessageAt: 'desc' },
+        skip,
+        take: pageSize,
+        include: {
+          user: { select: { id: true, nickname: true } },
+          character: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.tavernChatSession.count({ where }),
+    ])
+
+    res.json({
+      code: 0,
+      data: {
+        items: items.map(s => ({
+          id: s.id,
+          userId: s.userId,
+          userName: s.user.nickname || '匿名',
+          characterId: s.characterId,
+          characterName: s.character.name,
+          messageCount: s.messageCount,
+          createdAt: s.createdAt,
+          lastMessageAt: s.lastMessageAt,
+        })),
+        total,
+        page,
+        pageSize,
+      },
+      message: 'ok',
+    })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// GET /api/v1/admin/chats/stats - 聊天统计
+router.get('/chats/stats', async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const [totalChatsToday, activeConversations, totalMessages, sessionCount] = await Promise.all([
+      prisma.tavernChatSession.count({ where: { createdAt: { gte: today } } }),
+      prisma.tavernChatSession.count({
+        where: { lastMessageAt: { gte: new Date(Date.now() - 24 * 3600_000) } },
+      }),
+      prisma.tavernChatMessage.count(),
+      prisma.tavernChatSession.count(),
+    ])
+
+    const averageSessionLength = sessionCount > 0
+      ? Math.round(totalMessages / sessionCount)
+      : 0
+
+    res.json({
+      code: 0,
+      data: { totalChatsToday, activeConversations, totalMessages, averageSessionLength },
+      message: 'ok',
+    })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// GET /api/v1/admin/chats/:chatId/messages - 会话消息列表
+router.get('/chats/:chatId/messages', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1
+    const pageSize = parseInt(req.query.pageSize as string) || 100
+    const skip = (page - 1) * pageSize
+
+    const [items, total] = await Promise.all([
+      prisma.tavernChatMessage.findMany({
+        where: { sessionId: req.params.chatId },
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.tavernChatMessage.count({ where: { sessionId: req.params.chatId } }),
+    ])
+
+    res.json({ code: 0, data: { items, total, page, pageSize }, message: 'ok' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// ─── Key 管理端点 ──────────────────────────────────────────────────────
+
+// GET /api/v1/admin/keys - API Key 列表（管理员视图）
+router.get('/keys', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1
+    const pageSize = parseInt(req.query.pageSize as string) || 20
+    const userId = req.query.userId as string | undefined
+    const skip = (page - 1) * pageSize
+
+    const where: Record<string, unknown> = {}
+    if (userId) where.userId = userId
+
+    const [items, total] = await Promise.all([
+      prisma.tavernApiKey.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+        include: { user: { select: { id: true, nickname: true } } },
+      }),
+      prisma.tavernApiKey.count({ where }),
+    ])
+
+    res.json({
+      code: 0,
+      data: {
+        items: items.map(k => ({
+          id: k.id,
+          userId: k.userId,
+          userName: k.user.nickname || '匿名',
+          provider: k.provider,
+          isActive: k.isActive,
+          createdAt: k.createdAt,
+        })),
+        total,
+        page,
+        pageSize,
+      },
+      message: 'ok',
+    })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// POST /api/v1/admin/keys/:keyId/revoke - 吊销 API Key
+router.post('/keys/:keyId/revoke', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const key = await prisma.tavernApiKey.update({
+      where: { id: req.params.keyId },
+      data: { isActive: false },
+    })
+    res.json({ code: 0, data: key, message: '已吊销' })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message, data: null })
+  }
+})
+
+// ─── JSON 批量导入端点 ────────────────────────────────────────────────
+
+const importSchema = z.object({
+  cards: z.array(z.object({
+    name: z.string().min(1).max(50),
+    description: z.string().optional().default(''),
+    tags: z.array(z.string()).optional().default([]),
+    avatar: z.string().optional(),
+    personality: z.string().optional(),
+    scenario: z.string().optional(),
+    firstMsg: z.string().optional().default(''),
+    cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
+    lore: z.string().optional(),
+    systemPrompt: z.string().optional(),
+    exampleDialogs: z.any().optional(),
+    nsfw: z.boolean().optional(),
+  })).min(1).max(100),
+})
+
+// POST /api/v1/admin/import - 批量导入角色卡 JSON
+router.post('/import', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { cards } = importSchema.parse(req.body)
+    let created = 0
+    let failed = 0
+    const errors: string[] = []
+
+    for (const cardData of cards) {
+      try {
+        await prisma.tavernCard.create({
+          data: {
+            name: cardData.name,
+            description: cardData.description,
+            tags: cardData.tags,
+            avatar: cardData.avatar,
+            personality: cardData.personality,
+            scenario: cardData.scenario,
+            firstMsg: cardData.firstMsg,
+            cardType: cardData.cardType,
+            lore: cardData.lore,
+            systemPrompt: cardData.systemPrompt,
+            exampleDialogs: cardData.exampleDialogs ?? undefined,
+            nsfw: cardData.nsfw ?? false,
+            isOfficial: true,
+            creatorId: req.user!.userId,
+            status: 'PUBLISHED',
+          },
+        })
+        created++
+      } catch (e: unknown) {
+        failed++
+        errors.push(`[${cardData.name}]: ${(e as Error).message}`)
+      }
+    }
+
+    res.json({
+      code: 0,
+      data: { created, failed, errors },
+      message: `成功导入 ${created}/${cards.length} 张卡片`,
+    })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    res.status(500).json({ code: 500, message: (err as Error).message, data: null })
   }
 })
 

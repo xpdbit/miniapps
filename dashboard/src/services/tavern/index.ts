@@ -187,4 +187,8 @@ export const tavernAdminApi = {
   /** 吊销 API Key */
   revokeApiKey: (keyId: string) =>
     adminApiClient.post(`/admin/tavern/keys/${keyId}/revoke`),
+
+  /** 批量导入角色卡 JSON */
+  importCards: (cards: Record<string, unknown>[]) =>
+    adminApiClient.post<{ created: number; failed: number; errors: string[] }>('/admin/tavern/import', { cards }),
 }
