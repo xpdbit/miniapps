@@ -45,8 +45,8 @@ const MODEL_PROVIDER_MAP: Record<string, string> = {
   'chatglm-turbo': 'zhipu',
   'moonshot-v1-8k': 'moonshot',
   'moonshot-v1-32k': 'moonshot',
-  'abab6.5s': 'minimax',
-  'abab7': 'minimax',
+  'abab5.5-chat': 'minimax_free',
+  'abab5-chat': 'minimax_free',
   // OpenRouter（通用网关）
   'openrouter-auto': 'openrouter',
 }
@@ -65,6 +65,7 @@ const PROVIDER_CONFIGS: Record<string, { baseUrl: string; defaultModel: string; 
   zhipu: { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4', apiFormat: 'openai' },
   moonshot: { baseUrl: 'https://api.moonshot.cn', defaultModel: 'moonshot-v1-8k', apiFormat: 'openai' },
   minimax: { baseUrl: 'https://api.minimax.chat', defaultModel: 'abab6.5s', apiFormat: 'openai' },
+  minimax_free: { baseUrl: 'https://api.minimax.chat', defaultModel: 'abab5.5-chat', apiFormat: 'openai' },
 }
 
 /* ========================================================================
@@ -117,7 +118,7 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
     }
 
     // 免费提供商（使用系统配额）
-    if (provider === 'tongyi' || provider === 'opencode') {
+    if (provider === 'tongyi' || provider === 'opencode' || provider === 'minimax_free') {
       const hasQuota = await checkQuota(userId)
       if (!hasQuota) {
         onError(new Error('QUOTA_EXCEEDED'))
@@ -126,6 +127,8 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
 
       if (provider === 'tongyi') {
         await callDashScope(messages, modelKey, temperature, onToken, onDone)
+      } else if (provider === 'minimax_free') {
+        await callMiniMaxFree(messages, modelKey, temperature, onToken, onDone)
       } else {
         await callOpenCodeGo(messages, modelKey, temperature, onToken, onDone)
       }
@@ -260,6 +263,70 @@ async function callOpenCodeGo(
           }
           if (json.usage) {
             totalTokens = json.usage.total_tokens || json.usage.totalTokens || totalTokens
+          }
+        } catch {
+          // Skip invalid JSON lines
+        }
+      }
+    }
+  }
+
+  onDone({ tokens: totalTokens })
+}
+
+/* ========================================================================
+ *  MiniMax（系统级免费 Key）
+ *  ======================================================================== */
+
+async function callMiniMaxFree(
+  messages: ChatCompletionMessage[],
+  model: string,
+  temperature: number | undefined,
+  onToken: (token: string) => void,
+  onDone: (result: { tokens: number }) => void,
+): Promise<void> {
+  const apiKey = config.minimaxApiKey
+  if (!apiKey) {
+    throw new Error('MiniMax API Key 未配置')
+  }
+
+  let totalTokens = 0
+  const response = await axios.post(
+    'https://api.minimax.chat/v1/text/chatcompletion_v2',
+    {
+      model,
+      messages: messages.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+      temperature: temperature ?? 0.8,
+      stream: true,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      responseType: 'stream',
+      timeout: 60000,
+    },
+  )
+
+  const stream = response.data as AsyncIterable<Buffer>
+  for await (const chunk of stream) {
+    const lines = chunk.toString().split('\n').filter(Boolean)
+    for (const line of lines) {
+      if (line.startsWith('data:')) {
+        try {
+          const json = JSON.parse(line.slice(5))
+          // MiniMax v2 流式格式: choices[0].messages[0].text
+          const text = json.choices?.[0]?.messages?.[0]?.text
+            || json.choices?.[0]?.delta?.content
+          if (text) {
+            onToken(text)
+          }
+          if (json.usage) {
+            totalTokens = json.usage.total_tokens || totalTokens
           }
         } catch {
           // Skip invalid JSON lines
