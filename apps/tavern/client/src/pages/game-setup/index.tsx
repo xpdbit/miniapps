@@ -110,7 +110,7 @@ export default function GameSetupPage() {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
-        model: 'qwen-plus',
+        model: 'big-pickle',
       })
       // Extract JSON from response (may have markdown wrapping)
       const jsonMatch = resultText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
