@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { success } from '../utils/response';
 import authRoutes from './auth';
+import aiRoutes from './ai';
 import exportRoutes from './export';
 import characterRoutes from './characters';
 import chatRoutes from './chat';
@@ -18,6 +19,9 @@ router.get('/health', (_req, res) => {
 
 // Auth routes
 router.use('/api/v1/auth', authRoutes);
+
+// AI generation routes
+router.use('/api/v1/ai', aiRoutes);
 
 // Export routes (MUST be before /characters to match /:id/export)
 router.use('/api/v1', exportRoutes);

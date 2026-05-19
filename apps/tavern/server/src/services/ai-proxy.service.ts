@@ -266,9 +266,40 @@ async function callOpenCodeGo(
         }
       }
     }
-   }
+  }
 
   onDone({ tokens: totalTokens })
+}
+
+/* ========================================================================
+ *  非流式生成（用于世界构筑等一次性 AI 调用）
+ *  ======================================================================== */
+
+export async function generateText(params: {
+  userId: string
+  messages: ChatCompletionMessage[]
+  model?: string
+  temperature?: number
+}): Promise<string> {
+  const { userId, messages, model, temperature } = params
+  return new Promise<string>((resolve, reject) => {
+    let fullText = ''
+    routeChat({
+      userId,
+      messages,
+      model,
+      temperature,
+      onToken: (token: string) => {
+        fullText += token
+      },
+      onDone: () => {
+        resolve(fullText)
+      },
+      onError: (err: Error) => {
+        reject(err)
+      },
+    })
+  })
 }
 
 /* ========================================================================
