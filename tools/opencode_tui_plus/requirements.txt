@@ -1,0 +1,5 @@
+textual>=0.80.0
+textual-plotext>=0.3.0
+rich>=13.0.0
+pywin32>=306; sys_platform == 'win32'
+psutil>=5.9.0

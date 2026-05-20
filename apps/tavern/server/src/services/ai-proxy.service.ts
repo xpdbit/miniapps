@@ -67,8 +67,8 @@ const PROVIDER_CONFIGS: Record<string, { baseUrl: string; defaultModel: string; 
   google: { baseUrl: 'https://generativelanguage.googleapis.com', defaultModel: 'gemini-2.5-flash', apiFormat: 'google' },
   zhipu: { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4', apiFormat: 'openai' },
   moonshot: { baseUrl: 'https://api.moonshot.cn', defaultModel: 'moonshot-v1-8k', apiFormat: 'openai' },
-  minimax: { baseUrl: 'https://api.minimax.chat', defaultModel: 'abab6.5s', apiFormat: 'openai' },
-  minimax_free: { baseUrl: 'https://api.minimax.chat', defaultModel: 'MiniMax-Text-01', apiFormat: 'openai' },
+  minimax: { baseUrl: 'https://api.minimaxi.com', defaultModel: 'abab6.5s', apiFormat: 'openai' },
+  minimax_free: { baseUrl: 'https://api.minimaxi.com', defaultModel: 'MiniMax-Text-01', apiFormat: 'openai' },
 }
 
 /* ========================================================================
@@ -309,7 +309,7 @@ async function callMiniMaxFree(
   let totalTokens = 0
   let hasContent = false
   const response = await axios.post(
-    'https://api.minimax.chat/v1/text/chatcompletion_v2',
+    'https://api.minimaxi.com/v1/text/chatcompletion_v2',
     {
       model,
       messages: messages.map((m) => ({

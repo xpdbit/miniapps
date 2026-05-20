@@ -1,5 +1,5 @@
 ﻿import { View, Text, Image } from '@tarojs/components'
-import { cn, formatRelativeTime } from '@/utils'
+import { cn } from '@/utils'
 import './index.scss'
 
 interface ChatBubbleProps {
@@ -34,20 +34,38 @@ export default function ChatBubble({
           )}
         </View>
       )}
-      <View className='chat-bubble-body'>
+      <View className={cn('chat-bubble-body', isUser && 'chat-bubble-body--user')}>
         {!isUser && characterName && (
-          <View className='chat-bubble-header'>
-            <Text className='chat-bubble-name'>{characterName}</Text>
-          </View>
+          <Text className='chat-bubble-name'>{characterName}</Text>
         )}
         <View className={cn('chat-bubble-content', isStreaming && 'chat-bubble-content--streaming')}>
           <Text>{content}</Text>
-          {isStreaming && <Text className='chat-bubble-cursor'>|</Text>}
+          {isStreaming && (
+            <View className='chat-bubble-dots'>
+              <View className='chat-bubble-dot' />
+              <View className='chat-bubble-dot' />
+              <View className='chat-bubble-dot' />
+            </View>
+          )}
         </View>
         {timestamp && (
-          <Text className='chat-bubble-time'>{formatRelativeTime(timestamp)}</Text>
+          <Text className='chat-bubble-time'>
+            {typeof timestamp === 'string' ? timestamp : formatTime(timestamp)}
+          </Text>
         )}
       </View>
     </View>
   )
+}
+
+function formatTime(ts: number): string {
+  const date = new Date(ts)
+  const now = new Date()
+  const isToday = date.toDateString() === now.toDateString()
+  const h = date.getHours().toString().padStart(2, '0')
+  const m = date.getMinutes().toString().padStart(2, '0')
+  if (isToday) return `${h}:${m}`
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${month}-${day} ${h}:${m}`
 }

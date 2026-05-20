@@ -6,7 +6,7 @@
 .page-character-detail {
   min-height: 100vh;
   background: var(--color-bg);
-  padding: var(--spacing-md) var(--spacing-md) 140rpx;
+  padding: var(--spacing-md) var(--spacing-md) env(safe-area-inset-bottom, var(--spacing-md));
 
   &-loading {
     display: flex;

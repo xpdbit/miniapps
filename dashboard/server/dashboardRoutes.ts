@@ -26,6 +26,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
     ])
     res.json({ success: true, data: { totalUsers, newUsersToday, newUsersThisMonth, totalFoodRecords, recognitionsToday, totalCheckIns, checkInsToday } })
   } catch (e) {
+    console.error('[Dashboard] 获取统计概览失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -47,6 +48,7 @@ router.get('/stats/user-trend', async (_req: Request, res: Response) => {
     const data = Object.entries(grouped).map(([date, value]) => ({ date, value }))
     res.json({ success: true, data })
   } catch (e) {
+    console.error('[Dashboard] 获取用户趋势失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -68,6 +70,7 @@ router.get('/stats/recognition-trend', async (_req: Request, res: Response) => {
     const data = Object.entries(grouped).map(([date, value]) => ({ date, value }))
     res.json({ success: true, data })
   } catch (e) {
+    console.error('[Dashboard] 获取识别趋势失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -84,6 +87,7 @@ router.get('/stats/food-type-distribution', async (_req: Request, res: Response)
     const data = result.map((r) => ({ type: r.food_type, value: r._count.id }))
     res.json({ success: true, data })
   } catch (e) {
+    console.error('[Dashboard] 获取食物类型分布失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -105,6 +109,7 @@ router.get('/stats/theme-usage-distribution', async (_req: Request, res: Respons
     )
     res.json({ success: true, data })
   } catch (e) {
+    console.error('[Dashboard] 获取主题使用分布失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })

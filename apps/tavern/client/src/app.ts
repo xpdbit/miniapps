@@ -11,9 +11,9 @@ class App extends Component<AppProps> {
     // 全局捕获未处理的 Promise 拒绝（网络错误静默处理）
     this.bindGlobalErrorHandler()
 
-    // 延迟执行 API 调用，确保小程序首屏快速渲染，避免框架级 timeout
+    // 延迟执行初始化（含自动微信登录），确保首屏快速渲染
     setTimeout(() => {
-      void useAuthStore.getState().restoreSession()
+      void useAuthStore.getState().initialize()
     }, 100)
   }
 

@@ -25,6 +25,7 @@ router.get('/', async (_req: Request, res: Response) => {
       },
     })
   } catch (e) {
+    console.error('[Admin] 获取API密钥列表失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -57,6 +58,7 @@ router.post('/', async (req: Request, res: Response) => {
       },
     })
   } catch (e) {
+    console.error('[Admin] 创建API密钥失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -95,6 +97,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       },
     })
   } catch (e) {
+    console.error('[Admin] 更新API密钥失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -106,6 +109,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     await prisma.ftgApiKey.delete({ where: { id } })
     res.json({ success: true })
   } catch (e) {
+    console.error('[Admin] 删除API密钥失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })

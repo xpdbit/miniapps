@@ -12,9 +12,8 @@ if (!TAVERN_ADMIN_TOKEN) {
 /**
  * 统一代理处理：转换路径 + 认证
  * 前端请求：/api/admin/tavern/pending
- * Express 挂载在 /api/admin，req.path = /tavern/pending
- * 所有仪表盘接口均为 tavern-server 的管理接口（前缀 /admin/），
- * 所以目标 URL = {TAVERN_API}/admin/pending
+ * Express 挂载在 /api/admin/tavern，req.path = /pending
+ * 目标 URL = {TAVERN_API}/admin/pending
  *
  * 认证：如果配置了 TAVERN_ADMIN_TOKEN，用它替换 Authorization header。
  * 否则透传用户的 dashboard JWT（不兼容 tavern-server requireAdmin, 需配置一致）。
@@ -25,7 +24,8 @@ async function proxyRequest(
   method: 'get' | 'post' | 'put' | 'delete',
 ): Promise<void> {
   try {
-    const subPath = req.path.replace(/^\/tavern\//, '')
+    // req.path 是挂载点之后剩余路径，如 /pending → 去掉前导斜杠得到 pending
+    const subPath = req.path.replace(/^\//, '')
     // tavern-server 管理接口统一在 /api/v1/admin/ 下
     const targetUrl = `${TAVERN_API}/admin/${subPath}`
 
@@ -59,7 +59,9 @@ async function proxyRequest(
   }
 }
 
-router.use('/tavern', (req: Request, res: Response) => {
+// Router 挂载在 /api/admin/tavern，此处 req.path 已是去除了 mount prefix 的剩余路径
+// 无需再按 /tavern 前缀过滤 — 所有到达此 router 的请求都是 tavern 代理请求
+router.use((req: Request, res: Response) => {
   const method = req.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete'
   if (['get', 'post', 'put', 'delete'].includes(method)) {
     void proxyRequest(req, res, method)

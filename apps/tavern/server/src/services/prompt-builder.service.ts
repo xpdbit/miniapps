@@ -1,11 +1,8 @@
 export interface CharacterData {
   name: string
   description: string
-  personality?: string | null
+  prompt?: string | null
   scenario?: string | null
-  lore?: string | null
-  systemPrompt?: string | null
-  exampleDialogs?: unknown
   firstMsg: string
 }
 
@@ -52,32 +49,13 @@ export function buildPrompt(params: {
     `姓名: ${params.character.name}`,
     `外貌与性格: ${params.character.description}`,
   ]
-  if (params.character.personality) {
-    systemParts.push(`人格特征: ${params.character.personality}`)
+  if (params.character.prompt) {
+    systemParts.push('', '【提示词】', params.character.prompt)
   }
   if (params.character.scenario) {
-    systemParts.push(`场景: ${params.character.scenario}`)
-  }
-  if (params.character.lore) {
-    systemParts.push('', '【背景知识】', params.character.lore)
-  }
-  if (params.character.systemPrompt) {
-    systemParts.push('', '【额外指令】', params.character.systemPrompt)
+    systemParts.push('', '【场景】', params.character.scenario)
   }
   messages.push({ role: 'system', content: systemParts.join('\n') })
-
-  // Example dialogs
-  if (params.character.exampleDialogs) {
-    const dialogs = Array.isArray(params.character.exampleDialogs)
-      ? params.character.exampleDialogs
-      : []
-    for (const d of dialogs) {
-      if (d.user && d.char) {
-        messages.push({ role: 'user', content: d.user as string })
-        messages.push({ role: 'assistant', content: d.char as string })
-      }
-    }
-  }
 
   // Persona
   if (params.persona) {

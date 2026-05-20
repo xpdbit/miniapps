@@ -1,6 +1,6 @@
 /* ============================================================
- *  Creator Page — 现代扁平角色创建向导
- *  风格: 步骤指示器 + 表单 + 预览
+ *  Creator Page — 温暖酒馆角色创建向导
+ *  风格: 步骤指示器 + 优雅表单 + 预览卡片
  * ============================================================ */
 
 .page-creator {
@@ -24,6 +24,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+
+    &:active {
+      background: var(--color-bg-surface-hover);
+    }
   }
 
   &-header-title {
@@ -57,6 +63,10 @@
       background: var(--color-primary-bg);
       color: var(--color-primary);
     }
+
+    &:active {
+      transform: scale(0.97);
+    }
   }
 
   /* ── 预览卡片类型 ── */
@@ -76,11 +86,17 @@
     height: 80rpx;
     line-height: 80rpx;
     background: transparent !important;
-    color: #ef4444 !important;
-    border: 1px solid #ef4444 !important;
+    color: var(--color-error) !important;
+    border: 1px solid var(--color-error) !important;
     border-radius: var(--radius-md);
     font-size: var(--font-body);
     margin-top: var(--spacing-sm);
+    transition: all var(--transition-fast);
+
+    &:active {
+      transform: scale(0.97);
+      opacity: 0.8;
+    }
 
     &::after { border: none; }
   }
@@ -107,8 +123,8 @@
   }
 
   &-step-num {
-    width: 32rpx;
-    height: 32rpx;
+    width: 36rpx;
+    height: 36rpx;
     border-radius: var(--radius-full);
     background: var(--color-border);
     color: var(--color-text-secondary);
@@ -116,13 +132,14 @@
     align-items: center;
     justify-content: center;
     font-size: var(--font-caption);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-bold);
     transition: all var(--duration-fast) var(--ease-out);
   }
 
   &-step.active &-step-num {
     background: var(--color-primary);
     color: var(--color-primary-foreground);
+    box-shadow: 0 0 12px var(--color-primary-glow);
   }
 
   &-step.done &-step-num {
@@ -133,11 +150,17 @@
   &-step-label {
     font-size: var(--font-caption);
     color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-step.active &-step-label {
+    color: var(--color-text);
   }
 
   /* ── 表单区域 ── */
   &-form {
     padding: var(--spacing-md);
+    animation: slide-up-fade var(--duration-slow) var(--ease-out);
   }
 
   &-field {
@@ -160,10 +183,11 @@
     font-size: var(--font-body-sm);
     color: var(--color-text);
     border: 1px solid var(--color-border-subtle);
-    transition: border-color var(--duration-fast) var(--ease-out);
+    transition: all var(--duration-fast) var(--ease-out);
 
     &:focus-within {
       border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px var(--color-primary-glow);
     }
   }
 
@@ -176,6 +200,7 @@
     font-size: var(--font-body-sm);
     color: var(--color-text);
     border: 1px solid var(--color-border-subtle);
+    transition: border-color var(--duration-fast) var(--ease-out);
 
     &--large { min-height: 220rpx; }
   }
@@ -230,7 +255,7 @@
 
   &-tag {
     padding: 6rpx 16rpx;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-pill);
     font-size: var(--font-caption);
     color: var(--color-text-secondary);
     background: var(--color-bg-surface);
@@ -241,6 +266,10 @@
       background: var(--color-primary-bg);
       color: var(--color-primary);
       border-color: var(--color-primary);
+    }
+
+    &:active {
+      transform: scale(0.92);
     }
   }
 
@@ -260,12 +289,17 @@
     border-radius: var(--radius-md);
     font-size: var(--font-body);
     font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
   }
 
   &-prev-btn {
     background: var(--color-bg-surface) !important;
     color: var(--color-text) !important;
     border: 1px solid var(--color-border-subtle) !important;
+
+    &:active {
+      transform: scale(0.97);
+    }
   }
 
   &-next-btn,
@@ -273,6 +307,11 @@
     background: var(--color-primary) !important;
     color: var(--color-primary-foreground) !important;
     border: none !important;
+
+    &:active {
+      transform: scale(0.97);
+      opacity: 0.9;
+    }
   }
 
   /* ── 预览卡片 ── */
@@ -311,20 +350,23 @@
     font-size: var(--font-caption);
     color: var(--color-primary);
     background: var(--color-primary-bg);
-    padding: 2rpx 8rpx;
-    border-radius: var(--radius-xs);
+    padding: 2rpx 10rpx;
+    border-radius: var(--radius-pill);
   }
 
   &-preview-first {
     background: var(--color-bg-elevated);
     padding: var(--spacing-sm);
     border-radius: var(--radius-sm);
+    border-left: 3rpx solid var(--color-primary);
   }
 
   &-preview-first-label {
     font-size: var(--font-caption);
     color: var(--color-text-tertiary);
     font-weight: var(--font-weight-semibold);
+    display: block;
+    margin-bottom: var(--spacing-2xs);
   }
 
   &-preview-first-text {

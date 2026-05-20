@@ -83,10 +83,9 @@ export default function CharacterDetailPage() {
     name,
     avatar,
     description,
-    personality,
+    prompt,
     scenario,
     firstMsg,
-    lore,
     tags,
     status,
     chatCount,
@@ -144,12 +143,12 @@ export default function CharacterDetailPage() {
           </Text>
         </View>
 
-        {/* 性格特征 */}
-        {personality && (
+        {/* 提示词 */}
+        {prompt && (
           <View className='page-character-detail-section'>
-            <Text className='page-character-detail-section-title'>性格特征</Text>
+            <Text className='page-character-detail-section-title'>提示词</Text>
             <Text className='page-character-detail-section-content'>
-              {personality}
+              {prompt}
             </Text>
           </View>
         )}
@@ -174,13 +173,6 @@ export default function CharacterDetailPage() {
           </View>
         )}
 
-        {/* 背景故事 */}
-        {lore && (
-          <View className='page-character-detail-section'>
-            <Text className='page-character-detail-section-title'>背景故事</Text>
-            <Text className='page-character-detail-section-content'>{lore}</Text>
-          </View>
-        )}
       </View>
 
       {/* 操作按钮 */}

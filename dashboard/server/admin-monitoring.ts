@@ -24,7 +24,7 @@ interface ServiceHealth {
 }
 
 interface ProjectHealth {
-  projectId: number
+  projectId: string
   projectName: string
   status: 'healthy' | 'degraded' | 'down'
   responseTime: number
@@ -183,9 +183,9 @@ router.get('/health', async (_req: Request, res: Response) => {
     // 如果数据库没有项目记录，返回默认值
     if (results.length === 0) {
       const defaultProjects = [
-        { id: 0, name: 'FTG Server', url: 'http://server:3000' },
-        { id: 1, name: 'Game1 Server', url: 'http://game1-server:3000' },
-        { id: 2, name: 'Tavern Server', url: 'http://tavern-server:3000' },
+        { id: '0', name: 'FTG Server', url: 'http://server:3000' },
+        { id: '1', name: 'Game1 Server', url: 'http://game1-server:3000' },
+        { id: '2', name: 'Tavern Server', url: 'http://tavern-server:3000' },
       ]
       const defaultResults: ProjectHealth[] = await Promise.all(
         defaultProjects.map(async (p) => {

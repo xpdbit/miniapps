@@ -1,100 +1,125 @@
 /* ============================================================
- *  CharacterCard — 5:3 现代化卡片
- *  风格: 暖白卡面 / 柔和阴影 / 选中发光边框
+ *  CharacterCard — 5:3 纯文字卡片
+ *  无背景 / 左侧色条 / 自适应换行 / iOS 扁平
  * ============================================================ */
 
 .character-card {
-  width: 100%;
+  aspect-ratio: 5 / 3;
+  padding: var(--spacing-base);
+  display: flex;
+  flex-direction: column;
+  position: relative;
   opacity: 0;
   transform: translateY(6rpx);
   transition: all var(--transition-fast);
-  margin-bottom: var(--spacing-sm);
-  border-radius: var(--radius-base);
-  overflow: hidden;
 
-  /* ── 入场动画 ── */
+  /* ── 左侧色条 ── */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: var(--spacing-sm);
+    bottom: var(--spacing-sm);
+    width: 3rpx;
+    background: var(--color-primary);
+    border-radius: 0 2rpx 2rpx 0;
+    opacity: 0.6;
+    z-index: 1;
+  }
+
   &--visible {
     opacity: 1;
     transform: translateY(0);
   }
 
   &--active {
-    box-shadow: 0 0 0 2rpx var(--color-primary), var(--shadow-md);
+    &::before { opacity: 1; width: 4rpx; }
   }
 
-  /* ── 选中状态：主色边框 + 柔和发光 ── */
   &--selected {
-    box-shadow: 0 0 0 3rpx var(--color-primary), 0 0 16rpx var(--color-primary-glow);
+    &::before { opacity: 1; width: 4rpx; background: var(--color-primary); }
   }
 
   &:active {
-    transform: scale(0.96);
+    opacity: 0.7;
   }
 
-  /* ── 卡面：5:3 暖白卡面 ── */
-  &-face {
-    width: 100%;
-    aspect-ratio: 5 / 3;
-    background: linear-gradient(145deg, #FFFFFF, #FCF9F6);
-    border: 1px solid var(--color-border);
+  > * { position: relative; z-index: 1; }
+
+  /* ── 内容区 ── */
+  &-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+    min-width: 0;
+  }
+
+  /* ── 名字 ── */
+  &-name {
+    font-size: var(--font-body-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  /* ── 副标题 ── */
+  &-subtitle {
+    font-size: var(--font-body-sm);
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  /* ── 统计 ── */
+  &-stats {
+    margin-top: auto;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: var(--spacing-sm);
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
   }
 
-  /* ── 装饰性顶部暖色光晕 ── */
-  &-face::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(
-      circle at 30% 20%,
-      var(--color-primary-glow) 0%,
-      transparent 60%
-    );
-    opacity: 0.3;
-    pointer-events: none;
+  &-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4rpx;
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+    line-height: 1;
   }
 
-  /* ── 装饰底部线条 ── */
-  &-face::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 10%;
-    right: 10%;
-    height: 2rpx;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--color-primary) 50%,
-      transparent
-    );
-    opacity: 0.2;
+  &-stat-divider {
+    width: 3rpx;
+    height: 3rpx;
+    border-radius: var(--radius-round);
+    background: var(--color-border);
   }
 
-  /* ── 卡片名字 ── */
-  &-name {
-    font-size: var(--font-body);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    word-break: break-word;
-    line-height: 1.3;
-    position: relative;
-    z-index: 1;
-    letter-spacing: 0.5px;
+  &-stat-value {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+  }
+
+  /* ── 紧凑 ── */
+  &--compact {
+    aspect-ratio: auto;
+    min-height: 112rpx;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--spacing-sm) var(--spacing-base);
+  }
+
+  &--compact &-name {
+    -webkit-line-clamp: 1;
   }
 }

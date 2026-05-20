@@ -1,0 +1,96 @@
+# 文档关联与边界
+
+> 本文档说明 `docs/` 下各文档之间的关联关系与内容边界，避免同一信息在多处维护。
+
+## 一、核心原则
+
+- **单一事实来源** — 每条信息只在一个文档中维护，其他文档通过链接引用
+- **文档即代码** — 文档与代码同步更新，代码变更需同步更新相关文档
+- **层次化索引** — `docs/README.md` 是总入口，各子目录 `README.md` 是局部入口
+
+## 二、文档依赖关系
+
+```
+docs/README.md                       ← 总索引
+├── apps/{appname}/
+│   ├── client/README.md            ← 客户端概述
+│   └── server/
+│       ├── README.md               ← 服务端概述 + 路由总览
+│       └── API.md                  ← 详细 API 参考（server/README.md 引用此文件）
+├── dashboard/README.md              ← 管理后台概述
+├── deploy/README.md                 ← 部署配置
+├── prisma/README.md                 ← 数据库 Schema
+├── tools/{toolname}/
+│   └── README.md                   ← 工具概述
+├── server/{servername}/
+│   └── README.md                   ← 服务器连接信息（独立于 apps/*/server/ 的运维视角）
+├── plan/README.md                   ← 规划文档索引
+├── superpowers/
+│   ├── specs/                      ← 设计方案（被各 README.md 引用）
+│   └── plans/                      ← Agent 工作计划
+├── ARCHITECTURE.md                  ← 系统级架构（所有子项目的跨域视图）
+├── rules.md                         ← 文档编写规则（本文档引用它）
+├── urls.md                          ← URL 引用清单
+├── edge.md                          ← ← 当前文件
+└── README.md                        ← docs 根说明
+```
+
+## 三、关键边界定义
+
+### 3.1 `apps/ftg/server/README.md` vs `docs/server/ftg-server/README.md`
+
+| 维度 | `apps/*/server/README.md` | `docs/server/*/README.md` |
+|------|---------------------------|--------------------------|
+| 视角 | 开发者 — 代码结构、路由、服务 | 运维 — 连接信息、端口、环境变量 |
+| 内容 | 技术栈、目录结构、API 总览、CI/CD | 服务器地址、端口映射、Docker 配置、健康检测 |
+| 受众 | 参与开发的人员 | 部署运维人员 |
+| 维护 | 随代码变更同步更新 | 随部署配置变更更新 |
+
+### 3.2 `README.md` vs `AGENTS.md`
+
+| 维度 | `README.md`（docs/） | `AGENTS.md`（项目根/各子目录） |
+|------|----------------------|-------------------------------|
+| 受众 | 人类开发者 | AI Agent |
+| 内容 | 项目概述、技术栈、快速开始 | 代码约定、反模式列表、文件地图 |
+| 禁止 | 禁止写代码反模式 | 禁止写如何启动项目 |
+| 重复 | 允许少量重复（如技术栈），避免大段复制 |
+
+### 3.3 `ARCHITECTURE.md` vs 各项目 `README.md`
+
+| 维度 | `ARCHITECTURE.md` | 各项目 `README.md` |
+|------|-------------------|-------------------|
+| 范围 | 全局 — 跨所有子系统 | 局部 — 单个项目 |
+| 内容 | 项目间关系、整体数据流、端口映射 | 项目内目录结构、技术栈、快速开始 |
+| 更新 | 架构变更时更新 | 项目变更时更新 |
+
+### 3.4 `superpowers/specs/` vs `superpowers/plans/`
+
+| 维度 | `specs/` | `plans/` |
+|------|----------|----------|
+| 内容 | 设计方案、技术选型、架构决策 | Agent 工作计划、任务分解 |
+| 格式 | `YYYY-MM-DD-<描述>-design.md` | `YYYY-MM-DD-<描述>.md` |
+| 更新 | 按需（方案变更时） | 每次 Agent 执行 |
+
+## 四、避免重复的检查清单
+
+- [ ] `urls.md` 中的 URL 清单不从部署配置复制，而是引用其位置
+- [ ] `ARCHITECTURE.md` 中的端口号不从 `deploy/README.md` 复制，而是保持同步
+- [ ] 各项目的技术栈表格式保持一致
+- [ ] `rules.md` 中的命名约定一旦变更，需同步审核所有文档的一致性
+- [ ] 各 `API.md` 的响应格式说明统一，不从复制
+
+## 五、常见越界问题
+
+| 问题 | 示例 | 正确做法 |
+|------|------|----------|
+| README 过长 | 超出 80 行 | 拆分为 API.md / DATABASE.md |
+| 重复内容 | deploy/README.md 出现两次架构图 | 维护唯一版本 |
+| 空文档 | 仅标题无实质内容 | 标记「待补充」或直接删除 |
+| 绝对路径 | `E:\.Code\.miniapps\...` | 全部使用相对路径 |
+| 过期无标记 | 旧架构文档无废弃提示 | 添加 `> 🚫` 标记 |
+| 环境不匹配 | docs 使用 bash 但环境是 Windows | 标注命令执行环境 |
+
+---
+
+> 最后更新: 2026-05-18
+> 修改: 首次创建本文档，从 DOCUMENTATION_RULES.md 分离边界定义

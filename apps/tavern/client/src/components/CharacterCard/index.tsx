@@ -1,12 +1,11 @@
 import { View, Text } from '@tarojs/components'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { cn } from '@/utils'
 import './index.scss'
 
 export interface CharacterCardProps {
   id: string
   name: string
-  /** 以下属性向下兼容，但新设计只显示名字 */
   avatar?: string | null
   description?: string
   tags?: string[]
@@ -17,17 +16,47 @@ export interface CharacterCardProps {
   showBorder?: boolean
   compact?: boolean
   subtitle?: string
-  /** 选中状态（选中卡片自动前置 + 显示选中边框） */
   selected?: boolean
 }
 
 export default function CharacterCard(props: CharacterCardProps) {
   const {
-    id, name, onClick, showBorder, selected,
+    id, name, description,
+    subtitle, onClick, showBorder, selected,
+    compact, likeCount, chatCount,
   } = props
 
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+
+  const displaySubtitle = useMemo(() => {
+    if (subtitle) return subtitle
+    if (description) {
+      return description.length > 30
+        ? `${description.slice(0, 30)}...`
+        : description
+    }
+    return undefined
+  }, [subtitle, description])
+
+  const hasStats = likeCount !== undefined || chatCount !== undefined
+
+  if (compact) {
+    return (
+      <View
+        className={cn(
+          'character-card',
+          'character-card--compact',
+          (showBorder || selected) && 'character-card--active',
+          selected && 'character-card--selected',
+          mounted && 'character-card--visible',
+        )}
+        onClick={() => onClick?.(id)}
+      >
+        <Text className='character-card-name'>{name}</Text>
+      </View>
+    )
+  }
 
   return (
     <View
@@ -39,10 +68,32 @@ export default function CharacterCard(props: CharacterCardProps) {
       )}
       onClick={() => onClick?.(id)}
     >
-      {/* 卡面：暖白卡面，显示卡片名字 */}
-      <View className='character-card-face'>
+      <View className='character-card-body'>
         <Text className='character-card-name'>{name}</Text>
+        {displaySubtitle && (
+          <Text className='character-card-subtitle'>{displaySubtitle}</Text>
+        )}
       </View>
+
+      {hasStats && (
+        <View className='character-card-stats'>
+          {likeCount !== undefined && (
+            <View className='character-card-stat'>
+              <Text>♥ </Text>
+              <Text className='character-card-stat-value'>{likeCount}</Text>
+            </View>
+          )}
+          {likeCount !== undefined && chatCount !== undefined && (
+            <View className='character-card-stat-divider' />
+          )}
+          {chatCount !== undefined && (
+            <View className='character-card-stat'>
+              <Text>✦ </Text>
+              <Text className='character-card-stat-value'>{chatCount}</Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   )
 }

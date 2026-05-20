@@ -35,15 +35,11 @@ export interface TavernCharacter {
   tags?: string[]
   description?: string
   avatar?: string
-  personality?: string
+  prompt?: string
   scenario?: string
   firstMsg?: string
   cardType?: string
   isOfficial?: boolean
-  nsfw?: boolean
-  systemPrompt?: string
-  exampleDialogs?: unknown
-  lore?: string
 }
 
 export interface TavernStats {

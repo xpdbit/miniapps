@@ -10,14 +10,10 @@ const createSchema = z.object({
   description: z.string().min(1).max(2000),
   firstMsg: z.string().min(1).max(500),
   avatar: z.string().optional(),
-  personality: z.string().max(500).optional(),
+  prompt: z.string().max(5000).optional(),
   scenario: z.string().max(1000).optional(),
-  lore: z.string().max(5000).optional(),
-  systemPrompt: z.string().max(2000).optional(),
   tags: z.array(z.string().max(20)).max(10).optional(),
   cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
-  exampleDialogs: z.any().optional(),
-  nsfw: z.boolean().optional(),
 })
 
 // GET /api/v1/characters - My character list

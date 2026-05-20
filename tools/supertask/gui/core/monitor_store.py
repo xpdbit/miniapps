@@ -608,7 +608,7 @@ class MonitorStore:
                            time_created, time_updated, duration_ms,
                            total_cost, total_tokens_input + total_tokens_output
                                + total_tokens_reasoning as total_tokens,
-                           model_id, agent_type
+                           model_id, provider_id, agent_name, agent_type
                     FROM session_snapshots
                     ORDER BY time_created DESC
                     LIMIT ?

@@ -27,9 +27,8 @@ export function useSSE(options?: UseSSEOptions) {
       name?: string
       description?: string
       firstMsg?: string
-      personality?: string
+      prompt?: string
       scenario?: string
-      lore?: string
     }
   }) => {
     const token = useAuthStore.getState().token

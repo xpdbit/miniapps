@@ -1,280 +1,212 @@
-import { View, Text, ScrollView, Input, Button, Image } from '@tarojs/components'
+import { View, Text, ScrollView, Input, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 import ChatBubble from '@/components/ChatBubble'
-import ModelSelector from '@/components/ModelSelector'
-import { useSSE } from '@/hooks/useSSE'
-import { useChatStore } from '@/stores/chatStore'
-import { useSyncedCardsStore } from '@/stores/syncedCardsStore'
-import { useLocalCardsStore } from '@/stores/localCardsStore'
-import type { CharacterCard, LocalCard, CardType } from '@/types/character'
-import { CARD_TYPE_LABELS } from '@/types/character'
+import { useGameStore } from '@/stores/gameStore'
 import { Icon } from '@/components'
+import type { GameGroup, GameMessage } from '@/types/game'
+import { cn } from '@/utils'
 import './index.scss'
 
-type CardItem = CharacterCard | LocalCard
-
-interface SelectableCard {
-  id: string
-  name: string
-  description: string
-  avatar?: string | null
-  firstMsg?: string
-  personality?: string
-  scenario?: string
-  lore?: string
-  tags?: string[]
-  cardType: CardType
-  isOfficial: boolean
+function formatGroupTime(ts: number): string {
+  const date = new Date(ts)
+  const now = new Date()
+  const isToday = date.toDateString() === now.toDateString()
+  const h = date.getHours().toString().padStart(2, '0')
+  const m = date.getMinutes().toString().padStart(2, '0')
+  if (isToday) return `${h}:${m}`
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (date.toDateString() === yesterday.toDateString()) return '昨天'
+  return `${date.getMonth() + 1}/${date.getDate()}`
 }
 
 export default function ChatPage() {
-  const { sessions, loadSessions } = useChatStore()
-  const { messages, isStreaming, sendMessage, clearMessages } = useSSE()
+  const { saves, activeSave, addMessage, updateGroupLastMessage, setActiveSave, restoreSaves } = useGameStore()
+  const [view, setView] = useState<'list' | 'chat'>('list')
+  const [activeGroup, setActiveGroup] = useState<GameGroup | null>(null)
   const [input, setInput] = useState('')
-  const [showSessions, setShowSessions] = useState(false)
-  const [selectedCard, setSelectedCard] = useState<SelectableCard | null>(null)
-  const [, setLoadingCards] = useState(false)
-  const [scrollIntoViewId, setScrollIntoViewId] = useState('')
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>()
 
-  const syncedStore = useSyncedCardsStore()
-  const localStore = useLocalCardsStore()
+  const save = activeSave()
 
   useDidShow(() => {
-    loadSessions()
     Taro.eventCenter.trigger('tabChange', 1)
-    // 确保卡片数据已加载
-    syncedStore.restoreFromStorage()
-    localStore.restoreFromStorage()
-    // 触发同步
-    syncedStore.syncCards()
+    restoreSaves()
   })
 
-  // 合并所有可用卡片（官方 + 本地）
-  const allCards: SelectableCard[] = [
-    ...syncedStore.cards.map(c => ({
-      id: c.id,
-      name: c.name,
-      description: c.description || '',
-      avatar: c.avatar,
-      firstMsg: c.firstMsg,
-      personality: c.personality,
-      scenario: c.scenario,
-      lore: c.lore,
-      tags: c.tags,
-      cardType: c.cardType || 'CHARACTER',
-      isOfficial: true,
-    })),
-    ...localStore.cards.map(c => ({
-      id: c.id,
-      name: c.name,
-      description: c.description || '',
-      avatar: c.avatar,
-      firstMsg: c.firstMsg,
-      personality: c.personality,
-      scenario: c.scenario,
-      lore: c.lore,
-      tags: c.tags,
-      cardType: c.cardType || 'CHARACTER',
-      isOfficial: false,
-    })),
-  ]
+  const sortedGroups = save?.groups
+    ? [...save.groups].sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1
+        if (!a.pinned && b.pinned) return 1
+        if (a.pinned && b.pinned && a.pinnedAt && b.pinnedAt) return b.pinnedAt - a.pinnedAt
+        return (b.updatedAt || 0) - (a.updatedAt || 0)
+      })
+    : []
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      clearTimeout(scrollTimerRef.current)
-      setScrollIntoViewId('chat-bottom-anchor')
-      scrollTimerRef.current = setTimeout(() => setScrollIntoViewId(''), 300)
-    }
-    return () => clearTimeout(scrollTimerRef.current)
-  }, [messages])
-
-  const handleSend = async () => {
+  const handleSend = useCallback(() => {
     const text = input.trim()
-    if (!text || isStreaming || !selectedCard) return
+    if (!text || !activeGroup) return
     setInput('')
+    const msg: GameMessage = {
+      id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+      senderId: 'player',
+      senderName: '我',
+      content: text,
+      createdAt: Date.now(),
+    }
+    addMessage(activeGroup.id, msg)
+    updateGroupLastMessage(activeGroup.id, text)
+  }, [input, activeGroup, addMessage, updateGroupLastMessage])
 
-    await sendMessage({
-      characterId: selectedCard.id,
-      message: text,
-      model: useChatStore.getState().selectedModel,
-      cardData: selectedCard.isOfficial ? undefined : {
-        name: selectedCard.name,
-        description: selectedCard.description,
-        firstMsg: selectedCard.firstMsg,
-        personality: selectedCard.personality,
-        scenario: selectedCard.scenario,
-        lore: selectedCard.lore,
-      },
-    })
+  const handleGroupClick = (group: GameGroup) => {
+    setActiveGroup(group)
+    setView('chat')
   }
 
-  const handleSelectCharacter = (card: SelectableCard) => {
-    setSelectedCard(card)
-    clearMessages()
+  const handleBack = () => {
+    setView('list')
+    setActiveGroup(null)
   }
 
-  const handleCreateCharacter = () => {
-    Taro.navigateTo({ url: '/pages/creator/index' })
+  if (!save) {
+    return (
+      <View className='page-chat'>
+        <View className='page-chat-list-header'>
+          <Text className='page-chat-list-header-title'>AI 酒馆</Text>
+        </View>
+
+        {saves.length > 0 ? (
+          <ScrollView className='page-chat-saves-list' scrollY>
+            {saves.map(saveItem => (
+              <View
+                key={saveItem.id}
+                className='page-chat-saves-item'
+                onClick={() => setActiveSave(saveItem.id)}
+              >
+                <View className='page-chat-saves-item-icon'>
+                  <Text className='page-chat-saves-item-icon-text'>🎮</Text>
+                </View>
+                <View className='page-chat-saves-item-info'>
+                  <Text className='page-chat-saves-item-name'>{saveItem.name}</Text>
+                  <Text className='page-chat-saves-item-meta'>
+                    {saveItem.playerCount} 人 · {new Date(saveItem.updatedAt).toLocaleDateString('zh-CN')}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        ) : (
+          <View className='page-chat-empty-saves'>
+            <Text className='page-chat-empty-title'>暂无游戏会话</Text>
+            <Text className='page-chat-empty-subtitle'>点击下方按钮开始新游戏</Text>
+          </View>
+        )}
+
+        <View className='page-chat-footer'>
+          <View className='page-chat-footer-btn' onClick={() => Taro.navigateTo({ url: '/pages/game-setup/index' })}>
+            <Text className='page-chat-footer-btn-icon'>+</Text>
+            <Text>开始新游戏</Text>
+          </View>
+        </View>
+      </View>
+    )
   }
 
-  const handleSessionClick = () => {
-    setShowSessions(false)
+  // State A: Conversation List
+  if (view === 'list') {
+    return (
+      <View className='page-chat'>
+        <View className='page-chat-list-header'>
+          <Text className='page-chat-list-header-title'>AI 酒馆</Text>
+          <View className='page-chat-list-header-actions'>
+            <Text className='page-chat-list-header-btn' onClick={() => Taro.navigateTo({ url: '/pages/archive/index' })}>
+              存档
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView className='page-chat-list' scrollY>
+          {sortedGroups.map(group => (
+            <View
+              key={group.id}
+              className={cn('page-chat-list-item', group.pinned && 'page-chat-list-item--pinned')}
+              onClick={() => handleGroupClick(group)}
+            >
+              <View className='page-chat-list-item-avatar'>
+                <Text className='page-chat-list-item-avatar-text'>{(group.name?.[0] || '?')}</Text>
+              </View>
+              <View className='page-chat-list-item-info'>
+                <View className='page-chat-list-item-top'>
+                  <Text className='page-chat-list-item-name'>{group.name}</Text>
+                  {group.updatedAt && (
+                    <Text className='page-chat-list-item-time'>
+                      {formatGroupTime(group.updatedAt)}
+                    </Text>
+                  )}
+                </View>
+                <Text className='page-chat-list-item-preview'>
+                  {group.memberIds.length > 1 ? `${group.memberIds.length} 人参与` : group.lastMessage || ''}
+                </Text>
+              </View>
+              {group.pinned && <Text className='page-chat-list-item-pin'>📌</Text>}
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    )
   }
+
+  // State B: Chat View
+  const activeGroupFull = save.groups.find(g => g.id === activeGroup?.id) || activeGroup
+  const messages: GameMessage[] = activeGroupFull?._messages || []
 
   return (
     <View className='page-chat'>
-      {/* Header */}
       <View className='page-chat-header'>
-        <View className='page-chat-header-icon' onClick={() => setShowSessions(true)}>
-          <Icon name='menu' size={44} color='#666' />
+        <View className='page-chat-header-back' onClick={handleBack}>
+          <Icon name='arrow-left' size={36} color='#007AFF' />
         </View>
-        {selectedCard ? (
-          <View className='page-chat-header-center'>
-            <View className='page-chat-header-avatar'>
-              {selectedCard.avatar ? (
-                <Image src={selectedCard.avatar} mode='aspectFill' className='page-chat-header-avatar-img' />
-              ) : (
-                <Text className='page-chat-header-avatar-text'>{selectedCard.name.charAt(0)}</Text>
-              )}
-            </View>
-            <View className='page-chat-header-info'>
-              <Text className='page-chat-header-title'>{selectedCard.name}</Text>
-            </View>
-          </View>
-        ) : (
-          <View className='page-chat-header-center'>
-            <Icon name='chat' size={36} color='#C49A6C' />
-            <Text className='page-chat-header-title'>AI 酒馆</Text>
-          </View>
-        )}
-        <View className='page-chat-header-icon' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>
-          <Icon name='settings' size={44} color='#666' />
-        </View>
+        <Text className='page-chat-header-title'>{activeGroup?.name || '聊天'}</Text>
+        <View className='page-chat-header-spacer' />
       </View>
 
-      {/* 模型选择器 */}
-      <ModelSelector />
-
-      {/* Character card selector */}
-      <View className='page-chat-selector'>
-        <ScrollView
-          className='page-chat-selector-scroll'
-          scrollX
-          scrollWithAnimation
-          enableFlex
-        >
-          {allCards.map((card) => (
-            <View
-              key={card.id}
-              className={`page-chat-card ${selectedCard?.id === card.id ? 'page-chat-card--active' : ''}`}
-              onClick={() => handleSelectCharacter(card)}
-            >
-              <View className='page-chat-card-avatar'>
-                {card.avatar ? (
-                  <View className='page-chat-card-avatar-img' style={{ backgroundImage: `url(${card.avatar})` }} />
-                ) : (
-                  <Text className='page-chat-card-avatar-text'>{card.name.charAt(0)}</Text>
-                )}
-              </View>
-              <Text className='page-chat-card-name'>{card.name}</Text>
-              <Text className='page-chat-card-type'>{CARD_TYPE_LABELS[card.cardType] || card.cardType}</Text>
-            </View>
-          ))}
-          {/* Create character card */}
-          <View className='page-chat-card page-chat-card--create' onClick={handleCreateCharacter}>
-            <View className='page-chat-card-avatar page-chat-card-avatar--plus'>
-              <Text className='page-chat-card-avatar-plus'>+</Text>
-            </View>
-            <Text className='page-chat-card-name'>创建角色</Text>
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* Messages */}
-      <ScrollView
-        className='page-chat-messages'
-        scrollY
-        scrollWithAnimation
-        scrollIntoView={scrollIntoViewId}
-      >
+      <ScrollView className='page-chat-messages' scrollY>
         <View className='page-chat-messages-inner'>
-          {!selectedCard && (
-            <View className='page-chat-greeting'>
-              <View className='page-chat-greeting-icon'>
-                <Icon name='chat' size={72} color='#C49A6C' />
-              </View>
-              <Text className='page-chat-greeting-title'>欢迎来到 AI 酒馆</Text>
-              <Text className='page-chat-greeting-subtitle'>选择一位角色，开启奇妙的对话之旅</Text>
-              <View className='page-chat-greeting-hints'>
-                <View className='page-chat-greeting-hint'>
-                  <Icon name='sparkle' size={28} color='#C49A6C' />
-                  <Text className='page-chat-greeting-hint-text'>从上方选择角色</Text>
-                </View>
-                <View className='page-chat-greeting-hint'>
-                  <Icon name='plus' size={28} color='#7BADBF' />
-                  <Text className='page-chat-greeting-hint-text'>或创建新角色</Text>
-                </View>
-              </View>
-            </View>
-          )}
-          {selectedCard && messages.length === 0 && (
-            <View className='page-chat-welcome'>
-              <Text className='page-chat-welcome-name'>{selectedCard.name}</Text>
-              <Text className='page-chat-welcome-msg'>{selectedCard.firstMsg || '你好！让我们开始对话吧。'}</Text>
-            </View>
-          )}
+          <View className='page-chat-world-banner'>
+            <Text className='page-chat-world-title'>{save.worldSetting.title}</Text>
+            <Text className='page-chat-world-desc'>{save.worldSetting.description}</Text>
+          </View>
           {messages.map((msg, i) => (
             <ChatBubble
-              key={i}
-              role={msg.role as 'user' | 'character'}
+              key={msg.id}
+              role={msg.senderId === 'player' ? 'user' : 'character'}
               content={msg.content}
-              isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'character' && !msg.id}
+              characterName={msg.senderName}
+              timestamp={msg.createdAt}
+              avatarUrl={undefined}
+              isLast={i === messages.length - 1}
             />
           ))}
-          <View id='chat-bottom-anchor' />
         </View>
       </ScrollView>
 
-      {/* Input area */}
-      <View className='page-chat-input-area'>
-        <Input
-          className='page-chat-input'
-          value={input}
-          onInput={(e) => setInput(e.detail.value)}
-          placeholder={selectedCard ? '输入消息...' : '请先选择角色'}
-          disabled={isStreaming || !selectedCard}
-        />
-        <Button
-          className='page-chat-send-btn'
-          onClick={isStreaming || !selectedCard ? undefined : handleSend}
-        >
-          {isStreaming ? '...' : '发送'}
-        </Button>
-      </View>
-
-      {/* Session list panel */}
-      {showSessions && (
-        <View className='page-chat-overlay' onClick={() => setShowSessions(false)}>
-          <View className='page-chat-sessions' onClick={(e) => e.stopPropagation()}>
-            <Text className='page-chat-sessions-title'>历史会话</Text>
-            {sessions.map((s) => (
-              <View key={s.id} className='page-chat-session-item' onClick={() => handleSessionClick()}>
-                <Text className='page-chat-session-name'>{s.characterName || '对话'}</Text>
-                <Text className='page-chat-session-preview'>{s.lastMessage || ''}</Text>
-              </View>
-            ))}
-            {sessions.length === 0 && (
-              <View className='page-chat-sessions-empty'>
-                <Icon name='history' size={48} color='#C4BFB8' />
-                <Text className='page-chat-sessions-empty-text'>暂无历史会话</Text>
-              </View>
-            )}
-          </View>
+      <View className='page-chat-input'>
+        <View className='page-chat-input-voice'>
+          <Text>🎤</Text>
         </View>
-      )}
+        <Input
+          className='page-chat-input-field'
+          value={input}
+          onInput={e => setInput(e.detail.value)}
+          placeholder='输入消息...'
+          onConfirm={handleSend}
+        />
+        <View className='page-chat-input-actions'>
+          <Text>😊</Text>
+          <Text className='page-chat-input-send' onClick={handleSend}>发送</Text>
+        </View>
+      </View>
     </View>
   )
 }

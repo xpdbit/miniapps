@@ -135,7 +135,7 @@ router.post('/seed-admin', agentAuth, async (_req: Request, res: Response) => {
       return
     }
 
-    const bcrypt = await import('bcrypt')
+    const bcrypt = await import('bcryptjs')
     const passwordHash = await bcrypt.hash(seedPassword, 12)
 
     const admin = await prisma.dashboardAdminUser.create({

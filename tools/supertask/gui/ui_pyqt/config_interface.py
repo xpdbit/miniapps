@@ -225,6 +225,7 @@ class ConfigInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._on_save_cb = None
+        self._on_restart_cb = None
         self._config: dict = {}
         self._dirty: bool = False      # 配置是否已修改但未保存
         self._loading: bool = False    # 正在加载配置（忽略变更信号）
@@ -351,6 +352,19 @@ class ConfigInterface(QWidget):
         theme_row.addWidget(self._theme_combo)
         theme_row.addStretch()
         form_layout.addLayout(theme_row)
+
+        # 重启按钮
+        restart_row = QHBoxLayout()
+        restart_row.setSpacing(12)
+        restart_row.addWidget(_form_label("应用"))
+        self._restart_btn = PrimaryPushButton("重启应用")
+        self._restart_btn.setToolTip("重启 SuperTask，位置、尺寸保持不变")
+        restart_row.addWidget(self._restart_btn)
+        restart_hint = CaptionLabel("重启后保持窗口位置和尺寸")
+        restart_hint.setStyleSheet("color: #484f58; font-size: 12px;")
+        restart_row.addWidget(restart_hint)
+        restart_row.addStretch()
+        form_layout.addLayout(restart_row)
 
         form_layout.addWidget(_form_separator())
 
@@ -918,6 +932,7 @@ class ConfigInterface(QWidget):
         # 连接信号
         self._save_btn.clicked.connect(self._on_save)
         self._reset_btn.clicked.connect(self._on_reset)
+        self._restart_btn.clicked.connect(self._on_restart)
 
         # ── 连接脏标记信号：任意控件值变更时触发提醒 ──
         # 提示词
@@ -1071,6 +1086,22 @@ class ConfigInterface(QWidget):
         """注册保存回调：callback(config_dict)"""
         self._on_save_cb = callback
 
+    def set_on_restart(self, callback):
+        """注册重启回调：callback()"""
+        self._on_restart_cb = callback
+
+    def _on_restart(self):
+        """触发重启（带确认对话框）"""
+        reply = QMessageBox.question(
+            self,
+            "确认重启",
+            "重启后 SuperTask 将保持当前窗口位置和尺寸。\n\n确定要重启吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes and self._on_restart_cb:
+            self._on_restart_cb()
+
     def _on_save(self):
         """保存配置"""
         config = self.get_config()
@@ -1192,15 +1223,11 @@ class ConfigInterface(QWidget):
             self._model_push_combo,
             self._model_evaluate_combo,
         ]
-        first_texts = [
-            "（不使用默认模型）",
-            "（跟随默认）", "（跟随默认）", "（跟随默认）", "（跟随默认）",
-            "（跟随默认）",
-        ]
         # 各下拉框的首项文本不同，需分别保留
         first_texts = [
             "（不使用默认模型）",
             "（跟随默认）", "（跟随默认）", "（跟随默认）", "（跟随默认）",
+            "（跟随默认）",
         ]
         for combo, first_text in zip(combos, first_texts):
             current = combo.currentText().strip()

@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import prisma from './prisma'
 
 const router = Router()
@@ -211,7 +211,9 @@ router.post('/login', async (req: Request, res: Response) => {
       },
     })
   } catch (error) {
-    console.error('[Login] 服务器错误:', error)
+    const err = error as Error
+    console.error('[Login] 服务器错误:', err.message)
+    console.error('[Login] 错误栈:', err.stack)
     res.status(500).json({ success: false, message: '服务器内部错误，请稍后重试' })
   }
 })
@@ -248,7 +250,7 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
       return
     }
 
-    const valid = await bcrypt.compare(oldPassword, admin.passwordHash)
+    const valid = await bcrypt.compare(oldPassword, admin.password_hash)
     if (!valid) {
       res.status(400).json({ success: false, message: '旧密码不正确' })
       return
@@ -257,7 +259,7 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
     const passwordHash = await bcrypt.hash(newPassword, 12)
     await prisma.dashboardAdminUser.update({
       where: { id: req.admin!.adminId },
-      data: { passwordHash },
+      data: { password_hash: passwordHash },
     })
 
     // 记录修改密码日志
@@ -422,9 +424,10 @@ router.get('/projects', authenticate, requirePermission('projects'), async (req:
 // POST /api/admin/projects — create project
 router.post('/projects', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
-    const { name, apiBaseUrl, description } = req.body
+    const { name, slug, apiBaseUrl, description } = req.body
+    const projectSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     const project = await prisma.dashboardProject.create({
-      data: { name, api_base_url: apiBaseUrl, description: description || null },
+      data: { slug: projectSlug, name, api_base_url: apiBaseUrl, description: description || null },
     })
 
     // 记录创建项目日志

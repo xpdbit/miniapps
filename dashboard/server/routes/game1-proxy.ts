@@ -13,8 +13,8 @@ if (!GAME1_ADMIN_TOKEN) {
 /**
  * 统一代理处理：转换路径 + 注入 admin token 认证
  * 前端请求：GET /api/admin/game1/players
- * Express 挂载在 /api/admin，所以 req.path = /game1/players
- * 提取子路径后拼接：{GAME1_API}/admin/players
+ * Express 挂载在 /api/admin/game1，所以 req.path = /players
+ * 拼接目标 URL：{GAME1_API}/admin/players
  *
  * 认证：Dashboard 使用 GAME1_ADMIN_TOKEN 作为 Bearer token，
  * 匹配 game1-server requireAdmin 中间件的 adminToken 检查。
@@ -25,8 +25,8 @@ async function proxyRequest(
   method: 'get' | 'post' | 'put' | 'delete',
 ): Promise<void> {
   try {
-    // 关键修复：req.path = /game1/players，提取子路径
-    const subPath = req.path.replace(/^\/game1\//, '')
+    // req.path 是挂载点之后剩余路径，如 /players → 去掉前导斜杠得到 players
+    const subPath = req.path.replace(/^\//, '')
     const targetUrl = `${GAME1_API}/admin/${subPath}`
 
     // 使用 GAME1_ADMIN_TOKEN 认证（与 game1-server 的 ADMIN_TOKEN 保持一致）
@@ -61,9 +61,9 @@ async function proxyRequest(
   }
 }
 
-// 使用 router.use() 避免 Express5 path-to-regexp v8 的兼容问题
-// use() 接受字符串路径前缀，不经过 path-to-regexp 匹配
-router.use('/game1', (req: Request, res: Response) => {
+// Router 挂载在 /api/admin/game1，此处 req.path 已是去除了 mount prefix 的剩余路径
+// 无需再按 /game1 前缀过滤 — 所有到达此 router 的请求都是 game1 代理请求
+router.use((req: Request, res: Response) => {
   const method = req.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete'
   if (['get', 'post', 'put', 'delete'].includes(method)) {
     void proxyRequest(req, res, method)

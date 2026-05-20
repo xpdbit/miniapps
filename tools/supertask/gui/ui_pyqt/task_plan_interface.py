@@ -693,28 +693,27 @@ class TaskPlanInterface(QWidget):
         self._tab_widget = QTabWidget(self)
         self._tab_widget.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #30363d;
-                border-radius: 0 0 8px 8px;
-                background-color: transparent;
+                border: 1px solid #30363d; border-radius: 10px;
+                background: #0d1117; padding: 8px 4px 4px 4px;
+                top: -1px;
             }
             QTabBar::tab {
-                background-color: #161b22;
-                color: #8b949e;
-                padding: 8px 20px;
-                margin-right: 2px;
-                border: 1px solid #30363d;
-                border-bottom: none;
-                border-radius: 8px 8px 0 0;
-                font-size: 13px;
+                color: #8b949e; background: transparent;
+                border: 1px solid transparent; border-radius: 20px;
+                padding: 8px 20px; margin: 0px 3px;
+                font-size: 13px; font-weight: 500;
+            }
+            QTabBar::tab:hover {
+                color: #c9d1d9; background: #21262d;
+                border-color: #30363d;
             }
             QTabBar::tab:selected {
-                background-color: #0d1117;
-                color: #e6edf3;
-                border-bottom: 2px solid #1f6feb;
+                color: #ffffff; background: #1f6feb;
+                border-color: #1f6feb;
             }
-            QTabBar::tab:hover:!selected {
-                color: #c9d1d9;
-                background-color: #1c2128;
+            QTabBar::tab:selected:hover {
+                background: #388bfd;
+                border-color: #388bfd;
             }
         """)
 

@@ -3,6 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
 
 import { personaService, type Persona } from '@/services/personaService'
+import { useAuthStore } from '@/stores/authStore'
 import { EmptyState, Icon } from '@/components'
 import './index.scss'
 
@@ -14,6 +15,7 @@ interface PersonaForm {
 const emptyForm: PersonaForm = { name: '', description: '' }
 
 export default function PersonaPage() {
+  const { isLoggedIn } = useAuthStore()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
@@ -35,7 +37,7 @@ export default function PersonaPage() {
   }, [])
 
   useDidShow(() => {
-    loadPersonas()
+    if (isLoggedIn) loadPersonas()
   })
 
   const openCreateModal = () => {

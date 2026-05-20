@@ -6,6 +6,7 @@ import { useState, useCallback, useRef } from 'react'
 import {
   Table, Button, Card, Space, Tag, Input, Select, Popconfirm,
   message, Drawer, Descriptions, Empty, Alert, Modal, Form, Row, Col,
+  Typography,
 } from 'antd'
 import {
   SearchOutlined, ReloadOutlined, CheckCircleOutlined,
@@ -60,14 +61,14 @@ interface CardFormData {
   tags: string
   avatar: string
   cardType: string
-  personality: string
+  prompt: string
   scenario: string
   firstMsg: string
 }
 
 const EMPTY_FORM: CardFormData = {
   name: '', description: '', tags: '', avatar: '',
-  cardType: 'CHARACTER', personality: '', scenario: '', firstMsg: '',
+  cardType: 'CHARACTER', prompt: '', scenario: '', firstMsg: '',
 }
 
 /* ================================================================
@@ -146,7 +147,7 @@ const EMPTY_FORM: CardFormData = {
       tags,
       avatar: char.avatar ?? '',
       cardType: char.cardType ?? 'CHARACTER',
-      personality: char.personality ?? '',
+      prompt: char.prompt ?? '',
       scenario: char.scenario ?? '',
       firstMsg: char.firstMsg ?? '',
     }
@@ -483,12 +484,35 @@ const EMPTY_FORM: CardFormData = {
       >
         {detailChar ? (
           <Descriptions column={1} size="small" bordered>
-            <Descriptions.Item label="角色名">{detailChar.name}</Descriptions.Item>
-            <Descriptions.Item label="创建者">{detailChar.creator?.nickname || '匿名'}</Descriptions.Item>
+            <Descriptions.Item label="卡片名称">{detailChar.name}</Descriptions.Item>
+            <Descriptions.Item label="卡片类型">
+              <Tag>{CARD_TYPE_LABELS[detailChar.cardType ?? ''] ?? detailChar.cardType ?? '角色卡'}</Tag>
+            </Descriptions.Item>
             <Descriptions.Item label="状态">
               <Tag color={STATUS_CONFIG[detailChar.status]?.color}>
                 {STATUS_CONFIG[detailChar.status]?.label}
               </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="创建者">{detailChar.creator?.nickname || '匿名'}</Descriptions.Item>
+            <Descriptions.Item label="卡片简介">
+              <Typography.Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                {detailChar.description || '-'}
+              </Typography.Paragraph>
+            </Descriptions.Item>
+            <Descriptions.Item label="卡片提示词">
+              <Typography.Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap', maxHeight: 200, overflow: 'auto' }}>
+                {detailChar.prompt || '-'}
+              </Typography.Paragraph>
+            </Descriptions.Item>
+            <Descriptions.Item label="标签">
+              {detailChar.tags && detailChar.tags.length > 0
+                ? detailChar.tags.map((t: string) => <Tag key={t} style={{ margin: 2 }}>{t}</Tag>)
+                : '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label="头像 URL">
+              {detailChar.avatar ? (
+                <Typography.Text copyable style={{ fontSize: 12 }}>{detailChar.avatar}</Typography.Text>
+              ) : '-'}
             </Descriptions.Item>
             <Descriptions.Item label="对话数">{detailChar.chatCount}</Descriptions.Item>
             <Descriptions.Item label="点赞数">{detailChar.likeCount}</Descriptions.Item>
@@ -511,20 +535,20 @@ const EMPTY_FORM: CardFormData = {
         destroyOnClose
       >
         <Form form={form} layout="vertical" initialValues={formData}>
-          <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入卡片名称' }]}>
+          <Form.Item name="name" label="卡片名称" rules={[{ required: true, message: '请输入卡片名称' }]}>
             <Input placeholder="卡片名称" />
           </Form.Item>
           <Form.Item name="cardType" label="卡片类型">
             <Select options={CARD_TYPE_OPTIONS.filter((o) => o.value !== '')} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} placeholder="卡片描述" />
+          <Form.Item name="description" label="卡片简介">
+            <Input.TextArea rows={3} placeholder="卡片简要描述" />
+          </Form.Item>
+          <Form.Item name="prompt" label="卡片提示词">
+            <Input.TextArea rows={6} placeholder="定义 AI 角色行为逻辑、性格特征、背景知识和对话风格的系统提示词" />
           </Form.Item>
           <Form.Item name="tags" label="标签（逗号分隔）">
             <Input placeholder="例如：科幻, 机娘, 治愈" />
-          </Form.Item>
-          <Form.Item name="personality" label="人格特征">
-            <Input.TextArea rows={2} placeholder="角色的性格特点" />
           </Form.Item>
           <Form.Item name="scenario" label="场景设定">
             <Input.TextArea rows={2} placeholder="对话发生的场景" />

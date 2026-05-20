@@ -1,6 +1,6 @@
-﻿/* ============================================================
- *  Market Page — 温暖琥珀色角色市场
- *  风格: 玻璃态 / 温暖亮色 / 柔和阴影 / 沉浸式酒馆氛围
+/* ============================================================
+ *  Market Page �� ��ů����ɫ��ɫ�г�
+ *  ���: ����̬ / ��ů��ɫ / �����Ӱ / ����ʽ�ƹݷ�Χ
  * ============================================================ */
 
 .page-market {
@@ -10,7 +10,7 @@
   min-height: 100vh;
 }
 
-/* ── 搜索栏（玻璃态） ── */
+/* ���� ������������̬�� ���� */
 .market-search {
   padding: var(--spacing-md) var(--spacing-md) var(--spacing-xs);
   background: var(--color-bg);
@@ -22,8 +22,6 @@
   display: flex;
   align-items: center;
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 0 var(--spacing-md);
@@ -56,7 +54,47 @@
   opacity: 0.5;
 }
 
-/* ── 标签栏 ── */
+/* ── 刷新按钮（搜索栏内） ── */
+.market-search-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &:active {
+    opacity: 0.5;
+  }
+
+  &--spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+
+/* ── 刷新按钮（子面板顶部） ── */
+.market-sub-panel-refresh {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 var(--spacing-sm) var(--spacing-xs);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &:active {
+    opacity: 0.5;
+  }
+
+  &--spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ���� ��ǩ�� ���� */
 .market-tags {
   margin-bottom: var(--spacing-md);
 
@@ -90,15 +128,15 @@
   }
 }
 
-/* ── 角色卡内容区域（flex 撑满剩余空间） ── */
+/* ���� ��ɫ����������flex ����ʣ��ռ䣩 ���� */
 .market-character-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(240rpx + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(var(--tab-bar-height, 120rpx) + 1rpx + 104rpx + var(--spacing-sm) + env(safe-area-inset-bottom, 0));
 }
 
-/* ── 排序栏 ── */
+/* ���� ������ ���� */
 .market-sort {
   display: flex;
   padding: 0 var(--spacing-md);
@@ -120,7 +158,7 @@
   }
 }
 
-/* ── 卡片网格（2列，带阴影和圆角） ── */
+/* ���� ��Ƭ����2�У�����Ӱ��Բ�ǣ� ���� */
 .market-grid {
   padding: 0 var(--spacing-md);
   display: grid;
@@ -144,7 +182,7 @@
   }
 }
 
-/* ── 选中标记（对勾徽标） ── */
+/* ���� ѡ�б�ǣ��Թ��ձ꣩ ���� */
 .market-grid-check {
   position: absolute;
   top: 8rpx;
@@ -161,7 +199,7 @@
   animation: scale-in var(--duration-fast) var(--ease-spring);
 }
 
-/* ── 查看详情按钮 ── */
+/* ���� �鿴���鰴ť ���� */
 .market-grid-detail-btn {
   position: absolute;
   bottom: 12rpx;
@@ -170,8 +208,6 @@
   height: 44rpx;
   border-radius: var(--radius-full);
   background: var(--glass-bg);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   border: 1px solid var(--glass-border);
   display: flex;
   align-items: center;
@@ -185,13 +221,13 @@
   }
 }
 
-/* ── 主内容区域 ── */
+/* ���� ���������� ���� */
 .market-content {
   flex: 1;
   min-height: 0;
 }
 
-/* ── 加载更多 / 没有更多 ── */
+/* ���� ���ظ��� / û�и��� ���� */
 .market-load-more {
   display: flex;
   justify-content: center;
@@ -218,16 +254,14 @@
   }
 }
 
-/* ── 底部子 tab 栏（玻璃态，强可见度） ── */
+/* ���� �ײ��� tab ��������̬��ǿ�ɼ��ȣ� ���� */
 .market-sub-tabs {
   position: fixed;
-  bottom: calc(120rpx + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--tab-bar-height, 120rpx) + 1rpx + env(safe-area-inset-bottom, 0));
   left: var(--spacing-sm);
   right: var(--spacing-sm);
   display: flex;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -254,7 +288,7 @@
     background: var(--color-bg-surface-hover);
   }
 
-  /* 活跃状态：填充主色背景 */
+  /* ��Ծ״̬�������ɫ���� */
   &--active {
     background: var(--color-primary);
     box-shadow: 0 2px 12px rgba(196, 154, 108, 0.35);
@@ -276,7 +310,7 @@
   transition: color var(--transition-fast);
 }
 
-/* ── 返回按钮（独立样式，更紧凑） ── */
+/* ���� ���ذ�ť��������ʽ�������գ� ���� */
 .market-sub-tab--back {
   flex: 0 0 auto;
   width: 80rpx;
@@ -289,7 +323,7 @@
   }
 }
 
-/* ── 子 tab 栏分割线 ── */
+/* ���� �� tab ���ָ��� ���� */
 .market-sub-tabs-divider {
   width: 1px;
   height: 48rpx;
@@ -297,7 +331,7 @@
   flex-shrink: 0;
 }
 
-/* ── 子 tab 占位内容 ── */
+/* ���� �� tab ռλ���� ���� */
 .market-sub-placeholder {
   display: flex;
   flex-direction: column;
@@ -319,7 +353,7 @@
   margin-top: var(--spacing-sm);
 }
 
-/* ── 创建卡片入口（虚线框+玻璃感） ── */
+/* ���� ������Ƭ��ڣ����߿�+�����У� ���� */
 .market-create-card {
   aspect-ratio: 5 / 3;
   border: 2px dashed var(--color-border);
@@ -328,8 +362,6 @@
   align-items: center;
   justify-content: center;
   background: var(--glass-bg);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   transition: all var(--transition-base);
 
   &:active {
@@ -354,17 +386,17 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* ── 子面板 ── */
+/* ���� ����� ���� */
 .market-sub-panel {
   flex: 1;
   min-height: 0;
   padding: var(--spacing-xl) var(--spacing-md);
-  padding-bottom: calc(320rpx + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(var(--tab-bar-height, 120rpx) + 1rpx + 104rpx + var(--spacing-xl) + var(--spacing-md) + env(safe-area-inset-bottom, 0));
   display: flex;
   flex-direction: column;
 }
 
-/* ── 子面板底部创建栏 ── */
+/* ���� �����ײ������� ���� */
 .market-sub-create-bar {
   margin-top: auto;
   padding: var(--spacing-lg) var(--spacing-md) 0;
@@ -375,18 +407,18 @@
   height: 120rpx;
 }
 
-/* ── 子面板内容区 ── */
+/* ���� ����������� ���� */
 .market-sub-panel-content {
   flex: 1;
   min-height: 0;
   padding: var(--spacing-md);
-  padding-bottom: calc(320rpx + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(var(--tab-bar-height, 120rpx) + 1rpx + 104rpx + var(--spacing-xl) + var(--spacing-md) + env(safe-area-inset-bottom, 0));
   display: flex;
   flex-direction: column;
   overflow-y: auto;
 }
 
-/* ── 区域标题（左侧装饰线） ── */
+/* ���� ������⣨���װ���ߣ� ���� */
 .market-section-title {
   position: relative;
   padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-base);
@@ -407,7 +439,7 @@
     border-radius: 2px;
   }
 
-  /* 当有计数时（如"我的卡片 (3)"） */
+  /* ���м���ʱ����"�ҵĿ�Ƭ (3)"�� */
   Text + Text {
     color: var(--color-text-tertiary);
     font-weight: var(--font-weight-normal);
@@ -416,11 +448,11 @@
   }
 }
 
-/* ── 创建面板 ── */
+/* ���� ������� ���� */
 .market-create-panel {
   flex: 1;
   padding: var(--spacing-lg) var(--spacing-md);
-  padding-bottom: calc(320rpx + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(var(--tab-bar-height, 120rpx) + 1rpx + 104rpx + var(--spacing-xl) + var(--spacing-md) + env(safe-area-inset-bottom, 0));
   overflow-y: auto;
 }
 
@@ -453,7 +485,7 @@
   padding-left: var(--spacing-base);
 }
 
-/* ── 创建卡片选项网格（卡片样式） ── */
+/* ���� ������Ƭѡ�����񣨿�Ƭ��ʽ�� ���� */
 .market-create-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -510,7 +542,7 @@
   max-width: 180rpx;
 }
 
-/* ── 本地卡片列表 ── */
+/* ���� ���ؿ�Ƭ�б� ���� */
 .market-local-cards-section {
   margin-top: var(--spacing-md);
 }
@@ -554,7 +586,7 @@
   color: var(--color-text-tertiary);
 }
 
-/* ── 选中状态栏 ── */
+/* ���� ѡ��״̬�� ���� */
 .market-selection-bar {
   display: flex;
   align-items: center;
@@ -582,7 +614,7 @@
   }
 }
 
-/* ── 子 tab 底部面板 padding 适配 ── */
+/* ���� �� tab �ײ���� padding ���� ���� */
 .market-sub-panel-content,
 .market-create-panel,
 .market-character-area {

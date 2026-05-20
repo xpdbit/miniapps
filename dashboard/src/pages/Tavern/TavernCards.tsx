@@ -158,12 +158,9 @@ export default function TavernCards() {
     form.setFieldsValue({
       name: card.name,
       description: card.description ?? '',
-      cardType: card.cardType ?? 'CHARACTER',
+      prompt: card.prompt ?? '',
       tags: Array.isArray(card.tags) ? card.tags.join(', ') : '',
       avatar: card.avatar ?? '',
-      personality: card.personality ?? '',
-      scenario: card.scenario ?? '',
-      firstMsg: card.firstMsg ?? '',
     })
     setFormOpen(true)
   }, [form])
@@ -282,13 +279,12 @@ export default function TavernCards() {
     if (!detailCard) return []
     const dc = detailCard as unknown as Record<string, unknown>
     return [
-      { label: 'lore', value: dc.lore },
-      { label: 'systemPrompt', value: dc.systemPrompt },
-      { label: 'exampleDialogs', value: dc.exampleDialogs },
+      { label: 'prompt', value: dc.prompt },
+      { label: 'scenario', value: dc.scenario },
+      { label: 'firstMsg', value: dc.firstMsg },
       { label: 'cardSpec', value: dc.cardSpec },
       { label: 'modelPreference', value: dc.modelPreference },
       { label: 'temperature', value: dc.temperature },
-      { label: 'nsfw', value: dc.nsfw },
       { label: 'version', value: dc.version },
     ].filter(f => f.value !== undefined && f.value !== null && f.value !== '')
   }, [detailCard])
@@ -636,7 +632,7 @@ export default function TavernCards() {
     "name": "示例角色",
     "description": "角色描述...",
     "cardType": "CHARACTER",
-    "personality": "性格特征...",
+    "prompt": "你是一个...（角色设定提示词）",
     "firstMsg": "开场白...",
     "tags": ["科幻", "治愈"]
   }
@@ -735,26 +731,20 @@ export default function TavernCards() {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入卡片名称' }]}>
+          <Form.Item label="UUID">
+            <Input value={editingId ?? '创建后自动生成'} disabled />
+          </Form.Item>
+          <Form.Item name="name" label="卡片名称" rules={[{ required: true, message: '请输入卡片名称' }]}>
             <Input placeholder="卡片名称" />
           </Form.Item>
-          <Form.Item name="cardType" label="卡片类型" initialValue="CHARACTER">
-            <Select options={CARD_TYPES.filter((o) => o.value !== '')} />
+          <Form.Item name="description" label="卡片简介">
+            <Input.TextArea rows={3} placeholder="卡片简要描述" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} placeholder="卡片描述" />
+          <Form.Item name="prompt" label="卡片提示词">
+            <Input.TextArea rows={6} placeholder="定义 AI 角色行为逻辑、性格特征、背景知识和对话风格的系统提示词" />
           </Form.Item>
           <Form.Item name="tags" label="标签（逗号分隔）">
             <Input placeholder="例如：科幻, 机娘, 治愈" />
-          </Form.Item>
-          <Form.Item name="personality" label="人格特征">
-            <Input.TextArea rows={2} placeholder="角色的性格特点" />
-          </Form.Item>
-          <Form.Item name="scenario" label="场景设定">
-            <Input.TextArea rows={2} placeholder="对话发生的场景" />
-          </Form.Item>
-          <Form.Item name="firstMsg" label="开场白">
-            <Input.TextArea rows={2} placeholder="角色的第一句话" />
           </Form.Item>
           <Form.Item name="avatar" label="头像 URL">
             <Input placeholder="https://..." />

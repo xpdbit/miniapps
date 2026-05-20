@@ -3,6 +3,7 @@
 // 为 Dashboard 提供独立的管理员认证 API 服务
 // =============================================================================
 
+import { execSync } from 'child_process'
 import express from 'express'
 import prisma from './prisma'
 import adminAuth from './admin-auth'
@@ -72,6 +73,20 @@ app.get('/health', async (_req, res) => {
     res.status(503).json({ status: 'degraded', service: 'dashboard-admin', db: 'disconnected' })
   }
 })
+
+// ─── 启动时自动同步数据库 schema ─────────────────────────────────────
+// 确保 dashboard_admin_users 等表存在，避免部署时遗漏 prisma db push
+try {
+  execSync('npx prisma db push', {
+    stdio: 'pipe',
+    timeout: 30000,
+    env: { ...process.env, NODE_ENV: process.env.NODE_ENV || 'production' },
+  })
+  console.log('[Startup] 数据库 schema 同步完成')
+} catch (err) {
+  const syncErr = err as Error
+  console.error('[Startup] 数据库 schema 同步失败（服务仍将继续启动）:', syncErr.message)
+}
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Dashboard Admin API running on port ${PORT}`)

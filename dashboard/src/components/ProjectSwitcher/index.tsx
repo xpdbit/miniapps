@@ -33,7 +33,7 @@ const ProjectSwitcher = () => {
   const projects = useProjectStore((s) => s.projects)
   const setProject = useProjectStore((s) => s.setProject)
 
-  const handleChange = (value: number) => {
+  const handleChange = (value: string) => {
     const selected = projects.find((p) => p.id === value)
     if (selected) {
       setProject(selected)
@@ -47,7 +47,7 @@ const ProjectSwitcher = () => {
   }
 
   return (
-    <Select<number>
+    <Select<string>
       value={currentProject?.id ?? undefined}
       placeholder="选择项目"
       onChange={handleChange}

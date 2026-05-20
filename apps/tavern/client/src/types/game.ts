@@ -1,0 +1,39 @@
+export interface GameSave {
+  id: string
+  name: string
+  createdAt: number
+  updatedAt: number
+  playerCount: number
+  selectedCards: {
+    characters: string[]
+    mechanics: string[]
+    maps: string[]
+    backgrounds: string[]
+  }
+  worldSetting: {
+    title: string
+    description: string
+    rules: string[]
+  }
+  groups: GameGroup[]
+}
+
+export interface GameGroup {
+  id: string
+  name: string
+  memberIds: string[]
+  isGroup: true
+  lastMessage?: string
+  updatedAt?: number
+  pinned: boolean
+  pinnedAt?: number
+  _messages?: GameMessage[]
+}
+
+export interface GameMessage {
+  id: string
+  senderId: string
+  senderName: string
+  content: string
+  createdAt: number
+}

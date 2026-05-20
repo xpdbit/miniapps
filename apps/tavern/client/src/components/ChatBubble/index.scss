@@ -1,14 +1,8 @@
-/* ============================================================
- *  ChatBubble — 温暖亮色聊天气泡
- *  风格: 暖白主题 / 圆润气泡 / 微交互
- * ============================================================ */
-
 .chat-bubble {
   display: flex;
   margin-bottom: var(--spacing-md);
   align-items: flex-start;
   gap: var(--spacing-xs);
-  animation: enter-message var(--duration-normal) var(--ease-out);
 
   &--user {
     flex-direction: row-reverse;
@@ -18,15 +12,14 @@
     flex-direction: row;
   }
 
-  /* ── 头像 ── */
+  /* Avatar — only for character */
   &-avatar {
     width: 72rpx;
     height: 72rpx;
     border-radius: var(--radius-full);
     flex-shrink: 0;
     overflow: hidden;
-    border: 1.5px solid var(--color-border-subtle);
-    background: var(--color-bg-surface);
+    background: var(--color-bg-muted);
   }
 
   &-avatar-img {
@@ -41,75 +34,120 @@
     align-items: center;
     justify-content: center;
     background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-body-lg);
+    color: #fff;
+    font-size: var(--font-body);
     font-weight: var(--font-weight-semibold);
   }
 
-  /* ── 消息体 ── */
+  /* Body container */
   &-body {
     display: flex;
     flex-direction: column;
-    max-width: 72%;
+    max-width: 65%;
     min-width: 0;
-  }
 
-  /* ── 发送者名字 ── */
-  &-header {
-    margin-bottom: var(--spacing-2xs);
-    padding: 0 var(--spacing-xs);
-  }
-
-  &-name {
-    font-size: var(--font-caption);
-    color: var(--color-text-tertiary);
-    font-weight: var(--font-weight-medium);
-  }
-
-  /* ── 消息内容 ── */
-  &-content {
-    max-width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-lg);
-    font-size: var(--font-body-sm);
-    line-height: var(--leading-relaxed);
-    word-break: break-word;
-    position: relative;
-    transition: all var(--transition-fast);
-
-    &--streaming {
-      border-color: var(--color-primary);
+    &--user {
+      align-items: flex-end;
     }
   }
 
-  /* ── 用户消息 ── */
-  &--user &-content {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    color: var(--color-text-inverse);
-    border-bottom-right-radius: var(--radius-xs);
-  }
-
-  /* ── 角色消息 ── */
-  &--character &-content {
-    background: var(--color-bg-elevated);
-    color: var(--color-text);
-    border-bottom-left-radius: var(--radius-xs);
-    border: 1px solid var(--color-border-subtle);
-  }
-
-  /* ── 时间戳 ── */
-  &-time {
-    font-size: var(--font-caption);
+  /* Sender name (character only) */
+  &-name {
+    font-size: 24rpx;
     color: var(--color-text-tertiary);
-    margin-top: var(--spacing-2xs);
-    padding: 0 var(--spacing-xs);
+    margin-bottom: 4rpx;
+    padding: 0 8rpx;
   }
 
-  /* ── 流式光标 ── */
-  &-cursor {
-    animation: blink-cursor 1s infinite;
-    color: var(--color-primary);
-    font-weight: var(--font-weight-bold);
-    margin-left: 1rpx;
+  /* Bubble content */
+  &-content {
+    padding: 12rpx 16rpx;
+    font-size: 32rpx;
+    line-height: 1.6;
+    word-break: break-word;
+    position: relative;
   }
+
+  /* User bubble: green, right-aligned */
+  &--user &-content {
+    background: #07C160;
+    color: #FFFFFF;
+    border-radius: 10rpx;
+  }
+
+  &--user &-body {
+    align-items: flex-end;
+  }
+
+  /* User triangle tail (right side) */
+  &--user &-content::after {
+    content: '';
+    position: absolute;
+    top: 20rpx;
+    right: -12rpx;
+    border: 12rpx solid transparent;
+    border-left: 12rpx solid #07C160;
+    border-top: 0;
+  }
+
+  /* Character bubble: white, left-aligned */
+  &--character &-content {
+    background: #FFFFFF;
+    color: #1A1A1A;
+    border-radius: 10rpx;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  /* Character triangle tail (left side) */
+  &--character &-content::after {
+    content: '';
+    position: absolute;
+    top: 20rpx;
+    left: -12rpx;
+    border: 12rpx solid transparent;
+    border-right: 12rpx solid #FFFFFF;
+    border-top: 0;
+  }
+
+  /* Timestamp */
+  &-time {
+    font-size: 24rpx;
+    color: var(--color-text-tertiary);
+    margin-top: 4rpx;
+    padding: 0 8rpx;
+  }
+
+  &--user &-time {
+    text-align: right;
+  }
+
+  /* Streaming dots */
+  &-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4rpx;
+    margin-left: 4rpx;
+    vertical-align: middle;
+  }
+
+  &-dot {
+    width: 8rpx;
+    height: 8rpx;
+    border-radius: var(--radius-full);
+    background: #07C160;
+    animation: chat-bubble-dot-jump 1.4s ease-in-out infinite both;
+
+    &:nth-child(1) { animation-delay: 0s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+
+  &--character &-dot {
+    background: var(--color-primary);
+  }
+}
+
+@keyframes chat-bubble-dot-jump {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8rpx); opacity: 1; }
 }

@@ -12,10 +12,9 @@ export interface CharacterCard {
   name: string
   avatar?: string | null
   description: string
-  personality?: string
+  prompt?: string
   scenario?: string
   firstMsg?: string
-  lore?: string
   tags?: string[]
   creator?: { id: string; nickname: string } | string
   likeCount?: number
@@ -33,10 +32,9 @@ export interface LocalCard {
   name: string
   cardType: CardType
   description: string
-  personality?: string
+  prompt?: string
   scenario?: string
   firstMsg?: string
-  lore?: string
   tags?: string[]
   avatar?: string
   createdAt: number

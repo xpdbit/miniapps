@@ -25,10 +25,9 @@ const TYPE_ICONS: Record<CardType, IconName> = {
 interface CreatorForm {
   name: string
   description: string
-  personality: string
+  prompt: string
   firstMsg: string
   scenario: string
-  lore: string
   tags: string[]
   cardType: CardType
 }
@@ -37,10 +36,9 @@ function emptyForm(cardType: CardType): CreatorForm {
   return {
     name: '',
     description: '',
-    personality: '',
+    prompt: '',
     firstMsg: '',
     scenario: '',
-    lore: '',
     tags: [],
     cardType,
   }
@@ -69,10 +67,9 @@ export default function CreatorPage() {
         setForm({
           name: card.name || '',
           description: card.description || '',
-          personality: card.personality || '',
+          prompt: card.prompt || '',
           firstMsg: card.firstMsg || '',
           scenario: card.scenario || '',
-          lore: card.lore || '',
           tags: card.tags || [],
           cardType: card.cardType || cardType,
         })
@@ -103,10 +100,9 @@ export default function CreatorPage() {
         name: form.name,
         description: form.description,
         cardType: form.cardType,
-        personality: form.personality,
+        prompt: form.prompt,
         scenario: form.scenario,
         firstMsg: form.firstMsg,
-        lore: form.lore,
         tags: form.tags,
       }
 
@@ -200,7 +196,7 @@ export default function CreatorPage() {
                   <Icon
                     name={type === 'CHARACTER' ? 'user' : type === 'MECHANISM' ? 'settings' : type === 'MAP' ? 'gallery' : 'photo'}
                     size={24}
-                    color={form.cardType === type ? '#FF6B35' : '#999'}
+                    color={form.cardType === type ? '#007AFF' : '#999'}
                   />
                   <Text>{CARD_TYPE_LABELS[type]}</Text>
                 </View>
@@ -244,21 +240,13 @@ export default function CreatorPage() {
           </View>
 
           <View className='page-creator-field'>
-            <Text className='page-creator-label'>
-              {form.cardType === 'CHARACTER' ? '人格特征' :
-               form.cardType === 'MECHANISM' ? '机制规则' :
-               form.cardType === 'MAP' ? '地图特性' : '世界设定'}
-            </Text>
-            <Input
-              className='page-creator-input'
-              value={form.personality}
-              onInput={e => updateField('personality', e.detail.value)}
-              placeholder={
-                form.cardType === 'CHARACTER' ? '如：开朗、神秘、傲娇...' :
-                form.cardType === 'MECHANISM' ? '定义核心机制与规则...' :
-                form.cardType === 'MAP' ? '描述地图的特色与氛围...' : '描述世界的基本设定...'
-              }
-              maxlength={500}
+            <Text className='page-creator-label'>提示词</Text>
+            <Textarea
+              className='page-creator-textarea page-creator-textarea--large'
+              value={form.prompt}
+              onInput={e => updateField('prompt', e.detail.value)}
+              placeholder='定义 AI 角色的行为逻辑、性格特征、背景知识和对话风格...'
+              maxlength={5000}
             />
           </View>
 
@@ -315,25 +303,6 @@ export default function CreatorPage() {
             </Text>
           </View>
 
-          <View className='page-creator-field'>
-            <Text className='page-creator-label'>
-              {form.cardType === 'CHARACTER' ? '世界观 / 背景知识' :
-               form.cardType === 'MECHANISM' ? '详细规则说明' :
-               form.cardType === 'MAP' ? '地图详细描述' : '详细设定文档'}
-            </Text>
-            <Textarea
-              className='page-creator-textarea page-creator-textarea--large'
-              value={form.lore}
-              onInput={e => updateField('lore', e.detail.value)}
-              placeholder={
-                form.cardType === 'CHARACTER' ? '角色的背景故事、世界观设定...' :
-                form.cardType === 'MECHANISM' ? '机制的详细规则、参数、交互方式...' :
-                form.cardType === 'MAP' ? '地图的详细描述、NPC、事件、资源...' : '完整的世界观设定、势力、文化、科技...'
-              }
-              maxlength={5000}
-            />
-          </View>
-
           <View className='page-creator-nav'>
             <Button className='page-creator-prev-btn' onClick={() => setStep(2)}>上一步</Button>
             <Button className='page-creator-next-btn' onClick={() => setStep(4)}>下一步</Button>
@@ -348,7 +317,7 @@ export default function CreatorPage() {
             <View className='page-creator-preview-type'>
               <Icon
                 name={TYPE_ICONS[form.cardType]}
-                size={36} color='#FF6B35'
+                size={36} color='#007AFF'
               />
               <Text>{CARD_TYPE_LABELS[form.cardType]}卡</Text>
             </View>

@@ -5,7 +5,7 @@
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
-$SERVER = "root@47.94.108.150"
+$SERVER = "root@mnapp.top"
 $REPO = "E:\.Code\.miniapps"
 
 Write-Host "============================================" -ForegroundColor Cyan
@@ -56,10 +56,10 @@ Write-Host " 验证 API 端点:" -ForegroundColor Cyan
 Write-Host "----------------------------------------------------" -ForegroundColor Cyan
 
 $endpoints = @(
-    "http://47.94.108.150/api/tavern/health",
-    "http://47.94.108.150/api/tavern/api/v1/market/featured",
-    "http://47.94.108.150/api/tavern/api/v1/market/tags",
-    "http://47.94.108.150/api/tavern/api/v1/market?page=1&pageSize=20&sort=latest"
+    "https://mnapp.top/api/tavern/health",
+    "https://mnapp.top/api/tavern/api/v1/market/featured",
+    "https://mnapp.top/api/tavern/api/v1/market/tags",
+    "https://mnapp.top/api/tavern/api/v1/market?page=1&pageSize=20&sort=latest"
 )
 
 foreach ($url in $endpoints) {

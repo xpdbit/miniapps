@@ -7,7 +7,7 @@
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
-$SERVER = "root@47.94.108.150"
+$SERVER = "root@mnapp.top"
 $REPO_ROOT = "E:\.Code\.miniapps"
 
 Write-Host "============================================" -ForegroundColor Cyan
@@ -47,22 +47,12 @@ Write-Host " 验证 Dashboard:" -ForegroundColor Cyan
 Write-Host "----------------------------------------------------" -ForegroundColor Cyan
 
 try {
-    $response = Invoke-WebRequest -Uri "http://47.94.108.150/" -TimeoutSec 10 -UseBasicParsing
+    $response = Invoke-WebRequest -Uri "https://mnapp.top/" -TimeoutSec 10 -UseBasicParsing
     $status = $response.StatusCode
     $emoji = if ($status -eq 200) { "✅" } else { "❌" }
-    Write-Host "  $emoji HTTP http://47.94.108.150/ → $status" -ForegroundColor $(if ($status -eq 200) { "Green" } else { "Red" })
+    Write-Host "  $emoji HTTPS https://mnapp.top/ → $status" -ForegroundColor $(if ($status -eq 200) { "Green" } else { "Red" })
 } catch {
-    Write-Host "  ❌ HTTP http://47.94.108.150/ → $($_.Exception.Message)" -ForegroundColor Red
-}
-
-try {
-    $response = Invoke-WebRequest -Uri "https://47.94.108.150/" -TimeoutSec 10 -UseBasicParsing
-    $status = $response.StatusCode
-    $emoji = if ($status -eq 200) { "✅" } else { "❌" }
-    Write-Host "  $emoji HTTPS https://47.94.108.150/ → $status" -ForegroundColor $(if ($status -eq 200) { "Green" } else { "Red" })
-} catch {
-    Write-Host "  ⚠️  HTTPS https://47.94.108.150/ → $($_.Exception.Message)" -ForegroundColor Yellow
-    Write-Host "  （HTTPS 可能因自签名证书在脚本中无法验证，请在浏览器中手动测试）" -ForegroundColor Yellow
+    Write-Host "  ❌ HTTPS https://mnapp.top/ → $($_.Exception.Message)" -ForegroundColor Red
 }
 
 Write-Host ""
@@ -70,5 +60,4 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host " 部署完成！" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "浏览器访问: https://47.94.108.150/" -ForegroundColor White
-Write-Host "（自签名证书需手动添加例外）" -ForegroundColor Gray
+Write-Host "浏览器访问: https://mnapp.top/" -ForegroundColor White

@@ -25,7 +25,7 @@ const Projects = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const modalWidth = useResponsiveWidth(MODAL_WIDTH)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [testingId, setTestingId] = useState<number | null>(null)
+  const [testingId, setTestingId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [form] = Form.useForm<Pick<Project, 'name' | 'apiBaseUrl' | 'description'>>()
 
@@ -80,7 +80,7 @@ const Projects = () => {
     }
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await projectApi.delete(id)
       message.success('删除成功')
@@ -90,7 +90,7 @@ const Projects = () => {
     }
   }
 
-  const handleTestConnection = async (id: number) => {
+  const handleTestConnection = async (id: string) => {
     setTestingId(id)
     try {
       const res = await projectApi.testConnection(id)

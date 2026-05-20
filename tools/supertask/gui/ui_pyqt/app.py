@@ -9,6 +9,7 @@ from PyQt6.QtGui import QCursor, QIcon
 from PyQt6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import FluentWindow, NavigationItemPosition, Theme, setTheme
+from PyQt6.QtCore import QProcess
 
 # FIF.ROBOT 是较新版本的图标，旧版本可能没有，fallback 到 FIF.PEOPLE
 _FIF_AGENT_ICON = getattr(FIF, 'ROBOT', None) or getattr(FIF, 'PEOPLE', FIF.CHAT)
@@ -102,6 +103,7 @@ class SuperTaskWindow(FluentWindow):
         self._loop.apply_config(config)
         self.config_interface.set_config(config)
         self.config_interface.set_on_save(self._on_config_save)
+        self.config_interface.set_on_restart(self._on_restart_app)
 
         # 同步项目列表到控制面板
         projects = config.get("projects", [])
@@ -176,7 +178,11 @@ class SuperTaskWindow(FluentWindow):
         if os.path.isfile(_icon_path):
             self.setWindowIcon(QIcon(_icon_path))
 
-        # 窗口大小和位置由 create_app 中的鼠标屏幕最大化逻辑控制
+        # 窗口默认尺寸和最小尺寸（确保在恢复屏幕最大化之前有合理的初始大小）
+        self.setMinimumSize(800, 600)
+        # 设置一个合理的默认还原尺寸（当没有保存的配置时使用）
+        # 在 create_app 中会被 _restore_window_geometry 或 showMaximized 覆盖
+        self.resize(1280, 800)
 
     # ─── 手动操作 ────────────────────────────────
 
@@ -499,14 +505,115 @@ class SuperTaskWindow(FluentWindow):
         except Exception as e:
             self._log("error", f"刷新失败: {e}")
 
+    # ─── 重启 ────────────────────────────────────
+
+    def _save_window_geometry(self):
+        """保存窗口位置、尺寸、最大化状态到 config
+
+        注意：当窗口最大化时，self.x()/y()/width()/height() 返回的是
+        最大化帧几何信息，而非用户期望的还原态坐标。因此最大化时使用
+        normalGeometry() 保存还原后的位置和尺寸。
+        """
+        try:
+            config = self._loop.fm.load_config()
+            screen = self.screen()
+            if self.isMaximized():
+                ng = self.normalGeometry()
+                config["window"] = {
+                    "x": ng.x(), "y": ng.y(),
+                    "width": ng.width(), "height": ng.height(),
+                    "maximized": True,
+                    "screen_name": screen.name() if screen else "",
+                }
+            else:
+                config["window"] = {
+                    "x": self.x(), "y": self.y(),
+                    "width": self.width(), "height": self.height(),
+                    "maximized": False,
+                    "screen_name": screen.name() if screen else "",
+                }
+            # 通过 FileManager 原子写入（保持配置一致性）
+            self._loop.fm.save_config(config)
+        except Exception as e:
+            print(f"[SuperTask] 保存窗口几何信息失败: {e}")
+
+    def _on_restart_app(self):
+        """重启应用，保存几何信息后启动新进程"""
+        self._save_window_geometry()
+        # 标记：restart 已保存几何，closeEvent 无需重复保存
+        self._restarting = True
+        # 用 Python 重新启动当前脚本
+        script = os.path.join(os.path.dirname(os.path.dirname(__file__)), "main.py")
+        python = sys.executable
+        QProcess.startDetached(python, [script])
+        QApplication.quit()
+
     # ─── 关闭处理 ────────────────────────────────
 
     def closeEvent(self, event):
+        if not getattr(self, '_restarting', False):
+            self._save_window_geometry()
         if self._loop.isRunning():
             self._loop.requestInterruption()
             self._loop.wait(3000)
             self._loop.runner.kill()
         event.accept()
+
+
+def _restore_window_geometry(window: 'SuperTaskWindow', state_dir: str) -> bool:
+    """从 config 恢复窗口位置、尺寸和最大化状态
+
+    Returns:
+        True 表示成功应用了保存的配置，False 表示没有可恢复的配置
+    """
+    import yaml
+    config_path = os.path.join(state_dir, "config.yaml")
+    try:
+        if not os.path.isfile(config_path):
+            return False
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+        win_cfg = config.get("window", {})
+        if not win_cfg:
+            return False
+
+        # 尝试在保存的屏幕上定位
+        screen_name = win_cfg.get("screen_name", "")
+        target_screen = None
+        if screen_name:
+            app = QApplication.instance()
+            for screen in app.screens():
+                if screen.name() == screen_name:
+                    target_screen = screen
+                    break
+            # 外接显示器已断连 → 回退到主屏幕
+            if target_screen is None:
+                target_screen = app.primaryScreen()
+
+        if target_screen:
+            window.setScreen(target_screen)
+
+        # 验证尺寸有效性（防止 normalGeometry() 返回 (0,0,0,0) 的情况）
+        saved_w = win_cfg.get("width", 0) or 0
+        saved_h = win_cfg.get("height", 0) or 0
+        saved_x = win_cfg.get("x")
+        saved_y = win_cfg.get("y")
+
+        if saved_w > 300 and saved_h > 200:
+            if saved_x is not None and saved_y is not None:
+                window.move(int(saved_x), int(saved_y))
+            window.resize(int(saved_w), int(saved_h))
+        # 否则保持 _init_window 设置的默认尺寸 (1280x800)
+
+        if win_cfg.get("maximized"):
+            window.showMaximized()
+        else:
+            # 非最大化配置：必须显式 showNormal()，否则窗口不可见
+            window.showNormal()
+        return True
+    except Exception as e:
+        print(f"[SuperTask] 恢复窗口几何信息失败: {e}")
+        return False
 
 
 def create_app(working_dir: str, state_dir: str, logs_dir: str) -> int:
@@ -522,16 +629,18 @@ def create_app(working_dir: str, state_dir: str, logs_dir: str) -> int:
 
     window = SuperTaskWindow(working_dir, state_dir, logs_dir)
 
-    # 在鼠标所在屏幕最大化（避免覆盖任务栏）
-    cursor_pos = QCursor.pos()
-    screen = app.screenAt(cursor_pos)
-    if screen:
-        # 设置目标屏幕，让 showMaximized 在该屏幕上正确最大化（Windows 自动保留任务栏空间）
-        window.setScreen(screen)
-    else:
-        # 回退：确保窗口有合理默认尺寸
-        window.resize(1400, 900)
+    # 尝试从 config 恢复窗口位置（包括保存的显示器、尺寸、最大化状态）
+    restored = _restore_window_geometry(window, state_dir)
 
-    window.showMaximized()
+    if not restored:
+        # 首次启动：在鼠标所在屏幕最大化（避免覆盖任务栏）
+        cursor_pos = QCursor.pos()
+        screen = app.screenAt(cursor_pos)
+        if screen:
+            window.setScreen(screen)
+        window.showMaximized()
+    else:
+        # 已有保存的配置 → 已精确恢复（含最大化状态），无需额外操作
+        pass
 
     return app.exec()

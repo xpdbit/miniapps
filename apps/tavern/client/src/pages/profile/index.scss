@@ -6,7 +6,7 @@
 .page-profile {
   min-height: 100vh;
   background: var(--color-bg);
-  padding-bottom: calc(env(safe-area-inset-bottom, var(--spacing-2xl)) + 120rpx);
+  padding-bottom: calc(var(--tab-bar-height, 120rpx) + 1rpx + env(safe-area-inset-bottom, 0));
 
   /* ── 头部区域：渐变氛围背景 ── */
   &-header {
@@ -202,5 +202,271 @@
     font-size: var(--font-caption);
     color: var(--color-text-tertiary);
     letter-spacing: 0.5px;
+  }
+
+  /* ── 模型与服务商折叠区 ── */
+  &-section {
+    margin: var(--spacing-md);
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+
+    &-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+    }
+
+    &-title {
+      font-size: var(--font-body);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+    }
+
+    &-arrow {
+      font-size: var(--font-caption);
+      color: var(--color-text-tertiary);
+    }
+
+    &-body {
+      padding: 0 var(--spacing-md) var(--spacing-md);
+    }
+  }
+
+  &-model-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  &-model-label {
+    font-size: var(--font-body-sm);
+    color: var(--color-text-secondary);
+  }
+
+  &-model-value {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+  }
+
+  &-model-name {
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-apikey-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+  }
+
+  &-apikey-summary-text {
+    font-size: var(--font-caption);
+    color: var(--color-text-secondary);
+  }
+
+  &-apikey-expand {
+    font-size: var(--font-caption);
+    color: var(--color-primary);
+  }
+
+  &-apikey-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  &-apikey-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+  }
+
+  &-apikey-icon {
+    width: 40rpx;
+    height: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-caption);
+    font-weight: var(--font-weight-bold);
+  }
+
+  &-apikey-info {
+    flex: 1;
+  }
+
+  &-apikey-name {
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+    display: block;
+  }
+
+  &-apikey-desc {
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+  }
+
+  &-apikey-add {
+    font-size: var(--font-caption);
+    color: var(--color-primary);
+    padding: 4rpx 12rpx;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-pill);
+  }
+
+  &-apikey-delete {
+    font-size: var(--font-caption);
+    color: var(--color-danger, #FF3B30);
+  }
+
+  /* ── 保存配置按钮 ── */
+  &-section-save {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+    background: var(--color-primary);
+    border-radius: var(--radius-sm);
+    text-align: center;
+
+    &-text {
+      font-size: var(--font-body-sm);
+      color: var(--color-text-inverse);
+      font-weight: var(--font-weight-medium);
+    }
+
+    &:active {
+      opacity: 0.8;
+    }
+  }
+
+  /* ── 弹窗 ── */
+  &-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  &-modal {
+    width: 100%;
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: var(--spacing-lg);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  &-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+  }
+
+  &-modal-title {
+    font-size: var(--font-subtitle);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+
+  &-modal-body {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  &-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  &-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  &-modal-label {
+    font-size: var(--font-body-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &-modal-provider {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  &-modal-provider-option {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-caption);
+    color: var(--color-text-secondary);
+
+    &.active {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+
+  &-modal-input {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-body-sm);
+    color: var(--color-text);
+  }
+
+  &-modal-hint {
+    margin-top: var(--spacing-sm);
+    font-size: var(--font-caption);
+    color: var(--color-text-tertiary);
+  }
+
+  &-modal-footer {
+    display: flex;
+    gap: var(--spacing-md);
+  }
+
+  &-modal-cancel-btn {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-body-sm);
+    color: var(--color-text-secondary);
+    text-align: center;
+    border: none;
+  }
+
+  &-modal-confirm-btn {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background: var(--color-primary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-body-sm);
+    color: var(--color-text-inverse);
+    text-align: center;
+    border: none;
+
+    &[disabled] {
+      opacity: 0.5;
+    }
   }
 }

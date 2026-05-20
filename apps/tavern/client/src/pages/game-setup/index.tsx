@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useSyncedCardsStore } from '@/stores/syncedCardsStore'
 import { useLocalCardsStore } from '@/stores/localCardsStore'
 import { useGameStore } from '@/stores/gameStore'
+import { useChatStore } from '@/stores/chatStore'
 import { generateText } from '@/services/aiService'
 import { Icon } from '@/components'
 import type { CardType, CharacterCard, LocalCard } from '@/types/character'
@@ -48,6 +49,7 @@ export default function GameSetupPage() {
   const syncedStore = useSyncedCardsStore()
   const localStore = useLocalCardsStore()
   const { createSave, updateSaveGroups } = useGameStore()
+  const { selectedModel } = useChatStore()
 
   const currentStepDef = STEP_ORDER.find(s => s.step === step)
   const syncedCards = currentStepDef ? syncedStore.getCardsByType(currentStepDef.cardType) : []
@@ -110,12 +112,19 @@ export default function GameSetupPage() {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
-        model: 'abab5.5-chat',
+        model: selectedModel || 'minimax-m2.5-free',
       })
+      // Validate response is not empty
+      if (!resultText || !resultText.trim()) {
+        throw new Error('AI 返回了空响应，请重试')
+      }
       // Extract JSON from response (may have markdown wrapping)
       const jsonMatch = resultText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
         || resultText.match(/{[\s\S]*}/)
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : resultText
+      if (!jsonStr || !jsonStr.trim()) {
+        throw new Error('AI 响应中未找到有效的 JSON，请重试')
+      }
       const result: GenResult = JSON.parse(jsonStr)
 
       const save = createSave({

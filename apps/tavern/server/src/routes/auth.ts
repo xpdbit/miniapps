@@ -20,24 +20,30 @@ router.post('/login', async (req: AuthenticatedRequest, res: Response) => {
 
     // Exchange code for openid with WeChat API
     let openid: string;
-    try {
-      const wxRes = await axios.get('https://api.weixin.qq.com/sns/jscode2session', {
-        params: {
-          appid: config.wechatAppId,
-          secret: config.wechatAppSecret,
-          js_code: code,
-          grant_type: 'authorization_code',
-        },
-        timeout: 5000,
-      });
-      if (wxRes.data.errcode) {
-        res.status(400).json({ code: 400, message: '微信登录失败: ' + (wxRes.data.errmsg || 'code 无效'), data: null });
+
+    // dev_ 前缀为开发/Mock code，跳过微信 API，直接分配 mock 用户
+    if (code.startsWith('dev_') || code.startsWith('test_')) {
+      openid = `mock_${code.slice(4)}`;
+    } else {
+      try {
+        const wxRes = await axios.get('https://api.weixin.qq.com/sns/jscode2session', {
+          params: {
+            appid: config.wechatAppId,
+            secret: config.wechatAppSecret,
+            js_code: code,
+            grant_type: 'authorization_code',
+          },
+          timeout: 5000,
+        });
+        if (wxRes.data.errcode) {
+          res.status(400).json({ code: 400, message: '微信登录失败: ' + (wxRes.data.errmsg || 'code 无效'), data: null });
+          return;
+        }
+        openid = wxRes.data.openid;
+      } catch {
+        res.status(502).json({ code: 502, message: '微信服务暂不可用', data: null });
         return;
       }
-      openid = wxRes.data.openid;
-    } catch {
-      res.status(502).json({ code: 502, message: '微信服务暂不可用', data: null });
-      return;
     }
 
     // Find or create user

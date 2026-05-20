@@ -37,18 +37,8 @@ apps/tavern/server/
 同根目录：TypeScript strict，2 空格缩进，LF 换行，UTF-8，`@/*` 路径别名，Prisma ORM，独立 `npm install`。额外：Zod 参数校验，AES-256-GCM 加密 API Key，Helmet + rate-limit 安全中间件，SSE 流式响应。
 
 # ANTI-PATTERNS
-- ❌ **占位注释** — `src/routes/chat.ts` line 149 `// Clean up if needed` — 客户端断开处理未实现
-- ❌ **CI 路径过滤器错误** — `.github/workflows/ci.yml` 使用 `servers/tavern-server/**`，实际路径 `apps/tavern/server/`，CI 永不触发
-- ❌ **类型定义** — `no-explicit-any: off`，类型检查不如其他项目严格
-
-# COMMANDS
-```bash
-npm run dev                # tsx watch 热重载
-npm run build              # tsc 编译
-npm run start              # 生产启动
-npm run type-check         # 类型检查
-npm run lint               # ESLint
-npm run db:generate        # Prisma Client 生成
-npm run db:migrate         # 数据库迁移
-npm run db:seed            # 种子数据（内置角色）
-```
+- ❌ **占位注释** — `src/routes/chat.ts:149` `// Clean up if needed` — 客户端断开处理未实现
+- ❌ **CI 路径过滤器错误（3处）** — paths + working-directory + cache-dependency-path 均使用 `servers/tavern-server/`，实际路径 `apps/tavern/server/`，CI 永不触发
+- ❌ **死路由文件** — `personas.ts` 和 `builtin.ts` 存在于 routes/ 但未被 routes/index.ts 导入
+- ❌ **no-explicit-any: off** — 唯一关闭此规则的项目，类型检查最宽松
+- ❌ **无 Prettier 配置** — 缺少 `.prettierrc`，其他 Server 项目已配置

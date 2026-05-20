@@ -71,7 +71,7 @@ const PROVIDER_DEFAULT_URLS: Record<string, string> = {
   zhipu: 'https://open.bigmodel.cn/api/paas/v4',
   deepseek: 'https://api.deepseek.com',
   moonshot: 'https://api.moonshot.cn',
-  minimax: 'https://api.minimax.chat',
+  minimax: 'https://api.minimaxi.com',
 }
 
 const MODEL_OPTIONS: ModelOption[] = [

@@ -1,116 +1,28 @@
 /* ============================================================
    AppCard - 通用卡片组件
-   使用全局 CSS 变量系统（Tavern 新系统）
+   基于全局 Card System（app.scss 中的 .card 系列类）
+   提供向后兼容的 padding 变体和 header/body 结构
    ============================================================ */
 
-.app-card {
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-  transition:
-    box-shadow var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+/* ── padding: sm ── */
+.card--compact {
+  .card__header { padding: var(--card-padding-compact) var(--card-padding-compact) 0; }
+  .card__body   { padding: var(--card-padding-compact); }
+  .card__footer { padding: 0 var(--card-padding-compact) var(--card-padding-compact); }
 }
 
-/* ============================================================
-   Bordered
-   ============================================================ */
+/* ── padding: base 已由全局 card 系统提供默认值 ── */
 
-.app-card--bordered {
-  border: 1px solid var(--color-border);
-  box-shadow: none;
+/* ── padding: lg ── */
+.app-card--padding-lg {
+  .card__header { padding: var(--spacing-xl) var(--spacing-xl) 0; }
+  .card__body   { padding: var(--spacing-xl); }
+  .card__footer { padding: 0 var(--spacing-xl) var(--spacing-xl); }
 }
 
-/* ============================================================
-   Hoverable / Clickable
-   ============================================================ */
-
+/* ── 旧版 hoverable 保持兼容 ── */
 .app-card--hoverable:active,
 .app-card--clickable:active {
-  box-shadow: var(--shadow-card);
-  transform: scale(0.99);
-}
-
-.app-card--clickable {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* ============================================================
-   Padding variants
-   ============================================================ */
-
-.app-card--padding-sm {
-  .app-card__header {
-    padding: var(--spacing-sm) var(--spacing-sm) 0;
-  }
-  .app-card__body {
-    padding: var(--spacing-sm);
-  }
-}
-
-.app-card--padding-base {
-  .app-card__header {
-    padding: var(--spacing-lg) var(--spacing-lg) 0;
-  }
-  .app-card__body {
-    padding: var(--spacing-lg);
-  }
-}
-
-.app-card--padding-lg {
-  .app-card__header {
-    padding: var(--spacing-xl) var(--spacing-xl) 0;
-  }
-  .app-card__body {
-    padding: var(--spacing-xl);
-  }
-}
-
-/* ============================================================
-   Header
-   ============================================================ */
-
-.app-card__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.app-card__header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-  flex: 1;
-  min-width: 0;
-}
-
-.app-card__title {
-  font-size: var(--font-body);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-.app-card__subtitle {
-  font-size: var(--font-caption);
-  color: var(--color-text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.app-card__extra {
-  flex-shrink: 0;
-}
-
-/* ============================================================
-   Body
-   ============================================================ */
-
-.app-card__body {
-  /* inherits padding from variant above */
+  box-shadow: var(--card-shadow-hover);
+  transform: scale(0.98);
 }

@@ -1,321 +1,326 @@
-/* ============================================================
- *  Chat Page — 温暖亮色聊天界面
- *  风格: 暖白主题 / 柔和卡片 / 沉浸式对话
- * ============================================================ */
-
 .page-chat {
-  height: 100vh;
+  height: calc(100vh - var(--tab-bar-height, 120rpx) - 1rpx - env(safe-area-inset-bottom, 0));
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
-  padding-bottom: 120rpx;
+  background: #F5F5F5;
 
-  /* ── 头部 ── */
-  &-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--color-border-subtle);
-    flex-shrink: 0;
-
-    &-title {
-      font-size: var(--font-subtitle);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text);
-    }
-
-    &-icon {
-      font-size: var(--font-body-lg);
-      color: var(--color-text-secondary);
-      padding: var(--spacing-xs);
-      width: 56rpx;
-      height: 56rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-sm);
-
-      &:active {
-        background: var(--color-bg-surface-hover);
-      }
-    }
-  }
-
-  /* ── 角色选择器 ── */
-  &-selector {
-    height: 170rpx;
-    padding: var(--spacing-sm) 0;
-    background: var(--color-bg-elevated);
-    border-bottom: 1px solid var(--color-border-subtle);
-    flex-shrink: 0;
-
-    &-scroll {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      white-space: nowrap;
-      height: 130rpx;
-      padding: 0 var(--spacing-md);
-    }
-  }
-
-  /* ── 角色卡片 ── */
-  &-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 130rpx;
-    height: 120rpx;
-    margin-right: var(--spacing-sm);
-    background: var(--color-bg-surface);
-    border-radius: var(--radius-md);
-    border: 2px solid transparent;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-
-    &--active {
-      border-color: var(--color-primary);
-      background: var(--color-primary-bg);
-    }
-
-    &--create {
-      border-style: dashed;
-      border-color: var(--color-border);
-      background: transparent;
-    }
-
-    &-avatar {
-      width: 72rpx;
-      height: 72rpx;
-      border-radius: var(--radius-full);
-      background: var(--color-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: var(--spacing-2xs);
-      overflow: hidden;
-
-      &--plus {
-        background: transparent;
-        border: 2px dashed var(--color-primary);
-      }
-    }
-
-    &-avatar-text {
-      font-size: var(--font-body-lg);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-inverse);
-    }
-
-    &-avatar-img {
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-    }
-
-    &-avatar-plus {
-      font-size: 40rpx;
-      color: var(--color-primary);
-      font-weight: 300;
-      line-height: 1;
-    }
-
-    &-name {
-      font-size: var(--font-caption);
-      color: var(--color-text-secondary);
-      text-align: center;
-      max-width: 110rpx;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    &-type {
-      font-size: 16rpx;
-      color: var(--color-text-tertiary);
-      text-align: center;
-      line-height: 1;
-      margin-top: 2rpx;
-    }
-  }
-
-  /* ── 消息列表 ── */
-  &-messages {
-    flex: 1;
-    overflow-y: auto;
-
-    &-inner {
-      padding: var(--spacing-md) var(--spacing-sm);
-    }
-  }
-
-  /* ── 空状态 ── */
   &-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-top: 200rpx;
+    height: 100%;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xl);
 
     &-title {
-      font-size: var(--font-body-lg);
-      color: var(--color-text);
-      font-weight: var(--font-weight-medium);
-      margin-bottom: var(--spacing-sm);
+      font-size: var(--font-body);
+      color: var(--color-text-secondary);
+    }
+
+    &-subtitle {
+      font-size: var(--font-caption);
+      color: var(--color-text-tertiary);
+    }
+
+    &-btn {
+      padding: var(--spacing-sm) var(--spacing-lg);
+      background: #07C160;
+      color: #fff;
+      border-radius: var(--radius-pill);
+      font-size: var(--font-body-sm);
+    }
+  }
+
+  /* ── State A: Conversation List ── */
+  &-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0));
+    background: #FFFFFF;
+    border-bottom: 1px solid #E5E5E5;
+
+    &-title {
+      font-size: var(--font-title);
+      font-weight: var(--font-weight-bold);
+      color: #1A1A1A;
+    }
+
+    &-btn {
+      font-size: var(--font-body-sm);
+      color: #07C160;
+      padding: 4rpx 12rpx;
+    }
+  }
+
+  &-list {
+    flex: 1;
+    background: #FFFFFF;
+
+    &-item {
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid #F0F0F0;
+      position: relative;
+
+      &:active {
+        background: #F5F5F5;
+      }
+
+      &--pinned {
+        background: #FAFAFA;
+      }
+
+      &-avatar {
+        width: 96rpx;
+        height: 96rpx;
+        border-radius: var(--radius-sm);
+        background: #07C160;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: var(--spacing-sm);
+      }
+
+      &-avatar-text {
+        font-size: var(--font-body-lg);
+        color: #fff;
+        font-weight: var(--font-weight-semibold);
+      }
+
+      &-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      &-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4rpx;
+      }
+
+      &-name {
+        font-size: var(--font-body);
+        color: #1A1A1A;
+        font-weight: var(--font-weight-medium);
+      }
+
+      &-time {
+        font-size: 24rpx;
+        color: var(--color-text-tertiary);
+        flex-shrink: 0;
+      }
+
+      &-preview {
+        font-size: var(--font-caption);
+        color: var(--color-text-tertiary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &-pin {
+        position: absolute;
+        top: 4rpx;
+        right: 8rpx;
+        font-size: 24rpx;
+      }
+    }
+  }
+
+  /* ── State B: Chat View ── */
+  &-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0));
+    background: #FFFFFF;
+    border-bottom: 1px solid #E5E5E5;
+
+    &-back {
+      padding: var(--spacing-xs);
+    }
+
+    &-title {
+      font-size: var(--font-body);
+      font-weight: var(--font-weight-semibold);
+      color: #1A1A1A;
+    }
+
+    &-spacer {
+      width: 60rpx;
+    }
+  }
+
+  &-messages {
+    flex: 1;
+    overflow-y: auto;
+    background: #F5F5F5;
+
+    &-inner {
+      padding: var(--spacing-md);
+    }
+  }
+
+  &-world-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+
+    &-title {
+      font-size: var(--font-body);
+      font-weight: var(--font-weight-semibold);
+      color: #fff;
+      display: block;
+      margin-bottom: var(--spacing-xs);
     }
 
     &-desc {
+      font-size: var(--font-caption);
+      color: rgba(255, 255, 255, 0.85);
+      line-height: var(--leading-relaxed);
+    }
+  }
+
+  /* Input area */
+  &-input {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    padding-bottom: calc(var(--spacing-xs) + env(safe-area-inset-bottom, 0));
+    background: #FFFFFF;
+    border-top: 1px solid #E5E5E5;
+    gap: var(--spacing-xs);
+
+    &-voice {
+      width: 56rpx;
+      height: 56rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    &-field {
+      flex: 1;
+      height: 68rpx;
+      background: #F0F0F0;
+      border-radius: 8rpx;
+      padding: 0 var(--spacing-sm);
       font-size: var(--font-body-sm);
+      color: #1A1A1A;
+    }
+
+    &-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      flex-shrink: 0;
+    }
+
+    &-send {
+      font-size: var(--font-body-sm);
+      color: #07C160;
+      font-weight: var(--font-weight-semibold);
+      padding: 4rpx 12rpx;
+    }
+  }
+
+  /* ── State C: Saves List (no active save) ── */
+  &-saves-list {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background: #F5F5F5;
+  }
+
+  &-saves-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: #FFFFFF;
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-sm);
+
+    &:active {
+      background: #F5F5F5;
+    }
+
+    &-icon {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: var(--radius-sm);
+      background: #F0F0F0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: var(--spacing-sm);
+      flex-shrink: 0;
+    }
+
+    &-icon-text {
+      font-size: 40rpx;
+    }
+
+    &-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-name {
+      font-size: var(--font-body);
+      color: #1A1A1A;
+      font-weight: var(--font-weight-medium);
+      display: block;
+      margin-bottom: 4rpx;
+    }
+
+    &-meta {
+      font-size: var(--font-caption);
       color: var(--color-text-tertiary);
     }
   }
 
-  /* ── 欢迎消息 ── */
-  &-welcome {
+  &-empty-saves {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: var(--spacing-xl) var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-
-    &-name {
-      font-size: var(--font-body-lg);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-primary);
-      margin-bottom: var(--spacing-md);
-    }
-
-    &-msg {
-      font-size: var(--font-body);
-      color: var(--color-text-secondary);
-      text-align: center;
-      line-height: var(--leading-relaxed);
-      font-style: italic;
-    }
+    justify-content: center;
+    gap: var(--spacing-xs);
   }
 
-  /* ── 输入栏 ── */
-  &-input-area {
+  &-footer {
+    padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
+    background: #FFFFFF;
+  }
+
+  &-footer-btn {
     display: flex;
     align-items: center;
-    padding: var(--spacing-sm) var(--spacing-md);
-    padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom, 0));
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--color-border-subtle);
-    flex-shrink: 0;
-    gap: var(--spacing-sm);
-  }
-
-  &-input {
-    flex: 1;
-    height: 72rpx;
-    background: var(--color-bg-muted);
-    border-radius: var(--radius-pill);
-    padding: 0 var(--spacing-md);
-    font-size: var(--font-body-sm);
-    color: var(--color-text);
-    border: 1px solid var(--color-border-subtle);
-    transition: all var(--transition-fast);
-
-    &:focus {
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px var(--color-primary-glow);
-    }
-  }
-
-  &-send-btn {
-    width: 120rpx;
-    height: 72rpx;
-    line-height: 72rpx;
-    text-align: center;
-    background: var(--color-primary) !important;
-    color: var(--color-text-inverse) !important;
-    border-radius: var(--radius-pill) !important;
-    font-size: var(--font-body-sm);
-    font-weight: var(--font-weight-medium);
-    border: none !important;
-    transition: all var(--transition-fast);
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    background: #07C160;
+    color: #FFFFFF;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-body);
+    font-weight: var(--font-weight-semibold);
 
     &:active {
-      transform: scale(0.95);
-      opacity: 0.85;
-    }
-  }
-
-  /* ── 遮罩层 ── */
-  &-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--color-bg-overlay);
-    z-index: var(--z-overlay);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-
-  /* ── 会话列表侧栏 ── */
-  &-sessions {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 70%;
-    height: 100%;
-    background: var(--color-bg-elevated);
-    padding: var(--spacing-md);
-    z-index: var(--z-modal);
-    animation: slide-left var(--duration-normal) var(--ease-out);
-    border-right: 1px solid var(--color-border);
-
-    &-title {
-      font-size: var(--font-body-lg);
-      font-weight: var(--font-weight-semibold);
-      display: block;
-      margin-bottom: var(--spacing-lg);
-      padding-top: var(--spacing-xl);
-      color: var(--color-text);
+      opacity: 0.8;
     }
 
-    &-item {
-      padding: var(--spacing-md);
-      border-bottom: 1px solid var(--color-border-subtle);
-      border-radius: var(--radius-sm);
-      transition: background var(--transition-fast);
-
-      &:active {
-        background: var(--color-bg-surface-hover);
-      }
-    }
-
-    &-name {
-      font-size: var(--font-body);
-      color: var(--color-text);
-      display: block;
-      font-weight: var(--font-weight-medium);
-    }
-
-    &-preview {
-      font-size: var(--font-caption);
-      color: var(--color-text-tertiary);
-      margin-top: var(--spacing-2xs);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      display: block;
-    }
-
-    &-empty {
-      color: var(--color-text-tertiary);
-      font-size: var(--font-body-sm);
+    &-icon {
+      font-size: var(--font-title);
+      font-weight: 300;
     }
   }
 }

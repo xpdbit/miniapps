@@ -45,9 +45,14 @@ export class HttpClient {
       })
 
       if (res.statusCode === 401) {
-        useAuthStore.getState().logout()
-        Taro.switchTab({ url: '/pages/profile/index' })
-        throw new Error('登录已过期，请重新登录')
+        const auth = useAuthStore.getState()
+        const hadToken = !!auth.token
+        auth.logout()
+        // 初始化期间 401（旧 token 失效）→ 不重定向，由 initialize() 处理重登录
+        if (auth.initialized) {
+          Taro.switchTab({ url: '/pages/profile/index' })
+        }
+        throw new Error(hadToken ? '登录已过期，请重新登录' : '请先登录')
       }
 
       return res.data as T

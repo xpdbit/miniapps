@@ -47,12 +47,12 @@ export async function exportToV2(cardId: string): Promise<V2CharacterData> {
     data: {
       name: card.name,
       description: card.description,
-      personality: card.personality || '',
+      personality: card.prompt || '',
       scenario: card.scenario || '',
       first_mes: card.firstMsg ?? '',
-      mes_example: parseMesExample(card.exampleDialogs as any[]),
+      mes_example: '',
       creator_notes: '',
-      system_prompt: card.systemPrompt || '',
+      system_prompt: '',
       post_history_instructions: '',
       tags: (card.tags as string[]) || [],
       creator: '',
@@ -64,16 +64,19 @@ export async function exportToV2(cardId: string): Promise<V2CharacterData> {
 
 export async function importFromV2(data: V2CharacterData, userId: string) {
   const d = data.data
+  const promptParts: string[] = []
+  if (d.personality) promptParts.push(`【人格】${d.personality}`)
+  if (d.system_prompt) promptParts.push(`【指令】${d.system_prompt}`)
+  if (d.creator_notes) promptParts.push(`【备注】${d.creator_notes}`)
+  if (d.mes_example) promptParts.push(`【示例对话】\n${d.mes_example}`)
+
   const card = await prisma.tavernCard.create({
     data: {
       name: d.name,
       description: d.description,
-      personality: d.personality || null,
+      prompt: promptParts.join('\n\n') || null,
       scenario: d.scenario || null,
       firstMsg: d.first_mes,
-      systemPrompt: d.system_prompt || null,
-      lore: d.creator_notes || null,
-      exampleDialogs: stringifyMesExample(d.mes_example),
       tags: d.tags || [],
       creatorId: userId,
       status: 'DRAFT',

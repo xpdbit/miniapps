@@ -34,6 +34,7 @@ export default function MarketPage() {
   const [subTab, setSubTab] = useState<SubTabType>('character')
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
 
   const syncedStore = useSyncedCardsStore()
   const localStore = useLocalCardsStore()
@@ -42,6 +43,15 @@ export default function MarketPage() {
     Taro.eventCenter.trigger('tabChange', 0)
     syncedStore.syncCards()
   })
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    const result = await syncedStore.forceRefresh()
+    if (!result.success) {
+      Taro.showToast({ title: result.error || '刷新失败', icon: 'none' })
+    }
+    setRefreshing(false)
+  }, [syncedStore])
 
   useEffect(() => {
     if (!syncedStore.loading) {
@@ -113,7 +123,7 @@ export default function MarketPage() {
                 handleCardClick(card.id)
               }}
             >
-              <Icon name='arrow-right' size={28} color='#C49A6C' />
+              <Icon name='arrow-right' size={28} color='#007AFF' />
             </View>
           )}
         </View>
@@ -134,6 +144,12 @@ export default function MarketPage() {
                 value={searchQuery}
                 onInput={handleSearchInput}
               />
+              <View
+                className={`market-search-refresh ${refreshing ? 'market-search-refresh--spinning' : ''}`}
+                onClick={handleRefresh}
+              >
+                <Icon name='refresh' size={36} color='#999' />
+              </View>
             </View>
           </View>
           <ScrollView scrollY className='market-content' lowerThreshold={100}>
@@ -158,6 +174,12 @@ export default function MarketPage() {
 
       {subTab === 'mechanism' && (
         <View className='market-sub-panel-content'>
+          <View
+            className={`market-sub-panel-refresh ${refreshing ? 'market-sub-panel-refresh--spinning' : ''}`}
+            onClick={handleRefresh}
+          >
+            <Icon name='refresh' size={32} color='#999' />
+          </View>
           {loading && <Skeleton type='list' count={4} />}
           {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
           {localCards.length > 0 && (
@@ -169,7 +191,7 @@ export default function MarketPage() {
           <View className='market-sub-create-bar'>
             <View className='market-create-card' onClick={() => handleCreateCard('MECHANISM')}>
               <View className='market-create-card-inner'>
-                <Icon name='plus' size={40} color='#C49A6C' />
+                <Icon name='plus' size={40} color='#007AFF' />
                 <Text className='market-create-card-label'>创建机制卡</Text>
               </View>
             </View>
@@ -179,6 +201,12 @@ export default function MarketPage() {
 
       {subTab === 'map' && (
         <View className='market-sub-panel-content'>
+          <View
+            className={`market-sub-panel-refresh ${refreshing ? 'market-sub-panel-refresh--spinning' : ''}`}
+            onClick={handleRefresh}
+          >
+            <Icon name='refresh' size={32} color='#999' />
+          </View>
           {loading && <Skeleton type='list' count={4} />}
           {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
           {localCards.length > 0 && (
@@ -190,7 +218,7 @@ export default function MarketPage() {
           <View className='market-sub-create-bar'>
             <View className='market-create-card' onClick={() => handleCreateCard('MAP')}>
               <View className='market-create-card-inner'>
-                <Icon name='plus' size={40} color='#C49A6C' />
+                <Icon name='plus' size={40} color='#007AFF' />
                 <Text className='market-create-card-label'>创建地图卡</Text>
               </View>
             </View>
@@ -200,6 +228,12 @@ export default function MarketPage() {
 
       {subTab === 'background' && (
         <View className='market-sub-panel-content'>
+          <View
+            className={`market-sub-panel-refresh ${refreshing ? 'market-sub-panel-refresh--spinning' : ''}`}
+            onClick={handleRefresh}
+          >
+            <Icon name='refresh' size={32} color='#999' />
+          </View>
           {loading && <Skeleton type='list' count={4} />}
           {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
           {localCards.length > 0 && (
@@ -211,7 +245,7 @@ export default function MarketPage() {
           <View className='market-sub-create-bar'>
             <View className='market-create-card' onClick={() => handleCreateCard('BACKGROUND')}>
               <View className='market-create-card-inner'>
-                <Icon name='plus' size={40} color='#C49A6C' />
+                <Icon name='plus' size={40} color='#007AFF' />
                 <Text className='market-create-card-label'>创建背景卡</Text>
               </View>
             </View>
@@ -229,7 +263,7 @@ export default function MarketPage() {
                 <View className='market-create-option-icon'>
                   <Icon
                     name={type === 'CHARACTER' ? 'user' : type === 'MECHANISM' ? 'settings' : type === 'MAP' ? 'gallery' : 'photo'}
-                    size={48} color='#C49A6C'
+                    size={48} color='#007AFF'
                   />
                 </View>
                 <Text className='market-create-option-label'>{CARD_TYPE_LABELS[type]}卡</Text>
@@ -246,7 +280,8 @@ export default function MarketPage() {
                 {localStore.cards.map(card => (
                   <View key={card.id} className='market-local-card-item' onClick={() => {
                     Taro.navigateTo({ url: `/pages/creator/index?cardType=${card.cardType}&edit=${card.id}` })
-                  }}>
+                  }}
+                  >
                     <View className='market-local-card-info'>
                       <Text className='market-local-card-name'>{card.name}</Text>
                       <Text className='market-local-card-type'>{CARD_TYPE_LABELS[card.cardType] || card.cardType}卡</Text>

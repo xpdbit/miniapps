@@ -27,7 +27,7 @@
 // ─── 域名/IP 基础定义 ─────────────────────────────────────────────────────────
 // =============================================================================
 const DOMAIN = 'mnapp.top';
-const IP = '47.94.108.150';
+// const IP = '47.94.108.150'; // 已迁移至域名，保留注释作为历史记录
 
 // =============================================================================
 // ─── 项目配置 ─────────────────────────────────────────────────────────────────
@@ -35,13 +35,12 @@ const IP = '47.94.108.150';
 const config = {
   // ─── 主域名 ───
   DOMAIN,
-  IP,
 
   // ─── FTG 项目 ───
   // 小程序前端 API_BASE + 服务端 CORS 白名单
   FTG: {
-    // 开发测试（DevTools 勾「不校验」即可）
-    DEV: `http://${IP}/api/v1`,
+    // 开发测试（备案后域名可直接使用）
+    DEV: `http://${DOMAIN}/api/v1`,
     // 生产（ICP 备案后生效）
     PROD: `https://${DOMAIN}/api/ftl/api/v1`,
     // 服务端 CORS 允许来源
@@ -49,21 +48,19 @@ const config = {
       `https://${DOMAIN}`,
       `https://ftl.${DOMAIN}`,
       `https://game1.${DOMAIN}`,
-      `http://${IP}`,
-      `https://${IP}`,
     ],
   },
 
   // ─── Game1 项目 ───
   GAME1: {
-    DEV: `http://${IP}/api/v1/game1`,
+    DEV: `http://${DOMAIN}/api/v1/game1`,
     PROD: `https://${DOMAIN}/api/v1/game1`,
   },
 
   // ─── AI-Tavern 项目 ───
   TAVERN: {
-    // 开发测试（通过域名访问，需要 DNS 或 hosts 指向服务器）
-    DEV: `http://${IP}/api/tavern/api/v1`,
+    // 开发测试（备案后域名可直接使用）
+    DEV: `http://${DOMAIN}/api/tavern/api/v1`,
     // 生产（ICP 备案后生效）
     PROD: `https://${DOMAIN}/api/tavern/api/v1`,
   },

@@ -16,8 +16,7 @@ process_monitor.py — 实时 OpenCode 进程监控器
 import os
 import sqlite3
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Set
 
 import psutil
@@ -38,6 +37,7 @@ class ProcessInfo:
     cpu_percent: float = 0.0
     memory_mb: float = 0.0
     status: str = "running"   # running | idle | zombie
+    comm_elapsed: float = -1.0  # 距上次 LLM 服务商通信的秒数（-1=未知）
 
     # 关联的会话信息（从 DB 关联）
     session_id: str = ""
@@ -49,9 +49,11 @@ class ProcessInfo:
     session_started_at: float = 0.0
     session_tokens_used: int = 0
 
+    # 与 LLM 服务商通信追踪（按 session 查询 message 表）
+    last_provider_comm_time: float = 0.0  # 该 session 最后一条 assistant 消息的 Unix 时间戳（秒）
+
     # 内部追踪字段
-    _first_seen: float = 0.0
-    _cpu_samples: List[float] = field(default_factory=list)
+    _last_active_time: float = 0.0   # 最后一次检测到通信活动的时间戳
 
     @property
     def elapsed(self) -> float:
@@ -89,6 +91,7 @@ class ProcessMonitor:
         self._interval = 10  # 扫描间隔（秒）
         self._callback: Optional[Callable[[List[ProcessInfo]], None]] = None
         self._thread = None
+        self._scan_counter = 0  # 扫描次数计数，用于周期性刷新 session 关联
 
     # ─── 扫描 ──────────────────────────────
 
@@ -104,6 +107,10 @@ class ProcessMonitor:
         now = time.time()
         current_pids: Set[int] = set()
         results: List[ProcessInfo] = []
+
+        # 扫描计数器递增，每 3 次扫描（~30s）强制刷新 session 关联，避免 agent 信息过时
+        self._scan_counter += 1
+        should_relink = (self._scan_counter % 3 == 0)
 
         try:
             for proc in psutil.process_iter(
@@ -129,23 +136,51 @@ class ProcessMonitor:
                         mem = proc.info.get('memory_info')
                         if mem:
                             pinfo.memory_mb = mem.rss / (1024 * 1024)
+
+                        # ── 通信活跃度检测（按 session 查询 LLM 服务商通信时间）──
+                        # 每次扫描刷新该 session 最后 assistant 消息的时间戳，
+                        # 计算距上次与 LLM 服务商通信的间隔。每个 Agent 独立追踪。
+                        # 原理参考 opencode 源码: message 表含 time_created + data.role = 'assistant'
+                        # 阈值 20s：20s 内有 LLM 响应 = 活跃
+                        self._refresh_comm_time(pinfo)
+
+                        # ── 周期性 session 关联刷新 ──
+                        # 每 3 次扫描重新匹配 session，解决长时间运行的 agent
+                        # 在初始匹配后 session 信息一直不过期的问题。
+                        # 此时实际 running 的 agent 数量正确，但 agent_type/model_id
+                        # 等元数据可能因 session 匹配错误而保持过期值。
+                        if should_relink and pinfo.status == "running":
+                            self._link_session(pinfo)
+                        comm_elapsed = -1.0
+                        if pinfo.last_provider_comm_time > 0:
+                            comm_elapsed = now - pinfo.last_provider_comm_time
+                        pinfo.comm_elapsed = comm_elapsed
+                        comm_active = comm_elapsed > 0 and comm_elapsed <= 20
+                        if comm_active:
+                            pinfo._last_active_time = now
+
                         pinfo.status = self._map_status(p.status())
+                        # 状态降级：running 但超过 60s 无通信活动 → idle
+                        if (pinfo.status == "running"
+                                and now - pinfo._last_active_time > 60):
+                            pinfo.status = "idle"
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         pinfo.status = "zombie"
                     results.append(pinfo)
                 else:
                     # 新进程：创建 ProcessInfo 并关联会话
                     pinfo = self._build_process_info(proc, now)
-                    # 首扫即时获取 CPU/内存
-                    if pinfo.cpu_percent == 0.0:
-                        try:
-                            p = psutil.Process(pid)
-                            pinfo.cpu_percent = p.cpu_percent(interval=0)
-                            mem = proc.info.get('memory_info')
-                            if mem:
-                                pinfo.memory_mb = mem.rss / (1024 * 1024)
-                        except (psutil.NoSuchProcess, psutil.AccessDenied):
-                            pass
+                    # 首扫获取指标
+                    try:
+                        p2 = psutil.Process(pid)
+                        pinfo.cpu_percent = p2.cpu_percent(interval=0)
+                        mem = proc.info.get('memory_info')
+                        if mem:
+                            pinfo.memory_mb = mem.rss / (1024 * 1024)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+                    # 新进程默认记为活跃
+                    pinfo._last_active_time = now
                     self._known[pid] = pinfo
                     results.append(pinfo)
 
@@ -205,7 +240,6 @@ class ProcessMonitor:
             working_dir=working_dir,
             cmdline=cmdline,
             status="running",
-            _first_seen=now,
         )
 
         # 尝试关联 OpenCode 会话
@@ -292,11 +326,13 @@ class ProcessMonitor:
                 )
                 pinfo.session_started_at = best_match.time_created / 1000
 
-                # 提取 agent 类型
+                # 提取 agent 类型：优先从标题提取，回退到 session 的 agent_name
                 if hasattr(self._reader, '_extract_agent_type'):
                     atype = self._reader._extract_agent_type(pinfo.session_title)
                     if atype:
                         pinfo.agent_type = atype
+                if not pinfo.agent_type and best_match.agent_name:
+                    pinfo.agent_type = best_match.agent_name
 
                 # 从 DB 消息表获取实时 provider 和累计成本
                 self._fill_live_session_stats(pinfo)
@@ -318,10 +354,11 @@ class ProcessMonitor:
             conn = sqlite3.connect(db_path, timeout=3)
             conn.row_factory = sqlite3.Row
 
-            # 获取最新 assistant 消息的 model/provider
+            # 获取最新 assistant 消息的 model/provider + 通信时间
             cur = conn.execute("""
                 SELECT json_extract(data, '$.modelID') as model,
-                       json_extract(data, '$.providerID') as provider
+                       json_extract(data, '$.providerID') as provider,
+                       time_created
                 FROM message
                 WHERE session_id = ? AND json_extract(data, '$.role') = 'assistant'
                 ORDER BY time_created DESC
@@ -333,6 +370,8 @@ class ProcessMonitor:
                     pinfo.model_id = row["model"]
                 if row["provider"]:
                     pinfo.provider_id = row["provider"]
+                if row["time_created"]:
+                    pinfo.last_provider_comm_time = row["time_created"] / 1000.0
 
             # 获取累计成本
             cur2 = conn.execute("""
@@ -347,6 +386,50 @@ class ProcessMonitor:
             conn.close()
         except Exception:
             pass  # 实时统计失败不影响进程监控
+
+    def _refresh_comm_time(self, pinfo: ProcessInfo):
+        """每次扫描时刷新 last_provider_comm_time
+
+        从 message 表查询该 session 最新 assistant 消息的 time_created，
+        转换为 Unix 秒时间戳。单次索引查询，<5ms，不影响扫描性能。
+        参考 opencode 源码: packages/opencode/src/session/session.sql.ts
+
+        无论是否找到消息，都检查 session 的 time_updated 是否过期：
+        若超过 5 分钟未更新，自动触发 _link_session 重新匹配。
+        这覆盖了同 PID 跨会话复用场景（开放终端中开始新任务）。
+        """
+        if not pinfo.session_id or not self._reader:
+            return
+        db_path = self._reader.db_path
+        if not db_path:
+            return
+        try:
+            conn = sqlite3.connect(db_path, timeout=3)
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("""
+                SELECT time_created FROM message
+                WHERE session_id = ? AND json_extract(data, '$.role') = 'assistant'
+                ORDER BY time_created DESC
+                LIMIT 1
+            """, (pinfo.session_id,))
+            row = cur.fetchone()
+            if row and row["time_created"]:
+                pinfo.last_provider_comm_time = row["time_created"] / 1000.0
+
+            # 无论 messages 是否存在，都检查 session 是否过期
+            if pinfo.status != "zombie":
+                cur2 = conn.execute(
+                    "SELECT time_updated FROM session WHERE id = ?",
+                    (pinfo.session_id,)
+                )
+                sess_row = cur2.fetchone()
+                if sess_row and sess_row["time_updated"]:
+                    session_age = time.time() - (sess_row["time_updated"] / 1000.0)
+                    if session_age > 300:  # 5 分钟无更新 → 进程可能切换了会话
+                        self._link_session(pinfo)
+            conn.close()
+        except Exception:
+            pass  # 单次刷新失败不阻塞扫描
 
     @staticmethod
     def _map_status(psutil_status: str) -> str:

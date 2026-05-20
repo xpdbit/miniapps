@@ -9,13 +9,13 @@ echo =============================================
 echo  mnapp.top 部署与修复工具
 echo =============================================
 echo.
-echo  服务器 IP: 47.94.108.150
-echo  当前状态: HTTPS 域名被阿里云备案(ICP)阻断
+echo  服务器域名: mnapp.top (ICP 备案已完成)
+echo  当前状态: 域名可正常访问
 echo.
-echo  [1] DevTools 测试（已构建 IP 直连版，可直接在开发者工具中运行）
+echo  [1] DevTools 测试（使用域名构建版）
 echo  [2] 部署 Dashboard + SSL 自动配置
 echo  [3] 恢复模式（容器全部停止后恢复）
-echo  [4] SSL 一键修复（先确保已完成 ICP 备案）
+echo  [4] SSL 一键修复
 echo  [5] 复制最新配置文件到服务器
 echo.
 echo  [Q] 退出
@@ -37,7 +37,7 @@ echo =============================================
 echo  DevTools 测试说明
 echo =============================================
 echo.
-echo  已构建 IP 直连版本（无需 ICP 备案即可测试）
+echo  使用域名构建版本，ICP 备案已完成
 echo.
 echo  操作步骤：
 echo    1. 打开微信开发者工具
@@ -46,11 +46,7 @@ echo    3. 确保「详情」→「本地设置」中：
 echo       - 不校验合法域名、TLS 版本及 HTTPS 证书 ☑
 echo    4. 点击编译/预览
 echo.
-echo  API 地址: https://47.94.108.150/api/v1
-echo.
-echo  注意：
-echo  - 此版本仅限本地开发测试
-echo  - 生产上传前需要切换到域名版本
+echo  API 地址: https://mnapp.top/api/ftl/api/v1
 echo.
 pause
 goto menu
@@ -70,7 +66,7 @@ if /i not "%confirm%"=="Y" goto menu
 
 echo.
 echo 执行部署...
-ssh -o StrictHostKeyChecking=no root@47.94.108.150 "bash -s" < deploy_commands.sh
+ssh -o StrictHostKeyChecking=no root@mnapp.top "bash -s" < deploy_commands.sh
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo 部署失败！请检查 SSH 连接。
@@ -93,7 +89,7 @@ echo.
 set /p confirm="确认继续? (Y/N): "
 if /i not "%confirm%"=="Y" goto menu
 
-ssh -o StrictHostKeyChecking=no root@47.94.108.150 "bash -s" < recover_and_deploy.sh
+ssh -o StrictHostKeyChecking=no root@mnapp.top "bash -s" < recover_and_deploy.sh
 pause
 goto menu
 
@@ -115,7 +111,7 @@ echo.
 set /p confirm="确认继续? (Y/N): "
 if /i not "%confirm%"=="Y" goto menu
 
-ssh -o StrictHostKeyChecking=no root@47.94.108.150 "bash /opt/ftg/deploy/scripts/setup-ssl.sh"
+ssh -o StrictHostKeyChecking=no root@mnapp.top "bash /opt/ftg/deploy/scripts/setup-ssl.sh"
 echo.
 echo SSL 配置完成！
 echo 验证: curl -I https://mnapp.top/api/ftl/health
@@ -140,34 +136,34 @@ echo  [4] 全部
 echo.
 set /p cfgChoice="请选择 (1/2/3/4): "
 
-set SCP_TARGET=root@47.94.108.150:/opt/ftg/deploy/
+set SCP_TARGET=root@mnapp.top:/opt/ftg/deploy/
 
 if "%cfgChoice%"=="1" (
     echo 复制部署脚本...
-    scp "%DEPLOY_DIR%\scripts\deploy.sh" root@47.94.108.150:/opt/ftg/deploy/scripts/
-    scp "%DEPLOY_DIR%\scripts\setup-ssl.sh" root@47.94.108.150:/opt/ftg/deploy/scripts/
+    scp "%DEPLOY_DIR%\scripts\deploy.sh" root@mnapp.top:/opt/ftg/deploy/scripts/
+    scp "%DEPLOY_DIR%\scripts\setup-ssl.sh" root@mnapp.top:/opt/ftg/deploy/scripts/
     goto copy_done
 )
 if "%cfgChoice%"=="2" (
     echo 复制 Nginx 配置...
-    scp "%DEPLOY_DIR%\nginx\nginx.conf" root@47.94.108.150:/opt/ftg/deploy/nginx/
-    scp "%DEPLOY_DIR%\nginx\entrypoint.sh" root@47.94.108.150:/opt/ftg/deploy/nginx/
+    scp "%DEPLOY_DIR%\nginx\nginx.conf" root@mnapp.top:/opt/ftg/deploy/nginx/
+    scp "%DEPLOY_DIR%\nginx\entrypoint.sh" root@mnapp.top:/opt/ftg/deploy/nginx/
     goto copy_done
 )
 if "%cfgChoice%"=="3" (
     echo 复制 SSL 配置和阿里云凭证...
-    scp "%DEPLOY_DIR%\scripts\setup-ssl.sh" root@47.94.108.150:/opt/ftg/deploy/scripts/
-    scp "%DEPLOY_DIR%\nginx\aliyun-credentials.ini" root@47.94.108.150:/opt/ftg/deploy/nginx/
+    scp "%DEPLOY_DIR%\scripts\setup-ssl.sh" root@mnapp.top:/opt/ftg/deploy/scripts/
+    scp "%DEPLOY_DIR%\nginx\aliyun-credentials.ini" root@mnapp.top:/opt/ftg/deploy/nginx/
     goto copy_done
 )
 if "%cfgChoice%"=="4" (
     echo 复制全部配置...
-    scp "%DEPLOY_DIR%\nginx\nginx.conf" root@47.94.108.150:/opt/ftg/deploy/nginx/
-    scp "%DEPLOY_DIR%\nginx\entrypoint.sh" root@47.94.108.150:/opt/ftg/deploy/nginx/
-    scp "%DEPLOY_DIR%\scripts\setup-ssl.sh" root@47.94.108.150:/opt/ftg/deploy/scripts/
-    scp "%DEPLOY_DIR%\scripts\deploy.sh" root@47.94.108.150:/opt/ftg/deploy/scripts/
-    scp "%DEPLOY_DIR%\nginx\aliyun-credentials.ini" root@47.94.108.150:/opt/ftg/deploy/nginx/
-    scp "%DEPLOY_DIR%\.env" root@47.94.108.150:/opt/ftg/deploy/
+    scp "%DEPLOY_DIR%\nginx\nginx.conf" root@mnapp.top:/opt/ftg/deploy/nginx/
+    scp "%DEPLOY_DIR%\nginx\entrypoint.sh" root@mnapp.top:/opt/ftg/deploy/nginx/
+    scp "%DEPLOY_DIR%\scripts\setup-ssl.sh" root@mnapp.top:/opt/ftg/deploy/scripts/
+    scp "%DEPLOY_DIR%\scripts\deploy.sh" root@mnapp.top:/opt/ftg/deploy/scripts/
+    scp "%DEPLOY_DIR%\nginx\aliyun-credentials.ini" root@mnapp.top:/opt/ftg/deploy/nginx/
+    scp "%DEPLOY_DIR%\.env" root@mnapp.top:/opt/ftg/deploy/
     goto copy_done
 )
 goto menu
@@ -180,7 +176,7 @@ if %ERRORLEVEL% EQU 0 (
     echo.
     echo 复制失败！请检查 SSH 连接和路径。
     echo 可能需要在服务器先创建目录：
-    echo   ssh root@47.94.108.150 "mkdir -p /opt/ftg/deploy/scripts /opt/ftg/deploy/nginx"
+    echo   ssh root@mnapp.top "mkdir -p /opt/ftg/deploy/scripts /opt/ftg/deploy/nginx"
 )
 pause
 goto menu

@@ -22,9 +22,9 @@ import type { Project } from '@/types'
 
 /** 默认项目列表（API 加载失败时的 fallback） */
 const FALLBACK_PROJECTS: Project[] = [
-  { id: 1, name: 'FTG', apiBaseUrl: '/api/ftl', description: '食物主题生成器', status: 'active', createdAt: '', updatedAt: '' },
-  { id: 2, name: 'Game1', apiBaseUrl: '/api/v1/game1', description: '挂机放置游戏', status: 'active', createdAt: '', updatedAt: '' },
-  { id: 3, name: 'AI-Tavern', apiBaseUrl: '/api/tavern', description: 'AI 角色聊天', status: 'active', createdAt: '', updatedAt: '' },
+  { id: 'ftg', name: 'FTG', slug: 'ftg', apiBaseUrl: '/api/ftl', description: '食物主题生成器', status: 'active', createdAt: '', updatedAt: '' },
+  { id: 'game1', name: 'Game1', slug: 'game1', apiBaseUrl: '/api/v1/game1', description: '挂机放置游戏', status: 'active', createdAt: '', updatedAt: '' },
+  { id: 'tavern', name: 'AI-Tavern', slug: 'tavern', apiBaseUrl: '/api/tavern', description: 'AI 角色聊天', status: 'active', createdAt: '', updatedAt: '' },
 ]
 
 const { Header, Sider, Content } = AntLayout
@@ -59,8 +59,8 @@ const Layout = () => {
       const stored = sessionStorage.getItem('currentProject')
       if (stored) {
         try {
-          const parsed = JSON.parse(stored) as { id: number }
-          const exists = projects.find((p) => p.id === parsed.id)
+          const parsed = JSON.parse(stored) as { id: string | number }
+          const exists = projects.find((p) => p.id === String(parsed.id))
           if (exists) setProject(exists)
         } catch { /* ignore parse error */ }
       }
@@ -69,8 +69,8 @@ const Layout = () => {
       const stored = sessionStorage.getItem('currentProject')
       if (stored) {
         try {
-          const parsed = JSON.parse(stored) as { id: number }
-          const exists = FALLBACK_PROJECTS.find((p) => p.id === parsed.id)
+          const parsed = JSON.parse(stored) as { id: string | number }
+          const exists = FALLBACK_PROJECTS.find((p) => p.id === String(parsed.id))
           if (exists) setProject(exists)
         } catch { /* ignore parse error */ }
       } else if (FALLBACK_PROJECTS.length > 0) {

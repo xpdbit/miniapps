@@ -639,7 +639,7 @@ class OpencodeDBReader:
 
         # 优先级2: 标题以 agent 类型关键词开头
         prefix_match = re.match(
-            r'^(Explore|Oracle|Librarian|Metis|Momus|Plan)\b',
+            r'^(Explore|Oracle|Librarian|Metis|Momus|Plan|Sisyphus|Prometheus)\b',
             title, re.IGNORECASE
         )
         if prefix_match:

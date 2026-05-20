@@ -25,6 +25,7 @@ router.get('/', async (_req: Request, res: Response) => {
     }))
     res.json({ success: true, data: { achievements: rows } })
   } catch (e) {
+    console.error('[Admin] 获取成就列表失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -97,6 +98,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
       },
     })
   } catch (e) {
+    console.error('[Admin] 获取成就统计失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -144,6 +146,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     res.json({ success: true })
   } catch (e) {
+    console.error('[Admin] 更新成就失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -167,6 +170,7 @@ router.get('/:id/users', async (req: Request, res: Response) => {
     }))
     res.json({ success: true, data: { users: rows } })
   } catch (e) {
+    console.error('[Admin] 获取成就用户列表失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -177,6 +181,7 @@ router.post('/trigger', async (_req: Request, res: Response) => {
     // 占位实现 — 实际成就检测逻辑由云函数或定时任务执行
     res.json({ success: true, data: { unlocked: [] as string[] } })
   } catch (e) {
+    console.error('[Admin] 触发成就检测失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })

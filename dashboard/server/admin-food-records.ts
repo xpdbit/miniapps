@@ -70,6 +70,7 @@ router.get('/', async (req: Request, res: Response) => {
       data: { records: mapped, total, page, pageSize },
     })
   } catch (e) {
+    console.error('[Admin] 获取食物记录列表失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -126,6 +127,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       data: { record: { ...result, aiDescription, nutrition, location } },
     })
   } catch (e) {
+    console.error('[Admin] 获取食物记录详情失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -140,6 +142,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     })
     res.json({ success: true })
   } catch (e) {
+    console.error('[Admin] 软删除食物记录失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -154,6 +157,7 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
     })
     res.json({ success: true })
   } catch (e) {
+    console.error('[Admin] 恢复食物记录失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })
@@ -172,6 +176,7 @@ router.post('/batch-delete', async (req: Request, res: Response) => {
     })
     res.json({ success: true })
   } catch (e) {
+    console.error('[Admin] 批量删除食物记录失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
   }
 })

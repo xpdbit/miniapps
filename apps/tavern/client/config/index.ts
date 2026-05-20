@@ -4,13 +4,18 @@ import devConfig from './dev'
 import prodConfig from './prod'
 import domain from '../../../../domain.config.js'
 
+// 根据构建类型（weapp/h5）确定输出目录，避免互相覆盖
+const targetEnv = process.env.TARO_ENV || 'weapp'
+const isH5 = targetEnv === 'h5'
+const outputRoot = isH5 ? 'dist-h5' : 'dist-weapp'
+
 const baseConfig = {
   projectName: 'ai-tavern',
   date: '2026-05-10',
   designWidth: 750,
   deviceRatio: { 640: 2.34 / 2, 750: 1, 828: 1.81 / 2 },
   sourceRoot: 'src',
-  outputRoot: 'dist',
+  outputRoot,
   plugins: [
     '@tarojs/plugin-platform-weapp',
     '@tarojs/plugin-platform-h5',
@@ -19,7 +24,7 @@ const baseConfig = {
   ],
   copy: {
     patterns: [
-      { from: 'src/assets/icons/', to: 'dist/assets/icons/' },
+      { from: 'src/assets/icons/', to: `${outputRoot}/assets/icons/` },
     ],
     options: {},
   },
@@ -27,6 +32,7 @@ const baseConfig = {
   compiler: 'webpack5',
   cache: { enable: false },
   mini: {
+    outputRoot: 'dist-weapp',
     postcss: {
       pxtransform: { enable: true, config: {} },
       cssModules: { enable: false, config: { namingPattern: 'module', generateScopedName: '[name]__[local]___[hash:base64:5]' } },
@@ -43,6 +49,7 @@ const baseConfig = {
     },
   },
   h5: {
+    outputRoot: 'dist-h5',
     publicPath: '/',
     staticDirectory: 'static',
     router: {

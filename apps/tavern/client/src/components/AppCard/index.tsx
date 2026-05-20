@@ -1,5 +1,6 @@
 import { View, Text } from '@tarojs/components';
 import type { FC, ReactNode } from 'react';
+import { cn } from '@/utils';
 import './index.scss';
 
 type AppCardPadding = 'sm' | 'base' | 'lg';
@@ -9,8 +10,10 @@ interface AppCardProps {
   subtitle?: string;
   extra?: ReactNode;
   bordered?: boolean;
+  elevated?: boolean;
   padding?: AppCardPadding;
   hoverable?: boolean;
+  glass?: boolean;
   onClick?: () => void;
   children?: ReactNode;
   className?: string;
@@ -21,39 +24,41 @@ const AppCard: FC<AppCardProps> = ({
   subtitle,
   extra,
   bordered = false,
+  elevated = false,
   padding = 'base',
   hoverable = false,
+  glass = false,
   onClick,
   children,
   className = '',
 }) => {
-  const classNames = [
-    'app-card',
-    `app-card--padding-${padding}`,
-    bordered ? 'app-card--bordered' : '',
-    hoverable ? 'app-card--hoverable' : '',
-    onClick ? 'app-card--clickable' : '',
+  const classNames = cn(
+    'card',
+    bordered && 'card--bordered',
+    elevated && 'card--elevated',
+    hoverable && 'card--interactive',
+    glass && 'card--glass',
+    onClick && 'card--interactive',
+    padding === 'sm' && 'card--compact',
     className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  );
 
   const hasHeader = title || extra;
 
   return (
     <View className={classNames} onClick={onClick}>
       {hasHeader && (
-        <View className='app-card__header'>
-          <View className='app-card__header-left'>
-            {title && <Text className='app-card__title'>{title}</Text>}
+        <View className='card__header'>
+          <View className='card__header-left'>
+            {title && <Text className='card__title'>{title}</Text>}
             {subtitle && (
-              <Text className='app-card__subtitle'>{subtitle}</Text>
+              <Text className='card__subtitle'>{subtitle}</Text>
             )}
           </View>
-          {extra && <View className='app-card__extra'>{extra}</View>}
+          {extra && <View className='card__extra'>{extra}</View>}
         </View>
       )}
-      {children && <View className='app-card__body'>{children}</View>}
+      {children && <View className='card__body'>{children}</View>}
     </View>
   );
 };

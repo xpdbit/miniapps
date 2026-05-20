@@ -1,6 +1,6 @@
 /* ============================================================
- *  Persona Page — 现代扁平人设管理
- *  风格: 列表 + 操作按钮 + 底部创建
+ *  Persona Page — 温暖酒馆人设管理
+ *  风格: 列表卡片 / 玻璃弹窗 / 优雅排版
  * ============================================================ */
 
 .page-persona {
@@ -48,8 +48,15 @@
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-sm);
     background: var(--color-bg-surface);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--color-border-subtle);
+    transition: all var(--transition-fast);
+    animation: slide-up-fade var(--duration-slow) var(--ease-out);
+
+    &:active {
+      background: var(--color-bg-surface-hover);
+      transform: scale(0.99);
+    }
 
     &-avatar {
       width: 80rpx;
@@ -62,6 +69,8 @@
       margin-right: var(--spacing-md);
       flex-shrink: 0;
       overflow: hidden;
+      border: 2rpx solid var(--color-border-subtle);
+      box-shadow: 0 0 12px var(--color-primary-glow);
     }
 
     &-info {
@@ -83,10 +92,10 @@
 
     &-badge {
       font-size: var(--font-caption);
-      padding: 2rpx 8rpx;
+      padding: 2rpx 10rpx;
       background: var(--color-primary-bg);
       color: var(--color-primary);
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-pill);
       font-weight: var(--font-weight-medium);
     }
 
@@ -111,6 +120,12 @@
       color: var(--color-primary);
       padding: 4rpx 8rpx;
       text-align: center;
+      transition: opacity var(--transition-fast);
+      border-radius: var(--radius-xs);
+
+      &:active {
+        opacity: 0.7;
+      }
 
       &.disabled {
         color: var(--color-text-tertiary);
@@ -124,6 +139,7 @@
 
   &-footer {
     padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
     background: var(--color-bg-elevated);
     border-top: 1px solid var(--color-border-subtle);
   }
@@ -140,6 +156,12 @@
   border-radius: var(--radius-md);
   font-size: var(--font-body);
   font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+
+  &:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
 }
 
 /* ── 头像替换 ── */
@@ -154,7 +176,7 @@
   color: var(--color-primary-foreground);
 }
 
-/* ── 自定义 Modal ── */
+/* ── 玻璃 Modal ── */
 .page-persona-modal-overlay {
   position: fixed;
   top: 0;
@@ -172,10 +194,12 @@
 .page-persona-modal {
   width: 100%;
   max-width: 640rpx;
-  background: var(--color-bg-surface);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  animation: scale-in var(--duration-normal) var(--ease-out);
+  animation: scale-in var(--duration-normal) var(--ease-spring);
+  box-shadow: var(--glass-shadow);
 }
 
 .page-persona-modal-header {
@@ -222,10 +246,16 @@
   height: 72rpx;
   background: var(--color-bg-input);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: 0 var(--spacing-md);
   font-size: var(--font-body-sm);
   color: var(--color-text);
+  transition: all var(--transition-fast);
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+  }
 }
 
 .page-persona-modal-textarea {
@@ -233,10 +263,11 @@
   min-height: 140rpx;
   background: var(--color-bg-input);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-body-sm);
   color: var(--color-text);
+  transition: border-color var(--transition-fast);
 }
 
 .page-persona-modal-footer {
@@ -244,6 +275,7 @@
   gap: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-lg);
   border-top: 1px solid var(--color-border-subtle);
+  padding-bottom: env(safe-area-inset-bottom, var(--spacing-md));
 }
 
 .page-persona-modal-cancel-btn {
@@ -255,6 +287,11 @@
   border: 1px solid var(--color-border-subtle) !important;
   border-radius: var(--radius-md);
   font-size: var(--font-body);
+  transition: all var(--transition-fast);
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 .page-persona-modal-confirm-btn {
@@ -266,4 +303,10 @@
   border: none !important;
   border-radius: var(--radius-md);
   font-size: var(--font-body);
+  transition: all var(--transition-fast);
+
+  &:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
 }

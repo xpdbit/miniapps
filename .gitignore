@@ -4,6 +4,8 @@ node_modules/
 
 # 构建产物
 dist/
+dist-weapp/
+dist-h5/
 dev-dist/
 build/
 
@@ -51,9 +53,18 @@ temp/
 .sisyphus/
 temp-tsc-test/
 
-# 规划与部署配置
+# 规划文档
 plan/
+
+# 旧部署目录（已迁移到 tools/deploy/）
 deploy/
+
+# 部署工具 — 密钥和运行时文件
+tools/deploy/.env
+tools/deploy/nginx/ssl/*
+tools/deploy/nginx/html/*
+!tools/deploy/nginx/html/.gitkeep
+!tools/deploy/nginx/ssl/.gitkeep
 
 # SuperTask Worktree 临时目录
 .worktrees/

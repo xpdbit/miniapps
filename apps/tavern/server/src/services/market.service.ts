@@ -114,8 +114,8 @@ export async function getAllOfficialCards() {
     where: { isOfficial: true, status: 'PUBLISHED' },
     select: {
       id: true, name: true, avatar: true, description: true,
-      personality: true, firstMsg: true, scenario: true, lore: true,
-      systemPrompt: true, tags: true, cardType: true, isOfficial: true,
+      prompt: true, firstMsg: true, scenario: true,
+      tags: true, cardType: true, isOfficial: true,
       chatCount: true, likeCount: true, favCount: true,
       createdAt: true, updatedAt: true,
       creator: { select: { id: true, nickname: true } },

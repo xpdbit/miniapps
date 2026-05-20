@@ -1,5 +1,5 @@
 {
-  "miniprogramRoot": "dist/",
+  "miniprogramRoot": "dist-weapp/",
   "projectname": "ai-tavern",
   "appid": "wx304f234695e196d1",
   "compileType": "miniprogram",

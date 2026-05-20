@@ -36,9 +36,8 @@ export async function getCharacterDetail(id: string) {
 // Create character
 export async function createCharacter(data: {
   name: string; description: string; firstMsg: string
-  avatar?: string; personality?: string; scenario?: string
-  lore?: string; systemPrompt?: string; tags?: string[]
-  exampleDialogs?: unknown; nsfw?: boolean
+  avatar?: string; prompt?: string; scenario?: string
+  tags?: string[]
   cardType?: string
 }, userId: string) {
   const card = await prisma.tavernCard.create({
@@ -47,14 +46,10 @@ export async function createCharacter(data: {
       description: data.description,
       firstMsg: data.firstMsg,
       avatar: data.avatar,
-      personality: data.personality,
+      prompt: data.prompt,
       scenario: data.scenario,
-      lore: data.lore,
-      systemPrompt: data.systemPrompt,
       tags: data.tags ?? [],
       cardType: (data.cardType as Prisma.EnumCardTypeFilter['equals']) || 'CHARACTER',
-      exampleDialogs: data.exampleDialogs != null ? data.exampleDialogs as Prisma.InputJsonValue : undefined,
-      nsfw: data.nsfw ?? false,
       creatorId: userId,
       status: 'DRAFT',
     },
@@ -65,9 +60,8 @@ export async function createCharacter(data: {
 // Update character
 export async function updateCharacter(id: string, userId: string, data: {
   name?: string; description?: string; firstMsg?: string
-  avatar?: string; personality?: string; scenario?: string
-  lore?: string; systemPrompt?: string; tags?: string[]
-  exampleDialogs?: unknown; nsfw?: boolean
+  avatar?: string; prompt?: string; scenario?: string
+  tags?: string[]
   cardType?: string
 }) {
   const card = await prisma.tavernCard.findUnique({ where: { id } })
@@ -76,15 +70,10 @@ export async function updateCharacter(id: string, userId: string, data: {
 
   const updateData: Prisma.TavernCardUpdateInput = {
     name: data.name, description: data.description, firstMsg: data.firstMsg,
-    avatar: data.avatar, personality: data.personality, scenario: data.scenario,
-    lore: data.lore, systemPrompt: data.systemPrompt, tags: data.tags,
-    nsfw: data.nsfw,
+    avatar: data.avatar, prompt: data.prompt, scenario: data.scenario, tags: data.tags,
   }
   if (data.cardType) {
     updateData.cardType = data.cardType as Prisma.EnumCardTypeFilter['equals']
-  }
-  if (data.exampleDialogs !== undefined) {
-    updateData.exampleDialogs = data.exampleDialogs != null ? data.exampleDialogs as Prisma.InputJsonValue : undefined
   }
 
   const updated = await prisma.tavernCard.update({

@@ -159,6 +159,15 @@ page {
   --z-toast: 500;
   --z-tooltip: 600;
 
+  /* === 玻璃态变量 (Glassemblance) === */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+
+  /* === 布局变量 === */
+  --tab-bar-height: 120rpx;
+
   /* === 全局默认样式 === */
   font-family: var(--font-family);
   font-size: var(--font-size-base);
@@ -173,6 +182,11 @@ page {
 /* === 全局重置 === */
 * {
   box-sizing: inherit;
+}
+
+/* 移除 scroll-view 默认 width: 100% */
+scroll-view {
+  width: auto;
 }
 
 /* === 工具类 === */
@@ -323,12 +337,3 @@ page {
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* ============================================================
-   全局 Reduced Motion 支持
-   ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-  }
-}

@@ -20,9 +20,8 @@ const sendSchema = z.object({
     name: z.string().optional(),
     description: z.string().optional(),
     firstMsg: z.string().optional(),
-    personality: z.string().optional(),
+    prompt: z.string().optional(),
     scenario: z.string().optional(),
-    lore: z.string().optional(),
   }).optional(),
 })
 
@@ -66,10 +65,9 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
     // Get character and persona for prompt building
     // Support cardData for local cards (not stored in DB)
     let character: {
-      name: string; description: string; personality?: string | null
-      scenario?: string | null; lore?: string | null
-      firstMsg?: string | null; systemPrompt?: string | null
-      exampleDialogs?: unknown
+      name: string; description: string; prompt?: string | null
+      scenario?: string | null
+      firstMsg?: string | null
     } | null = null
 
     if (params.cardData) {
@@ -77,12 +75,9 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       character = {
         name: params.cardData.name || '',
         description: params.cardData.description || '',
-        personality: params.cardData.personality || null,
+        prompt: params.cardData.prompt || null,
         scenario: params.cardData.scenario || null,
-        lore: params.cardData.lore || null,
         firstMsg: params.cardData.firstMsg || null,
-        systemPrompt: null,
-        exampleDialogs: null,
       }
     } else {
       // Server card: look up from database
@@ -126,11 +121,8 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       character: {
         name: character.name,
         description: character.description,
-        personality: character.personality,
+        prompt: character.prompt,
         scenario: character.scenario,
-        lore: character.lore,
-        systemPrompt: character.systemPrompt,
-        exampleDialogs: character.exampleDialogs,
         firstMsg: character.firstMsg || '',
       },
       persona: persona ? { name: persona.name, description: persona.description } : null,

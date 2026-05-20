@@ -1,8 +1,9 @@
 export type ProjectStatus = 'active' | 'inactive'
 
 export interface Project {
-  id: number
+  id: string
   name: string
+  slug?: string
   apiBaseUrl: string
   description: string | null
   status: ProjectStatus

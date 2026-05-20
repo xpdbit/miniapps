@@ -11,7 +11,7 @@
 // =============================================================================
 
 const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 const prisma = new PrismaClient()
 
@@ -21,15 +21,15 @@ async function main() {
 
   console.log(`[Seed] 检查管理员账号 "${username}" ...`)
 
-  const existing = await prisma.adminUser.findUnique({ where: { username } })
+  const existing = await prisma.dashboardAdminUser.findUnique({ where: { username } })
   if (existing) {
     console.log(`[Seed] 管理员 "${username}" 已存在，跳过创建。`)
     return
   }
 
-  const passwordHash = await bcrypt.hash(password, 12)
-  const admin = await prisma.adminUser.create({
-    data: { username, passwordHash, role: 'super_admin' },
+  const password_hash_val = await bcrypt.hash(password, 12)
+  const admin = await prisma.dashboardAdminUser.create({
+    data: { username, password_hash: password_hash_val, role: 'super_admin' },
   })
 
   console.log(`[Seed] 已创建 super_admin 账号: id=${admin.id}, username="${admin.username}"`)

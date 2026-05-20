@@ -2,23 +2,24 @@
   pages: [
     'pages/market/index',
     'pages/chat/index',
+    'pages/archive/index',
+    'pages/game-setup/index',
     'pages/character/index',
     'pages/character/detail/index',
     'pages/creator/index',
     'pages/profile/index',
     'pages/persona/index',
-    'pages/settings/index',
   ],
   window: {
     navigationBarTitleText: 'AI 酒馆',
     navigationBarBackgroundColor: '#FFFFFF',
     navigationBarTextStyle: 'black',
-    backgroundColor: '#F8F4EF',
+    backgroundColor: '#F2F2F7',
   },
   tabBar: {
     custom: true,
-    color: '#A8A39E',
-    selectedColor: '#C49A6C',
+    color: '#8E8E93',
+    selectedColor: '#007AFF',
     backgroundColor: '#FFFFFF',
     borderStyle: 'white',
     list: [

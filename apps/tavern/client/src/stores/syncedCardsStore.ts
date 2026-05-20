@@ -3,6 +3,7 @@
  * 每次进入市场页时触发同步，500ms 防抖防刷
  */
 import { create } from 'zustand'
+import type { StoreApi } from 'zustand/vanilla'
 import Taro from '@tarojs/taro'
 import { officialService } from '@/services/officialService'
 import type { CharacterCard, CardType } from '@/types/character'
@@ -10,11 +11,17 @@ import type { CharacterCard, CardType } from '@/types/character'
 const STORAGE_KEY = 'tavern_synced_cards'
 const SYNC_DEBOUNCE_MS = 500
 
+interface SyncResult {
+  success: boolean
+  count: number
+  error?: string
+}
+
 interface SyncedCardsState {
   cards: CharacterCard[]
   lastSyncAt: number
   loading: boolean
-  lastSyncPromise: Promise<void> | null
+  lastSyncPromise: Promise<SyncResult> | null
   syncTimer: ReturnType<typeof setTimeout> | null
 
   /** 按卡片类型获取卡片 */
@@ -24,10 +31,86 @@ interface SyncedCardsState {
   getCardById: (id: string) => CharacterCard | undefined
 
   /** 同步官方卡片（带 500ms 防抖） */
-  syncCards: () => Promise<void>
+  syncCards: () => Promise<SyncResult>
+
+  /** 强制刷新（绕过防抖和去重，立即同步） */
+  forceRefresh: () => Promise<SyncResult>
 
   /** 从本地存储恢复 */
   restoreFromStorage: () => void
+}
+
+async function doSync(
+  set: StoreApi<SyncedCardsState>['setState'],
+  get: StoreApi<SyncedCardsState>['getState'],
+  isForce: boolean,
+): Promise<SyncResult> {
+  const state = get()
+
+  // 非强制刷新时才走防抖和去重
+  if (!isForce) {
+    // 必须先检查 lastSyncPromise，再清除 timer
+    // 否则先 clearTimeout 会导致旧 promise 永不 resolve → 死锁
+    if (state.lastSyncPromise) {
+      return state.lastSyncPromise
+    }
+
+    // 500ms 防抖：如果已有定时器，先清除
+    if (state.syncTimer) {
+      clearTimeout(state.syncTimer)
+    }
+  } else {
+    // 强制刷新：清除所有待处理的同步
+    if (state.syncTimer) {
+      clearTimeout(state.syncTimer)
+    }
+  }
+
+  // 创建新的同步 Promise
+  const promise = new Promise<SyncResult>((resolve) => {
+    const doFetch = async () => {
+      try {
+        set({ loading: true })
+        const res = await officialService.getAll()
+        // 检查服务器业务状态码 — 非 0 视为失败，避免 500 等错误静默清空缓存
+        if (res.code !== 0) {
+          throw new Error(res.message || '服务器返回异常')
+        }
+        const cards = res.data ?? []
+        set({
+          cards,
+          lastSyncAt: Date.now(),
+          loading: false,
+          lastSyncPromise: null,
+          syncTimer: null,
+        })
+        // 持久化到本地存储
+        try {
+          Taro.setStorageSync(STORAGE_KEY, cards)
+        } catch {
+          // 静默处理存储失败
+        }
+        resolve({ success: true, count: cards.length })
+      } catch (err: unknown) {
+        // 同步失败不影响现有缓存
+        set({ loading: false, lastSyncPromise: null, syncTimer: null })
+        const msg = err instanceof Error ? err.message : '同步失败，请检查网络'
+        resolve({ success: false, count: get().cards.length, error: msg })
+      }
+    }
+
+    if (isForce) {
+      // 强制刷新：立即执行
+      doFetch()
+    } else {
+      // 正常同步：500ms 防抖
+      const timer = setTimeout(doFetch, SYNC_DEBOUNCE_MS)
+      set({ syncTimer: timer })
+    }
+  })
+
+  set({ lastSyncPromise: promise })
+  return promise
 }
 
 export const useSyncedCardsStore = create<SyncedCardsState>((set, get) => ({
@@ -46,50 +129,11 @@ export const useSyncedCardsStore = create<SyncedCardsState>((set, get) => ({
   },
 
   syncCards: async () => {
-    const state = get()
+    return doSync(set, get, false)
+  },
 
-    // 500ms 防抖：如果已有定时器，先清除
-    if (state.syncTimer) {
-      clearTimeout(state.syncTimer)
-    }
-
-    // 如果已有正在进行的同步，复用其 Promise
-    if (state.lastSyncPromise) {
-      return state.lastSyncPromise
-    }
-
-    // 创建新的同步 Promise
-    const promise = new Promise<void>((resolve) => {
-      const timer = setTimeout(async () => {
-        try {
-          set({ loading: true })
-          const res = await officialService.getAll()
-          const cards = res.data ?? []
-          set({
-            cards,
-            lastSyncAt: Date.now(),
-            loading: false,
-            lastSyncPromise: null,
-            syncTimer: null,
-          })
-          // 持久化到本地存储
-          try {
-            Taro.setStorageSync(STORAGE_KEY, cards)
-          } catch {
-            // 静默处理存储失败
-          }
-        } catch {
-          // 同步失败不影响现有缓存
-          set({ loading: false, lastSyncPromise: null, syncTimer: null })
-        }
-        resolve()
-      }, SYNC_DEBOUNCE_MS)
-
-      set({ syncTimer: timer })
-    })
-
-    set({ lastSyncPromise: promise })
-    return promise
+  forceRefresh: async () => {
+    return doSync(set, get, true)
   },
 
   restoreFromStorage: () => {

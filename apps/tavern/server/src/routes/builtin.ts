@@ -10,7 +10,7 @@ router.get('/characters', async (_req: Request, res: Response) => {
       where: { creator: { openid: 'builtin_system' } },
       select: {
         id: true, name: true, avatar: true, description: true,
-        personality: true, firstMsg: true, scenario: true,
+        prompt: true, firstMsg: true, scenario: true,
         tags: true, chatCount: true, likeCount: true,
       },
     })

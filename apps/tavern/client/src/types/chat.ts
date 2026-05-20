@@ -15,6 +15,10 @@ export interface ChatSession {
   messageCount?: number
   title?: string
   updatedAt?: string
+  pinned?: boolean
+  pinnedAt?: number
+  isGroup?: boolean
+  memberIds?: string[]
 }
 
 export interface SSEMessage {

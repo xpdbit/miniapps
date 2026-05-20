@@ -5,15 +5,24 @@ import { useState, useCallback } from 'react'
 import CharacterCard from '@/components/CharacterCard'
 import { EmptyState, Icon } from '@/components'
 import { useCharacterStore } from '@/stores/characterStore'
+import { useAuthStore } from '@/stores/authStore'
 import './index.scss'
 
 export default function CharacterListPage() {
+  const { isLoggedIn } = useAuthStore()
   const { characters, loading, hasMore, loadCharacters } = useCharacterStore()
   const [tab, setTab] = useState<string>('all')
+  const [refreshing, setRefreshing] = useState(false)
 
   useDidShow(() => {
-    loadCharacters(1)
+    if (isLoggedIn) loadCharacters(1)
   })
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await loadCharacters(1)
+    setRefreshing(false)
+  }, [loadCharacters])
 
   const handleLoadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -45,6 +54,12 @@ export default function CharacterListPage() {
             <Text>{tabValue === 'all' ? '全部' : tabValue === 'draft' ? '草稿' : '已发布'}</Text>
           </View>
         ))}
+        <View
+          className={`page-character-list-refresh ${refreshing ? 'page-character-list-refresh--spinning' : ''}`}
+          onClick={handleRefresh}
+        >
+          <Icon name='refresh' size={36} color='#999' />
+        </View>
       </View>
 
       <ScrollView

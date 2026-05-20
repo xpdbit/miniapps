@@ -401,28 +401,23 @@ class ControlInterface(QWidget):
         self._log_tabs = QTabWidget()
         self._log_tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: none;
-                background: transparent;
+                border: 1px solid #21262d; border-radius: 8px;
+                background: #0d1117; padding: 4px;
+                top: -1px;
             }
             QTabBar::tab {
-                background: #161b22;
-                color: #8b949e;
-                border: 1px solid #30363d;
-                border-bottom: none;
-                padding: 6px 16px;
-                font-size: 12px;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-                margin-right: 2px;
+                color: #8b949e; background: transparent;
+                border: 1px solid transparent; border-radius: 16px;
+                padding: 6px 16px; margin: 0px 2px;
+                font-size: 12px; font-weight: 500;
+            }
+            QTabBar::tab:hover {
+                color: #c9d1d9; background: #21262d;
+                border-color: #30363d;
             }
             QTabBar::tab:selected {
-                background: #0d1117;
-                color: #c9d1d9;
-                border-bottom: 2px solid #58a6ff;
-            }
-            QTabBar::tab:hover:!selected {
-                background: #1c2433;
-                color: #c9d1d9;
+                color: #e6edf3; background: #30363d;
+                border-color: #484f58;
             }
         """)
 
