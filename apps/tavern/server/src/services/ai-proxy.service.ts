@@ -45,8 +45,11 @@ const MODEL_PROVIDER_MAP: Record<string, string> = {
   'chatglm-turbo': 'zhipu',
   'moonshot-v1-8k': 'moonshot',
   'moonshot-v1-32k': 'moonshot',
-  'abab5.5-chat': 'minimax_free',
-  'abab5-chat': 'minimax_free',
+  // MiniMax v2 direct models (requires MINIMAX_API_KEY env var)
+  'MiniMax-Text-01': 'minimax_free',
+  // MiniMax v1 legacy models → route through OpenCode (v2 endpoint incompatible)
+  'abab5.5-chat': 'opencode',
+  'abab5-chat': 'opencode',
   // OpenRouter（通用网关）
   'openrouter-auto': 'openrouter',
 }
@@ -65,7 +68,7 @@ const PROVIDER_CONFIGS: Record<string, { baseUrl: string; defaultModel: string; 
   zhipu: { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4', apiFormat: 'openai' },
   moonshot: { baseUrl: 'https://api.moonshot.cn', defaultModel: 'moonshot-v1-8k', apiFormat: 'openai' },
   minimax: { baseUrl: 'https://api.minimax.chat', defaultModel: 'abab6.5s', apiFormat: 'openai' },
-  minimax_free: { baseUrl: 'https://api.minimax.chat', defaultModel: 'abab5.5-chat', apiFormat: 'openai' },
+  minimax_free: { baseUrl: 'https://api.minimax.chat', defaultModel: 'MiniMax-Text-01', apiFormat: 'openai' },
 }
 
 /* ========================================================================
@@ -144,15 +147,19 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
       return
     }
 
+    // 自定义 baseUrl 优先于硬编码配置
+    const effectiveBaseUrl = decryptedKey.baseUrl || providerConfig.baseUrl
+    const effectiveConfig = { ...providerConfig, baseUrl: effectiveBaseUrl }
+
     switch (providerConfig.apiFormat) {
       case 'anthropic':
-        await callAnthropic(providerConfig, decryptedKey, messages, modelKey, temperature, onToken, onDone)
+        await callAnthropic(effectiveConfig, decryptedKey.key, messages, modelKey, temperature, onToken, onDone)
         break
       case 'google':
-        await callGoogle(providerConfig, decryptedKey, messages, modelKey, temperature, onToken, onDone)
+        await callGoogle(effectiveConfig, decryptedKey.key, messages, modelKey, temperature, onToken, onDone)
         break
       default:
-        await callOpenAICompatible(providerConfig, decryptedKey, messages, modelKey, temperature, onToken, onDone)
+        await callOpenAICompatible(effectiveConfig, decryptedKey.key, messages, modelKey, temperature, onToken, onDone)
     }
   } catch (err: unknown) {
     onError(err instanceof Error ? err : new Error(String(err)))
@@ -192,6 +199,7 @@ async function callDashScope(
   )
 
   let totalTokens = 0
+  let hasContent = false
   const stream = response.data as AsyncIterable<Buffer>
 
   for await (const chunk of stream) {
@@ -200,9 +208,17 @@ async function callDashScope(
       if (line.startsWith('data:')) {
         try {
           const json = JSON.parse(line.slice(5))
-          if (json.output?.text) {
-            onToken(json.output.text)
-            totalTokens += json.usage?.output_tokens || 0
+          // DashScope returns content differently based on result_format:
+          // - 'text' format: output.text
+          // - 'message' format: output.choices[0].messages[0].content
+          const text = json.output?.text
+            || json.output?.choices?.[0]?.messages?.[0]?.content
+          if (text) {
+            onToken(text)
+            hasContent = true
+          }
+          if (json.usage?.output_tokens) {
+            totalTokens += json.usage.output_tokens
           }
         } catch {
           // Skip invalid JSON lines
@@ -291,6 +307,7 @@ async function callMiniMaxFree(
   }
 
   let totalTokens = 0
+  let hasContent = false
   const response = await axios.post(
     'https://api.minimax.chat/v1/text/chatcompletion_v2',
     {
@@ -309,11 +326,14 @@ async function callMiniMaxFree(
       },
       responseType: 'stream',
       timeout: 60000,
+      validateStatus: null, // Don't throw on non-2xx — we handle errors in parser
     },
   )
 
   const stream = response.data as AsyncIterable<Buffer>
+  let rawBody = ''
   for await (const chunk of stream) {
+    rawBody += chunk.toString()
     const lines = chunk.toString().split('\n').filter(Boolean)
     for (const line of lines) {
       if (line.startsWith('data:')) {
@@ -324,6 +344,7 @@ async function callMiniMaxFree(
             || json.choices?.[0]?.delta?.content
           if (text) {
             onToken(text)
+            hasContent = true
           }
           if (json.usage) {
             totalTokens = json.usage.total_tokens || totalTokens
@@ -332,6 +353,24 @@ async function callMiniMaxFree(
           // Skip invalid JSON lines
         }
       }
+    }
+  }
+
+  // Fallback: if no tokens were streamed, the response may be a non-SSE error.
+  // Try to parse the raw body as JSON to extract the error message.
+  if (!hasContent && rawBody.trim()) {
+    try {
+      const errorJson = JSON.parse(rawBody.trim())
+      const errorMsg = errorJson?.error?.message
+        || errorJson?.base_resp?.status_msg
+        || 'MiniMax API 返回了空响应'
+      throw new Error(errorMsg)
+    } catch (parseErr: unknown) {
+      if (parseErr instanceof SyntaxError) {
+        // Raw body is not valid JSON either
+        throw new Error(`MiniMax 返回异常响应: ${rawBody.trim().slice(0, 200)}`)
+      }
+      throw parseErr
     }
   }
 
@@ -360,6 +399,10 @@ export async function generateText(params: {
         fullText += token
       },
       onDone: () => {
+        if (!fullText || !fullText.trim()) {
+          reject(new Error('AI 返回了空响应，请检查模型配置或稍后重试'))
+          return
+        }
         resolve(fullText)
       },
       onError: (err: Error) => {

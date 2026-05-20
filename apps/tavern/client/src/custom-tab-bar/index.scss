@@ -1,6 +1,8 @@
 ﻿/* ============================================================
    自定义底部栏样式
-   使用全局 CSS 变量系统（Tavern 新系统）
+   注意：微信自定义 tabBar 渲染在 page DOM 树之外，
+   无法继承 app.scss page{} 中定义的 CSS 变量，
+   因此此处使用直接颜色值（与主题保持一致）。
    高度补偿：各 tab 页面需添加 padding-bottom 避免内容被遮挡
    ============================================================ */
 
@@ -10,12 +12,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: var(--z-sticky);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--color-border);
+  z-index: 200;                      /* var(--z-sticky) — tab bar 无法继承 page{} 变量 */
+  background: #FCF9F6;               /* 不透明背景，对应 --color-bg-elevated */
+  border-top: 1px solid #E5DDD4;    /* 对应 --color-border */
   padding-bottom: env(safe-area-inset-bottom, 0);
+  transition: transform 0.2s ease;
+
+  &--hidden {
+    transform: translateY(100%);
+  }
 }
 
 .tab-bar-inner {
@@ -58,19 +63,19 @@
 
 /* --- 标签文字 --- */
 .tab-label {
-  font-size: var(--font-caption);
-  color: var(--color-text-tertiary);
+  font-size: 20px;                   /* var(--font-caption) */
+  color: #A8A39E;                    /* var(--color-text-tertiary) */
   line-height: 1;
-  font-weight: var(--font-weight-medium);
+  font-weight: 500;                  /* var(--font-weight-medium) */
 }
 
 .tab-item--active .tab-label {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
+  color: #C49A6C;                    /* var(--color-primary) */
+  font-weight: 600;                  /* var(--font-weight-semibold) */
 }
 
 /* 亮色主题适配 */
 .tab-item--active .tab-icon-wrap {
-  filter: drop-shadow(0 0 4px var(--color-primary-glow));
+  filter: drop-shadow(0 0 4px rgba(196, 154, 108, 0.15));  /* var(--color-primary-glow) */
 }
 

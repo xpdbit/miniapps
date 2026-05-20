@@ -64,6 +64,7 @@ function getSelectedIndex(): number {
 
 export default function CustomTabBar() {
   const [selected, setSelected] = useState(getSelectedIndex());
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     // 监听页面切换事件（由各 tab 页面在 componentDidShow 中触发）
@@ -72,11 +73,18 @@ export default function CustomTabBar() {
     };
     Taro.eventCenter.on('tabChange', tabHandler);
 
+    // 监听 modal 覆盖层状态（如添加 API Key 弹窗）
+    const modalHandler = (visible: boolean) => {
+      setHidden(visible);
+    };
+    Taro.eventCenter.on('modalOverlayChange', modalHandler);
+
     // 组件挂载时读取一次当前路由
     setSelected(getSelectedIndex());
 
     return () => {
       Taro.eventCenter.off('tabChange', tabHandler);
+      Taro.eventCenter.off('modalOverlayChange', modalHandler);
     };
   }, []);
 
@@ -89,7 +97,7 @@ export default function CustomTabBar() {
   };
 
   return (
-    <View className='custom-tab-bar'>
+    <View className={`custom-tab-bar ${hidden ? 'custom-tab-bar--hidden' : ''}`}>
       <View className='tab-bar-inner'>
         {TAB_LIST.map((tab, index) => (
           <View
@@ -101,7 +109,7 @@ export default function CustomTabBar() {
               {tab.svgIcon ? (
                 <Image
                   className='tab-icon'
-                  src={svgToDataUri(tab.svgIcon, selected === index ? '#C49A6C' : '#A8A39E')}
+                  src={svgToDataUri(tab.svgIcon, selected === index ? '#007AFF' : '#8E8E93')}
                   mode='aspectFit'
                 />
               ) : (

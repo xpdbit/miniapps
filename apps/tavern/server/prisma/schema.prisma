@@ -72,7 +72,7 @@ model SharedUser {
 }
 
 // ============================================================
-// 2. tavern_cards — 角色卡片
+// 2. Card — 卡片
 // ============================================================
 model TavernCard {
   id               String     @id @default(uuid())
@@ -81,14 +81,10 @@ model TavernCard {
   description      String     @db.VarChar(2000)
   avatar           String?    @map("avatar_url")
   cardType         CardType   @default(CHARACTER) @map("card_type")
-  personality      String?    @db.Text
+  prompt           String?    @db.Text
   scenario         String?    @db.Text
   firstMsg         String?    @map("first_msg")
-  lore             String?    @db.Text
-  systemPrompt     String?    @map("system_prompt")
-  exampleDialogs   Json?      @map("example_dialogs")
   tags             Json
-  nsfw             Boolean    @default(false)
   isOfficial       Boolean    @default(false) @map("is_official")
   status           CardStatus @default(DRAFT)
   locked           Boolean    @default(false)
@@ -116,11 +112,11 @@ model TavernCard {
   @@index([status, cardType, chatCount(sort: Desc)])
   @@index([status, cardType, createdAt(sort: Desc)])
   @@index([name])
-  @@map("tavern_cards")
+  @@map("Card")
 }
 
 // ============================================================
-// 3. tavern_card_likes — 点赞
+// 3. CardLike — 点赞
 // ============================================================
 model TavernCardLike {
   id        String   @id @default(uuid())
@@ -133,11 +129,11 @@ model TavernCardLike {
 
   @@unique([cardId, userId])
   @@index([cardId, createdAt(sort: Desc)])
-  @@map("tavern_card_likes")
+  @@map("CardLike")
 }
 
 // ============================================================
-// 5. tavern_card_favs — 收藏
+// 4. CardFav — 收藏
 // ============================================================
 model TavernCardFav {
   id        String   @id @default(uuid())
@@ -150,11 +146,11 @@ model TavernCardFav {
 
   @@unique([cardId, userId])
   @@index([userId, createdAt(sort: Desc)])
-  @@map("tavern_card_favs")
+  @@map("CardFav")
 }
 
 // ============================================================
-// 6. tavern_personas — 用户人设
+// 5. Persona — 用户人设
 // ============================================================
 model TavernPersona {
   id          String   @id @default(uuid())
@@ -173,11 +169,11 @@ model TavernPersona {
   chatSessions TavernChatSession[]
 
   @@index([userId])
-  @@map("tavern_personas")
+  @@map("Persona")
 }
 
 // ============================================================
-// 7. tavern_chat_sessions — 聊天会话
+// 6. ChatSession — 聊天会话
 // ============================================================
 model TavernChatSession {
   id            String   @id @default(uuid())
@@ -202,11 +198,11 @@ model TavernChatSession {
 
   @@index([userId, lastMessageAt(sort: Desc)])
   @@index([userId, pinned, updatedAt(sort: Desc)])
-  @@map("tavern_chat_sessions")
+  @@map("ChatSession")
 }
 
 // ============================================================
-// 8. tavern_chat_messages — 聊天消息
+// 7. ChatMessage — 聊天消息
 // ============================================================
 model TavernChatMessage {
   id        String      @id @default(uuid())
@@ -219,11 +215,11 @@ model TavernChatMessage {
   session TavernChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
-  @@map("tavern_chat_messages")
+  @@map("ChatMessage")
 }
 
 // ============================================================
-// 9. tavern_moderation_logs — 审核日志
+// 8. ModerationLog — 审核日志
 // ============================================================
 model TavernModerationLog {
   id         String   @id @default(uuid())
@@ -240,11 +236,11 @@ model TavernModerationLog {
   @@index([targetType, targetId])
   @@index([operatorId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
-  @@map("tavern_moderation_logs")
+  @@map("ModerationLog")
 }
 
 // ============================================================
-// 10. tavern_card_revisions — 卡片版本历史
+// 9. CardRevision — 卡片版本历史
 // ============================================================
 model TavernCardRevision {
   id            String   @id @default(uuid())
@@ -259,17 +255,18 @@ model TavernCardRevision {
 
   @@index([cardId, revision(sort: Desc)])
   @@index([cardId, createdAt(sort: Desc)])
-  @@map("tavern_card_revisions")
+  @@map("CardRevision")
 }
 
 // ============================================================
-// 11. tavern_api_keys — 用户 AI Provider 密钥
+// 10. ApiKey — 用户 AI Provider 密钥
 // ============================================================
 model TavernApiKey {
   id         String    @id @default(uuid())
   userId     String    @map("user_id")
   provider   String
   keyValue   String    @map("key_value")
+  baseUrl    String?   @map("base_url")
   isActive   Boolean   @default(true) @map("is_active")
   lastUsedAt DateTime? @map("last_used_at")
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -278,5 +275,5 @@ model TavernApiKey {
   user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider])
-  @@map("tavern_api_keys")
+  @@map("ApiKey")
 }

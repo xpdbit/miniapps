@@ -5,17 +5,17 @@ import axios from 'axios';
 export async function listKeys(userId: string) {
   const keys = await prisma.tavernApiKey.findMany({
     where: { userId },
-    select: { id: true, provider: true, isActive: true, createdAt: true, updatedAt: true },
+    select: { id: true, provider: true, baseUrl: true, isActive: true, createdAt: true, updatedAt: true },
   });
   return keys;
 }
 
-export async function addKey(userId: string, provider: string, keyValue: string) {
+export async function addKey(userId: string, provider: string, keyValue: string, baseUrl?: string) {
   const { encrypted, iv, tag } = encrypt(keyValue);
   const key = await prisma.tavernApiKey.create({
-    data: { userId, provider, keyValue: JSON.stringify({ encrypted, iv, tag }) },
+    data: { userId, provider, keyValue: JSON.stringify({ encrypted, iv, tag }), baseUrl: baseUrl || null },
   });
-  return { id: key.id, provider: key.provider, isActive: key.isActive, createdAt: key.createdAt };
+  return { id: key.id, provider: key.provider, baseUrl: key.baseUrl, isActive: key.isActive, createdAt: key.createdAt };
 }
 
 export async function deleteKey(id: string, userId: string) {
@@ -27,7 +27,7 @@ export async function deleteKey(id: string, userId: string) {
 export async function verifyKey(provider: string, keyValue: string): Promise<boolean> {
   try {
     const baseUrls: Record<string, string> = {
-      opencode: 'https://opencode.ai/zen/go/v1',
+      opencode: 'https://opencode.ai/zen/go',
       openai: 'https://api.openai.com',
       anthropic: 'https://api.anthropic.com',
       google: 'https://generativelanguage.googleapis.com',
@@ -70,9 +70,10 @@ export async function verifyKey(provider: string, keyValue: string): Promise<boo
   }
 }
 
-export async function getDecryptedKey(userId: string, provider: string) {
+export async function getDecryptedKey(userId: string, provider: string): Promise<{ key: string; baseUrl?: string } | null> {
   const key = await prisma.tavernApiKey.findFirst({ where: { userId, provider, isActive: true } });
   if (!key) return null;
   const stored = JSON.parse(key.keyValue);
-  return decrypt(stored.encrypted, stored.iv, stored.tag);
+  const decrypted = decrypt(stored.encrypted, stored.iv, stored.tag);
+  return { key: decrypted, baseUrl: key.baseUrl || undefined };
 }

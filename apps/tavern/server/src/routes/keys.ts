@@ -8,6 +8,7 @@ const router = Router();
 const addSchema = z.object({
   provider: z.enum(['opencode', 'openai', 'anthropic', 'google', 'zhipu', 'deepseek', 'moonshot', 'minimax', 'openrouter']),
   keyValue: z.string().min(1),
+  baseUrl: z.string().optional(),
 });
 
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -23,11 +24,12 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
 router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = addSchema.parse(req.body);
-    const valid = await keyService.verifyKey(data.provider, data.keyValue);
-    if (!valid) {
-      return res.status(400).json({ code: 400, message: 'API Key 无效', data: null });
-    }
-    const key = await keyService.addKey(req.user!.userId, data.provider, data.keyValue);
+    // 先保存 Key，确保用户配置不会丢失
+    const key = await keyService.addKey(req.user!.userId, data.provider, data.keyValue, data.baseUrl);
+    // 后台异步验证 Key 有效性（不阻塞保存，仅用于日志）
+    keyService.verifyKey(data.provider, data.keyValue).then((valid) => {
+      if (!valid) console.warn(`[key] verify ${data.provider}: invalid or unreachable`);
+    });
     res.status(201).json({ code: 0, data: key, message: 'ok' });
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {

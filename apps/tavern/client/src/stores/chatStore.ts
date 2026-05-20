@@ -1,6 +1,17 @@
 import { create } from 'zustand'
+import Taro from '@tarojs/taro'
 import { httpClient } from '@/services/httpClient'
 import type { ChatSession, ChatMessage } from '@/types/chat'
+
+const MODEL_STORAGE_KEY = 'tavern_selected_model'
+
+function loadSavedModel(): string {
+  try {
+    return Taro.getStorageSync<string>(MODEL_STORAGE_KEY) || 'qwen-turbo'
+  } catch {
+    return 'qwen-turbo'
+  }
+}
 
 interface ChatState {
   sessions: ChatSession[]
@@ -23,7 +34,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   currentSession: null,
   messages: [],
   isStreaming: false,
-  selectedModel: 'qwen-turbo',
+  selectedModel: loadSavedModel(),
 
   loadSessions: async () => {
     try {
@@ -53,5 +64,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setStreaming: (v) => set({ isStreaming: v }),
   clearCurrent: () => set({ messages: [], currentSession: null }),
-  setModel: (model) => set({ selectedModel: model }),
+  setModel: (model) => {
+    try {
+      Taro.setStorageSync(MODEL_STORAGE_KEY, model)
+    } catch {
+      // ignore
+    }
+    set({ selectedModel: model })
+  },
 }))
