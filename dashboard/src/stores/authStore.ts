@@ -4,16 +4,16 @@ import { getToken, setToken, removeToken, setRememberMe } from '../utils/token'
 import { hasPermission, type Permission } from '../constants/permissions'
 
 interface AdminUser {
-  id: number
-  username: string
+  uuid: string
+  nickname: string | null
   role: string
 }
 
 interface AuthState {
   token: string | null
+  refreshToken: string | null
   user: AdminUser | null
   isAuthenticated: boolean
-  /** 标记 restoreSession 是否已完成（无论成功/失败） */
   initialized: boolean
   login: (username: string, password: string, rememberMe?: boolean) => Promise<void>
   logout: () => void
@@ -23,21 +23,25 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: getToken(),
+  refreshToken: localStorage.getItem('refresh_token'),
   user: null,
   isAuthenticated: !!getToken(),
-  /** 初始化标志，避免 ProtectedRoute 在 user 尚未加载时就做权限判断 */
   initialized: false,
 
   login: async (username: string, password: string, rememberMe = true) => {
     setRememberMe(rememberMe)
-    const { token, user } = await authApi.login({ username, password })
-    setToken(token)
-    set({ token, user, isAuthenticated: true, initialized: true })
+    const { access_token, refresh_token, user } = await authApi.login({ username, password })
+    setToken(access_token)
+    if (refresh_token) {
+      localStorage.setItem('refresh_token', refresh_token)
+    }
+    set({ token: access_token, refreshToken: refresh_token, user, isAuthenticated: true, initialized: true })
   },
 
   logout: () => {
     removeToken()
-    set({ token: null, user: null, isAuthenticated: false })
+    localStorage.removeItem('refresh_token')
+    set({ token: null, refreshToken: null, user: null, isAuthenticated: false })
   },
 
   restoreSession: async () => {
@@ -47,15 +51,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return
     }
 
-    // Token exists — fetch user info (includes role) to verify session is still valid
     try {
       const user = await authApi.getMe()
       set({ token, user, isAuthenticated: true, initialized: true })
     } catch (error) {
-      // Token expired or invalid — clear session
       console.error('[Auth] restoreSession 失败:', error)
+      // Try refreshing the token
+      const refreshToken = localStorage.getItem('refresh_token')
+      if (refreshToken) {
+        try {
+          const newToken = await authApi.refreshToken(refreshToken)
+          setToken(newToken)
+          const user = await authApi.getMe()
+          set({ token: newToken, user, isAuthenticated: true, initialized: true })
+          return
+        } catch {
+          // Refresh failed, clear everything
+        }
+      }
       removeToken()
-      set({ token: null, user: null, isAuthenticated: false, initialized: true })
+      localStorage.removeItem('refresh_token')
+      set({ token: null, refreshToken: null, user: null, isAuthenticated: false, initialized: true })
     }
   },
 

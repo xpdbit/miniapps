@@ -1,7 +1,7 @@
 // ============================================================
-// AI-Tavern Server Prisma Schema — miniapps DB
-// 使用 camelCase 模型字段（兼容现有代码）
-// @map 映射到 snake_case 数据库列名（兼容统一 DB 架构）
+// AI-Tavern Server Prisma Schema — miniapps DB → ai_tavern DB
+// 基于: 原 apps/tavern/server/prisma/schema.prisma
+// 变更: 去 SharedUser, creatorId/userId → userUuid, 加 user_profiles
 // ============================================================
 
 generator client {
@@ -11,17 +11,12 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")  // → ai_tavern 库
 }
 
 // ============================================================
 // 枚举
 // ============================================================
-
-enum UserRole {
-  USER
-  ADMIN
-}
 
 enum CardStatus {
   DRAFT
@@ -44,39 +39,18 @@ enum MessageRole {
   system
 }
 
-// ============================================================
-// 1. shared_users — 统一用户身份
-// ============================================================
-model SharedUser {
-  id            String    @id @default(uuid())
-  uuid          String    @unique
-  openid        String?   @unique
-  nickname      String?
-  avatar        String?
-  dailyQuota    Int       @default(20)
-  usedQuota     Int       @default(0)
-  quotaDate     DateTime  @default(now())
-  role          String    @default("USER")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  tavernCards          TavernCard[]
-  personas             TavernPersona[]
-  chatSessions         TavernChatSession[]
-  cardLikes            TavernCardLike[]
-  cardFavs             TavernCardFav[]
-  apiKeys              TavernApiKey[]
-  moderationLogs       TavernModerationLog[]
-
-  @@map("shared_users")
+enum UserTierType {
+  FREE
+  PAID
+  TESTER
 }
 
 // ============================================================
-// 2. Card — 卡片
+// 1. Card — 角色卡 (creatorId → userUuid)
 // ============================================================
 model TavernCard {
   id               String     @id @default(uuid())
-  creatorId        String     @map("creator_id")
+  userUuid         String     @map("user_uuid")
   name             String
   description      String     @db.VarChar(2000)
   avatar           String?    @map("avatar_url")
@@ -101,13 +75,12 @@ model TavernCard {
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
 
-  creator   SharedUser          @relation(fields: [creatorId], references: [id])
   likes     TavernCardLike[]
   favs      TavernCardFav[]
   chats     TavernChatSession[]
   revisions TavernCardRevision[]
 
-  @@index([creatorId, status, cardType])
+  @@index([userUuid, status, cardType])
   @@index([status, cardType, likeCount(sort: Desc)])
   @@index([status, cardType, chatCount(sort: Desc)])
   @@index([status, cardType, createdAt(sort: Desc)])
@@ -116,45 +89,43 @@ model TavernCard {
 }
 
 // ============================================================
-// 3. CardLike — 点赞
+// 2. CardLike — 点赞 (userId → userUuid)
 // ============================================================
 model TavernCardLike {
   id        String   @id @default(uuid())
   cardId    String   @map("card_id")
-  userId    String   @map("user_id")
+  userUuid  String   @map("user_uuid")
   createdAt DateTime @default(now()) @map("created_at")
 
   card TavernCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([cardId, userId])
+  @@unique([cardId, userUuid])
   @@index([cardId, createdAt(sort: Desc)])
   @@map("CardLike")
 }
 
 // ============================================================
-// 4. CardFav — 收藏
+// 3. CardFav — 收藏 (userId → userUuid)
 // ============================================================
 model TavernCardFav {
   id        String   @id @default(uuid())
   cardId    String   @map("card_id")
-  userId    String   @map("user_id")
+  userUuid  String   @map("user_uuid")
   createdAt DateTime @default(now()) @map("created_at")
 
   card TavernCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([cardId, userId])
-  @@index([userId, createdAt(sort: Desc)])
+  @@unique([cardId, userUuid])
+  @@index([userUuid, createdAt(sort: Desc)])
   @@map("CardFav")
 }
 
 // ============================================================
-// 5. Persona — 用户人设
+// 4. Persona — 用户人设 (userId → userUuid)
 // ============================================================
 model TavernPersona {
   id          String   @id @default(uuid())
-  userId      String   @map("user_id")
+  userUuid    String   @map("user_uuid")
   name        String
   description String?  @db.Text
   avatar      String?  @map("avatar_url")
@@ -165,20 +136,19 @@ model TavernPersona {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  user         SharedUser          @relation(fields: [userId], references: [id])
   chatSessions TavernChatSession[]
 
-  @@index([userId])
+  @@index([userUuid])
   @@map("Persona")
 }
 
 // ============================================================
-// 6. ChatSession — 聊天会话
+// 5. ChatSession — 聊天会话 (userId → userUuid)
 // ============================================================
 model TavernChatSession {
   id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  characterId   String   @map("card_id")
+  userUuid      String   @map("user_uuid")
+  cardId        String   @map("card_id")
   personaId     String?  @map("persona_id")
   title         String?
   modelKey      String?  @map("model_key")
@@ -191,18 +161,17 @@ model TavernChatSession {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  user     SharedUser        @relation(fields: [userId], references: [id])
-  character TavernCard      @relation(fields: [characterId], references: [id])
-  persona  TavernPersona?    @relation(fields: [personaId], references: [id])
-  messages TavernChatMessage[]
+  character TavernCard       @relation(fields: [cardId], references: [id])
+  persona   TavernPersona?   @relation(fields: [personaId], references: [id])
+  messages  TavernChatMessage[]
 
-  @@index([userId, lastMessageAt(sort: Desc)])
-  @@index([userId, pinned, updatedAt(sort: Desc)])
+  @@index([userUuid, lastMessageAt(sort: Desc)])
+  @@index([userUuid, pinned, updatedAt(sort: Desc)])
   @@map("ChatSession")
 }
 
 // ============================================================
-// 7. ChatMessage — 聊天消息
+// 6. ChatMessage — 聊天消息 (无 user 引用)
 // ============================================================
 model TavernChatMessage {
   id        String      @id @default(uuid())
@@ -219,7 +188,7 @@ model TavernChatMessage {
 }
 
 // ============================================================
-// 8. ModerationLog — 审核日志
+// 7. ModerationLog — 审核日志 (operatorId → userUuid)
 // ============================================================
 model TavernModerationLog {
   id         String   @id @default(uuid())
@@ -227,20 +196,18 @@ model TavernModerationLog {
   targetId   String   @map("target_id")
   action     String
   reason     String?
-  operatorId String?  @map("operator_id")
+  userUuid   String?  @map("user_uuid")
   meta       Json?
   createdAt  DateTime @default(now()) @map("created_at")
 
-  operator SharedUser? @relation(fields: [operatorId], references: [id])
-
   @@index([targetType, targetId])
-  @@index([operatorId, createdAt(sort: Desc)])
+  @@index([userUuid, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@map("ModerationLog")
 }
 
 // ============================================================
-// 9. CardRevision — 卡片版本历史
+// 8. CardRevision — 卡片版本历史 (无 user 引用)
 // ============================================================
 model TavernCardRevision {
   id            String   @id @default(uuid())
@@ -259,21 +226,83 @@ model TavernCardRevision {
 }
 
 // ============================================================
-// 10. ApiKey — 用户 AI Provider 密钥
+// 9. ApiKey — 用户 AI Provider 密钥 (userId → userUuid)
 // ============================================================
 model TavernApiKey {
   id         String    @id @default(uuid())
-  userId     String    @map("user_id")
+  userUuid   String    @map("user_uuid")
   provider   String
-  keyValue   String    @map("key_value")
-  baseUrl    String?   @map("base_url")
+  keyValue   String    @db.Text @map("key_value")
+  baseUrl    String?   @db.Text @map("base_url")
   isActive   Boolean   @default(true) @map("is_active")
   lastUsedAt DateTime? @map("last_used_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, provider])
+  @@unique([userUuid, provider])
   @@map("ApiKey")
+}
+
+// ============================================================
+// 10. UserTier — 用户等级与配额 (重构: 加 daily_quota 计数器)
+// ============================================================
+model TavernUserTier {
+  userUuid        String       @id @map("user_uuid")
+  tier            UserTierType @default(FREE)
+  level           Int          @default(1)
+
+  maxSessions     Int          @default(5)
+  maxCharacters   Int          @default(3)
+  maxPersonas     Int          @default(2)
+
+  dailyQuotaMax   Int          @default(20) @map("daily_quota_max")
+  dailyQuotaUsed  Int          @default(0)  @map("daily_quota_used")
+
+  xp              Int          @default(0)
+  xpToNext        Int          @default(100) @map("xp_to_next")
+
+  permissions     Json         @default("{}")
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@map("tavern_user_tiers")
+}
+
+// ============================================================
+// 11. ModelMeta — 平台 AI 模型元数据 (不变)
+// ============================================================
+model TavernModelMeta {
+  modelId     String       @id
+  displayName String
+  provider    String
+  description String?
+  icon        String?
+
+  minTier   UserTierType @default(FREE)
+  minLevel  Int          @default(1)
+  quotaCost Int          @default(1)
+
+  isActive  Boolean      @default(true)
+  sortOrder Int          @default(0)
+
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([minTier, sortOrder])
+  @@map("ModelMeta")
+}
+
+// ============================================================
+// 12. UserProfile — 用户偏好设置 (🆕)
+// ============================================================
+model TavernUserProfile {
+  userUuid        String   @id @map("user_uuid")
+  defaultModel    String?  @map("default_model")
+  defaultTemp     Float?   @map("default_temp")
+  preferredLocale String   @default("zh-CN") @map("preferred_locale")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("tavern_user_profiles")
 }

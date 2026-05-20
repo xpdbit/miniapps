@@ -46,9 +46,9 @@ for i in $(seq 1 30); do
     sleep 2
 done
 echo "鎵ц鏁版嵁搴撹縼绉?.."
-docker compose --env-file .env exec -T admin npx prisma db push --accept-data-loss 2>&1 | tail -5
-echo "鏁版嵁搴撹〃缁撴瀯宸插悓姝?
-docker compose --env-file .env exec -T admin npx prisma db seed 2>&1
+docker compose --env-file .env exec -T admin npx prisma db push --schema=../prisma/schema-miniapps.prisma --accept-data-loss 2>&1 | tail -5
+echo "miniapps DB synced"
+docker compose --env-file .env exec -T admin npx prisma db seed --schema=../prisma/schema-miniapps.prisma 2>&1
 echo "绠＄悊鍛樼瀛愭暟鎹凡妫€鏌?
 
 # 4b. AI Tavern 鏁版嵁搴?鈥?纭繚 ai_tavern 搴撳瓨鍦紙宸叉湁鏁版嵁鍗蜂笉浼氶噸鏂版墽琛?init-db.sql锛?echo "纭繚 ai_tavern 鏁版嵁搴撳瓨鍦?.."
@@ -59,7 +59,13 @@ docker compose --env-file .env exec -T mysql \
 echo "鎵ц AI Tavern Server 鏁版嵁搴撹縼绉?.."
 docker compose --env-file .env exec -T tavern-server npx prisma db push --accept-data-loss 2>&1 | tail -10 || echo "鈿狅笍  tavern杩佺Щ鍙兘澶辫触锛岃妫€鏌ユ棩蹇?
 echo "AI Tavern 鏁版嵁搴撹〃缁撴瀯宸插悓姝?
-docker compose --env-file .env exec -T tavern-server npx tsx prisma/seed.ts 2>&1 | tail -10 || echo "鈿狅笍  tavern绉嶅瓙鏁版嵁鍙兘宸插瓨鍦?
+docker compose --env-file .env exec -T tavern-server npx tsx prisma/seed.ts 2>&1 | tail -10 || echo "tavern seed may exist"
+
+echo "-> FTG Server..."
+docker compose --env-file .env exec -T server npx prisma db push --schema=../../prisma/schema-food-theme-generator.prisma --accept-data-loss 2>&1 | tail -5 || echo "FTG db push may fail"
+
+echo "-> Game1 Server..."
+docker compose --env-file .env exec -T game1-server npx prisma db push --schema=../../prisma/schema-game1.prisma --accept-data-loss 2>&1 | tail -5 || true
 
 # 5. SSL 璇佷功鑷姩閰嶇疆锛堥€氳繃 DNS-01 楠岃瘉锛屾棤闇€寮€鏀?80 绔彛锛?#    浣跨敤闃块噷浜?DNS API 鑷姩鑾峰彇 Let's Encrypt 閫氶厤绗﹁瘉涔?echo ""
 echo "[5/6] SSL 璇佷功鑷姩閰嶇疆..."

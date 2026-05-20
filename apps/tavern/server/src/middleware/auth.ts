@@ -1,9 +1,10 @@
-import { Response, NextFunction } from 'express';
+﻿import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../config';
 import { AuthPayload, AuthenticatedRequest } from '../types';
 
 export type { AuthPayload, AuthenticatedRequest };
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
 
 // Required authentication - returns 401 if no valid token
 export function requireAuth(
@@ -19,8 +20,8 @@ export function requireAuth(
 
   const token = authHeader.slice(7);
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as AuthPayload;
-    req.user = decoded;
+    const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    req.user = { userId: payload.sub, role: payload.role };
     next();
   } catch {
     res.status(401).json({ code: 401, message: '登录已过期，请重新登录', data: null });
@@ -41,8 +42,8 @@ export function optionalAuth(
 
   const token = authHeader.slice(7);
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as AuthPayload;
-    req.user = decoded;
+    const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    req.user = { userId: payload.sub, role: payload.role };
   } catch {
     // Token invalid, continue without user
   }
@@ -55,18 +56,6 @@ export function requireAdmin(
   res: Response,
   next: NextFunction
 ): void {
-  // 1. 检查 shared admin token（用于仪表盘代理）
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.slice(7);
-    if (config.adminToken && token === config.adminToken) {
-      req.user = { userId: 'admin', role: 'ADMIN' };
-      next();
-      return;
-    }
-  }
-
-  // 2. 检查 JWT + ADMIN role
   requireAuth(req, res, () => {
     if (req.user?.role !== 'ADMIN') {
       res.status(403).json({ code: 403, message: '无权限', data: null });

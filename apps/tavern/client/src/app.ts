@@ -11,7 +11,7 @@ class App extends Component<AppProps> {
     // 全局捕获未处理的 Promise 拒绝（网络错误静默处理）
     this.bindGlobalErrorHandler()
 
-    // 延迟执行初始化（含自动微信登录），确保首屏快速渲染
+    // 延迟执行初始化（仅检查已保存 token 有效性，不自动登录）
     setTimeout(() => {
       void useAuthStore.getState().initialize()
     }, 100)

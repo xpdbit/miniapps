@@ -101,7 +101,8 @@ services:
       - .env.production
     environment:
       # Docker 内部服务发现 — 覆盖 .env.production 中的 localhost 地址
-      DATABASE_URL: mysql://${MYSQL_USER:-ftg_user}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-food_theme_generator}
+      FTG_DATABASE_URL: mysql://${MYSQL_USER:-ftg_user}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-food_theme_generator}?connection_limit=5&pool_timeout=10
+      JWT_SECRET: ${JWT_SECRET}
       REDIS_URL: redis://redis:6379
       PPSHITU_SERVICE_URL: http://ppshituv2:5000
       NODE_ENV: production

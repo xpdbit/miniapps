@@ -1,7 +1,7 @@
 {
   "name": "food-theme-generator-server",
   "version": "1.0.0",
-  "description": "食物主题生成器 - 后端服务",
+  "description": "食物主题生成�?- 后端服务",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/app.ts",
@@ -9,9 +9,9 @@
     "start": "node dist/app.js",
     "lint": "eslint src",
     "type-check": "tsc --noEmit",
-    "db:generate": "prisma generate --schema=../prisma/schema.prisma && node -e \"require('fs').cpSync(require('path').resolve('../node_modules/.prisma/client'), require('path').resolve('node_modules/.prisma/client'), { recursive: true, force: true })\"",
-    "db:push": "prisma db push --schema=../prisma/schema.prisma",
-    "db:seed": "prisma db seed --schema=../prisma/schema.prisma"
+    "db:generate": "prisma generate --schema=../../../prisma/schema-food-theme-generator.prisma && node -e \"require('fs').cpSync(require('path').resolve('../node_modules/.prisma/client'), require('path').resolve('node_modules/.prisma/client'), { recursive: true, force: true })\"",
+    "db:push": "prisma db push --schema=../../../prisma/schema-food-theme-generator.prisma",
+    "db:seed": "prisma db seed --schema=../../../prisma/schema-food-theme-generator.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

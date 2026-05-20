@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "type-check": "tsc --noEmit",
-    "db:generate": "prisma generate --schema=../prisma/schema.prisma && node -e \"require('fs').cpSync(require('path').resolve('../node_modules/.prisma/client'), require('path').resolve('node_modules/.prisma/client'), { recursive: true, force: true })\"",
-    "db:push": "prisma db push --schema=../prisma/schema.prisma",
-    "db:seed": "prisma db seed --schema=../prisma/schema.prisma"
+    "db:generate": "prisma generate --schema=../prisma/schema-miniapps.prisma && node -e \"require('fs').cpSync(require('path').resolve('../node_modules/.prisma/client'), require('path').resolve('node_modules/.prisma/client'), { recursive: true, force: true })\"",
+    "db:push": "prisma db push --schema=../prisma/schema-miniapps.prisma",
+    "db:seed": "prisma db seed --schema=../prisma/schema-miniapps.prisma"
   },
   "prisma": {
     "seed": "node prisma/seed.cjs"

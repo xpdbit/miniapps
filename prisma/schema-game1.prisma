@@ -1,0 +1,148 @@
+// ============================================================
+// game1 库 Prisma Schema — 7 models
+// 数据库: game1
+// 使用方: Game1 Server（不动，仅从旧统一Schema拆出）
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("GAME1_DATABASE_URL")
+}
+
+// ─── 玩家 ───
+model Game1Player {
+  id             String    @id @default(uuid())
+  uuid           String    @unique
+  nickname       String?
+  avatar_url     String?   @map("avatar_url")
+  level          Int       @default(1)
+  exp            Int       @default(0)
+  gold           Int       @default(0)
+  gems           Int       @default(0)
+  total_mileage  Float     @default(0) @map("total_mileage")
+  play_time      Int       @default(0) @map("play_time")
+  prestige_count Int       @default(0) @map("prestige_count")
+  login_days     Int       @default(1) @map("login_days")
+  last_login_date DateTime?
+  last_login_at  DateTime  @default(now()) @map("last_login_at")
+  last_sync_at   DateTime  @default(now()) @map("last_sync_at")
+  is_deleted     Boolean   @default(false) @map("is_deleted")
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  cloudSave       Game1CloudSave?
+  pvpMatches      Game1PvpMatch[]   @relation("playerMatches")
+  opponentMatches Game1PvpMatch[]   @relation("opponentMatches")
+  pvpRanking      Game1PvpRanking?
+  achievements    Game1Achievement[]
+  shareLogs       Game1ShareLog[]
+
+  @@index([uuid])
+  @@index([total_mileage(sort: Desc)])
+  @@index([level(sort: Desc)])
+  @@index([last_sync_at(sort: Desc)])
+  @@map("game1_players")
+}
+
+// ─── 云端存档 ───
+model Game1CloudSave {
+  id         String   @id @default(uuid())
+  player_id  String   @unique @map("player_id")
+  savedata   Json     @map("savedata")
+  version    Int      @default(1)
+  checksum   String?
+  extra      Json?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  player Game1Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
+
+  @@index([player_id])
+  @@map("game1_cloud_saves")
+}
+
+// ─── PVP 对战记录 ───
+model Game1PvpMatch {
+  id             String   @id @default(uuid())
+  player_id      String   @map("player_id")
+  opponent_id    String   @map("opponent_id")
+  result         String
+  rating_change  Int      @map("rating_change")
+  player_rating  Int      @map("player_rating")
+  opponent_rating Int     @map("opponent_rating")
+  season         Int      @default(1)
+  battle_log     Json?    @map("battle_log")
+  created_at     DateTime @default(now())
+
+  player   Game1Player @relation("playerMatches", fields: [player_id], references: [id], onDelete: Cascade)
+  opponent Game1Player @relation("opponentMatches", fields: [opponent_id], references: [id], onDelete: Cascade)
+
+  @@index([player_id, created_at(sort: Desc)])
+  @@index([opponent_id, created_at(sort: Desc)])
+  @@index([season, created_at(sort: Desc)])
+  @@map("game1_pvp_matches")
+}
+
+// ─── PVP 排行榜 ───
+model Game1PvpRanking {
+  id         String   @id @default(uuid())
+  player_id  String   @unique @map("player_id")
+  rating     Int      @default(1000)
+  rank       String   @default("Bronze") @map("rank")
+  season     Int      @default(1)
+  wins       Int      @default(0)
+  losses     Int      @default(0)
+  updated_at DateTime @updatedAt
+
+  player Game1Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
+
+  @@index([rating(sort: Desc)])
+  @@index([season, rating(sort: Desc)])
+  @@map("game1_pvp_rankings")
+}
+
+// ─── 成就记录 ───
+model Game1Achievement {
+  id             String   @id @default(uuid())
+  player_id      String   @map("player_id")
+  achievement_id String   @map("achievement_id")
+  title          String
+  unlocked_at    DateTime @default(now()) @map("unlocked_at")
+  progress       Float    @default(0)
+
+  player Game1Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
+
+  @@unique([player_id, achievement_id])
+  @@index([player_id])
+  @@map("game1_achievements")
+}
+
+// ─── 分享记录 ───
+model Game1ShareLog {
+  id         String   @id @default(uuid())
+  player_id  String   @map("player_id")
+  share_type String   @map("share_type")
+  created_at DateTime @default(now())
+
+  player Game1Player @relation(fields: [player_id], references: [id], onDelete: Cascade)
+
+  @@index([player_id, created_at(sort: Desc)])
+  @@map("game1_share_logs")
+}
+
+// ─── 游戏配置 ───
+model Game1Config {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  value      Json
+  version    Int      @default(1)
+  updated_by String?  @map("updated_by")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("game1_configs")
+}

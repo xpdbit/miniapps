@@ -1,6 +1,4 @@
 import httpClient from '../lib/http-client';
-import prisma from '../lib/prisma';
-import { signToken } from '../lib/jwt';
 import { env } from '../config/env';
 
 interface WechatSession {
@@ -95,67 +93,50 @@ export async function getWechatSession(code: string): Promise<WechatSession> {
 }
 
 /**
- * Login with WeChat code - returns JWT token and user info
- * Creates user on first login
+ * Login with WeChat code - returns JWT token and user info.
+ * ⚠️ DEPRECATED: 用户管理已迁移至 Dashboard Admin API (/api/auth/wechat/login)。
+ * FTG Server 仅验证 JWT（middleware/auth.ts），不管理用户。
+ * 此函数保留作为兼容过渡，直接调用 Dashboard API。
  */
 export async function wechatLogin(code: string) {
-  // 1. Exchange code for openid
+  // 1. Exchange code for openid (WeChat API)
   const session = await getWechatSession(code);
 
-    // 2. Upsert user（首次创建时 nickname 和 avatarUrl 留空，
-    //    由前端通过 <OpenData> 组件展示微信真实昵称/头像。
-    //    用户主动编辑后才通过 PATCH /auth/me 或 POST /auth/avatar 持久化。）
-  const user = await prisma.user.upsert({
-    where: { openid: session.openid },
-    update: {
-      updatedAt: new Date(),
-    },
-    create: {
-      openid: session.openid,
-      nickname: null,
-    },
-  });
+  // 2. Delegate to Dashboard auth API
+  const authApiUrl = process.env.AUTH_API_URL || 'http://localhost:3001';
+  const httpClient = await import('../lib/http-client').then(m => m.default);
+  const response = await httpClient.post<{
+    code: number;
+    data?: { access_token: string; refresh_token: string; user: { uuid: string; nickname: string; avatar_url: string; role: string } };
+  }>(`${authApiUrl}/api/auth/wechat/login`, { wx_code: code });
 
-  // 3. Sign JWT
-  const token = signToken({ openid: session.openid, userId: user.id });
+  if (!response.data?.data) {
+    throw new Error('Dashboard 统一认证失败');
+  }
 
-  return { token, user: withTransformedAvatar(user) };
+  return {
+    token: response.data.data.access_token,
+    refreshToken: response.data.data.refresh_token,
+    user: response.data.data.user,
+  };
 }
 
 /**
- * 将旧版头像 URL（https://xxx/uploads/avatars/...）转为新版 API 路径 URL
- * 避免微信小程序 ERR_BLOCKED_BY_RESPONSE 问题
- * 新版格式: https://xxx/api/v1/auth/avatar/view/filename
+ * Get user by ID.
+ * ⚠️ DEPRECATED: 用户数据已迁移至 miniapps.users。
+ * 使用 Dashboard API /api/auth/me 获取当前用户信息。
  */
-function transformAvatarUrl(avatarUrl: string | null): string | null {
-  if (!avatarUrl) return null;
-  const match = avatarUrl.match(/^(https?:\/\/[^/]+)\/uploads\/avatars\/([\w.-]+)$/);
-  if (match && match[1] && match[2]) {
-    return `${match[1]}/api/v1/auth/avatar/view/${match[2]}`;
-  }
-  // 已经是新版 URL 或其他格式，原样返回
-  return avatarUrl;
-}
-
-/** 封装用户返回数据时自动转换 avatarUrl */
-function withTransformedAvatar<T extends { avatarUrl: string | null }>(user: T): T {
-  if (user.avatarUrl) {
-    return { ...user, avatarUrl: transformAvatarUrl(user.avatarUrl) ?? '' };
-  }
-  return user;
-}
-
-/**
- * Get user by ID
- */
-export async function getUserById(userId: number) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  return user ? withTransformedAvatar(user) : null;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getUserById(userUuid: string) {
+  // TODO: 改为调用 Dashboard API GET /api/auth/me?uuid=xxx (需admin权限)
+  return null;
 }
 
 /**
  * Get user by ID (raw, no transformation)
+ * ⚠️ DEPRECATED: 同上
  */
-export async function getUserByIdRaw(userId: number) {
-  return prisma.user.findUnique({ where: { id: userId } });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getUserByIdRaw(userUuid: string) {
+  return null;
 }

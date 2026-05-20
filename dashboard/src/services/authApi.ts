@@ -1,4 +1,3 @@
-import adminApiClient from './adminApiClient'
 import axios from 'axios'
 
 interface LoginRequest {
@@ -6,44 +5,43 @@ interface LoginRequest {
   password: string
 }
 
-export interface AdminUserInfo {
-  id: number
-  username: string
+export interface AuthUserInfo {
+  uuid: string
+  nickname: string | null
+  avatar_url: string | null
   role: string
 }
 
-interface LoginSuccessResponse {
-  success: true
-  data: {
-    token: string
-    user: AdminUserInfo
-  }
-}
-
-interface LoginErrorResponse {
-  success: false
-  message: string
-}
-
-type LoginResponse = LoginSuccessResponse | LoginErrorResponse
-
-interface GetMeResponse {
-  success: true
+interface LoginResponse {
+  code: number
   message?: string
-  data: {
-    user: AdminUserInfo & { status: string; createdAt: string }
+  data?: {
+    access_token: string
+    refresh_token: string
+    user: AuthUserInfo
   }
 }
 
-export async function login(data: LoginRequest): Promise<LoginSuccessResponse['data']> {
+interface MeResponse {
+  code: number
+  data?: {
+    user: AuthUserInfo
+  }
+}
+
+export async function login(data: LoginRequest): Promise<{ access_token: string; refresh_token: string; user: AuthUserInfo }> {
   try {
-    const response = await adminApiClient.post<LoginResponse>('/admin/login', data)
-    if (!response.data.success) {
-      throw new Error(response.data.message)
+    // 使用独立 axios 实例（不走 adminApiClient 的 /admin 前缀）
+    const response = await axios.post<LoginResponse>('/api/auth/login', {
+      credential: data.username,
+      password: data.password,
+    })
+
+    if (!response.data.data) {
+      throw new Error(response.data.message || '登录失败')
     }
     return response.data.data
   } catch (error) {
-    // 从 Axios 错误中提取服务端返回的错误信息
     if (axios.isAxiosError(error) && error.response?.data?.message) {
       throw new Error(error.response.data.message)
     }
@@ -51,17 +49,25 @@ export async function login(data: LoginRequest): Promise<LoginSuccessResponse['d
   }
 }
 
-export async function getMe(): Promise<AdminUserInfo> {
+export async function getMe(): Promise<AuthUserInfo> {
   try {
-    const response = await adminApiClient.get<GetMeResponse>('/admin/me')
-    if (!response.data.success) {
-      throw new Error(response.data.message || '获取用户信息失败')
+    const response = await axios.get<MeResponse>('/api/auth/me', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+    })
+    if (!response.data.data?.user) {
+      throw new Error('获取用户信息失败')
     }
     return response.data.data.user
   } catch (error) {
-    // axios 错误已在 adminApiClient 拦截器中处理（401/500/网络错误）
-    // 这里只做日志记录，不重复弹窗
-    console.error('[Auth] /admin/me 请求失败:', error)
+    console.error('[Auth] /api/auth/me 请求失败:', error)
     throw error
   }
+}
+
+export async function refreshToken(token: string): Promise<string> {
+  const response = await axios.post<LoginResponse>('/api/auth/refresh', { refresh_token: token })
+  if (!response.data.data?.access_token) {
+    throw new Error('刷新失败')
+  }
+  return response.data.data.access_token
 }

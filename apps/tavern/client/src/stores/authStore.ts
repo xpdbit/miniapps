@@ -3,144 +3,185 @@ import Taro from '@tarojs/taro'
 import { httpClient } from '@/services/httpClient'
 
 interface UserInfo {
-  id: string
-  uuid?: string
+  uuid: string
   nickname?: string
-  avatar?: string
-  dailyQuota: number
-  usedQuota: number
-  role: 'USER' | 'ADMIN'
+  avatar_url?: string
+  role: string
+}
+
+export interface TierInfo {
+  tier: 'FREE' | 'PAID' | 'TESTER'
+  level: number
+  maxDailyQuota: number
+  maxSessions: number
+  maxCharacters: number
+  maxPersonas: number
+  permissions: Record<string, unknown>
 }
 
 interface AuthState {
   token: string | null
+  refreshToken: string | null
   user: UserInfo | null
+  tier: TierInfo | null
   isLoggedIn: boolean
   initialized: boolean
+  loginError: string | null
 
   initialize: () => Promise<void>
-  login: (code: string) => Promise<void>
+  wechatLogin: (code: string) => Promise<void>
+  passwordLogin: (username: string, password: string) => Promise<void>
   logout: () => void
   restoreSession: () => Promise<void>
   refreshQuota: () => Promise<void>
-}
-
-/**
- * 生成 Mock code（H5/DevTools 调试用）
- * 服务端 dev_ 前缀 code 返回 mock 用户
- */
-function generateMockCode(): string {
-  return `dev_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  fetchTier: () => Promise<void>
+  retryLogin: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
+  refreshToken: null,
   user: null,
+  tier: null,
   isLoggedIn: false,
   initialized: false,
+  loginError: null,
 
   initialize: async () => {
     if (get().initialized) return
     try {
       const savedToken = Taro.getStorageSync<string | null>('tavern_token')
       if (savedToken) {
-        // 有存储的 token → 验证有效性
         try {
-          const res = await httpClient.get<{ data: UserInfo }>('/auth/me')
-          set({ token: savedToken, user: res.data, isLoggedIn: true, initialized: true })
-          return
+          const res = await httpClient.get<{ code: number; data: { user: UserInfo } }>('/auth/me')
+          if (res.code === 0 && res.data?.user) {
+            set({
+              token: savedToken,
+              user: res.data.user,
+              isLoggedIn: true,
+              initialized: true,
+            })
+            return
+          }
         } catch {
-          // token 无效 → 清除后重新登录
           Taro.removeStorageSync('tavern_token')
         }
       }
-
-      // 无 token 或 token 失效 → 自动微信登录
-      let code: string
-      let isRealCode = false
-
-      // 尝试 wx.login()
-      try {
-        const loginRes = await Taro.login({ timeout: 10000 })
-        if (loginRes.code) {
-          code = loginRes.code
-          isRealCode = true
-        } else {
-          throw new Error('未获取到临时 code')
-        }
-      } catch {
-        // wx.login() 失败（H5 环境等）→ 降级使用 Mock code
-        code = generateMockCode()
-      }
-
-      // 尝试登录（失败时若为真实微信 code，自动降级 mock code 重试）
-      try {
-        const res = await httpClient.post<{ data: { token: string; user: UserInfo } }>('/auth/login', { code })
-        const { token, user } = res.data
-        Taro.setStorageSync('tavern_token', token)
-        set({ token, user, isLoggedIn: true, initialized: true })
-        return
-      } catch {
-        // 真实微信 code 登录失败（WECHAT_SECRET 未配置等）→ 降级 mock code
-        if (isRealCode) {
-          try {
-            const mockCode = generateMockCode()
-            const res = await httpClient.post<{ data: { token: string; user: UserInfo } }>(
-              '/auth/login',
-              { code: mockCode },
-            )
-            const { token, user } = res.data
-            Taro.setStorageSync('tavern_token', token)
-            set({ token, user, isLoggedIn: true, initialized: true })
-            return
-          } catch {
-            // mock 登录也失败，继续 fallback
-          }
-        }
-      }
-
-      // 登录失败 → 用户以未登录状态使用
+      // No valid token → show login prompt
       set({ initialized: true })
     } catch {
-      // 登录失败 → 用户以未登录状态使用
       set({ initialized: true })
     }
   },
 
-  login: async (code: string) => {
-    const res = await httpClient.post<{ data: { token: string; user: UserInfo } }>('/auth/login', { code })
-    const { token, user } = res.data
-    Taro.setStorageSync('tavern_token', token)
-    set({ token, user, isLoggedIn: true })
+  /** 微信一键登录 */
+  wechatLogin: async (code: string) => {
+    const res = await httpClient.post<{
+      code: number
+      message?: string
+      data?: { access_token: string; refresh_token: string; user: UserInfo }
+    }>('/auth/wechat/login', { wx_code: code })
+
+    if (res.code !== 0) { // code 0 = success (tavern convention)
+      throw new Error(res.message || '微信登录失败')
+    }
+    if (!res.data) throw new Error('登录响应异常')
+
+    const { access_token, refresh_token, user } = res.data
+    Taro.setStorageSync('tavern_token', access_token)
+    if (refresh_token) {
+      Taro.setStorageSync('tavern_refresh_token', refresh_token)
+    }
+    set({ token: access_token, refreshToken: refresh_token, user, isLoggedIn: true, loginError: null })
+  },
+
+  /** 账号密码登录 */
+  passwordLogin: async (username: string, password: string) => {
+    const res = await httpClient.post<{
+      code: number
+      message?: string
+      data?: { access_token: string; refresh_token: string; user: UserInfo }
+    }>('/auth/login', { credential: username, password })
+
+    if (res.code !== 0) {
+      throw new Error(res.message || '用户名或密码错误')
+    }
+    if (!res.data) throw new Error('登录响应异常')
+
+    const { access_token, refresh_token, user } = res.data
+    Taro.setStorageSync('tavern_token', access_token)
+    if (refresh_token) {
+      Taro.setStorageSync('tavern_refresh_token', refresh_token)
+    }
+    set({ token: access_token, refreshToken: refresh_token, user, isLoggedIn: true, loginError: null })
   },
 
   logout: () => {
     Taro.removeStorageSync('tavern_token')
-    set({ token: null, user: null, isLoggedIn: false })
+    Taro.removeStorageSync('tavern_refresh_token')
+    set({ token: null, refreshToken: null, user: null, isLoggedIn: false, loginError: null })
   },
 
   restoreSession: async () => {
     try {
-      const savedToken = Taro.getStorageSync('tavern_token')
+      const savedToken = Taro.getStorageSync<string | null>('tavern_token')
       if (!savedToken) {
         set({ initialized: true })
         return
       }
       set({ token: savedToken })
-      const res = await httpClient.get<{ data: UserInfo }>('/auth/me')
-      set({ user: res.data, isLoggedIn: true, initialized: true })
+      const res = await httpClient.get<{ code: number; data: { user: UserInfo } }>('/auth/me')
+      if (res.code === 0 && res.data?.user) {
+        set({ user: res.data.user, isLoggedIn: true, initialized: true })
+      } else {
+        throw new Error('Session invalid')
+      }
     } catch {
       Taro.removeStorageSync('tavern_token')
-      set({ token: null, user: null, isLoggedIn: false, initialized: true })
+      Taro.removeStorageSync('tavern_refresh_token')
+      set({ token: null, refreshToken: null, user: null, isLoggedIn: false, initialized: true })
     }
   },
 
   refreshQuota: async () => {
     try {
-      const res = await httpClient.get<{ data: UserInfo }>('/auth/me')
-      set({ user: res.data })
+      const res = await httpClient.get<{ code: number; data: { user: UserInfo } }>('/auth/me')
+      if (res.code === 0 && res.data?.user) {
+        set({ user: res.data.user })
+      }
     } catch {
       // ignore
     }
+  },
+
+  fetchTier: async () => {
+    try {
+      const res = await httpClient.get<{ code: number; data: TierInfo }>('/user/tier')
+      if (res.code === 0 && res.data) {
+        set({ tier: res.data })
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  retryLogin: async () => {
+    set({ loginError: null })
+    const savedToken = Taro.getStorageSync<string | null>('tavern_token')
+    if (savedToken) {
+      try {
+        const res = await httpClient.get<{ code: number; data: { user: UserInfo } }>('/auth/me')
+        if (res.code === 0 && res.data?.user) {
+          set({ token: savedToken, user: res.data.user, isLoggedIn: true, initialized: true })
+          Taro.showToast({ title: '登录成功', icon: 'success' })
+          return
+        }
+      } catch {
+        Taro.removeStorageSync('tavern_token')
+        Taro.removeStorageSync('tavern_refresh_token')
+      }
+    }
+    // Token invalid → don't auto-login, show login prompt
+    set({ loginError: '请登录后使用完整功能' })
   },
 }))

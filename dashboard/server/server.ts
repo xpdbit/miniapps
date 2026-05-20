@@ -6,6 +6,7 @@
 import { execSync } from 'child_process'
 import express from 'express'
 import prisma from './prisma'
+import authRouter from './auth-routes'
 import adminAuth from './admin-auth'
 import dashboardRoutes from './dashboardRoutes'
 import foodRecordRoutes from './admin-food-records'
@@ -33,6 +34,9 @@ app.use((req, res, next) => {
   })
   next()
 })
+
+// 挂载统一认证路由（/api/auth/*）— 所有项目共享
+app.use('/api/auth', authRouter)
 
 // 挂载管理员认证路由
 app.use('/api/admin', adminAuth)
@@ -67,8 +71,8 @@ app.use('/api/admin/tavern', tavernRoutes)
 app.get('/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
-    const adminCount = await prisma.dashboardAdminUser.count()
-    res.json({ status: 'ok', service: 'dashboard-admin', db: 'connected', admins: adminCount })
+    const userCount = await prisma.user.count()
+    res.json({ status: 'ok', service: 'dashboard-admin', db: 'connected', users: userCount })
   } catch {
     res.status(503).json({ status: 'degraded', service: 'dashboard-admin', db: 'disconnected' })
   }
@@ -77,7 +81,7 @@ app.get('/health', async (_req, res) => {
 // ─── 启动时自动同步数据库 schema ─────────────────────────────────────
 // 确保 dashboard_admin_users 等表存在，避免部署时遗漏 prisma db push
 try {
-  execSync('npx prisma db push', {
+  execSync('npx prisma db push --schema=../prisma/schema-miniapps.prisma --accept-data-loss', {
     stdio: 'pipe',
     timeout: 30000,
     env: { ...process.env, NODE_ENV: process.env.NODE_ENV || 'production' },

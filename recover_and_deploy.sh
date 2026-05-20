@@ -87,8 +87,8 @@ echo ""
 echo "[6/8] 数据库迁移..."
 
 echo "→ Dashboard Admin..."
-docker compose --env-file .env exec -T admin npx prisma db push --accept-data-loss 2>&1 | tail -5
-docker compose --env-file .env exec -T admin npx prisma db seed 2>&1
+docker compose --env-file .env exec -T admin npx prisma db push --schema=../prisma/schema-miniapps.prisma --accept-data-loss 2>&1 | tail -5
+docker compose --env-file .env exec -T admin npx prisma db seed --schema=../prisma/schema-miniapps.prisma 2>&1
 
 echo "→ 确保 ai_tavern 数据库存在..."
 docker compose --env-file .env exec -T mysql \
@@ -99,8 +99,11 @@ echo "→ AI Tavern Server..."
 docker compose --env-file .env exec -T tavern-server npx prisma db push --accept-data-loss 2>&1 | tail -10 || echo "⚠️  tavern迁移可能失败，请检查日志"
 docker compose --env-file .env exec -T tavern-server npx tsx prisma/seed.ts 2>&1 | tail -10 || echo "⚠️  tavern种子数据可能已存在"
 
+echo "→ FTG Server..."
+docker compose --env-file .env exec -T server npx prisma db push --schema=../../prisma/schema-food-theme-generator.prisma --accept-data-loss 2>&1 | tail -5 || echo "FTG db push may fail"
+
 echo "→ Game1 Server..."
-docker compose --env-file .env exec -T game1-server npx prisma db push --accept-data-loss 2>&1 | tail -5 || true
+docker compose --env-file .env exec -T game1-server npx prisma db push --schema=../../prisma/schema-game1.prisma --accept-data-loss 2>&1 | tail -5 || true
 
 echo ""
 

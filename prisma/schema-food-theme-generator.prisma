@@ -1,0 +1,248 @@
+// ============================================================
+// food_theme_generator 库 Prisma Schema — 11 models
+// 数据库: food_theme_generator
+// 使用方: FTG Server
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("FTG_DATABASE_URL")
+}
+
+// ============================================================
+// 枚举
+// ============================================================
+
+enum FoodType {
+  grain      @map("grain")
+  vegetable  @map("vegetable")
+  fruit      @map("fruit")
+  meat       @map("meat")
+  seafood    @map("seafood")
+  dairy      @map("dairy")
+  nut        @map("nut")
+  snack      @map("snack")
+  beverage   @map("beverage")
+  seasoning  @map("seasoning")
+  dish       @map("dish")
+  other      @map("other")
+}
+
+enum PipelineStatus {
+  pending      @map("pending")
+  recognizing  @map("recognizing")
+  recognized   @map("recognized")
+  generating   @map("generating")
+  composing    @map("composing")
+  completed    @map("completed")
+  failed       @map("failed")
+}
+
+// ============================================================
+// 1. ftg_food_records — 食物记录
+// ============================================================
+model FtgFoodRecord {
+  id         String    @id @default(uuid())
+  userUuid   String    @map("user_uuid")
+  foodType   FoodType  @map("food_type")
+  themeId    String?   @map("theme_id")
+  isPublic   Boolean   @default(true) @map("is_public")
+  isDeleted  Boolean   @default(false) @map("is_deleted")
+  deletedAt  DateTime? @map("deleted_at")
+  data       Json
+  version    Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  checkin   FtgCheckin?
+  favorites FtgFavorite[]
+
+  @@index([userUuid, createdAt(sort: Desc)])
+  @@index([foodType])
+  @@index([themeId])
+  @@index([isPublic, isDeleted, createdAt(sort: Desc)])
+  @@map("ftg_food_records")
+}
+
+// ============================================================
+// 2. ftg_checkins — 打卡记录
+// ============================================================
+model FtgCheckin {
+  id             String    @id @default(uuid())
+  userUuid       String    @map("user_uuid")
+  foodRecordId   String    @unique @map("food_record_id")
+  locationName   String?   @map("location_name")
+  latitude       Float?
+  longitude      Float?
+  checkinDate    DateTime  @db.Date @map("checkin_date")
+  streakCount    Int       @default(0) @map("streak_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  foodRecord FtgFoodRecord @relation(fields: [foodRecordId], references: [id])
+
+  @@index([userUuid, checkinDate(sort: Desc)])
+  @@map("ftg_checkins")
+}
+
+// ============================================================
+// 3. ftg_achievements — 成就定义
+// ============================================================
+model FtgAchievement {
+  id              String   @id @default(uuid())
+  achievementId   String   @unique @map("achievement_id")
+  name            String
+  description     String
+  iconUrl         String?  @map("icon_url")
+  conditionType   String   @map("condition_type")
+  conditionValue  Int      @map("condition_value")
+  conditionParam  String?  @map("condition_param")
+  themeId         String?  @map("theme_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  userAchievements FtgUserAchievement[]
+
+  @@map("ftg_achievements")
+}
+
+// ============================================================
+// 4. ftg_user_achievements — 用户成就关联
+// ============================================================
+model FtgUserAchievement {
+  id             String   @id @default(uuid())
+  userUuid       String   @map("user_uuid")
+  achievementId  String   @map("achievement_id")
+  unlockedAt     DateTime @default(now()) @map("unlocked_at")
+  progress       Int      @default(0)
+  isUnlocked     Boolean  @default(false) @map("is_unlocked")
+
+  achievement FtgAchievement @relation(fields: [achievementId], references: [achievementId])
+
+  @@unique([userUuid, achievementId])
+  @@map("ftg_user_achievements")
+}
+
+// ============================================================
+// 5. ftg_themes — 主题定义
+// ============================================================
+model FtgTheme {
+  id               String   @id @default(uuid())
+  themeId          String   @unique @map("theme_id")
+  projectId        String   @default("ftg") @map("project_id")
+  name             String
+  shortName        String?  @unique @map("short_name")
+  gameName         String   @map("game_name")
+  description      String?
+  data             Json
+  previewImageUrl  String?  @map("preview_image_url")
+  isActive         Boolean  @default(true) @map("is_active")
+  sortOrder        Int      @default(0) @map("sort_order")
+  usageCount       Int      @default(0) @map("usage_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, isActive])
+  @@index([shortName])
+  @@map("ftg_themes")
+}
+
+// ============================================================
+// 6. ftg_theme_classes — CSS Class 定义
+// ============================================================
+model FtgThemeClass {
+  id          String   @id @default(uuid())
+  classId     String   @unique @map("class_id")
+  projectId   String   @default("ftg") @map("project_id")
+  name        String
+  category    String   @default("official")
+  data        Json
+  description String?
+  creatorId   String?  @map("creator_id")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, category])
+  @@map("ftg_theme_classes")
+}
+
+// ============================================================
+// 7. ftg_theme_usage_logs — 主题使用日志
+// ============================================================
+model FtgThemeUsageLog {
+  id         String   @id @default(uuid())
+  themeId    String   @map("theme_id")
+  recordId   String   @map("record_id")
+  userUuid   String   @map("user_uuid")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([themeId, recordId])
+  @@index([themeId, createdAt(sort: Desc)])
+  @@map("ftg_theme_usage_logs")
+}
+
+// ============================================================
+// 8. ftg_pipeline_statuses — AI 流水线状态
+// ============================================================
+model FtgPipelineStatus {
+  id          String         @id @default(uuid())
+  userUuid    String         @map("user_uuid")
+  pipelineId  String         @unique @map("pipeline_id")
+  status      PipelineStatus @default(pending)
+  progress    Int            @default(0)
+  imageUrl    String?        @map("image_url")
+  themeId     String?        @map("theme_id")
+  data        Json?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@map("ftg_pipeline_statuses")
+}
+
+// ============================================================
+// 9. ftg_favorites — 收藏
+// ============================================================
+model FtgFavorite {
+  id         String   @id @default(uuid())
+  userUuid   String   @map("user_uuid")
+  recordId   String   @map("record_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  foodRecord FtgFoodRecord @relation(fields: [recordId], references: [id])
+
+  @@unique([userUuid, recordId])
+  @@index([userUuid, createdAt(sort: Desc)])
+  @@map("ftg_favorites")
+}
+
+// ============================================================
+// 10. ftg_api_keys — FTG 服务 API 密钥
+// ============================================================
+model FtgApiKey {
+  id           String    @id @default(uuid())
+  serviceName  String    @map("service_name")
+  encryptedKey String    @map("encrypted_key")
+  isActive     Boolean   @default(true) @map("is_active")
+  lastUsedAt   DateTime? @map("last_used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@unique([serviceName])
+  @@map("ftg_api_keys")
+}
+
+// ============================================================
+// 11. ftg_checkin_streaks — 打卡连续天数统计
+// ============================================================
+model FtgCheckinStreak {
+  userUuid        String    @id @map("user_uuid")
+  currentStreak   Int       @default(0) @map("current_streak")
+  longestStreak   Int       @default(0) @map("longest_streak")
+  lastCheckinDate DateTime? @db.Date @map("last_checkin_date")
+
+  @@map("ftg_checkin_streaks")
+}

@@ -1,0 +1,144 @@
+// ============================================================
+// miniapps 公用库 Prisma Schema — 5 models
+// 数据库: miniapps
+// 使用方: Dashboard Admin API
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("MINIAPPS_DATABASE_URL")
+}
+
+// ============================================================
+// 枚举
+// ============================================================
+
+enum UserRole {
+  user
+  admin
+  super_admin
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  active
+  disabled
+
+  @@map("user_status")
+}
+
+enum AuthType {
+  password
+  wechat
+  phone
+
+  @@map("auth_type")
+}
+
+enum ProjectStatus {
+  active
+  inactive
+
+  @@map("project_status")
+}
+
+// ============================================================
+// 1. users — 核心用户身份（替代 shared_users + dashboard_admin_users）
+// ============================================================
+model User {
+  id         String     @id @default(uuid())
+  uuid       String     @unique
+  nickname   String?
+  avatarUrl  String?    @map("avatar_url")
+  role       UserRole   @default(user)
+  status     UserStatus @default(active)
+  meta       Json?
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  auths    UserAuth[]
+  sessions UserSession[]
+
+  @@index([uuid])
+  @@index([role])
+  @@map("users")
+}
+
+// ============================================================
+// 2. user_auths — 多认证方式（password / wechat / phone）
+// ============================================================
+model UserAuth {
+  id         String    @id @default(uuid())
+  userUuid   String    @map("user_uuid")
+  authType   AuthType  @map("auth_type")
+  credential String
+  verifiedAt DateTime? @map("verified_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userUuid], references: [uuid])
+
+  @@unique([authType, credential])
+  @@index([userUuid])
+  @@map("user_auths")
+}
+
+// ============================================================
+// 3. user_sessions — 登录会话（refresh_token 持久化）
+// ============================================================
+model UserSession {
+  id           String   @id @default(uuid())
+  userUuid     String   @map("user_uuid")
+  refreshToken String   @unique @map("refresh_token")
+  deviceInfo   Json?    @map("device_info")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userUuid], references: [uuid])
+
+  @@index([userUuid])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// ============================================================
+// 4. dashboard_projects — 项目注册
+// ============================================================
+model DashboardProject {
+  id          String        @id @default(uuid())
+  slug        String        @unique
+  name        String
+  apiBaseUrl  String        @map("api_base_url")
+  description String?
+  status      ProjectStatus @default(active)
+  meta        Json?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("dashboard_projects")
+}
+
+// ============================================================
+// 5. dashboard_audit_logs — 管理审计日志
+// ============================================================
+model DashboardAuditLog {
+  id         String   @id @default(uuid())
+  userUuid   String   @map("user_uuid")
+  action     String
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userUuid, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@index([createdAt(sort: Desc)])
+  @@map("dashboard_audit_logs")
+}

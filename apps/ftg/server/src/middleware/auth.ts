@@ -1,12 +1,14 @@
 import type { Request, Response, NextFunction } from 'express';
-import { verifyToken, type JwtPayload } from '../lib/jwt';
+import jwt from 'jsonwebtoken';
 import { ErrorCode } from '../types/api';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
 
 // Extend Express Request to include user
 declare global {
   namespace Express {
     interface Request {
-      user?: JwtPayload;
+      user?: { uuid: string; role: string };
     }
   }
 }
@@ -29,8 +31,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 
   const token = authHeader.slice(7); // Remove 'Bearer '
   try {
-    const payload = verifyToken(token);
-    req.user = payload;
+    const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    req.user = { uuid: payload.sub, role: payload.role };
     next();
   } catch {
     res.status(401).json({
@@ -54,7 +56,8 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction): v
 
   const token = authHeader.slice(7);
   try {
-    req.user = verifyToken(token);
+    const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    req.user = { uuid: payload.sub, role: payload.role };
   } catch {
     // Token invalid - ignore
   }

@@ -42,16 +42,26 @@ interface AddKeyResponse {
   message: string
 }
 
-interface ModelOption {
-  id: string
-  name: string
+interface AvailableModel {
+  modelId: string
+  displayName: string
   provider: string
-  description: string
-  icon: string
+  description: string | null
+  icon: string | null
+  quotaCost: number
+  minTier: string
   free: boolean
 }
 
+interface ModelsResponse {
+  code: number
+  data: AvailableModel[]
+  message: string
+}
+
 const PROVIDERS = [
+  { key: 'tavern', name: '酒馆', icon: '🍺', free: true, desc: '通义千问 / OpenCode Go · 系统免费' },
+  { key: 'tongyi', name: '通义千问', icon: 'TY', free: true, desc: 'Qwen Turbo / Plus / Max · 系统免费' },
   { key: 'opencode', name: 'OpenCode Go', icon: 'OC', free: true, desc: '免费AI · Big Pickle / MiniMax M2.5' },
   { key: 'openai', name: 'OpenAI', icon: 'OA', free: false, desc: 'GPT-4o / GPT-4 Turbo' },
   { key: 'anthropic', name: 'Anthropic', icon: 'AN', free: false, desc: 'Claude 3.5 Sonnet / Opus' },
@@ -60,10 +70,16 @@ const PROVIDERS = [
   { key: 'deepseek', name: 'DeepSeek', icon: 'DS', free: false, desc: 'DeepSeek-V3 / R1' },
   { key: 'moonshot', name: '月之暗面', icon: 'MS', free: false, desc: 'Kimi / Moonshot-v1' },
   { key: 'minimax', name: 'MiniMax', icon: 'MM', free: false, desc: 'abab6.5s / abab7' },
+  { key: 'openrouter', name: 'OpenRouter', icon: 'OR', free: false, desc: '智能路由最佳模型' },
 ] as const
+
+/** 酒馆自持服务商（模型来自 ModelMeta seed 数据） */
+const TAVERN_PROVIDERS = ['tongyi', 'opencode']
 
 /** 各服务商默认 API Base URL（中国区优先） */
 const PROVIDER_DEFAULT_URLS: Record<string, string> = {
+  tavern: '',
+  tongyi: 'https://dashscope.aliyuncs.com',
   opencode: 'https://opencode.ai/zen/go',
   openai: 'https://api.openai.com',
   anthropic: 'https://api.anthropic.com',
@@ -72,36 +88,11 @@ const PROVIDER_DEFAULT_URLS: Record<string, string> = {
   deepseek: 'https://api.deepseek.com',
   moonshot: 'https://api.moonshot.cn',
   minimax: 'https://api.minimaxi.com',
+  openrouter: 'https://openrouter.ai/api',
 }
 
-const MODEL_OPTIONS: ModelOption[] = [
-  { id: 'qwen-turbo', name: '通义千问 Turbo', provider: 'tongyi', description: '快速响应，适合日常对话', icon: '⚡', free: true },
-  { id: 'qwen-plus', name: '通义千问 Plus', provider: 'tongyi', description: '更强能力，适合复杂任务', icon: '✨', free: true },
-  { id: 'qwen-max', name: '通义千问 Max', provider: 'tongyi', description: '最强模型，适合极限挑战', icon: '🔥', free: true },
-  { id: 'big-pickle', name: 'Big Pickle', provider: 'opencode', description: '免费大模型 · OpenCode Go', icon: '🥒', free: true },
-  { id: 'minimax-m2.5-free', name: 'MiniMax M2.5 Free', provider: 'opencode', description: '免费对话 · OpenCode Go', icon: '🆓', free: true },
-  { id: 'deepseek-v4-flash-free', name: 'DeepSeek V4 Flash', provider: 'opencode', description: '免费推理 · OpenCode Go', icon: '⚙️', free: true },
-  { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', description: '多模态旗舰模型', icon: '🧠', free: false },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'openai', description: '高性能推理', icon: '💎', free: false },
-  { id: 'deepseek-chat', name: 'DeepSeek V3', provider: 'deepseek', description: '国产开源，代码能力强', icon: '🐋', free: false },
-  { id: 'deepseek-reasoner', name: 'DeepSeek R1', provider: 'deepseek', description: '深度推理，复杂问题克星', icon: '🔍', free: false },
-  { id: 'claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic', description: '平衡性能与速度', icon: '🎭', free: false },
-  { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'anthropic', description: '最强分析推理', icon: '🏛️', free: false },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'google', description: 'Google 旗舰模型', icon: '🌐', free: false },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google', description: '轻量快速响应', icon: '⚡', free: false },
-  { id: 'glm-4', name: 'GLM-4', provider: 'zhipu', description: '智谱旗舰大模型', icon: '🔮', free: false },
-  { id: 'chatglm-turbo', name: 'ChatGLM Turbo', provider: 'zhipu', description: '轻量高效推理', icon: '💨', free: false },
-  { id: 'moonshot-v1-8k', name: 'Kimi 8K', provider: 'moonshot', description: '长上下文理解', icon: '🌙', free: false },
-  { id: 'moonshot-v1-32k', name: 'Kimi 32K', provider: 'moonshot', description: '超长上下文处理', icon: '🌕', free: false },
-  { id: 'abab6.5s', name: 'abab6.5s', provider: 'minimax', description: 'MiniMax 快速模型', icon: '🎯', free: false },
-  { id: 'abab7', name: 'abab7', provider: 'minimax', description: 'MiniMax 旗舰模型', icon: '🚀', free: false },
-  { id: 'openrouter-auto', name: 'OpenRouter Auto', provider: 'openrouter', description: '智能路由最佳模型', icon: '🔀', free: false },
-]
-
-const MODEL_NAMES = MODEL_OPTIONS.map(m => m.name)
-
 export default function ProfilePage() {
-  const { user } = useAuthStore()
+  const { user, tier, isLoggedIn, initialized, loginError, retryLogin } = useAuthStore()
   const { selectedModel, setModel } = useChatStore()
 
   const [showModelSection, setShowModelSection] = useState(false)
@@ -113,6 +104,11 @@ export default function ProfilePage() {
   const [baseUrl, setBaseUrl] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [models, setModels] = useState<AvailableModel[]>([])
+  const [discoveredModels, setDiscoveredModels] = useState<AvailableModel[]>([])
+  const [discovering, setDiscovering] = useState(false)
+  const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [filterProvider, setFilterProvider] = useState<string>('all')
 
   const loadKeys = useCallback(async () => {
     try {
@@ -125,17 +121,77 @@ export default function ProfilePage() {
     }
   }, [])
 
+  const loadModels = useCallback(async () => {
+    if (modelsLoaded) return
+    try {
+      const res = await httpClient.get<ModelsResponse>('/models')
+      if (res.code === 0 && res.data) {
+        setModels(res.data)
+        setModelsLoaded(true)
+      }
+    } catch {
+      // ignore — fall back to default 'qwen-turbo'
+    }
+  }, [modelsLoaded])
+
+  /** 从各服务商 API 发现可用模型 */
+  const discoverModels = useCallback(async () => {
+    // 只发现非酒馆的自配 Key 服务商
+    const keyProviders = keys.filter(k => !TAVERN_PROVIDERS.includes(k.provider))
+    if (keyProviders.length === 0) return
+
+    setDiscovering(true)
+    const results: AvailableModel[] = []
+    await Promise.allSettled(
+      keyProviders.map(async (key) => {
+        try {
+          const res = await httpClient.get<{ code: number; data: AvailableModel[] }>(
+            `/models/discover/${key.provider}`
+          )
+          if (res.code === 0 && res.data) {
+            results.push(...res.data)
+          }
+        } catch {
+          // 单个服务商发现失败不影响其他
+        }
+      })
+    )
+    if (results.length > 0) {
+      setDiscoveredModels(results)
+    }
+    setDiscovering(false)
+  }, [keys])
+
   useDidShow(() => {
     Taro.eventCenter.trigger('tabChange', 2)
-    loadKeys()
+    loadModels()
+    if (isLoggedIn) loadKeys()
   })
+
+  // keys 加载完成后自动发现外部服务商模型
+  useEffect(() => {
+    if (keys.length > 0) discoverModels()
+  }, [keys, discoverModels])
 
   // modal 打开时隐藏底部 tab bar（WeChat 自定义 tabBar 渲染在 page DOM 树外，z-index 无效）
   useEffect(() => {
     Taro.eventCenter.trigger('modalOverlayChange', showModal)
   }, [showModal])
 
+  // 用户登录状态变化时重新加载 Key（useDidShow 闭包可能捕获旧的 isLoggedIn）
+  useEffect(() => {
+    if (isLoggedIn) loadKeys()
+  }, [isLoggedIn, loadKeys])
+
+  // 过滤掉 providerIndex 的边界 case：providerIndex 始终指向 providerNames 中的有效索引
+  // 注：当 filterProvider 指向的服务商从 providerNames 中消失时（如删除了唯一 Key 的 PAID 服务商），
+  // providerIndex 会回退到 0 ('all')，但 filterProvider 状态不会被重置。首次 Picker 交互即可自动恢复。
+
   const handleAddKey = useCallback(async () => {
+    if (!isLoggedIn) {
+      Taro.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
     if (!selectedProvider || !keyValue.trim()) {
       Taro.showToast({ title: '请填写完整信息', icon: 'none' })
       return
@@ -163,7 +219,7 @@ export default function ProfilePage() {
     } finally {
       setVerifying(false)
     }
-  }, [selectedProvider, keyValue, loadKeys])
+  }, [selectedProvider, keyValue, baseUrl, isLoggedIn, loadKeys])
 
   const handleDeleteKey = useCallback(async (id: string) => {
     const existKey = keys.find(k => k.id === id)
@@ -190,13 +246,86 @@ export default function ProfilePage() {
       setDeletingId(null)
     }
   }, [keys, loadKeys])
+  const [showLoginForm, setShowLoginForm] = useState(false)
+  const [loginMode, setLoginMode] = useState<'wechat' | 'password'>('wechat')
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loggingIn, setLoggingIn] = useState(false)
+
+  // 微信一键登录
+  const handleWechatLogin = useCallback(async () => {
+    setLoggingIn(true)
+    try {
+      let code: string
+      try {
+        const loginRes = await Taro.login({ timeout: 10000 })
+        if (!loginRes.code) throw new Error('未获取到微信授权码')
+        code = loginRes.code
+      } catch {
+        Taro.showToast({ title: '请确认已安装微信', icon: 'none' })
+        setLoggingIn(false)
+        return
+      }
+      await useAuthStore.getState().wechatLogin(code)
+      Taro.showToast({ title: '登录成功', icon: 'success' })
+      setShowLoginForm(false)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '微信登录失败'
+      Taro.showToast({ title: msg, icon: 'none' })
+    } finally {
+      setLoggingIn(false)
+    }
+  }, [])
+
+  // 账号密码登录
+  const handlePasswordLogin = useCallback(async () => {
+    if (!loginUsername.trim() || !loginPassword.trim()) {
+      Taro.showToast({ title: '请输入用户名和密码', icon: 'none' })
+      return
+    }
+    setLoggingIn(true)
+    try {
+      await useAuthStore.getState().passwordLogin(loginUsername.trim(), loginPassword.trim())
+      Taro.showToast({ title: '登录成功', icon: 'success' })
+      setShowLoginForm(false)
+      setLoginUsername('')
+      setLoginPassword('')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '登录失败'
+      Taro.showToast({ title: msg, icon: 'none' })
+    } finally {
+      setLoggingIn(false)
+    }
+  }, [loginUsername, loginPassword])
   const nickname = user?.nickname || '酒馆旅人'
   const userUuid = user?.uuid || ''
-  const dailyQuota = user?.dailyQuota ?? 20
-  const usedQuota = user?.usedQuota ?? 0
+  const dailyQuota = tier?.maxDailyQuota ?? 20
+  const usedQuota = 0
   const remaining = Math.max(0, dailyQuota - usedQuota)
-  const currentModel = MODEL_OPTIONS.find(m => m.id === selectedModel) ?? MODEL_OPTIONS[0]
-  const modelIndex = Math.max(0, MODEL_OPTIONS.findIndex(m => m.id === selectedModel))
+
+  // 服务商 & 模型分组
+  // 酒馆自持模型（来自 ModelMeta）+ 外部 API 发现模型合并
+  const allModels: AvailableModel[] = [...models, ...discoveredModels]
+  // 只显示有可用模型或已配置 Key 的服务商
+  const modelProviders = new Set(allModels.map(m => m.provider))
+  const keyProviders = new Set(keys.map(k => k.provider))
+  const visibleProviders = PROVIDERS.filter(p =>
+    p.key === 'tavern' || modelProviders.has(p.key) || keyProviders.has(p.key)
+  )
+  const providerNames = ['all', ...visibleProviders.map(p => p.key)]
+
+  // 'tavern' 是酒馆自持服务商的总称，聚合 tongyi + opencode 的模型
+  const tavernModelProviders = new Set(TAVERN_PROVIDERS)
+  const filteredModels = filterProvider === 'all'
+    ? allModels
+    : filterProvider === 'tavern'
+      ? allModels.filter(m => tavernModelProviders.has(m.provider))
+      : allModels.filter(m => m.provider === filterProvider)
+  const modelNames = filteredModels.map(m => m.displayName)
+  const hasModelsForProvider = filterProvider === 'all' || filteredModels.length > 0
+  const currentModel = allModels.find(m => m.modelId === selectedModel) ?? allModels[0]
+  const modelIndex = Math.max(0, filteredModels.findIndex(m => m.modelId === selectedModel))
+  const providerIndex = Math.max(0, providerNames.indexOf(filterProvider))
   const configuredCount = keys.length
 
   const handleNavigate = (item: MenuItem) => {
@@ -212,8 +341,8 @@ export default function ProfilePage() {
       {/* 用户信息卡片 */}
       <View className='page-profile-header'>
         <View className='page-profile-avatar'>
-          {user?.avatar ? (
-            <Image src={user.avatar} mode='aspectFill' className='page-profile-avatar-img' />
+          {user?.avatar_url ? (
+            <Image src={user.avatar_url} mode='aspectFill' className='page-profile-avatar-img' />
           ) : (
             <Text className='page-profile-avatar-text'>{nickname?.[0] || '?'}</Text>
           )}
@@ -251,6 +380,98 @@ export default function ProfilePage() {
         </View>
       </View>
 
+      {/* 登录入口（仅初始化完成后显示，未登录时展示登录表单）*/}
+      {initialized && !isLoggedIn && (
+        <View className='page-profile-login-section'>
+          {!showLoginForm ? (
+            <View className='page-profile-login-prompt'>
+              <Icon name='close' size={40} color='#FF9500' />
+              <Text className='page-profile-login-prompt-text'>
+                {loginError || '登录后可解锁全部功能'}
+              </Text>
+              <View className='page-profile-login-buttons'>
+                <Button className='page-profile-login-btn page-profile-login-btn--wechat' onClick={handleWechatLogin} loading={loggingIn} disabled={loggingIn}>
+                  微信一键登录
+                </Button>
+                <Button className='page-profile-login-btn page-profile-login-btn--password' onClick={() => { setShowLoginForm(true); setLoginMode('password') }} disabled={loggingIn}>
+                  账号密码登录
+                </Button>
+              </View>
+            </View>
+          ) : (
+            <View className='page-profile-login-form'>
+              <View className='page-profile-login-form-header'>
+                <Text className='page-profile-login-form-title'>
+                  {loginMode === 'wechat' ? '微信登录' : '账号登录'}
+                </Text>
+                <Text className='page-profile-login-form-back' onClick={() => { setShowLoginForm(false); setLoginMode('wechat') }}>
+                  返回
+                </Text>
+              </View>
+
+              {loginMode === 'password' && (
+                <View className='page-profile-login-form-body'>
+                  <Input
+                    className='page-profile-login-input'
+                    type='text'
+                    placeholder='用户名'
+                    value={loginUsername}
+                    onInput={e => setLoginUsername(e.detail.value)}
+                  />
+                  <Input
+                    className='page-profile-login-input'
+                    type='text'
+                    password
+                    placeholder='密码'
+                    value={loginPassword}
+                    onInput={e => setLoginPassword(e.detail.value)}
+                  />
+                  <Button
+                    className='page-profile-login-submit'
+                    onClick={handlePasswordLogin}
+                    loading={loggingIn}
+                    disabled={loggingIn}
+                  >
+                    登录
+                  </Button>
+                </View>
+              )}
+
+              {loginMode === 'wechat' && (
+                <View className='page-profile-login-form-body'>
+                  <Text className='page-profile-login-wechat-desc'>
+                    点击下方按钮将使用微信账号一键登录
+                  </Text>
+                  <Button
+                    className='page-profile-login-submit page-profile-login-submit--wechat'
+                    onClick={handleWechatLogin}
+                    loading={loggingIn}
+                    disabled={loggingIn}
+                  >
+                    微信一键登录
+                  </Button>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* 已登录用户可注销 */}
+      {initialized && isLoggedIn && (
+        <View className='page-profile-logout-section'>
+          <Text
+            className='page-profile-logout-text'
+            onClick={() => {
+              useAuthStore.getState().logout()
+              Taro.showToast({ title: '已退出登录', icon: 'none' })
+            }}
+          >
+            退出登录
+          </Text>
+        </View>
+      )}
+
       {/* 模型与服务商 */}
       <View className='page-profile-section'>
         <View className='page-profile-section-header' onClick={() => setShowModelSection(!showModelSection)}>
@@ -259,27 +480,55 @@ export default function ProfilePage() {
         </View>
         {showModelSection && (
           <View className='page-profile-section-body'>
-            {/* Model picker */}
+            {/* 服务商选择 */}
             <View className='page-profile-model-row'>
-              <Text className='page-profile-model-label'>当前模型</Text>
+              <Text className='page-profile-model-label'>服务商</Text>
               <Picker
                 mode='selector'
-                range={MODEL_NAMES}
-                value={modelIndex}
+                range={providerNames}
+                value={providerIndex}
                 onChange={(e) => {
                   const idx = e.detail.value as number
-                  const model = MODEL_OPTIONS[idx]
-                  if (model) {
-                    setModel(model.id)
-                    Taro.showToast({ title: `模型已切换为 ${model.name}`, icon: 'none', duration: 1500 })
-                  }
+                  setFilterProvider(providerNames[idx] ?? 'all')
                 }}
               >
                 <View className='page-profile-model-value'>
-                  <Text className='page-profile-model-name'>{currentModel?.name || '选择模型'}</Text>
+                  <Text className='page-profile-model-name'>
+                    {filterProvider === 'all' ? '全部服务商' : PROVIDERS.find(p => p.key === filterProvider)?.name || filterProvider}
+                  </Text>
                   <Icon name='arrow-down' size={24} color='#999' />
                 </View>
               </Picker>
+            </View>
+
+            {/* 模型选择 */}
+            <View className='page-profile-model-row'>
+              <Text className='page-profile-model-label'>当前模型</Text>
+              {hasModelsForProvider ? (
+                <Picker
+                  mode='selector'
+                  range={modelNames}
+                  value={modelIndex}
+                  onChange={(e) => {
+                    const idx = e.detail.value as number
+                    const model = filteredModels[idx]
+                    if (model) {
+                      // 同时保存模型 ID 和服务商，确保动态发现的模型也能正确路由
+                      setModel(model.modelId, model.provider)
+                      Taro.showToast({ title: `已切换为 ${model.displayName}`, icon: 'none', duration: 1500 })
+                    }
+                  }}
+                >
+                  <View className='page-profile-model-value'>
+                    <Text className='page-profile-model-name'>{currentModel?.displayName || '选择模型'}</Text>
+                    <Icon name='arrow-down' size={24} color='#999' />
+                  </View>
+                </Picker>
+              ) : (
+                <View className='page-profile-model-value'>
+                  <Text className='page-profile-model-name page-profile-model-name--muted'>该服务商暂无可用模型</Text>
+                </View>
+              )}
             </View>
 
             {/* API Key summary */}
@@ -333,7 +582,8 @@ export default function ProfilePage() {
             {/* 保存配置按钮 */}
             <View className='page-profile-section-save' onClick={() => {
               Taro.showToast({ title: '配置已保存', icon: 'success', duration: 2000 })
-            }}>
+            }}
+            >
               <Text className='page-profile-section-save-text'>保存配置</Text>
             </View>
           </View>
@@ -383,8 +633,8 @@ export default function ProfilePage() {
                     {PROVIDERS.map(p => (
                       <Text
                         key={p.key}
-                      className={`page-profile-modal-provider-option ${selectedProvider === p.key ? 'active' : ''}`}
-                      onClick={() => {
+                        className={`page-profile-modal-provider-option ${selectedProvider === p.key ? 'active' : ''}`}
+                        onClick={() => {
                         setSelectedProvider(p.key)
                         setBaseUrl(PROVIDER_DEFAULT_URLS[p.key] || '')
                       }}
