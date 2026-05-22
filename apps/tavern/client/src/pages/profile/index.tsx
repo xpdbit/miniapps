@@ -71,10 +71,21 @@ const PROVIDERS = [
   { key: 'moonshot', name: '月之暗面', icon: 'MS', free: false, desc: 'Kimi / Moonshot-v1' },
   { key: 'minimax', name: 'MiniMax', icon: 'MM', free: false, desc: 'abab6.5s / abab7' },
   { key: 'openrouter', name: 'OpenRouter', icon: 'OR', free: false, desc: '智能路由最佳模型' },
+  { key: 'oneapi', name: 'One API', icon: '1A', free: false, desc: '统一 API 管理 · 自定义部署' },
 ] as const
 
 /** 酒馆自持服务商（模型来自 ModelMeta seed 数据） */
 const TAVERN_PROVIDERS = ['tongyi', 'opencode']
+
+/** 内置兜底模型列表（API 不可用或数据库为空时使用） */
+const FALLBACK_MODELS: AvailableModel[] = [
+  { modelId: 'qwen-turbo', displayName: '通义千问 Turbo', provider: 'tongyi', description: '快速响应，适合日常对话', icon: '⚡', quotaCost: 1, minTier: 'FREE', free: true },
+  { modelId: 'qwen-plus', displayName: '通义千问 Plus', provider: 'tongyi', description: '更强能力，适合复杂任务', icon: '✨', quotaCost: 1, minTier: 'FREE', free: true },
+  { modelId: 'qwen-max', displayName: '通义千问 Max', provider: 'tongyi', description: '最强模型，适合极限挑战', icon: '🔥', quotaCost: 2, minTier: 'FREE', free: true },
+  { modelId: 'big-pickle', displayName: 'Big Pickle', provider: 'opencode', description: '免费大模型 · OpenCode Go', icon: '🥒', quotaCost: 1, minTier: 'FREE', free: true },
+  { modelId: 'minimax-m2.5-free', displayName: 'MiniMax M2.5 Free', provider: 'opencode', description: '免费对话 · OpenCode Go', icon: '🆓', quotaCost: 1, minTier: 'FREE', free: true },
+  { modelId: 'deepseek-v4-flash-free', displayName: 'DeepSeek V4 Flash', provider: 'opencode', description: '免费推理 · OpenCode Go', icon: '⚙️', quotaCost: 1, minTier: 'FREE', free: true },
+]
 
 /** 各服务商默认 API Base URL（中国区优先） */
 const PROVIDER_DEFAULT_URLS: Record<string, string> = {
@@ -89,13 +100,14 @@ const PROVIDER_DEFAULT_URLS: Record<string, string> = {
   moonshot: 'https://api.moonshot.cn',
   minimax: 'https://api.minimaxi.com',
   openrouter: 'https://openrouter.ai/api',
+  oneapi: '',  // One API 需用户自行填写部署地址
 }
 
 export default function ProfilePage() {
   const { user, tier, isLoggedIn, initialized, loginError, retryLogin } = useAuthStore()
   const { selectedModel, setModel } = useChatStore()
 
-  const [showModelSection, setShowModelSection] = useState(false)
+  const [showModelSection, setShowModelSection] = useState(true)
   const [showKeys, setShowKeys] = useState(false)
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -122,17 +134,22 @@ export default function ProfilePage() {
   }, [])
 
   const loadModels = useCallback(async () => {
-    if (modelsLoaded) return
+    if (modelsLoaded && isLoggedIn) return
     try {
       const res = await httpClient.get<ModelsResponse>('/models')
       if (res.code === 0 && res.data) {
         setModels(res.data)
         setModelsLoaded(true)
+      } else if (res.code === 401) {
+        // 未登录，静默跳过
+        setModelsLoaded(false)
       }
-    } catch {
-      // ignore — fall back to default 'qwen-turbo'
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '加载模型列表失败'
+      console.warn('[profile] loadModels error:', msg)
+      setModelsLoaded(false)
     }
-  }, [modelsLoaded])
+  }, [modelsLoaded, isLoggedIn])
 
   /** 从各服务商 API 发现可用模型 */
   const discoverModels = useCallback(async () => {
@@ -164,9 +181,13 @@ export default function ProfilePage() {
 
   useDidShow(() => {
     Taro.eventCenter.trigger('tabChange', 2)
-    loadModels()
-    if (isLoggedIn) loadKeys()
+    if (isLoggedIn) { loadModels(); loadKeys() }
   })
+
+  // 用户登录状态变化时重新加载 Key 和模型
+  useEffect(() => {
+    if (isLoggedIn) { loadKeys(); loadModels() }
+  }, [isLoggedIn, loadKeys, loadModels])
 
   // keys 加载完成后自动发现外部服务商模型
   useEffect(() => {
@@ -305,7 +326,17 @@ export default function ProfilePage() {
 
   // 服务商 & 模型分组
   // 酒馆自持模型（来自 ModelMeta）+ 外部 API 发现模型合并
-  const allModels: AvailableModel[] = [...models, ...discoveredModels]
+  // 如果数据库和发现都为空，降级使用内置兜底模型
+  // 按 modelId 去重：发现的模型优先覆盖数据库中的同名模型（信息更新）
+  const allModels: AvailableModel[] = (() => {
+    if (models.length === 0 && discoveredModels.length === 0 && isLoggedIn) {
+      return FALLBACK_MODELS
+    }
+    const merged = new Map<string, AvailableModel>()
+    models.forEach(m => merged.set(m.modelId, m))
+    discoveredModels.forEach(m => merged.set(m.modelId, m))
+    return [...merged.values()]
+  })()
   // 只显示有可用模型或已配置 Key 的服务商
   const modelProviders = new Set(allModels.map(m => m.provider))
   const keyProviders = new Set(keys.map(k => k.provider))
