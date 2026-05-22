@@ -1,6 +1,6 @@
 import { View, Text, Image, Input, Button, Picker } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import { httpClient } from '@/services/httpClient'
@@ -122,6 +122,12 @@ export default function ProfilePage() {
   const [modelsLoaded, setModelsLoaded] = useState(false)
   const [filterProvider, setFilterProvider] = useState<string>('all')
 
+  // 防止组件卸载后 setState
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    return () => { isMountedRef.current = false }
+  }, [])
+
   const loadKeys = useCallback(async () => {
     try {
       const res = await httpClient.get<ApiKeyResponse>('/keys')
@@ -173,6 +179,8 @@ export default function ProfilePage() {
         }
       })
     )
+    // 组件可能已卸载，避免 setState 警告
+    if (!isMountedRef.current) return
     if (results.length > 0) {
       setDiscoveredModels(results)
     }

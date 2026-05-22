@@ -59,7 +59,9 @@ async function runStartupSync(): Promise<void> {
 }
 
 /** 直接写入 FREE 模型种子数据（完全绕过 syncAllModels，用于兜底） */
-async function seedFallback(prisma: { tavernModelMeta: { upsert: Function; count: Function } }) {
+// dynamic import fallback — PrismaClient type is not available in this scope
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function seedFallback(prisma: any) {
   const FREE_MODELS = [
     { modelId: 'qwen-turbo',           displayName: '通义千问 Turbo',    provider: 'tongyi',   description: '快速响应，适合日常对话',     icon: '⚡', minTier: 'FREE', quotaCost: 1, sortOrder: 10 },
     { modelId: 'qwen-plus',            displayName: '通义千问 Plus',     provider: 'tongyi',   description: '更强能力，适合复杂任务',     icon: '✨', minTier: 'FREE', quotaCost: 1, sortOrder: 20 },
