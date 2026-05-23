@@ -62,5 +62,7 @@ npm run db:seed       # Prisma 种子数据
 ## NOTES
 - 生产端口由环境变量 `PORT` 指定
 - AI 识别服务 PP-ShiTuV2 为独立容器，通过 HTTP API 调用
+- 认证使用统一 Prisma Schema (`prisma/schema-food-theme-generator.prisma`)，uuid 用户引用，跨库兼容
+- Prisma Schema 在根目录 `prisma/` 管理，`apps/ftg/server/prisma/` 仅为软链或指向
 - CI 流程: lint → type-check → build → docker-build → (deploy)
 - deploy.yml 中 SSH 部署部分需按实际环境配置后启用

@@ -41,6 +41,7 @@ dashboard/
 │   ├── admin-auth.ts        # JWT认证 + RBAC + 审计日志 + 项目管理 CRUD
 │   ├── dashboardRoutes.ts   # FTG 仪表盘统计（共享 DB 直查）
 │   ├── admin-food-records.ts / admin-achievements.ts / admin-api-keys.ts  # FTG 管理
+│   ├── auth-routes.ts       # 认证路由（登录/注册/me，统一 Prisma Schema）
 │   ├── agent-routes.ts      # Agent 调试通道
 │   └── routes/
 │       ├── game1-proxy.ts   # Game1 代理路由（GAME1_ADMIN_TOKEN 认证）
@@ -65,7 +66,10 @@ dashboard/
 | 状态管理 | `src/stores/` | authStore / themeStore / projectStore（当前项目） |
 | Game1 代理 | `server/routes/game1-proxy.ts` | 配置 `GAME1_ADMIN_TOKEN` 匹配 game1-server ADMIN_TOKEN |
 | Tavern 代理 | `server/routes/tavern-proxy.ts` | 配置 `TAVERN_ADMIN_TOKEN` 匹配 tavern-server admin JWT |
-| Prisma Schema | `prisma/schema.prisma` | AdminUser / Project / AuditLog + FTG 共享表 |
+| Prisma Schema | `prisma/schema.prisma` | AdminUser / Project / AuditLog + miniapps 公用表 |
+| 认证路由 | `server/auth-routes.ts` | 登录/注册/me 端点，统一 miniapps 数据库 |
+| 项目 API | `src/services/projectApi.ts` | 项目切换/列表 API |
+| 项目状态管理 | `src/stores/projectStore.ts` | 当前项目选择状态 |
 
 ## CONVENTIONS (与项目根不同的规则)
 - `noUnusedLocals: true` — 未使用变量报错

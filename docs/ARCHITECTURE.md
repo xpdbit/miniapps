@@ -347,23 +347,28 @@ GameEngine 处理逻辑 (纯 TS，离线友好)
 ```
 Tavern MiniApp (apps/tavern/client, Taro 4 + React 18)
   │
-  ├── pages/           # 7 页面 (market/chat/character/creator/persona/profile/settings)
+  ├── pages/           # 12 页面 (market/chat/archive/game-setup/character/detail/creator/
+  │                    #        profile/persona/settings + chats/contacts/discover)
   ├── components/      # CharacterCard/ChatBubble/ModelSelector/Skeleton
-  ├── stores/          # authStore/chatStore/characterStore
-  ├── services/        # httpClient/characterService/marketService/personaService
-  └── hooks/           # useSSE (SSE 流式聊天 EventSource 封装)
+  ├── stores/          # 8 stores (authStore/chatStore/characterStore/gameStore/
+  │                    #           privacyStore/localCardsStore/syncedCardsStore)
+  ├── services/        # httpClient/aiClient/aiService/characterService/marketService/personaService
+  └── hooks/           # useSSE (SSE 流式) + useDirectAI (隐私模式直连)
          │
          ▼
 Tavern Server (apps/tavern/server, Express + TypeScript)
   │
-  ├── routes/          # 10 路由模块 (auth/characters/chat/personas/keys/market/admin/builtin/export)
-  ├── services/        # 10 个服务 (ai-proxy/character/context/export/key/market/moderation/persona/prompt-builder/social)
-  └── Prisma           # 8 张表 (User/CharacterCard/ChatSession/ChatMessage/Persona/ApiKey/ModerationLog/关联表)
+  ├── routes/          # 13 路由模块 (auth/characters/chat/keys/market/admin/builtin/export/
+  │                    #           tier/official/ai + personas/export)
+  ├── services/        # 14 服务 (ai-proxy/character/context/export/key/market/moderation/
+  │                    #          persona/prompt-builder/social/tier/model-discovery/model-sync)
+  └── Prisma           # 20+ 表 (TavernUser/Card/CharacterCard/ChatSession/ChatMessage/
+                       #         Persona/ApiKey/ModerationLog/Like/Follow/UserTier/ModelMeta...)
          │
          ▼
 Dashboard Tavern 管理 (通过 tavern-proxy 代理到 tavern-server)
   │
-  ├── pages/           # Tavern (角色审核/密钥审计)
+  ├── pages/           # Tavern (角色审核/密钥审计/角色导入)
   └── services/        # dashboard/src/services/tavern/
 ```
 
@@ -389,8 +394,14 @@ SSE EventSource 流式返回 (useSSE hook)
 
 ### 关键特性
 
-- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter 无缝切换
+- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter/MiniMax/DeepBrick 无缝切换
+- **模型自动发现**: model-discovery.service 自动探测各 Provider 可用模型列表
+- **用户等级系统**: FREE/PAID/TESTER 三级，等级路由和 API
 - **角色卡市场**: 发布/审核/收藏/点赞/标签搜索完整链路
+- **AI 直连代理**: `/api/v1/ai/generate` 代理端点，支持隐私模式直连
+- **双模式 TabBar**: 酒馆模式(酒馆/开始/我的) ↔ 游戏模式(通信/通讯录/发现/我的)
+- **游戏存档系统**: gameStore 管理 localStorage 存档，含世界设定/选卡/群组/消息
+- **隐私模式**: 本地 API Key 缓存，AI 请求绕过服务器中转直连 Provider
 - **API Key 加密**: 用户级 AES-256-GCM 加密存储
 - **Prompt 构建**: 系统提示 + 角色定义 + 示例对话 + 历史消息 + 当前消息
 - **内容审核**: 敏感词过滤 + 人工审核双机制

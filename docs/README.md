@@ -60,5 +60,5 @@ docs/
 
 ---
 
-> 最后更新: 2026-05-18
-> 修改: 重构文档结构，废弃路径 docs/apps/*-miniapp/ 和 docs/servers/ 已清理
+> 最后更新: 2026-05-23
+> 修改: 更新 tavern-game-mode-tabbar 设计文档和计划

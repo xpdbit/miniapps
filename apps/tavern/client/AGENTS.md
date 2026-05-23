@@ -1,101 +1,119 @@
-﻿# apps/tavern/client 鈥?寰俊灏忕▼搴?+ H5
+﻿# apps/tavern/client — 微信小程序 + H5
 
 ## OVERVIEW
-Taro 4.x 璺ㄥ钩鍙板簲鐢?(React 18 + Zustand 5 + TypeScript + Sass)锛孉I-Tavern 瑙掕壊鑱婂ぉ搴旂敤銆傛敮鎸?WeChat 灏忕▼搴忓拰 H5 娴忚鍣ㄥ弻骞冲彴銆傝鑹插競鍦烘祻瑙堛€丼SE 娴佸紡鑱婂ぉ銆佽鑹插崱鍒涘缓涓庣鐞嗐€佽嚜瀹氫箟浜鸿銆?
+Taro 4.x 跨平台应用 (React 18 + Zustand 5 + TypeScript + Sass)，AI-Tavern 角色聊天应用。支持微信小程序和 H5 双平台。
+核心功能：角色市场浏览、SSE 流式聊天、角色卡创建与管理、自定义人设、双模式 TabBar（酒馆/游戏模式）。
 
 ## STRUCTURE
 ```
 apps/tavern/client/
-鈹溾攢鈹€ src/
-鈹?  鈹溾攢鈹€ app.ts           # 搴旂敤鍏ュ彛 (璁よ瘉鍒濆鍖?閰嶉鍒锋柊)
-鈹?  鈹溾攢鈹€ app.config.ts    # 灏忕▼搴忛厤缃?(3 tabBar 椤甸潰)
-鈹?  鈹溾攢鈹€ app.scss         # 鍏ㄥ眬鏍峰紡 & CSS 鍙橀噺 (鏆楄壊涓婚)
-鈹?  鈹溾攢鈹€ pages/           # 椤甸潰缁勪欢
-鈹?  鈹?  鈹溾攢鈹€ market/      # 瑙掕壊甯傚満 (娴忚/鎼滅储/鏍囩/杞挱)
-鈹?  鈹?  鈹溾攢鈹€ chat/        # 鑱婂ぉ椤甸潰 (SSE 娴佸紡/浼氳瘽绠＄悊)
-鈹?  鈹?  鈹溾攢鈹€ character/   # 瑙掕壊璇︽儏
-鈹?  鈹?  鈹?  鈹斺攢鈹€ detail/  # 瑙掕壊璇︽儏椤?
-鈹?  鈹?  鈹溾攢鈹€ creator/     # 瑙掕壊鍗＄紪杈?鍙戝竷
-鈹?  鈹?  鈹溾攢鈹€ profile/     # 涓汉涓婚〉
-鈹?  鈹?  鈹溾攢鈹€ persona/     # 鑷畾涔変汉璁剧鐞?
-鈹?  鈹?  鈹斺攢鈹€ settings/    # 璁剧疆 (API Key/鍋忓ソ)
-鈹?  鈹溾攢鈹€ components/      # 鍏变韩缁勪欢
-鈹?  鈹?  鈹溾攢鈹€ CharacterCard/ # 瑙掕壊鍗＄墖
-鈹?  鈹?  鈹溾攢鈹€ ChatBubble/  # 鑱婂ぉ姘旀场
-鈹?  鈹?  鈹溾攢鈹€ ModelSelector/ # 妯″瀷閫夋嫨鍣?
-鈹?  鈹?  鈹斺攢鈹€ Skeleton/    # 楠ㄦ灦灞?
-鈹?  鈹溾攢鈹€ services/        # API 灏佽
-鈹?  鈹?  鈹溾攢鈹€ httpClient.ts  # 缁熶竴 HTTP 瀹㈡埛绔?(JWT 鑷姩鎼哄甫/401 鎷︽埅)
-鈹?  鈹?  鈹溾攢鈹€ characterService.ts # 瑙掕壊鍗?CRUD
-鈹?  鈹?  鈹溾攢鈹€ marketService.ts    # 瑙掕壊甯傚満 API
-鈹?  鈹?  鈹斺攢鈹€ personaService.ts   # 浜鸿 API
-鈹?  鈹溾攢鈹€ stores/          # Zustand 鐘舵€佺鐞?
-鈹?  鈹?  鈹溾攢鈹€ authStore.ts      # 璁よ瘉鐘舵€?(寰俊鐧诲綍/JWT/姣忔棩閰嶉)
-鈹?  鈹?  鈹溾攢鈹€ chatStore.ts      # 鑱婂ぉ鐘舵€?(浼氳瘽/娑堟伅/娴佸紡/妯″瀷閫夋嫨)
-鈹?  鈹?  鈹斺攢鈹€ characterStore.ts # 瑙掕壊鍗＄姸鎬?
-鈹?  鈹溾攢鈹€ hooks/           # 鑷畾涔?Hooks
-鈹?  鈹?  鈹斺攢鈹€ useSSE.ts    # SSE 娴佸紡鑱婂ぉ Hook
-鈹?  鈹溾攢鈹€ types/           # TypeScript 绫诲瀷瀹氫箟
-鈹?  鈹?  鈹溾攢鈹€ character.ts # 瑙掕壊鍗＄被鍨?
-鈹?  鈹?  鈹溾攢鈹€ chat.ts      # 鑱婂ぉ绫诲瀷 (浼氳瘽/娑堟伅)
-鈹?  鈹?  鈹斺攢鈹€ common.ts    # 閫氱敤绫诲瀷
-鈹?  鈹溾攢鈹€ utils/           # 宸ュ叿鍑芥暟
-鈹?  鈹斺攢鈹€ constants/       # 甯搁噺瀹氫箟
-鈹斺攢鈹€ package.json         # Taro 4.0.13 + React 18 + Zustand 5
+├── src/
+│   ├── app.ts                 # 应用入口 (认证初始化/配额刷新)
+│   ├── app.config.ts          # 小程序配置 (12 pages + 3 tabBar)
+│   ├── app.scss               # 全局样式 & CSS 变量 (暗色主题)
+│   ├── custom-tab-bar/        # 自定义底部栏 (双模式)
+│   ├── pages/                 # 12 个页面
+│   │   ├── market/            # 角色市场 (浏览/搜索/标签/轮播)
+│   │   ├── chat/              # 聊天页面 (SSE 流式/会话管理)
+│   │   ├── archive/           # 聊天归档
+│   │   ├── game-setup/        # 游戏模式设置
+│   │   ├── character/         # 角色详情
+│   │   │   └── detail/        # 角色详情页
+│   │   ├── creator/           # 角色卡编辑/发布
+│   │   ├── profile/           # 个人主页
+│   │   ├── persona/           # 自定义人设管理
+│   │   ├── chats/             # [游戏模式] 通信-聊天列表
+│   │   ├── contacts/          # [游戏模式] 通讯录
+│   │   └── discover/          # [游戏模式] 发现
+│   ├── components/            # 共享组件
+│   │   ├── CharacterCard/     # 角色卡片
+│   │   ├── ChatBubble/        # 聊天气泡
+│   │   ├── ModelSelector/     # 模型选择器
+│   │   └── Skeleton/          # 骨架屏
+│   ├── services/              # API 封装
+│   │   ├── httpClient.ts      # 统一 HTTP 客户端 (JWT 自动携带/401拦截)
+│   │   ├── aiClient.ts        # AI 流式调用客户端
+│   │   ├── aiService.ts       # AI 服务 (含发现模型)
+│   │   ├── characterService.ts # 角色卡 CRUD
+│   │   ├── marketService.ts   # 角色市场 API
+│   │   └── personaService.ts  # 人设 API
+│   ├── stores/                # Zustand 状态管理 (8 stores)
+│   │   ├── authStore.ts       # 认证状态 (微信登录/JWT/每日配额)
+│   │   ├── chatStore.ts       # 聊天状态 (会话/消息/流式/模型选择)
+│   │   ├── characterStore.ts  # 角色卡状态
+│   │   ├── gameStore.ts       # 游戏模式状态 (存档/群组/消息)
+│   │   ├── privacyStore.ts    # 隐私模式 (本地 API Key 缓存)
+│   │   ├── localCardsStore.ts # 本地角色卡缓存
+│   │   └── syncedCardsStore.ts # 同步角色卡状态
+│   ├── hooks/                 # 自定义 Hooks
+│   │   ├── useSSE.ts          # SSE 流式聊天 Hook
+│   │   └── useDirectAI.ts     # 隐私模式直接 AI 调用 Hook
+│   ├── types/                 # TypeScript 类型定义
+│   │   ├── character.ts       # 角色卡类型
+│   │   ├── chat.ts            # 聊天类型 (会话/消息)
+│   │   ├── game.ts            # 游戏模式类型 (存档/群组)
+│   │   └── common.ts          # 通用类型
+│   ├── utils/                 # 工具函数
+│   └── constants/             # 常量定义
+└── package.json               # Taro 4.x + React 18 + Zustand 5
 ```
 
 ## WHERE TO LOOK
-| 鍏虫敞鐐?| 浣嶇疆 | 璇存槑 |
+| 关注点 | 位置 | 说明 |
 |--------|------|------|
-| 瑙掕壊甯傚満 | `src/pages/market/` + `src/services/marketService.ts` | 瑙掕壊鍗℃祻瑙?鎼滅储/鏍囩/杞挱 |
-| 鑱婂ぉ椤甸潰 | `src/pages/chat/` + `src/hooks/useSSE.ts` | SSE 娴佸紡鑱婂ぉ/浼氳瘽绠＄悊 |
-| 瑙掕壊鍒涘缓 | `src/pages/creator/` + `src/services/characterService.ts` | 瑙掕壊鍗＄紪杈?鍙戝竷 |
-| 瑙掕壊璇︽儏 | `src/pages/character/` + `src/pages/character/detail/` | 瑙掕壊璇︽儏/鏀惰棌 |
-| 涓汉璁剧疆 | `src/pages/profile/` + `src/pages/settings/` | 涓汉淇℃伅/API Key/鍋忓ソ |
-| 浜鸿绠＄悊 | `src/pages/persona/` | 鑷畾涔変汉璁?|
-| 璁よ瘉鐘舵€?| `src/stores/authStore.ts` | 寰俊鐧诲綍/JWT/姣忔棩閰嶉 |
-| 鑱婂ぉ鐘舵€?| `src/stores/chatStore.ts` | 浼氳瘽/娑堟伅/娴佸紡 |
-| 瑙掕壊鐘舵€?| `src/stores/characterStore.ts` | 瑙掕壊鍗＄紦瀛?鏀惰棌 |
-| HTTP 瀹㈡埛绔?| `src/services/httpClient.ts` | JWT 鑷姩鎼哄甫/401 鎷︽埅 |
-| 绫诲瀷瀹氫箟 | `src/types/character.ts` + `chat.ts` | 瑙掕壊鍗?鑱婂ぉ绫诲瀷 |
-| 搴旂敤閰嶇疆 | `src/app.config.ts` | 灏忕▼搴?H5 鍙屽钩鍙伴厤缃?|
-| CSS 鍙橀噺 | `src/app.scss` | 鏆楄壊涓婚/绱壊涓昏壊 #8B5CF6 |
-| SSE 娴佸紡 | `src/hooks/useSSE.ts` | EventSource 灏佽/鏂嚎閲嶈繛 |
+| 角色市场 | `src/pages/market/` + `src/services/marketService.ts` | 角色卡浏览/搜索/标签/轮播 |
+| 聊天页面 | `src/pages/chat/` + `src/hooks/useSSE.ts` | SSE 流式聊天/会话管理 |
+| 角色创建 | `src/pages/creator/` + `src/services/characterService.ts` | 角色卡编辑/发布 |
+| 角色详情 | `src/pages/character/` + `src/pages/character/detail/` | 角色详情/收藏 |
+| 游戏设置 | `src/pages/game-setup/` | 游戏模式创建/选卡/世界设定 |
+| 双模式 TabBar | `src/custom-tab-bar/index.tsx` | 酒馆模式 ↔ 游戏模式切换 |
+| 游戏存档 | `src/stores/gameStore.ts` | 存档创建/群组/消息管理 |
+| 隐私模式 | `src/stores/privacyStore.ts` | 隐私模式开关 + 本地 API Key |
+| 直接 AI 调用 | `src/hooks/useDirectAI.ts` | 隐私模式绕过中转直连 AI |
+| 个人设置 | `src/pages/profile/` + `src/pages/settings/` | 个人信息/API Key/偏好 |
+| 人设管理 | `src/pages/persona/` | 自定义人设 |
+| 通信页面 | `src/pages/chats/` | 游戏模式-通信列表 |
+| 通讯录页面 | `src/pages/contacts/` | 游戏模式-联系人 |
+| 发现页面 | `src/pages/discover/` | 游戏模式-发现/朋友圈 |
+| SSE 流式 | `src/hooks/useSSE.ts` | EventSource 封装/断线重连 |
+| 认证状态 | `src/stores/authStore.ts` | 微信登录/JWT/每日配额 |
+| HTTP 客户端 | `src/services/httpClient.ts` | JWT 自动携带/401 拦截 |
+| 类型定义 | `src/types/` | character.ts/chat.ts/game.ts |
 
 ## CONVENTIONS
-- Taro 4.x API (4.0.13)锛屾瀯寤哄懡浠?`taro build --type weapp` / `taro build --type h5`
-- React 18 + TypeScript strict 妯″紡
-- Zustand 5 鐘舵€佺鐞?
-- Sass 妯″潡鍖栨牱寮?(`.module.scss`)
-- 璺緞鍒悕 `@/*`, `@services/*`, `@stores/*`, `@types/*`, `@hooks/*`, `@components/*`
+- Taro 4.x API，构建命令 `taro build --type weapp` / `taro build --type h5`
+- React 18 + TypeScript strict 模式
+- Zustand 5 状态管理
+- Sass 模块化样式 (`.module.scss`)
+- 路径别名 `@/*`, `@services/*`, `@stores/*`, `@types/*`, `@hooks/*`, `@components/*`
 - Prettier: printWidth 100, singleQuote, trailingComma all
-- 2 绌烘牸缂╄繘锛孡F 鎹㈣锛孶TF-8
+- 2 空格缩进，LF 换行，UTF-8
 
 ## COMMANDS
 ```bash
-npm run dev:weapp        # 寰俊灏忕▼搴忓紑鍙戞ā寮?(watch 鐑噸杞?
-npm run build:weapp      # 寰俊灏忕▼搴忕敓浜ф瀯寤?
-npm run dev:h5           # H5 寮€鍙戞ā寮?(watch 鐑噸杞?
-npm run build:h5         # H5 鏋勫缓
-npm run build:h5:prod    # H5 鐢熶骇鏋勫缓
-npm run type-check       # TypeScript 绫诲瀷妫€鏌?
-npm run lint             # ESLint 浠ｇ爜妫€鏌?
-npm run format           # Prettier 鏍煎紡鍖?
-npm run generate-icons   # 鐢熸垚 tabBar 鍥炬爣
+npm run dev:weapp        # 微信小程序开发模式 (watch 热重载)
+npm run build:weapp      # 微信小程序生产构建
+npm run dev:h5           # H5 开发模式 (watch 热重载)
+npm run build:h5         # H5 构建
+npm run build:h5:prod    # H5 生产构建
+npm run type-check       # TypeScript 类型检查
+npm run lint             # ESLint 代码检查
+npm run format           # Prettier 格式化
+npm run generate-icons   # 生成 tabBar 图标
 ```
 
 ## NOTES
-- **Taro 4.0.13** + React 18 + Zustand 5
-- **鍙屽钩鍙?*: 寰俊灏忕▼搴?(weapp) + H5 娴忚鍣?
-- **H5 璺敱**: hash 妯″紡锛岄厤缃?8 涓嚜瀹氫箟璺敱璺緞
-- **婧愮洰褰曞叡鐢ㄤ簬鍙屽钩鍙?*: `src/` 鍚屾椂鎻愪緵 weapp 鍜?h5 鏋勫缓
-- **API_BASE_URL 缂栬瘧鏃舵敞鍏?*: 閫氳繃鏍圭洰褰?`domain.config.js` 閰嶇疆
-- **SSE 娴佸紡鑱婂ぉ**: `useSSE` hook 灏佽 EventSource锛屾敮鎸佹柇绾块噸杩炲拰娴佸紡娑堟伅杩藉姞
-- **璁よ瘉娴佺▼**: wx.login() 鈫?POST /auth/login 鈫?JWT 鈫?Taro Storage 鎸佷箙鍖?鈫?restoreSession 鑷姩鎭㈠
-- **姣忔棩閰嶉**: authStore 绠＄悊姣忔棩娑堟伅閰嶉锛屽垏鍓嶅彴鏃惰嚜鍔ㄥ埛鏂?
-- **HTTP 瀹㈡埛绔?*: HttpClient 绫诲皝瑁?Taro.request锛岃嚜鍔ㄦ惡甯?JWT token锛?01 鍝嶅簲鏃惰Е鍙戠櫥鍑?
-- **瑙掕壊甯傚満**: 鏀寔鏍囩绛涢€夈€佸垎椤靛姞杞姐€佽疆鎾帹鑽?
-- **澶氭ā鍨嬫敮鎸?*: 閫氳繃 ModelSelector 缁勪欢鍒囨崲 AI 妯″瀷 (閫氫箟鍗冮棶绛?
-- **authStore**: 浣跨敤 `@tarojs/taro` Storage API锛屽弻骞冲彴鍏煎
-- **H5 鏋勫缓**: 鍦?`apps/tavern/` 涓嬪畨瑁呬緷璧栧悗锛岃繍琛?`npm run dev:h5` 鍗冲彲
-- **H5 兼容性**: 已移除未使用的 `tdesign-miniprogram-taro` 依赖和 `app.config.ts` 中的 `usingComponents` 配置（这些组件从未在源码中实际使用）。Tavern 现已完全支持 H5 和 weapp 双平台构建。
+- **Taro 4.x** + React 18 + Zustand 5
+- **双平台**: 微信小程序 (weapp) + H5 浏览器
+- **H5 路由**: hash 模式，配置 8 个自定义路由路径
+- **双模式 TabBar**: 通过 `gameStore.gameMode` 切换 — 酒馆模式(酒馆/开始/我的) ↔ 游戏模式(通信/通讯录/发现/我的)
+- **游戏模式存档**: gameStore 管理 localStorage 持久化存档，含世界设定/选卡/群组/消息
+- **隐私模式**: privacyStore 管理隐私开关，开启后 AI 请求绕过服务器中转，用户本地缓存 API Key
+- **SSE 流式聊天**: useSSE hook 封装 EventSource，支持断线重连和流式消息追加
+- **认证流程**: wx.login() → POST /auth/login → JWT → Taro Storage 持久化 → restoreSession 自动恢复
+- **每日配额**: authStore 管理每日消息配额，切前台时自动刷新
+- **HTTP 客户端**: HttpClient 类封装 Taro.request，自动携带 JWT token，401 响应时触发登出
+- **角色市场**: 支持标签筛选、分页加载、轮播推荐
+- **多模型支持**: 通过 ModelSelector 组件切换 AI 模型
+- **API_BASE_URL 编译时注入**: 通过根目录 `domain.config.js` 配置
+- **H5 兼容性**: 已移除未使用的 `tdesign-miniprogram-taro` 依赖和 `app.config.ts` 中的 `usingComponents` 配置
