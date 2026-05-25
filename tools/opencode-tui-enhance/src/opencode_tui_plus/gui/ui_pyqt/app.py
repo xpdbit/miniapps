@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from typing import Optional
 
 from PyQt6.QtCore import Qt, QTimer
@@ -26,7 +27,6 @@ from ..core.logger import OceLogger
 from .overview_interface import OverviewInterface
 from .api_history_interface import ApiHistoryInterface
 from .settings_interface import SettingsInterface
-from .quick_launch_interface import QuickLaunchInterface
 from .tabs.automation import AutomationInterface
 from .tabs.agent_status.agent_status_interface import AgentStatusInterface
 from .tabs.logs.log_interface import LogInterface
@@ -52,7 +52,11 @@ class OceWindow(FluentWindow):
         state_dir = os.path.join(root_dir, "state")
         self._state_manager = StateManager(state_dir)
         self._runner = AgentRunner(root_dir)
-        self._supervisor = Supervisor(state_dir, os.path.join(root_dir, "logs"))
+        self._supervisor = Supervisor(
+            state_dir, os.path.join(root_dir, "logs"),
+            runner_ref=self._runner,
+            on_alert=self._on_supervisor_alert,
+        )
         self._loop_engine = LoopEngine(self._state_manager, self._runner, self._supervisor)
 
         # 应用配置
@@ -64,8 +68,6 @@ class OceWindow(FluentWindow):
         self.overview_interface.setObjectName("overviewInterface")
         self.api_history_interface = ApiHistoryInterface()
         self.api_history_interface.setObjectName("apiHistoryInterface")
-        self.quick_launch_interface = QuickLaunchInterface()
-        self.quick_launch_interface.setObjectName("quickLaunchInterface")
         self.automation_interface = AutomationInterface(
             self._state_manager, self._runner, self._loop_engine
         )
@@ -100,6 +102,9 @@ class OceWindow(FluentWindow):
         # 启动监管 Agent
         self._supervisor.start()
         self._logger.info("监管 Agent 已启动")
+
+        # 检查可恢复的任务（断点恢复）
+        QTimer.singleShot(500, self._check_recoverable_tasks)
 
         # 恢复窗口几何
         QTimer.singleShot(0, self._restore_window_geometry)
@@ -245,8 +250,6 @@ class OceWindow(FluentWindow):
         self._store.get_daily_stats_for_chart()
         # 通知 API 历史页重新渲染（它不订阅 DataStore）
         self.api_history_interface.refresh()
-        # 刷新快捷启动状态
-        self.quick_launch_interface.force_refresh()
         self._refresh_ui()
         self.flash_message("已刷新", 2000)
 
@@ -324,6 +327,52 @@ class OceWindow(FluentWindow):
         except Exception:
             self.showNormal()
 
+    def _check_recoverable_tasks(self):
+        """检查并提示恢复未完成的任务。"""
+        tasks = self._state_manager.get_recoverable_tasks()
+        if not tasks:
+            return
+
+        task = tasks[0]  # 只处理第一个可恢复任务
+        round_info = task.current_round_info
+        round_status = round_info.status if round_info else "unknown"
+        completed = sum(1 for r in task.rounds if r.status == "completed")
+
+        reply = QMessageBox.question(
+            self, "恢复任务",
+            f"发现未完成任务:\n\n"
+            f"  任务: {task.prompt[:50]}...\n"
+            f"  状态: {round_status}\n"
+            f"  已完成 {completed} 轮，第 {task.current_round} 轮中断\n\n"
+            f"是否恢复？",
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.No |
+            QMessageBox.StandardButton.Ignore,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            self._logger.info(f"恢复任务: {task.task_id}")
+            task = self._state_manager.resume_task(task.task_id)
+            if task:
+                threading.Thread(
+                    target=self._loop_engine.run_directed_iteration,
+                    args=(task.task_id,),
+                    daemon=True,
+                ).start()
+        elif reply == QMessageBox.StandardButton.No:
+            self._state_manager.stop_task(task.task_id)
+            self._logger.info(f"放弃任务: {task.task_id}")
+
+    def _on_supervisor_alert(self, alert):
+        """监管 Agent 告警回调 — 记录到日志并在状态栏提示。"""
+        self._logger.supervisor(
+            f"[{alert.level.value}] {alert.category}: {alert.message}"
+        )
+        if alert.level.value in ("error", "warn"):
+            self.flash_message(
+                f"⚠ {alert.category}: {alert.message[:50]}", 5000
+            )
+
     def closeEvent(self, e):
         """关闭窗口前保存状态并清理。"""
         self._logger.info("OceWindow 正在关闭…")
@@ -333,7 +382,6 @@ class OceWindow(FluentWindow):
         # 取消 DataStore 订阅（窗口级 + 子组件级）
         self._store.unsubscribe(self._on_data_updated)
         self.overview_interface.cleanup()
-        self.quick_launch_interface.cleanup()
         self.agent_status_interface.cleanup()
         self.log_interface.cleanup()
         super().closeEvent(e)

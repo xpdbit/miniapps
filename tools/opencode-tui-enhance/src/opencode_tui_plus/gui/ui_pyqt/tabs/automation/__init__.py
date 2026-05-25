@@ -179,6 +179,11 @@ class IterationPanel(QWidget):
     # ── 按钮事件 ──
 
     def _on_start(self):
+        # 并发防护：定向迭代同时只能运行一个
+        if self._engine.is_running:
+            InfoBar.warning("提示", "已有任务正在运行中，定向迭代模式下只能同时运行一个任务", parent=self)
+            return
+
         prompt = self._prompt_edit.toPlainText().strip()
         if not prompt:
             InfoBar.warning("提示", "请输入改进目标", parent=self)
