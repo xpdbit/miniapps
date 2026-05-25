@@ -497,12 +497,12 @@ class StateManager:
     # ─── 辅助方法 ──────────────────────────────
 
     def _recalc_elapsed(self, task: TaskState):
-        """重新计算累计耗时（基于已完成轮次）"""
+        """重新计算累计耗时——只增不减，取已完成轮次总和与当前值的较大者"""
         total = 0.0
         for r in task.rounds:
             if r.status == RoundStatus.COMPLETED.value and r.duration_seconds > 0:
                 total += r.duration_seconds
-        task.elapsed_seconds = total
+        task.elapsed_seconds = max(task.elapsed_seconds, total)
 
     def _load_yaml(self, path: Path) -> Optional[TaskState]:
         """从 YAML 文件加载任务状态（含损坏恢复）"""
