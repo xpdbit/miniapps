@@ -1,0 +1,28 @@
+# OCE 配置文件 — 自动生成，可通过设置面板修改
+# 模型路由使用 opencode 的 provider/model 格式
+
+models:
+  default_model: "deepseek/deepseek-v4-pro"
+  stage_model:
+    exploration: "deepseek/deepseek-chat"
+    proposal_generation: "deepseek/deepseek-chat"
+    proposal_evaluation: "deepseek/deepseek-v4-pro"
+    code_execution: "deepseek/deepseek-v4-pro"
+    diff_summary: "deepseek/deepseek-chat"
+    documentation: "deepseek/deepseek-v3-0324"
+    supervisor: "deepseek/deepseek-chat"
+
+agent:
+  timeout: 30
+  max_concurrent: 1
+  consecutive_failure_limit: 2
+
+automation:
+  default_time_limit_minutes: 120
+  cycle_interval_seconds: 5
+  use_worktree: false
+  auto_commit: false
+
+logs:
+  level: "INFO"
+  retention_days: 30

@@ -28,6 +28,8 @@ from .api_history_interface import ApiHistoryInterface
 from .settings_interface import SettingsInterface
 from .quick_launch_interface import QuickLaunchInterface
 from .tabs.automation import AutomationInterface
+from .tabs.agent_status.agent_status_interface import AgentStatusInterface
+from .tabs.logs.log_interface import LogInterface
 from opencode_tui_plus.core.state_manager import StateManager
 from opencode_tui_plus.core.runner import AgentRunner
 from opencode_tui_plus.core.loop_engine import LoopEngine
@@ -68,6 +70,10 @@ class OceWindow(FluentWindow):
             self._state_manager, self._runner, self._loop_engine
         )
         self.automation_interface.setObjectName("automationInterface")
+        self.agent_status_interface = AgentStatusInterface(self._runner)
+        self.agent_status_interface.setObjectName("agentStatusInterface")
+        self.log_interface = LogInterface()
+        self.log_interface.setObjectName("logInterface")
         self.settings_interface = SettingsInterface()
         self.settings_interface.setObjectName("settingsInterface")
 
@@ -102,8 +108,9 @@ class OceWindow(FluentWindow):
         """注册导航页面。"""
         self.addSubInterface(self.overview_interface, FIF.HOME, "概览")
         self.addSubInterface(self.api_history_interface, FIF.HISTORY, "会话")
-        self.addSubInterface(self.quick_launch_interface, FIF.APPLICATION, "快捷启动")
         self.addSubInterface(self.automation_interface, FIF.ROBOT, "自动化")
+        self.addSubInterface(self.agent_status_interface, FIF.INFO, "状态")
+        self.addSubInterface(self.log_interface, FIF.DOCUMENT, "日志")
         self.addSubInterface(self.settings_interface, FIF.SETTING, "设置")
 
     def _init_window(self):
@@ -327,6 +334,8 @@ class OceWindow(FluentWindow):
         self._store.unsubscribe(self._on_data_updated)
         self.overview_interface.cleanup()
         self.quick_launch_interface.cleanup()
+        self.agent_status_interface.cleanup()
+        self.log_interface.cleanup()
         super().closeEvent(e)
 
 
