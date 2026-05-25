@@ -34,6 +34,10 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.secrets
+*.env.production
+*.env.dev
+*.env.prod
 credentials.json
 secrets.json
 
@@ -51,6 +55,9 @@ temp/
 
 # 工具/临时目录
 .sisyphus/
+
+# 本地开发服务器日志
+local_server/logs/
 temp-tsc-test/
 
 # 规划文档
