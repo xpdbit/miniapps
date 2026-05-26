@@ -12,15 +12,17 @@ docs/
 │   └── tavern/{client,server}
 ├── dashboard/               # 统一管理后台
 ├── database/                # 4 库独立 Schema
+├── manual/                  # 操作手册
 ├── ops/                     # 服务器运维 + 部署
+├── standards/               # 代码约定、反模式、文档规范
 ├── tools/                   # 开发工具
 │   ├── deploy/
-│   └── supertask/
-├── standards/               # 代码约定、反模式、文档规范
-├── guides/                  # 跨项目指南
+│   ├── opencode-tui-enhance/
+│   └── supertask/           # 🚫 已存档
 ├── ARCHITECTURE.md          # 系统架构
 ├── CHANGELOG.md             # 文档变更日志
 ├── edge.md                  # 文档关联与边界
+├── rules.md                 # 文档编写规则
 ├── urls.md                  # URL 引用清单
 └── README.md                # ← 当前文件
 ```
@@ -38,7 +40,7 @@ docs/
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
 | **SuperTask 工具** 🚫 | [tools/supertask/](./tools/supertask/) | **已存档** — 功能整合至 OCE |
 | **OCE 工具** | [tools/opencode-tui-enhance/](./tools/opencode-tui-enhance/) | PyQt6 OpenCode 监控与看门狗 |
-| **部署工具** | [deploy/](../deploy/) | Docker Compose + Nginx → ECS |
+| **部署工具** | [tools/deploy/](../tools/deploy/) | Docker Compose + Nginx → ECS |
 | **数据库 Schema** | [database/](./database/) | 4 库独立 Schema 概览 |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |
 | **文档编写规则** | [standards/](./standards/) | 代码约定、反模式、文档规范 |

@@ -15,7 +15,7 @@
 | **新增数据库文档** | `docs/database/` — 4 库独立 Schema 文档 |
 | **新增运维文档** | `docs/ops/` — ECS 部署 + 容器编排 |
 | **新增代码约定** | `docs/standards/CONVENTIONS.md` + `ANTI-PATTERNS.md` |
-| **OCE-SuperTask 合并设计** | `docs/superpowers/specs/2026-05-26-oce-supertask-merge-design.md` |
+| **OCE-SuperTask 合并设计** | 已移至 `plan/specs/`（非 git 跟踪） |
 
 ### 文档结构
 
@@ -37,9 +37,9 @@ docs/
 ├── ops/                   ← 运维部署
 ├── standards/             ← 约定反模式
 ├── tools/                 ← 工具文档
-│   ├── supertask/         ← 🚫 已存档（工具已移除）
-│   └── opencode-tui-enhance/
-└── superpowers/           ← 设计方案与计划
+│   ├── deploy/
+│   ├── opencode-tui-enhance/
+│   └── supertask/         ← 🚫 已存档（工具已移除）
 ```
 
 ### AGENTS.md 改造
@@ -55,8 +55,8 @@ docs/
 | 删除 | `docs/prisma/README.md` | → `docs/database/` |
 | 删除 | `docs/server/` (3 文件) | → `docs/ops/` |
 | 删除 | `docs/server_info/ecs100.md` | → `docs/ops/servers.md` |
-| 删除 | `docs/superpowers/specs/` (4 旧文件) | 已过时删除 |
-| 删除 | `docs/superpowers/plans/` (6 旧文件) | 已过时删除 |
+| 删除 | `docs/superpowers/specs/` (4 旧过时文件) | 已从 git 移除，新设计文档 → `plan/specs/` |
+| 删除 | `docs/superpowers/plans/` (6 旧过时文件) | 已从 git 移除，新计划 → `.sisyphus/plans/` |
 
 ## 2026-05-24 — 文档结构重组
 
@@ -86,7 +86,6 @@ docs/
 ├── apps/              ← 各子项目文档
 ├── database/          ← 4 库 Schema
 ├── ops/               ← 运维 + 部署
-├── guides/            ← 跨项目指南
 ├── CHANGELOG.md       ← 本文档
 └── ...
 plan/

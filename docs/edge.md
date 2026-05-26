@@ -72,7 +72,7 @@ docs/README.md                       ← 总索引
 ## 四、避免重复的检查清单
 
 - [ ] `urls.md` 中的 URL 清单不从部署配置复制，而是引用其位置
-- [ ] `ARCHITECTURE.md` 中的端口号不从 `deploy/README.md` 复制，而是保持同步
+- [ ] `ARCHITECTURE.md` 中的端口号不从 `tools/deploy/README.md` 复制，而是保持同步
 - [ ] 各项目的技术栈表格式保持一致
 - [ ] `standards/` 中的命名约定一旦变更，需同步审核所有文档的一致性
 - [ ] 各 `API.md` 的响应格式说明统一，不从复制
@@ -82,7 +82,7 @@ docs/README.md                       ← 总索引
 | 问题 | 示例 | 正确做法 |
 |------|------|----------|
 | README 过长 | 超出 80 行 | 拆分为 API.md / DATABASE.md |
-| 重复内容 | deploy/README.md 出现两次架构图 | 维护唯一版本 |
+| 重复内容 | `tools/deploy/README.md` 出现两次架构图 | 维护唯一版本 |
 | 空文档 | 仅标题无实质内容 | 标记「待补充」或直接删除 |
 | 绝对路径 | `E:\.Code\.miniapps\...` | 全部使用相对路径 |
 | 过期无标记 | 旧架构文档无废弃提示 | 添加 `> 🚫` 标记 |
@@ -90,5 +90,5 @@ docs/README.md                       ← 总索引
 
 ---
 
-> 最后更新: 2026-05-24
-> 修改: 更新路径引用以匹配文档重组后的新结构
+> 最后更新: 2026-05-26
+> 修改: 修复 deploy/README.md 路径引用（→ tools/deploy/README.md）

@@ -99,7 +99,7 @@
 | 项目概述、技术栈、快速开始 | `docs/<project>/README.md` |
 | 架构设计、子系统关系 | `docs/ARCHITECTURE.md` |
 | API 接口定义 | `docs/<server>/API.md` |
-| 部署流程、容器编排 | `docs/deploy/README.md` |
+| 部署流程、容器编排 | `docs/ops/deploy.md` |
 | 设计方案 | `plan/specs/` |
 | Agent 工作计划 | `.sisyphus/plans/` |
 | 代码约定、反模式列表 | 各目录 `AGENTS.md` |
