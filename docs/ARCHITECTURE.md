@@ -1,7 +1,7 @@
 # 系统架构
 
 > **状态**: current
-> **更新**: 2026-05-24
+> **更新**: 2026-05-26
 
 ## 高层面架构（多项目视图）
 
@@ -397,7 +397,7 @@ SSE EventSource 流式返回 (useSSE hook)
 
 ### 关键特性
 
-- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter/MiniMax/DeepBrick 无缝切换
+- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter/MiniMax/Google/Anthropic/智谱/月之暗面 无缝切换
 - **模型自动发现**: model-discovery.service 自动探测各 Provider 可用模型列表
 - **用户等级系统**: FREE/PAID/TESTER 三级，等级路由和 API
 - **角色卡市场**: 发布/审核/收藏/点赞/标签搜索完整链路
@@ -405,6 +405,8 @@ SSE EventSource 流式返回 (useSSE hook)
 - **双模式 TabBar**: 酒馆模式(酒馆/开始/我的) ↔ 游戏模式(通信/通讯录/发现/我的)
 - **游戏存档系统**: gameStore 管理 localStorage 存档，含世界设定/选卡/群组/消息
 - **隐私模式**: 本地 API Key 缓存，AI 请求绕过服务器中转直连 Provider
+- **暗色模式**: CSS 变量驱动，通过 `<html class="dark-mode">` 切换，Storage 持久化偏好
+- **模型发现**: model-discovery.service 自动探测各 Provider 可用模型列表，Profile 页面支持服务商筛选和模型切换
 - **API Key 加密**: 用户级 AES-256-GCM 加密存储
 - **Prompt 构建**: 系统提示 + 角色定义 + 示例对话 + 历史消息 + 当前消息
 - **内容审核**: 敏感词过滤 + 人工审核双机制
