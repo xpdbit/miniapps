@@ -16,7 +16,6 @@ docs/
 ├── ops/                     # 服务器运维 + 部署
 ├── standards/               # 代码约定、反模式、文档规范
 ├── tools/                   # 开发工具
-│   ├── deploy/
 │   ├── opencode-tui-enhance/
 │   └── supertask/           # 🚫 已存档
 ├── ARCHITECTURE.md          # 系统架构

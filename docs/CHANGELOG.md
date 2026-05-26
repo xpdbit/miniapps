@@ -37,7 +37,6 @@ docs/
 ├── ops/                   ← 运维部署
 ├── standards/             ← 约定反模式
 ├── tools/                 ← 工具文档
-│   ├── deploy/
 │   ├── opencode-tui-enhance/
 │   └── supertask/         ← 🚫 已存档（工具已移除）
 ```
