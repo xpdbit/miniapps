@@ -98,6 +98,24 @@ function svgToDataUri(svgTemplate: string, color: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(colored)}`;
 }
 
+/**
+ * Resolve a CSS variable reference (e.g., "var(--color-icon-muted)") to its actual value.
+ * Falls back to the raw string if resolution fails or in non-browser environments.
+ */
+function resolveColor(color: string): string {
+  if (!color.startsWith('var(--')) return color;
+  try {
+    if (typeof document !== 'undefined') {
+      const match = color.match(/var\((--[\w-]+)\)/);
+      if (match) {
+        const resolved = getComputedStyle(document.documentElement).getPropertyValue(match[1]).trim();
+        if (resolved) return resolved;
+      }
+    }
+  } catch { /* ignore resolution failures */ }
+  return color;
+}
+
 const Icon: FC<IconProps> = ({
   name,
   size = 48,
@@ -107,9 +125,11 @@ const Icon: FC<IconProps> = ({
   const template = ICON_SVGS[name];
   if (!template) return null;
 
+  const resolvedColor = resolveColor(color);
+
   return (
     <Image
-      src={svgToDataUri(template, color)}
+      src={svgToDataUri(template, resolvedColor)}
       mode='aspectFit'
       className={`icon icon--${name} ${className}`.trim()}
       style={{

@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { Router, type Request, type Response, type NextFunction } from 'express'
+import crypto from 'crypto'
 import prisma from './prisma'
 
 const router = Router()
@@ -43,7 +44,7 @@ router.get('/health', agentAuth, async (_req: Request, res: Response) => {
     let adminUsersCount = 0
     if (dbConnected) {
       try {
-        adminUsersCount = await prisma.dashboardAdminUser.count()
+        adminUsersCount = await prisma.user.count({ where: { role: { in: ['admin', 'super_admin'] } } })
       } catch {
         adminUsersCount = -1
       }
@@ -70,7 +71,7 @@ router.get('/db-status', agentAuth, async (_req: Request, res: Response) => {
   try {
     const connected = await checkDbConnection()
 
-    const tableNames = ['dashboard_admin_users', 'dashboard_projects', 'dashboard_audit_logs', '_prisma_migrations'] as const
+    const tableNames = ['users', 'user_auths', 'dashboard_projects', 'dashboard_audit_logs', '_prisma_migrations'] as const
     const tables: Record<string, { exists: boolean; row_count: number }> = {}
 
     for (const name of tableNames) {
@@ -106,9 +107,10 @@ router.get('/db-status', agentAuth, async (_req: Request, res: Response) => {
 
 router.get('/admin-users', agentAuth, async (_req: Request, res: Response) => {
   try {
-    const users = await prisma.dashboardAdminUser.findMany({
-      select: { id: true, username: true, role: true, status: true, created_at: true },
-      orderBy: { created_at: 'desc' },
+    const users = await prisma.user.findMany({
+      where: { role: { in: ['admin', 'super_admin', 'viewer'] } },
+      select: { id: true, nickname: true, role: true, status: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
     })
 
     res.json({ users, count: users.length })
@@ -125,28 +127,36 @@ router.post('/seed-admin', agentAuth, async (_req: Request, res: Response) => {
     const seedUsername = process.env.ADMIN_SEED_USERNAME || 'admin'
     const seedPassword = process.env.ADMIN_SEED_PASSWORD || 'Admin123!'
 
-    const existing = await prisma.dashboardAdminUser.findUnique({ where: { username: seedUsername } })
+    const existing = await prisma.user.findFirst({ where: { nickname: seedUsername } })
     if (existing) {
       res.json({
         success: true,
         message: `Admin user '${seedUsername}' already exists`,
         alreadyExisted: true,
+        data: { id: existing.id, nickname: existing.nickname, role: existing.role, status: existing.status, createdAt: existing.createdAt },
       })
       return
     }
 
     const bcrypt = await import('bcryptjs')
-    const passwordHash = await bcrypt.hash(seedPassword, 12)
+    const passwordHash = await bcrypt.default.hash(seedPassword, 12)
+    const uuid = crypto.randomUUID()
 
-    const admin = await prisma.dashboardAdminUser.create({
-      data: { username: seedUsername, password_hash: passwordHash, role: 'super_admin' },
-      select: { id: true, username: true, role: true, status: true, created_at: true },
+    const user = await prisma.user.create({
+      data: {
+        uuid,
+        nickname: seedUsername,
+        role: 'super_admin',
+        auths: {
+          create: { authType: 'password', credential: passwordHash },
+        },
+      },
     })
 
     res.status(201).json({
       success: true,
       message: `Admin user '${seedUsername}' created`,
-      data: admin,
+      data: { id: user.id, nickname: user.nickname, role: user.role, status: user.status, createdAt: user.createdAt },
     })
   } catch {
     res.status(500).json({ success: false, message: 'Internal server error' })

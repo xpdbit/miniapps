@@ -1,4 +1,4 @@
-import { Menu, Typography } from 'antd'
+﻿import { Menu, Typography } from 'antd'
 import type { MenuProps } from 'antd'
 import {
   DashboardOutlined,
@@ -15,7 +15,6 @@ import {
   TeamOutlined,
   SlidersOutlined,
   ThunderboltOutlined,
-  IdcardOutlined,
   ContainerOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -32,15 +31,14 @@ interface MenuItemConfig {
   label: string
   /** Required permission (undefined = super_admin only) */
   permission?: Permission
-  /** 所属项目作用域 */
+  /** 鎵€灞為」鐩綔鐢ㄥ煙 */
   scope: ProjectScope
 }
 
-/** 图标映射 */
+/** 鍥炬爣鏄犲皠 */
 const ICON_MAP: Record<string, React.ReactNode> = {
   [ROUTES.DASHBOARD]: <DashboardOutlined />,
   [ROUTES.TAVERN]: <CommentOutlined />,
-  [ROUTES.TAVERN_CHARACTERS]: <IdcardOutlined />,
   [ROUTES.TAVERN_CHATS]: <ContainerOutlined />,
   [ROUTES.TAVERN_KEYS]: <KeyOutlined />,
   [ROUTES.TAVERN_CARDS]: <AppstoreOutlined />,
@@ -60,7 +58,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   [ROUTES.AUDIT_LOGS]: <AuditOutlined />,
 }
 
-/** 完整菜单配置 */
+/** 瀹屾暣鑿滃崟閰嶇疆 */
 const getMenuItems = (): MenuItemConfig[] => MENU_ITEMS.map((item) => ({
   key: item.path,
   icon: ICON_MAP[item.path] || <SettingOutlined />,
@@ -69,7 +67,7 @@ const getMenuItems = (): MenuItemConfig[] => MENU_ITEMS.map((item) => ({
   scope: item.scope,
 }))
 
-/** 路由 → 权限映射（反向引用） */
+/** 璺敱 鈫?鏉冮檺鏄犲皠锛堝弽鍚戝紩鐢級 */
 const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
   [ROUTES.DASHBOARD]: PERMISSIONS.DASHBOARD,
   [ROUTES.USERS]: PERMISSIONS.USERS,
@@ -80,7 +78,6 @@ const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
   [ROUTES.API_KEYS]: PERMISSIONS.KEYS,
   [ROUTES.MONITORING]: PERMISSIONS.MONITORING,
   [ROUTES.TAVERN]: PERMISSIONS.TAVERN,
-  [ROUTES.TAVERN_CHARACTERS]: PERMISSIONS.TAVERN_CHARACTERS,
   [ROUTES.TAVERN_CHATS]: PERMISSIONS.TAVERN_CHATS,
   [ROUTES.TAVERN_KEYS]: PERMISSIONS.TAVERN_KEYS,
   [ROUTES.TAVERN_CARDS]: PERMISSIONS.TAVERN_CARDS,
@@ -91,11 +88,11 @@ const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
 }
 
 /**
- * 根据当前选中项目过滤菜单
- * - currentProject=null（全局）: 只显示 scope=null 的项目
- * - currentProject=FTG: 显示 scope=null + scope=ftg
- * - currentProject=Game1: 显示 scope=null + scope=game1
- * - currentProject=Tavern: 显示 scope=null + scope=tavern
+ * 鏍规嵁褰撳墠閫変腑椤圭洰杩囨护鑿滃崟
+ * - currentProject=null锛堝叏灞€锛? 鍙樉绀?scope=null 鐨勯」鐩?
+ * - currentProject=FTG: 鏄剧ず scope=null + scope=ftg
+ * - currentProject=Game1: 鏄剧ず scope=null + scope=game1
+ * - currentProject=Tavern: 鏄剧ず scope=null + scope=tavern
  */
 const getProjectScope = (projectName: string | undefined): ProjectScope => {
   if (!projectName) return null
@@ -120,7 +117,7 @@ const Sidebar = () => {
 
   const filteredItems: MenuProps['items'] = allItems
     .filter((item) => {
-      // 权限过滤
+      // 鏉冮檺杩囨护
       if (!role) return false
       if (item.permission) {
         if (!hasPermission(item.permission)) return false
@@ -128,19 +125,19 @@ const Sidebar = () => {
         return false
       }
 
-      // 项目作用域过滤
+      // 椤圭洰浣滅敤鍩熻繃婊?
       if (activeScope === null) {
-        // 全局视图：只显示跨项目菜单
+        // 鍏ㄥ眬瑙嗗浘锛氬彧鏄剧ず璺ㄩ」鐩彍鍗?
         return item.scope === null
       }
-      // 项目视图：显示跨项目 + 当前项目专属菜单
+      // 椤圭洰瑙嗗浘锛氭樉绀鸿法椤圭洰 + 褰撳墠椤圭洰涓撳睘鑿滃崟
       return item.scope === null || item.scope === activeScope
     })
     .map(({ key, icon, label }) => ({ key, icon, label }))
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* 项目信息头 */}
+      {/* 椤圭洰淇℃伅澶?*/}
       {activeScope && (
         <div
           style={{

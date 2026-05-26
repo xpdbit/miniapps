@@ -28,7 +28,7 @@ router.use(requireAuth);
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { recordId } = req.body as { recordId: number };
 
     if (!recordId || typeof recordId !== 'number') {
@@ -55,7 +55,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.delete('/:recordId', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const recordId = parseInt(req.params.recordId as string, 10);
 
     if (isNaN(recordId)) {
@@ -76,7 +76,7 @@ router.delete('/:recordId', async (req: Request, res: Response) => {
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const page = Math.max(1, parseInt(req.query.page as string || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string || '20', 10)));
 
@@ -93,7 +93,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/check', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const idsParam = req.query.ids as string | undefined;
     if (!idsParam) {
       res.status(400).json({ success: false, errCode: 400, errMsg: '缺少 ids 参数', data: null });

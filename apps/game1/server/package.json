@@ -1,7 +1,7 @@
-﻿{
+{
   "name": "game1-server",
   "version": "1.0.0",
-  "description": "Game1 鎸傛満鏀剧疆娓告垙 鈥?鍚庣鏈嶅姟",
+  "description": "Game1 挂机放置游戏 — 后端服务",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/app.ts",

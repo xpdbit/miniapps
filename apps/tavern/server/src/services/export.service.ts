@@ -78,7 +78,7 @@ export async function importFromV2(data: V2CharacterData, userId: string) {
       scenario: d.scenario || null,
       firstMsg: d.first_mes,
       tags: d.tags || [],
-      creatorId: userId,
+      userUuid: userId,
       status: 'DRAFT',
     },
   })

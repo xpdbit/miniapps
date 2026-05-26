@@ -6,7 +6,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -43,6 +43,20 @@ enum UserTierType {
   FREE
   PAID
   TESTER
+}
+
+// ============================================================
+// 0. User — 酒馆用户（admin.ts resolveAdminUserId 依赖）
+// ============================================================
+model TavernUser {
+  id        String   @id @default(uuid())
+  uuid      String   @unique
+  nickname  String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tavern_users")
 }
 
 // ============================================================
@@ -257,6 +271,7 @@ model TavernUserTier {
 
   dailyQuotaMax   Int          @default(20) @map("daily_quota_max")
   dailyQuotaUsed  Int          @default(0)  @map("daily_quota_used")
+  quotaDate       DateTime     @default(now()) @map("quota_date")
 
   xp              Int          @default(0)
   xpToNext        Int          @default(100) @map("xp_to_next")

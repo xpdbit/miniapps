@@ -21,7 +21,7 @@ router.use(requireAuth);
  */
 router.post('/', upload.single('image'), async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const formData: Record<string, unknown> = { ...req.body };
     if (req.file?.buffer) {
       formData.imageBuffer = req.file.buffer;
@@ -39,7 +39,7 @@ router.post('/', upload.single('image'), async (req: Request, res: Response) => 
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { page, limit, foodType, themeId } = req.query as Record<string, string | undefined>;
     const result = await recordService.listByUser(userId, {
       page: page ? parseInt(page, 10) : 1,
@@ -59,7 +59,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/search', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const keyword = req.query.q as string | undefined;
     if (!keyword) {
       res.status(400).json({ success: false, errCode: 1001, errMsg: '缺少搜索关键词', data: null });
@@ -78,7 +78,7 @@ router.get('/search', async (req: Request, res: Response) => {
  */
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const stats = await recordService.getStats(userId);
     res.json({ success: true, errCode: 0, errMsg: 'ok', data: stats });
   } catch (error) {
@@ -92,7 +92,7 @@ router.get('/stats', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const id = parseInt(req.params.id as string, 10);
     if (Number.isNaN(id)) {
       res.status(400).json({ success: false, errCode: 1001, errMsg: '无效的记录 ID', data: null });
@@ -115,7 +115,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const id = parseInt(req.params.id as string, 10);
     if (Number.isNaN(id)) {
       res.status(400).json({ success: false, errCode: 1001, errMsg: '无效的记录 ID', data: null });

@@ -13,10 +13,11 @@ const envSchema = z.object({
   DASHSCOPE_API_KEY: z.string().optional().default(''),
   OPENCODE_API_KEY: z.string().optional().default('sk-98wxIPuxp1QWAXCADC0av2UgCbk3mkIgSG0p1g2SQ2KMRfMTzYqpFe8BEHoim1Gs'),
   OPENCODE_BASE_URL: z.string().optional().default('https://opencode.ai/zen/go/v1'),
-  MINIMAX_API_KEY: z.string().optional().default(''),
+  DEEPSEEK_API_KEY: z.string().optional().default(''),
   ENCRYPTION_KEY: z.string(),
   ADMIN_TOKEN: z.string().optional().default(''),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: z.string().default('http://localhost:5173,http://localhost:5174'),
+  PUBLIC_URL: z.string().default('http://localhost:3002'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -36,8 +37,9 @@ export const config = {
   dashscopeApiKey: parsed.data.DASHSCOPE_API_KEY,
   opencodeApiKey: parsed.data.OPENCODE_API_KEY,
   opencodeBaseUrl: parsed.data.OPENCODE_BASE_URL,
-  minimaxApiKey: parsed.data.MINIMAX_API_KEY,
+  deepseekApiKey: parsed.data.DEEPSEEK_API_KEY,
   encryptionKey: parsed.data.ENCRYPTION_KEY,
   adminToken: parsed.data.ADMIN_TOKEN,
-  corsOrigin: parsed.data.CORS_ORIGIN,
+  corsOrigin: parsed.data.CORS_ORIGIN.split(',').map(s => s.trim()),
+  publicUrl: parsed.data.PUBLIC_URL,
 };

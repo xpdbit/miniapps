@@ -26,7 +26,7 @@ router.use(requireAuth);
  */
 router.post('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { serviceName, apiKey } = req.body;
 
     if (!serviceName || typeof serviceName !== 'string') {
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/:serviceName', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { serviceName } = req.params;
 
     if (!serviceName) {
@@ -110,7 +110,7 @@ router.get('/:serviceName', async (req, res) => {
  */
 router.delete('/:serviceName', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { serviceName } = req.params;
 
     if (!serviceName) {

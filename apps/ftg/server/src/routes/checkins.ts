@@ -13,7 +13,7 @@ router.use(requireAuth);
  */
 router.post('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { foodRecordId, latitude, longitude, locationName } = req.body;
 
     if (!foodRecordId || typeof foodRecordId !== 'number') {
@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
 
@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/today', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const status = await getTodayStatus(userId);
     res.json({ success: true, errCode: 0, errMsg: 'ok', data: status });
   } catch (error) {
@@ -77,7 +77,7 @@ router.get('/today', async (req, res) => {
  */
 router.get('/streak', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const streak = await getStreak(userId);
     res.json({ success: true, errCode: 0, errMsg: 'ok', data: streak });
   } catch (error) {

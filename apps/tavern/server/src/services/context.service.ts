@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma'
+import { Prisma } from '@prisma/client'
 
 interface CreateSessionParams {
   userId: string
@@ -8,48 +9,52 @@ interface CreateSessionParams {
   temperature?: number
 }
 
-interface SendMessageParams {
-  sessionId: string
-  userId: string
-  message: string
-}
+
+type SessionWithIncludes = Prisma.TavernChatSessionGetPayload<{
+  include: { character: true; messages: { orderBy: { createdAt: 'asc' }; take: number } }
+}>
+
+type SessionWithMiniIncludes = Prisma.TavernChatSessionGetPayload<{
+  include: { character: { select: { name: true; avatar: true } }; messages: { orderBy: { createdAt: 'desc' }; take: 1 } }
+}>
 
 export async function createSession(params: CreateSessionParams) {
-  const character = await prisma.tavernCard.findUnique({
+  // 仅查 name 和 firstMsg，不拖全字段（省去 create 中 include character 的冗余 SELECT）
+  const card = await prisma.tavernCard.findUnique({
     where: { id: params.characterId },
+    select: { name: true, firstMsg: true },
   })
-  if (!character) throw new Error('CHARACTER_NOT_FOUND')
+  if (!card) throw new Error('CHARACTER_NOT_FOUND')
 
+  // 新建会话无需 include character/messages：
+  // - character: 调用方通过 cardData 或显式查询获取，不依赖 include
+  // - messages:  新会话始终为空，history 由调用方直接初始化为 []
   const session = await prisma.tavernChatSession.create({
     data: {
-      userId: params.userId,
-      characterId: params.characterId,
+      userUuid: params.userId,
+      cardId: params.characterId,
       personaId: params.personaId,
       modelKey: params.modelKey ?? 'tongyi',
       temperature: params.temperature ?? 0.8,
-      title: `与 ${character.name} 的对话`,
-    },
-    include: {
-      character: true,
-      messages: {
-        orderBy: { createdAt: 'asc' },
-      },
+      title: `与 ${card.name} 的对话`,
     },
   })
 
-  // Save the character's firstMsg as initial AI message
-  await prisma.tavernChatMessage.create({
-    data: {
-      sessionId: session.id,
-      role: 'character',
-      content: character.firstMsg ?? '',
-    },
-  })
+  // 保存角色卡 firstMsg（有则存）
+  if (card.firstMsg) {
+    await prisma.tavernChatMessage.create({
+      data: {
+        sessionId: session.id,
+        role: 'character',
+        content: card.firstMsg,
+      },
+    })
+  }
 
   return session
 }
 
-export async function getSession(sessionId: string, userId: string) {
+export async function getSession(sessionId: string, userId: string): Promise<SessionWithIncludes | null> {
   const session = await prisma.tavernChatSession.findUnique({
     where: { id: sessionId },
     include: {
@@ -60,7 +65,7 @@ export async function getSession(sessionId: string, userId: string) {
       },
     },
   })
-  if (!session || session.userId !== userId) return null
+  if (!session || session.userUuid !== userId) return null
   return session
 }
 
@@ -68,7 +73,7 @@ export async function getMySessions(userId: string, page = 1, pageSize = 20) {
   const skip = (page - 1) * pageSize
   const [items, total] = await Promise.all([
     prisma.tavernChatSession.findMany({
-      where: { userId },
+      where: { userUuid: userId },
       orderBy: { updatedAt: 'desc' },
       skip,
       take: pageSize,
@@ -77,7 +82,7 @@ export async function getMySessions(userId: string, page = 1, pageSize = 20) {
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
     }),
-    prisma.tavernChatSession.count({ where: { userId } }),
+    prisma.tavernChatSession.count({ where: { userUuid: userId } }),
   ])
 
   return {
@@ -99,21 +104,36 @@ export async function getMySessions(userId: string, page = 1, pageSize = 20) {
 
 export async function deleteSession(sessionId: string, userId: string) {
   const session = await prisma.tavernChatSession.findUnique({ where: { id: sessionId } })
-  if (!session || session.userId !== userId) throw new Error('FORBIDDEN')
+  if (!session || session.userUuid !== userId) throw new Error('FORBIDDEN')
   await prisma.tavernChatMessage.deleteMany({ where: { sessionId } })
   await prisma.tavernChatSession.delete({ where: { id: sessionId } })
 }
 
-export async function saveMessage(sessionId: string, role: string, content: string, tokens?: number) {
+/**
+ * 保存消息并可选择跳过 Session 计数器更新。
+ * skipSessionUpdate=true 时仅插入消息，调用方负责合并更新 Session
+ * （避免两次 saveMessage 各触发一次 Session UPDATE 的冗余）。
+ */
+export async function saveMessage(
+  sessionId: string,
+  role: string,
+  content: string,
+  tokens?: number,
+  skipSessionUpdate?: boolean,
+) {
   const msg = await prisma.tavernChatMessage.create({
     data: { sessionId, role: role as 'user' | 'character' | 'system', content, tokens },
   })
-  await prisma.tavernChatSession.update({
-    where: { id: sessionId },
-    data: {
-      messageCount: { increment: 1 },
-      tokenCount: { increment: tokens ?? 0 },
-    },
-  })
+
+  if (!skipSessionUpdate) {
+    await prisma.tavernChatSession.update({
+      where: { id: sessionId },
+      data: {
+        messageCount: { increment: 1 },
+        tokenCount: { increment: tokens ?? 0 },
+      },
+    })
+  }
+
   return msg
 }

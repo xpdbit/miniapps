@@ -116,7 +116,7 @@ export async function getAll(projectId?: string, category?: string): Promise<Cla
     where.category = category;
   }
 
-  const classes = await prisma.themeClass.findMany({
+  const classes = await prisma.ftgThemeClass.findMany({
     where,
     orderBy: [{ category: 'asc' }, { name: 'asc' }],
   });
@@ -128,7 +128,7 @@ export async function getAll(projectId?: string, category?: string): Promise<Cla
  * 根据 classId 获取 class
  */
 export async function getById(classId: string): Promise<ThemeClassData | null> {
-  const cls = await prisma.themeClass.findUnique({
+  const cls = await prisma.ftgThemeClass.findUnique({
     where: { classId },
   });
   if (!cls) return null;
@@ -145,7 +145,7 @@ export async function create(data: CreateClassInput): Promise<ThemeClassData> {
     throw new Error(`CSS 属性校验失败: ${validation.errors.join('; ')}`);
   }
 
-  const cls = await prisma.themeClass.create({
+  const cls = await prisma.ftgThemeClass.create({
     data: {
       classId: `cls_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`,
       projectId: data.projectId ?? 'ftg',
@@ -163,7 +163,7 @@ export async function create(data: CreateClassInput): Promise<ThemeClassData> {
  * 更新 class
  */
 export async function update(classId: string, data: UpdateClassInput): Promise<ThemeClassData | null> {
-  const existing = await prisma.themeClass.findUnique({ where: { classId } });
+  const existing = await prisma.ftgThemeClass.findUnique({ where: { classId } });
   if (!existing) return null;
 
   if (data.cssProperties !== undefined) {
@@ -180,7 +180,7 @@ export async function update(classId: string, data: UpdateClassInput): Promise<T
   if (data.description !== undefined) updateData.description = data.description;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
-  const cls = await prisma.themeClass.update({
+  const cls = await prisma.ftgThemeClass.update({
     where: { classId },
     data: updateData,
   });
@@ -192,11 +192,11 @@ export async function update(classId: string, data: UpdateClassInput): Promise<T
  * 删除 class（检查是否被主题引用）
  */
 export async function deleteByClassId(classId: string): Promise<boolean> {
-  const existing = await prisma.themeClass.findUnique({ where: { classId } });
+  const existing = await prisma.ftgThemeClass.findUnique({ where: { classId } });
   if (!existing) return false;
 
   // 检查是否有主题引用该 class
-  const themesWithClass = await prisma.theme.findMany({
+  const themesWithClass = await prisma.ftgTheme.findMany({
     where: {
       cssClasses: {
         path: '$',
@@ -211,7 +211,7 @@ export async function deleteByClassId(classId: string): Promise<boolean> {
     throw new Error(`Class 已被主题引用: ${themeNames}，请先移除引用后再删除`);
   }
 
-  await prisma.themeClass.delete({ where: { classId } });
+  await prisma.ftgThemeClass.delete({ where: { classId } });
   return true;
 }
 

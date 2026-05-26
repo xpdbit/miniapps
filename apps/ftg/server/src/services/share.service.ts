@@ -1,11 +1,11 @@
 /**
  * 分享卡片生成服务
  *
- * 使用 sharp 在服务端合成分享卡片图片，包含食物图片、
- * 食物名称、游戏风格描述和主题装饰框。
+ * 使用 sharp 在服务端合成分享卡片图片，包含食物图片�?
+ * 食物名称、游戏风格描述和主题装饰框�?
  *
  * ⚠️ 注意：不使用 Canvas（服务端无头浏览器开销大、不稳定），
- * 所有合成操作均通过 sharp + SVG overlay 实现。
+ * 所有合成操作均通过 sharp + SVG overlay 实现�?
  */
 import prisma from '../lib/prisma';
 import { getStorageProvider, buildStoragePath } from '../lib/storage-factory';
@@ -21,20 +21,20 @@ import logger from '../utils/logger';
 const CARD_WIDTH = 600;
 /** 分享卡片高度 */
 const CARD_HEIGHT = 800;
-/** 底部文本面板外边距 */
+/** 底部文本面板外边�?*/
 const PANEL_MARGIN = 24;
 /** 底部文本面板圆角 */
 const PANEL_RADIUS = 16;
 /** 底部文本面板高度 */
 const PANEL_HEIGHT = 210;
 /** 品牌标签文字 */
-const BRAND_TEXT = '✦ 美食主题生成器 ✦';
+const BRAND_TEXT = '🎨 美食主题生成器';
 
 // ============================================================
 // 辅助函数
 // ============================================================
 
-/** XML 转义（防止 SVG 注入） */
+/** XML 转义（防�?SVG 注入�?*/
 function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -51,8 +51,8 @@ function truncateText(text: string, maxLength: number): string {
 }
 
 /**
- * 按单词换行，每行不超过 maxChars 个字符
- * 对中文等无空格文字做硬截断兜底
+ * 按单词换行，每行不超�?maxChars 个字�?
+ * 对中文等无空格文字做硬截断兜�?
  */
 function wrapText(text: string, maxCharsPerLine: number): string[] {
   if (!text) return [''];
@@ -85,7 +85,7 @@ function wrapText(text: string, maxCharsPerLine: number): string[] {
 }
 
 /**
- * 生成叠层文本 SVG（底部半透明面板 + 食物名称 + 描述 + 品牌）
+ * 生成叠层文本 SVG（底部半透明面板 + 食物名称 + 描述 + 品牌�?
  */
 function generateTextSvg(foodName: string, gameDesc: string): Buffer {
   const panelTop = CARD_HEIGHT - PANEL_HEIGHT - PANEL_MARGIN;
@@ -96,7 +96,7 @@ function generateTextSvg(foodName: string, gameDesc: string): Buffer {
   const nameLines = wrapText(foodName, 18).slice(0, 2);
   const descLines = wrapText(gameDesc, 36).slice(0, 3);
 
-  // 构建描述文本的 <tspan> 行
+  // 构建描述文本�?<tspan> �?
   const lineHeight = 26;
   let descTspans = '';
   descLines.forEach((line, idx) => {
@@ -104,7 +104,7 @@ function generateTextSvg(foodName: string, gameDesc: string): Buffer {
     descTspans += `<tspan x="${CARD_WIDTH / 2}" dy="${dy}">${escapeXml(line)}</tspan>`;
   });
 
-  // 名称最多 2 行
+  // 名称最�?2 �?
   let nameTspans = '';
   nameLines.forEach((line, idx) => {
     const dy = idx === 0 ? '0' : '36';
@@ -139,31 +139,31 @@ function generateTextSvg(foodName: string, gameDesc: string): Buffer {
 }
 
 // ============================================================
-// 主服务函数
+// 主服务函�?
 // ============================================================
 
 /**
- * 生成食物记录的分享卡片
+ * 生成食物记录的分享卡�?
  *
- * 流程：
+ * 流程�?
  * 1. 校验食物记录所有权
- * 2. 下载食物图片（+ 主题装饰图）
- * 3. 使用 sharp 合成卡片（food image → theme frame → text overlay）
- * 4. 上传至存储服务
- * 5. 返回可公开访问的 URL
+ * 2. 下载食物图片�? 主题装饰图）
+ * 3. 使用 sharp 合成卡片（food image �?theme frame �?text overlay�?
+ * 4. 上传至存储服�?
+ * 5. 返回可公开访问�?URL
  *
  * @param foodRecordId - 食物记录 ID
- * @param userId       - 当前用户 ID
- * @returns 包含分享卡片图片 URL 的对象
- * @throws 记录不存在 / 无权操作 / 无图片时抛出 Error
+ * @param userUuid       - 当前用户 ID
+ * @returns 包含分享卡片图片 URL 的对�?
+ * @throws 记录不存�?/ 无权操作 / 无图片时抛出 Error
  */
 export async function generateShareCard(
   foodRecordId: number,
-  userId: number,
+  userUuid: number,
 ): Promise<{ shareImageUrl: string }> {
   // 1. 校验所有权
-  const record = await prisma.foodRecord.findFirst({
-    where: { id: foodRecordId, userId, isDeleted: false },
+  const record = await prisma.ftgFoodRecord.findFirst({
+    where: { id: foodRecordId, userUuid, isDeleted: false },
     select: {
       id: true,
       imageUrl: true,
@@ -193,7 +193,7 @@ export async function generateShareCard(
 
   const [foodImageBuffer] = await Promise.all([fetchImage(record.imageUrl)]);
 
-  // 可选：下载主题装饰图（失败不回退）
+  // 可选：下载主题装饰图（失败不回退�?
   let themeOverlayBuffer: Buffer | null = null;
   if (record.themeImageUrl) {
     try {
@@ -218,9 +218,9 @@ export async function generateShareCard(
 
   // 4. 合成分享卡片
   // 图层顺序（从下到上）:
-  //   a. 食物图片（缩放填充 600×800）
+  //   a. 食物图片（缩放填�?600×800�?
   //   b. 主题装饰框（可选）
-  //   c. SVG 文本叠层（底部面板 + 名称 + 描述 + 品牌）
+  //   c. SVG 文本叠层（底部面�?+ 名称 + 描述 + 品牌�?
   const compositeLayers: sharp.OverlayOptions[] = [
     ...(themeOverlayBuffer
       ? [{ input: themeOverlayBuffer, top: 0, left: 0 } as sharp.OverlayOptions]
@@ -235,18 +235,18 @@ export async function generateShareCard(
       .jpeg({ quality: 92, progressive: true })
       .toBuffer();
 
-    // 5. 上传至存储
+    // 5. 上传至存�?
     const storage = getStorageProvider();
-    const key = buildStoragePath(userId, 'share-card', 'jpg');
+    const key = buildStoragePath(userUuid, 'share-card', 'jpg');
     const shareImageUrl = await storage.upload(key, compositedBuffer, 'image/jpeg');
 
-    logger.info('分享卡片生成成功', { foodRecordId, userId, shareImageUrl });
+    logger.info('分享卡片生成成功', { foodRecordId, userUuid, shareImageUrl });
 
     return { shareImageUrl };
   } catch (error) {
     logger.error('分享卡片合成失败', {
       foodRecordId,
-      userId,
+      userUuid,
       error: (error as Error).message,
     });
     throw new Error('分享卡片生成失败');

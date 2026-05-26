@@ -10,7 +10,7 @@
 
   /* ── 头部区域：渐变氛围背景 ── */
   &-header {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     align-items: center;
     padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-lg);
@@ -80,13 +80,12 @@
   /* ── UUID 身份标识 ── */
   &-uuid {
     font-size: var(--font-caption);
-    color: var(--color-text-tertiary);
+    color: var(--color-text-secondary);
     font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     margin-bottom: var(--spacing-lg);
     position: relative;
     z-index: 1;
-    opacity: 0.7;
   }
 
   /* ── 配额显示 ── */
@@ -517,8 +516,8 @@
   border: none;
 
   &--wechat {
-    background: #07C160;
-    color: #FFFFFF;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
   }
 
   &--password {
@@ -527,9 +526,27 @@
     border: 1px solid var(--color-border);
   }
 
+  &--primary {
+    background: var(--color-primary-dark, #A67B4A);
+    color: #FFFFFF !important;
+    border: none;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.5px;
+    opacity: 1 !important;
+  }
+
   &[disabled] {
     opacity: 0.5;
   }
+}
+
+/* ===== H5 web login hint ===== */
+.page-profile-login-web-hint {
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin-top: var(--spacing-sm);
+  line-height: 1.5;
 }
 
 /* ===== login form ===== */
@@ -579,14 +596,15 @@
   padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   font-size: var(--font-body);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   text-align: center;
   border: none;
-  background: var(--color-primary);
+  background: var(--color-primary-dark, #A67B4A);
   color: #FFFFFF;
+  letter-spacing: 0.5px;
 
   &--wechat {
-    background: #07C160;
+    background: var(--color-primary-dark, #A67B4A);
   }
 
   &[disabled] {
@@ -609,5 +627,100 @@
 
 .page-profile-logout-text {
   font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-error, #E5534B);
+  }
+}
+
+/* ===== 隐私模式 ===== */
+.page-profile-privacy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.page-profile-privacy-info {
+  flex: 1;
+  margin-right: var(--spacing-md);
+}
+
+.page-profile-privacy-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+  display: block;
+}
+
+.page-profile-privacy-desc {
+  font-size: var(--font-body-sm, 13px);
   color: var(--color-text-tertiary);
+  line-height: 1.6;
+  margin-top: var(--spacing-2xs);
+  overflow: visible;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+
+  &--warn {
+    color: var(--color-warning, #FF9500);
+  }
+}
+
+.page-profile-privacy-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: rgba(255, 149, 0, 0.08);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 149, 0, 0.2);
+}
+
+.page-profile-privacy-notice-content {
+  flex: 1;
+}
+
+.page-profile-privacy-notice-title {
+  font-size: var(--font-body-sm);
+  color: var(--color-warning, #FF9500);
+  font-weight: var(--font-weight-medium);
+  display: block;
+}
+
+.page-profile-privacy-notice-desc {
+  font-size: var(--font-caption-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-top: var(--spacing-2xs);
+  white-space: pre-line;
+}
+
+/* ── 离开游戏按钮 ── */
+.page-profile-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-sm, 16px) var(--spacing-base, 24px);
+  padding: var(--spacing-sm, 16px) var(--spacing-base, 24px);
+  background: var(--color-error-bg, rgba(229, 83, 75, 0.1));
+  border: 1px solid var(--color-error, #E5534B);
+  border-radius: var(--radius-base, 12px);
+
+  Text {
+    font-size: var(--font-size-base, 28rpx);
+    color: var(--color-error, #E5534B);
+    font-weight: var(--font-weight-medium, 500);
+  }
+
+  &:active {
+    background: var(--color-error, rgba(229, 83, 75, 0.2));
+    opacity: 0.8;
+  }
 }

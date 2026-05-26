@@ -1,81 +1,119 @@
-﻿/* ============================================================
-   自定义底部栏样式
-   注意：微信自定义 tabBar 渲染在 page DOM 树之外，
-   无法继承 app.scss page{} 中定义的 CSS 变量，
-   因此此处使用直接颜色值（与主题保持一致）。
-   高度补偿：各 tab 页面需添加 padding-bottom 避免内容被遮挡
+/* ============================================================
+   自定义底部栏样式 — Tavern 双模式
+
+   ★ 注意：Taro 对 tabBar 列表内的原生 tabBar 页面（market/chat/
+   profile）渲染时会加 index-- 前缀，但对非 tabBar 页面（chats/
+   contacts/discover）不加。每条规则需同时匹配两种 class 名称。
    ============================================================ */
 
-/* --- 底部栏容器 --- */
-.custom-tab-bar {
+/* ---- Root ---- */
+.custom-tab-bar,
+.index--custom-tab-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 200;                      /* var(--z-sticky) — tab bar 无法继承 page{} 变量 */
-  background: #FCF9F6;               /* 不透明背景，对应 --color-bg-elevated */
-  border-top: 1px solid #E5DDD4;    /* 对应 --color-border */
+  z-index: 200;
+  background: #FCF9F6;
+  border-top: 1rpx solid #E5DDD4;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
   padding-bottom: env(safe-area-inset-bottom, 0);
-  transition: transform 0.2s ease;
-
-  &--hidden {
-    transform: translateY(100%);
-  }
 }
 
-.tab-bar-inner {
+/* ---- Hidden state ---- */
+.custom-tab-bar--hidden,
+.index--custom-tab-bar--hidden {
+  transform: translateY(100%);
+}
+
+/* ---- Inner layout ---- */
+.custom-tab-bar .tab-bar-inner,
+.index--custom-tab-bar .index--tab-bar-inner {
   display: flex;
   align-items: center;
   justify-content: space-around;
   height: 120rpx;
+  padding: 0 8rpx;
 }
 
-/* --- 单个 tab 项 --- */
-.tab-item {
-  flex: 1;
+/* ---- Tab item ---- */
+.custom-tab-bar .tab-item,
+.index--custom-tab-bar .index--tab-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
+  flex: 1;
   height: 100%;
+  padding: 4rpx 0;
   -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease;
+  -webkit-user-select: none;
   user-select: none;
 }
 
-.tab-item:active {
-  opacity: 0.7;
+.custom-tab-bar .tab-item:active,
+.index--custom-tab-bar .index--tab-item:active {
+  opacity: 0.65;
 }
 
-/* --- 图标 --- */
-.tab-icon-wrap {
-  width: 60rpx;
-  height: 60rpx;
+/* ---- Active tab state ---- */
+.custom-tab-bar .tab-item--active .tab-label,
+.index--custom-tab-bar .index--tab-item--active .index--tab-label {
+  color: #C49A6C;
+  font-weight: 600;
+}
+
+.custom-tab-bar .tab-item--active .tab-icon-wrap,
+.index--custom-tab-bar .index--tab-item--active .index--tab-icon-wrap {
+  filter: drop-shadow(0 2rpx 8rpx rgba(196, 154, 108, 0.2));
+}
+
+/* ---- Icon wrapper ---- */
+.custom-tab-bar .tab-icon-wrap,
+.index--custom-tab-bar .index--tab-icon-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.tab-icon {
   width: 56rpx;
   height: 56rpx;
+  margin-bottom: 4rpx;
+  transition: filter 0.25s ease;
 }
 
-/* --- 标签文字 --- */
-.tab-label {
-  font-size: 20px;                   /* var(--font-caption) */
-  color: #A8A39E;                    /* var(--color-text-tertiary) */
+/* ---- Icon ---- */
+.custom-tab-bar .tab-icon,
+.index--custom-tab-bar .index--tab-icon {
+  width: 52rpx;
+  height: 52rpx;
+}
+
+/* ---- Label ---- */
+.custom-tab-bar .tab-label,
+.index--custom-tab-bar .index--tab-label {
+  font-size: 20rpx;
+  color: #A8A39E;
   line-height: 1;
-  font-weight: 500;                  /* var(--font-weight-medium) */
+  font-weight: 500;
+  transition: color 0.2s ease, font-weight 0.2s ease;
 }
 
-.tab-item--active .tab-label {
-  color: #C49A6C;                    /* var(--color-primary) */
-  font-weight: 600;                  /* var(--font-weight-semibold) */
+/* ── 四 tab 紧凑模式（游戏模式）── 必须放在通用规则之后以确保覆盖 ── */
+.custom-tab-bar--four .tab-icon-wrap,
+.index--custom-tab-bar--four .index--tab-icon-wrap {
+  width: 48rpx;
+  height: 48rpx;
 }
 
-/* 亮色主题适配 */
-.tab-item--active .tab-icon-wrap {
-  filter: drop-shadow(0 0 4px rgba(196, 154, 108, 0.15));  /* var(--color-primary-glow) */
+.custom-tab-bar--four .tab-icon,
+.index--custom-tab-bar--four .index--tab-icon {
+  width: 44rpx;
+  height: 44rpx;
 }
 
+.custom-tab-bar--four .tab-label,
+.index--custom-tab-bar--four .index--tab-label {
+  font-size: 18rpx;
+}

@@ -1,129 +1,91 @@
-import { useState } from 'react'
-import { Table, Tag, Card, Row, Col, Statistic, Button, Space, message, Popconfirm } from 'antd'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { CommentOutlined, ReloadOutlined, AppstoreOutlined, UserOutlined, KeyOutlined, FileTextOutlined } from '@ant-design/icons'
+import { Tag, Card, Row, Col, Statistic, Button, Space, message, Tooltip } from 'antd'
+import { CommentOutlined, AppstoreOutlined, UserOutlined, KeyOutlined, FileTextOutlined, CloudDownloadOutlined } from '@ant-design/icons'
 import { ROUTES } from '@/constants/routes'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { tavernAdminApi, unwrapTavernResponse } from '@/services/tavern'
-import type { TavernCharacter, TavernStats, CharactersResponse } from '@/services/tavern'
-
-// 兼容旧版直接 API 调用（在 tavern proxy 未到位时用）
-const tavernApi = {
-  getCharacters: async (params?: { page?: number; pageSize?: number }): Promise<CharactersResponse> => {
-    try {
-      const res = await tavernAdminApi.getCharacters(params)
-      return unwrapTavernResponse<CharactersResponse>(res.data)
-    } catch {
-      // Fallback: 直接调用 tavern-server（通过 nginx 代理）
-      const axios = (await import('axios')).default
-      const { getToken } = await import('@/utils/token')
-      const token = getToken()
-      const res = await axios.get('/api/tavern/api/v1/characters', {
-        params,
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      return res.data.data
-    }
-  },
-  getStats: async (): Promise<TavernStats> => {
-    try {
-      const res = await tavernAdminApi.getStats()
-      return unwrapTavernResponse<TavernStats>(res.data)
-    } catch {
-      const axios = (await import('axios')).default
-      const { getToken } = await import('@/utils/token')
-      const token = getToken()
-      const res = await axios.get('/api/tavern/api/v1/admin/dashboard/stats', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      return res.data.data
-    }
-  },
-  banCharacter: async (id: string): Promise<void> => {
-    try {
-      await tavernAdminApi.banCharacter(id, '管理员封禁')
-    } catch {
-      const axios = (await import('axios')).default
-      const { getToken } = await import('@/utils/token')
-      const token = getToken()
-      await axios.post(`/api/tavern/api/v1/admin/ban/${id}`, { reason: '管理员封禁' }, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    }
-  },
-}
+import type { TavernStats } from '@/services/tavern'
 
 export default function TavernPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [page, setPage] = useState(1)
-
-  const { data: characters, isLoading: charsLoading } = useQuery({
-    queryKey: ['tavern-characters', page],
-    queryFn: () => tavernApi.getCharacters({ page, pageSize: 20 }),
-  })
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['tavern-stats'],
-    queryFn: () => tavernApi.getStats(),
+    queryFn: async () => {
+      const res = await tavernAdminApi.getStats()
+      return unwrapTavernResponse<TavernStats>(res.data)
+    },
   })
 
-  const handleBan = async (id: string) => {
-    try {
-      await tavernApi.banCharacter(id)
-      void message.success('已封禁')
-      queryClient.invalidateQueries({ queryKey: ['tavern-characters'] })
-    } catch {
-      void message.error('操作失败')
-    }
+  // ── 模型统计 ──
+  const { data: modelStats, isLoading: modelStatsLoading } = useQuery({
+    queryKey: ['tavern-model-stats'],
+    queryFn: async () => {
+      try {
+        const res = await tavernAdminApi.getModelStats()
+        return unwrapTavernResponse<{ total: number; active: number; byProvider: Array<{ provider: string; _count: { modelId: number } }> }>(res.data)
+      } catch {
+        return null
+      }
+    },
+    refetchInterval: 60_000, // 每分钟自动刷新
+  })
+
+  // ── 模型同步 ──
+  const syncMutation = useMutation({
+    mutationFn: () => tavernAdminApi.syncModels(),
+    onSuccess: (res) => {
+      const data = unwrapTavernResponse<{ summary: { success: number; failed: number; added: number; updated: number }; results: Array<{ provider: string; error?: string }> }>(res.data)
+      if (data?.summary) {
+        const { success, failed, added, updated } = data.summary
+        if (failed === 0) {
+          void message.success(`同步完成: ${success} 个服务商, 新增 ${added} 个, 更新 ${updated} 个`)
+        } else {
+          void message.warning(`同步完成: ${success}/${success + failed} 成功, 新增 ${added} 个, 更新 ${updated} 个`)
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['tavern-model-stats'] })
+    },
+    onError: () => {
+      void message.error('模型同步失败，请检查服务商配置')
+    },
+  })
+
+  // ── 刷新所有 tavern 数据 ──
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['tavern-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['tavern-model-stats'] })
   }
 
-  const columns = [
-    { title: '角色名', dataIndex: 'name', key: 'name' },
-    { title: '创建者', dataIndex: ['creator', 'nickname'], key: 'creator' },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        const colors: Record<string, string> = { DRAFT: 'default', PENDING: 'orange', PUBLISHED: 'green', BANNED: 'red' }
-        const labels: Record<string, string> = { DRAFT: '草稿', PENDING: '待审核', PUBLISHED: '已发布', BANNED: '已封禁' }
-        return <Tag color={colors[status] ?? 'default'}>{labels[status] ?? status}</Tag>
-      },
-    },
-    { title: '对话', dataIndex: 'chatCount', key: 'chatCount', width: 80 },
-    { title: '点赞', dataIndex: 'likeCount', key: 'likeCount', width: 80 },
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', render: (v: string) => new Date(v).toLocaleDateString() },
-    {
-      title: '操作',
-      key: 'actions',
-      render: (_: unknown, record: TavernCharacter) => (
-        <Space>
-          {record.status !== 'BANNED' && (
-            <Popconfirm title="确认封禁该角色卡？" onConfirm={() => handleBan(record.id)}>
-              <Button type="link" danger>封禁</Button>
-            </Popconfirm>
-          )}
-        </Space>
-      ),
-    },
-  ]
+  if (statsLoading) return <PageSkeleton type="table" />
 
-  if (charsLoading || statsLoading) return <PageSkeleton type="table" />
+  // ── 模型服务商 Tag 颜色映射 ──
+  const providerColors: Record<string, string> = {
+    tongyi: 'blue', opencode: 'purple', openai: 'green', deepseek: 'cyan',
+    anthropic: 'orange', google: 'red', zhipu: 'volcano', moonshot: 'gold',
+    minimax: 'magenta', openrouter: 'geekblue', oneapi: 'lime',
+  }
 
   return (
     <div>
       <PageHeader
         title="AI 酒馆管理"
+        onRefresh={handleRefresh}
         extra={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['tavern'] })}
-          >
-            刷新
-          </Button>
+          <Space>
+            <Tooltip title="从 One API 等服务商同步最新模型列表">
+              <Button
+                icon={<CloudDownloadOutlined />}
+                onClick={() => syncMutation.mutate()}
+                loading={syncMutation.isPending}
+              >
+                同步模型
+              </Button>
+            </Tooltip>
+          </Space>
         }
       />
 
@@ -136,14 +98,17 @@ export default function TavernPage() {
           <Button icon={<FileTextOutlined />} onClick={() => navigate(ROUTES.TAVERN_CARDS)}>
             卡片管理
           </Button>
-          <Button icon={<UserOutlined />} onClick={() => navigate(ROUTES.TAVERN_CHARACTERS)}>
-            角色管理
-          </Button>
           <Button icon={<CommentOutlined />} onClick={() => navigate(ROUTES.TAVERN_CHATS)}>
             聊天监控
           </Button>
           <Button icon={<KeyOutlined />} onClick={() => navigate(ROUTES.TAVERN_KEYS)}>
             Key 管理
+          </Button>
+          <Button icon={<UserOutlined />} onClick={() => navigate(ROUTES.TAVERN_USERS)}>
+            用户管理
+          </Button>
+          <Button icon={<AppstoreOutlined />} onClick={() => navigate(ROUTES.TAVERN_MODELS)}>
+            模型管理
           </Button>
         </Space>
       </Card>
@@ -171,17 +136,28 @@ export default function TavernPage() {
         </Col>
       </Row>
 
-      <Table
-        columns={columns}
-        dataSource={characters?.items ?? []}
-        rowKey="id"
-        pagination={{
-          current: page,
-          pageSize: 20,
-          total: characters?.total ?? 0,
-          onChange: setPage,
-        }}
-      />
+      {/* ── 模型统计 ── */}
+      {modelStats && !modelStatsLoading && (
+        <Card size="small" title="模型概况" style={{ marginBottom: 24 }}>
+          <Row gutter={16}>
+            <Col span={6}>
+              <Statistic title="模型总数" value={modelStats.total} />
+            </Col>
+            <Col span={6}>
+              <Statistic title="启用中" value={modelStats.active} valueStyle={{ color: '#52c41a' }} />
+            </Col>
+            <Col span={12}>
+              <Space wrap>
+                {modelStats.byProvider.map((p) => (
+                  <Tag key={p.provider} color={providerColors[p.provider] ?? 'default'}>
+                    {p.provider}: {p._count.modelId}
+                  </Tag>
+                ))}
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+      )}
     </div>
   )
 }

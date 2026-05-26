@@ -90,7 +90,7 @@ router.post('/login', async (req: Request, res: Response) => {
  */
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
   try {
-    const user = await getUserById(req.user!.userId);
+    const user = await getUserById(req.user!.uuid);
     if (!user) {
       const response: ApiResponse = {
         success: false,
@@ -139,7 +139,7 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    const updatedUser = await updateUserProfile(req.user!.userId, { nickname, avatarUrl });
+    const updatedUser = await updateUserProfile(req.user!.uuid, { nickname, avatarUrl });
     if (!updatedUser) {
       res.status(200).json({ success: true, errCode: 0, errMsg: '未提供需要更新的字段', data: null });
       return;

@@ -137,7 +137,7 @@ export default function PersonaPage() {
         ) : personas.length === 0 ? (
           <View className='page-persona-empty'>
             <EmptyState
-              icon={<Icon name='persona' size={64} color='#CCCCCC' />}
+              icon={<Icon name='persona' size={64} color='var(--color-icon-disabled)' />}
               title='还没有角色'
               description='创建一个角色来开启对话'
             />
@@ -203,7 +203,7 @@ export default function PersonaPage() {
             <View className='page-persona-modal-header'>
               <Text className='page-persona-modal-title'>{editId ? '编辑角色' : '创建角色'}</Text>
               <Text className='page-persona-modal-close' onClick={closeModal}>
-                <Icon name='close' size={32} color='#999' />
+                <Icon name='close' size={32} color='var(--color-icon-muted)' />
               </Text>
             </View>
             <View className='page-persona-modal-body'>

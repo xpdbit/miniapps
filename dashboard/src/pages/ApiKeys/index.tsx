@@ -249,7 +249,7 @@ const ApiKeys = () => {
         onCancel={handleCancel}
         confirmLoading={submitting}
         width={isMobile ? '100%' : 480}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item

@@ -4,6 +4,12 @@ import devConfig from './dev'
 import prodConfig from './prod'
 import domain from '../../../../domain.config.js'
 
+// HtmlWebpackPlugin for H5 entry HTML generation
+let HtmlWebpackPlugin: typeof import('html-webpack-plugin') | null = null
+try {
+  HtmlWebpackPlugin = require('html-webpack-plugin')
+} catch { /* optional - will fall back to copy-based approach */ }
+
 // 根据构建类型（weapp/h5）确定输出目录，避免互相覆盖
 const targetEnv = process.env.TARO_ENV || 'weapp'
 const isH5 = targetEnv === 'h5'
@@ -33,6 +39,7 @@ const baseConfig = {
   cache: { enable: false },
   mini: {
     outputRoot: 'dist-weapp',
+    prebundle: { enable: false },
     postcss: {
       pxtransform: { enable: true, config: {} },
       cssModules: { enable: false, config: { namingPattern: 'module', generateScopedName: '[name]__[local]___[hash:base64:5]' } },
@@ -52,6 +59,13 @@ const baseConfig = {
     outputRoot: 'dist-h5',
     publicPath: '/',
     staticDirectory: 'static',
+    devServer: {
+      port: 5174,
+      host: '0.0.0.0',
+      hot: true,
+      open: false,
+      historyApiFallback: true,
+    },
     router: {
       mode: 'hash',
       customRoutes: {
@@ -62,7 +76,6 @@ const baseConfig = {
         '/pages/creator/index': '/creator',
         '/pages/profile/index': '/profile',
         '/pages/persona/index': '/persona',
-        '/pages/settings/index': '/settings',
       },
     },
     postcss: {
@@ -78,6 +91,31 @@ const baseConfig = {
         .set('@types', path.resolve(__dirname, '..', 'src/types'))
         .set('@constants', path.resolve(__dirname, '..', 'src/constants'))
         .set('@stores', path.resolve(__dirname, '..', 'src/stores'))
+        // core-js-pure 3.x 已移除 web/ 路径，映射到兼容 shim
+        .set('core-js-pure/web/url', path.resolve(__dirname, '..', 'h5-polyfills', 'url-shim'))
+        .set('core-js-pure/web/url-search-params', path.resolve(__dirname, '..', 'h5-polyfills', 'url-search-params-shim'))
+
+      // 生成 index.html 入口（H5 Web 必需）
+      if (HtmlWebpackPlugin) {
+        chain.plugin('html-webpack-plugin').use(HtmlWebpackPlugin, [{
+          template: path.resolve(__dirname, '..', 'index.html'),
+          filename: 'index.html',
+          inject: true,
+          minify: process.env.NODE_ENV === 'production' ? {
+            removeComments: true,
+            collapseWhitespace: true,
+          } : false,
+        }])
+      }
+
+      // 显式启用 HMR plugin — Taro 4.x webpack5-runner 创建 devServer 时
+      // 才添加此 plugin（晚于 compiler 编译启动），导致 ReactRefreshPlugin 在首次编译时
+      // 无法检测到 HMR 并弹出 warning。此处提前注入，确保 plugin 在 compiler 创建时就存在。
+      // 同时仅 dev 模式注入，避免 production 构建中引入 HMR 运行时死代码。
+      if (process.env.NODE_ENV !== 'production') {
+        const webpack = require('webpack')
+        chain.plugin('hmr').before('fastRefreshPlugin').use(webpack.HotModuleReplacementPlugin)
+      }
     },
   },
 }

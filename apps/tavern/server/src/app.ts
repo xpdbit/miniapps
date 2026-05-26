@@ -13,7 +13,7 @@ const app = express();
 // 安全中间件
 app.use(helmet());
 
-// CORS
+// CORS — 支持多来源（H5 Web 各端口 + Dashboard + 微信小程序）
 app.use(cors({
   origin: config.corsOrigin,
   credentials: true,
@@ -23,11 +23,24 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 限流
-app.use(rateLimit({
+// 全局限流（宽松，主供聊天场景）
+const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-}));
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// 认证端点严限流（防暴力破解）
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 429, message: '请求过于频繁，请稍后再试', data: null },
+});
+
+app.use(globalLimiter);
 
 // 请求日志
 app.use((req, _res, next) => {

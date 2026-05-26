@@ -14,7 +14,7 @@ interface ChatMessage {
   content: string
 }
 
-const PROVIDER_CONFIGS: Record<AiProvider, { baseUrl: string; defaultModel: string }> = {
+export const PROVIDER_CONFIGS: Record<AiProvider, { baseUrl: string; defaultModel: string }> = {
   opencode: {
     baseUrl: 'https://api.opencode.com/v1/chat/completions',
     defaultModel: 'qwen-turbo',

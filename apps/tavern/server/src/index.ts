@@ -1,12 +1,115 @@
 import { createServer, default as app } from './app';
 import { config } from './config';
 import logger from './utils/logger';
+import { execSync } from 'child_process';
 
 // 使用 createServer() 以启用正确的超时配置（SSE 长连接支持）
 const server = createServer();
 
+/** server 是否已成功启动（用于 shutdown 容错） */
+let serverListening = false;
+/** 是否已尝试自动清理端口占用（避免无限重试） */
+let portCleanupAttempted = false;
+
+/**
+ * 尝试自动释放被同服务（node 进程）占用的端口
+ * @returns 是否成功清理了占用端口的 node 进程
+ */
+function tryReleaseNodePort(port: number): boolean {
+  try {
+    // 查找占用指定端口的 PID
+    const netstatOut = execSync(`netstat -ano | findstr :${port}`, {
+      encoding: 'utf-8',
+      timeout: 5000,
+    });
+
+    // netstat 输出: "  TCP    0.0.0.0:3002   0.0.0.0:0   LISTENING    12345"
+    const lines = netstatOut.trim().split('\n').filter(l => l.includes('LISTENING'));
+    if (lines.length === 0) return false;
+
+    const pids = new Set<number>();
+    for (const line of lines) {
+      const match = line.trim().match(/(\d+)$/);
+      if (match) pids.add(parseInt(match[1]!, 10));
+    }
+
+    if (pids.size === 0) return false;
+
+    let cleaned = false;
+    for (const pid of pids) {
+      if (pid === 0 || pid === process.pid) continue;
+
+      // 检查是否为 node 进程
+      try {
+        const taskOut = execSync(`tasklist /FI "PID eq ${pid}" /NH`, {
+          encoding: 'utf-8',
+          timeout: 3000,
+        });
+
+        if (taskOut.toLowerCase().includes('node.exe')) {
+          logger.info(`检测到 node 进程 (PID: ${pid}) 占用端口 ${port}，正在清理...`);
+          execSync(`taskkill /PID ${pid} /F`, { timeout: 3000 });
+          logger.info(`已终止进程 PID: ${pid}`);
+          cleaned = true;
+        } else {
+          logger.warn(`端口 ${port} 被非 node 进程 (PID: ${pid}) 占用，无法自动清理`);
+          return false;
+        }
+      } catch {
+        // tasklist 查询失败，不处理
+        return false;
+      }
+    }
+
+    return cleaned;
+  } catch {
+    // netstat 执行失败或超时
+    return false;
+  }
+}
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    if (!portCleanupAttempted) {
+      portCleanupAttempted = true;
+      logger.warn(`端口 ${config.port} 被占用，尝试自动清理同服务进程...`);
+
+      if (tryReleaseNodePort(config.port)) {
+        // 等待端口释放后重试 listen
+        setTimeout(() => {
+          server.listen(config.port);
+        }, 500);
+        return;
+      }
+    }
+
+    logger.error(`端口 ${config.port} 已被占用，无法启动服务器。`);
+    logger.error(`手动清理: 在管理员终端执行以下命令:`);
+    logger.error(`  for /f "tokens=5" %a in ('netstat -ano ^| findstr :${config.port}') do taskkill /PID %a /F`);
+    process.exit(1);
+  } else {
+    logger.error('服务器启动错误:', err);
+    process.exit(1);
+  }
+});
+
 server.listen(config.port, () => {
+  serverListening = true;
   logger.info(`服务器运行在端口 ${config.port}`);
+
+  const envLabel = process.env.NODE_ENV === 'production' ? '生产' : '开发';
+  logger.info(`========================================`);
+  logger.info(`  AI-Tavern Server`);
+  logger.info(`========================================`);
+  logger.info(`  环境:         ${envLabel} (${process.env.NODE_ENV || 'development'})`);
+  logger.info(`  端口:         ${config.port}`);
+  logger.info(`  公开地址:     ${config.publicUrl}`);
+  logger.info(`  CORS:         ${Array.isArray(config.corsOrigin) ? config.corsOrigin.join(', ') : config.corsOrigin}`);
+  logger.info(`  数据库:       MySQL (ai_tavern)`);
+  logger.info(`  Redis:        ${config.redisUrl || '未配置'}`);
+  logger.info(`  通义千问:     ${config.dashscopeApiKey ? '已配置' : '未配置'}`);
+  logger.info(`  OpenCode:     ${config.opencodeApiKey ? '已配置' : '未配置'}`);
+  logger.info(`========================================`);
 
   // 启动时配置验证
   if (!config.dashscopeApiKey) {
@@ -34,15 +137,15 @@ async function runStartupSync(): Promise<void> {
     const { syncAllModels } = await import('./services/model-sync.service')
     const results = await syncAllModels('admin-001')
     const failed = results.filter(r => r.error)
-    logger.info(`[startup] 模型同步完成: ${results.length - failed.length} 服务商成功, ${failed.length} 失败`)
-    
-    const afterCount = await prisma.tavernModelMeta.count({ where: { isActive: true } })
-    logger.info(`[startup] 同步后活跃模型: ${afterCount} 个 (新增 ${afterCount - existingCount} 个)`)
+    const synced = results.filter(r => !r.error)
+    const totalAdded = results.reduce((s, r) => s + r.added, 0)
+    logger.info(`[startup] 模型同步完成: ${synced.length} 服务商同步, ${failed.length} 个有错误, 新增 ${totalAdded} 个模型`)
     
     if (failed.length > 0) {
-      logger.warn(`[startup] 同步失败: ${failed.map(f => `${f.provider}(${f.error})`).join(', ')}`)
+      logger.warn(`[startup] 同步错误: ${failed.map(f => `${f.provider}(${f.error})`).join(', ')}`)
     }
-    if (afterCount === 0) {
+    // 仅当同步前为 0 且无新增时才种子兜底（避免重复 COUNT 查询）
+    if (existingCount === 0 && totalAdded === 0) {
       logger.error('[startup] ⚠ 模型数据库为空！尝试直接种子...')
       await seedFallback(prisma)
     }
@@ -92,6 +195,14 @@ async function seedFallback(prisma: any) {
 // 优雅关闭
 function shutdown(signal: string) {
   logger.info(`${signal} 收到，关闭服务器...`);
+
+  if (!serverListening) {
+    // server 尚未成功启动（如 EADDRINUSE 后直接退出），无需 close
+    logger.info('服务器尚未启动完成，直接退出');
+    process.exit(1);
+    return;
+  }
+
   server.close((err) => {
     if (err) {
       logger.error('关闭服务器时出错:', err);
@@ -118,7 +229,7 @@ function scheduleDailyModelSync(): void {
       const failed = results.filter(r => r.error)
       logger.info(`[cron] 模型同步完成: ${results.length - failed.length}/${results.length} 成功, 新增 ${results.reduce((s, r) => s + r.added, 0)}, 更新 ${results.reduce((s, r) => s + r.updated, 0)}`)
       if (failed.length > 0) {
-        logger.warn(`[cron] 同步失败的服务商: ${failed.map(f => `${f.provider}(${f.error})`).join(', ')}`)
+        logger.warn(`[cron] 同步错误的服务商: ${failed.map(f => `${f.provider}(${f.error})`).join(', ')}`)
       }
     } catch (err: unknown) {
       logger.error('[cron] 模型同步异常:', err instanceof Error ? err.message : String(err))

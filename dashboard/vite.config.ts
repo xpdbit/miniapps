@@ -22,13 +22,26 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      // Dashboard 统计路由 — 转发到 Admin API
-      '/dashboard': {
+      // 统一认证 API — 由 Dashboard Admin API (3001) 处理，非 ftg-server
+      '/api/auth': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      // Tavern API 代理 — 转发到 Tavern Server (3002)
+      // 匹配 /api/tavern/*，rewrite 为 /api/* 后转发（与生产 Nginx 路由对齐）
+      '/api/tavern': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/tavern/, '/api'),
+      },
+      // Game1 API 代理 — 转发到 Game1 Server (3004)
+      // 匹配 /api/v1/game1/*，与生产 Nginx 路由对齐
+      '/api/v1/game1': {
+        target: 'http://localhost:3004',
+        changeOrigin: true,
+      },
       // 主 API 代理 — /api/* 转发到 ftg-server (3000)
-      // 必须放在 /api/admin 和 /dashboard 之后
+      // 必须放在所有更具体的 /api/* 规则之后
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

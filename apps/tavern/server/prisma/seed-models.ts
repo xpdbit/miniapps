@@ -16,7 +16,8 @@ const models = [
   { modelId: 'qwen-max',             displayName: '通义千问 Max',      provider: 'tongyi',     description: '最强模型，适合极限挑战',     icon: '🔥', minTier: 'FREE' as const, quotaCost: 2, sortOrder: 30 },
   { modelId: 'big-pickle',           displayName: 'Big Pickle',        provider: 'opencode',   description: '免费大模型 · OpenCode Go',  icon: '🥒', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 40 },
   { modelId: 'minimax-m2.5-free',    displayName: 'MiniMax M2.5 Free', provider: 'opencode',   description: '免费对话 · OpenCode Go',     icon: '🆓', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 50 },
-  { modelId: 'deepseek-v4-flash-free', displayName: 'DeepSeek V4 Flash', provider: 'opencode', description: '免费推理 · OpenCode Go',     icon: '⚙️', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 60 },
+  { modelId: 'deepseek-v4-flash', displayName: 'DeepSeek V4 Flash', provider: 'opencode', description: '免费推理 · OpenCode Go',     icon: '⚡', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 60 },
+  { modelId: 'deepseek-v4-pro',   displayName: 'DeepSeek V4 Pro',   provider: 'opencode', description: '深度推理 · OpenCode Go',     icon: '🧠', minTier: 'FREE' as const, quotaCost: 2, sortOrder: 65 },
 
   // ── PAID 模型（需自配 Key）───────────────────────────────
   { modelId: 'chatglm-turbo',        displayName: 'ChatGLM Turbo',     provider: 'zhipu',      description: '轻量高效推理',               icon: '💨', minTier: 'PAID' as const, quotaCost: 2, sortOrder: 90 },

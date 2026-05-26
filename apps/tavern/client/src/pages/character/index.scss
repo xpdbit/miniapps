@@ -101,3 +101,33 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ===== error state ===== */
+.page-character-list-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+.page-character-list-error-msg {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.page-character-list-error-retry {
+  padding: var(--spacing-xs) var(--spacing-xl);
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+  color: #FFFFFF;
+  font-size: var(--font-body-sm);
+  font-weight: var(--font-weight-medium);
+
+  &:active {
+    opacity: 0.8;
+  }
+}

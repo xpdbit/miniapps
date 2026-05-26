@@ -181,6 +181,18 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 const port: number = env.PORT;
 
 const server = app.listen(port, () => {
+  const nodeEnv = env.NODE_ENV || 'development';
+  const envLabel = nodeEnv === 'production' ? '生产' : '开发';
+  logger.info(`========================================`);
+  logger.info(`  FTG Server`);
+  logger.info(`========================================`);
+  logger.info(`  环境:       ${envLabel} (${nodeEnv})`);
+  logger.info(`  端口:       ${env.PORT}`);
+  logger.info(`  公开地址:   ${env.PUBLIC_URL}`);
+  logger.info(`  CORS:       ${env.CORS_ORIGINS}`);
+  logger.info(`  数据库:     MySQL (food_theme_generator)`);
+  logger.info(`  Redis:      ${env.REDIS_URL || '未配置'}`);
+  logger.info(`========================================`);
   logger.info(`Server is running on http://localhost:${port}`);
   logger.info(`Health check: http://localhost:${port}/health`);
 });

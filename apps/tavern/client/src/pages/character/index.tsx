@@ -10,7 +10,7 @@ import './index.scss'
 
 export default function CharacterListPage() {
   const { isLoggedIn } = useAuthStore()
-  const { characters, loading, hasMore, loadCharacters } = useCharacterStore()
+  const { characters, loading, error, hasMore, loadCharacters } = useCharacterStore()
   const [tab, setTab] = useState<string>('all')
   const [refreshing, setRefreshing] = useState(false)
 
@@ -58,7 +58,7 @@ export default function CharacterListPage() {
           className={`page-character-list-refresh ${refreshing ? 'page-character-list-refresh--spinning' : ''}`}
           onClick={handleRefresh}
         >
-          <Icon name='refresh' size={36} color='#999' />
+          <Icon name='refresh' size={36} color='var(--color-icon-muted)' />
         </View>
       </View>
 
@@ -82,12 +82,21 @@ export default function CharacterListPage() {
           />
         ))}
         {loading && <Text className='page-character-list-loading'>加载中...</Text>}
-        {!loading && filtered.length === 0 && (
+        {!loading && filtered.length === 0 && !error && (
           <EmptyState
-            icon={<Icon name='user' size={64} color='#CCCCCC' />}
+            icon={<Icon name='user' size={64} color='var(--color-icon-disabled)' />}
             title='还没有角色卡'
             description='前往"创建"页面开始创作'
           />
+        )}
+        {!loading && error && filtered.length === 0 && (
+          <View className='page-character-list-error'>
+            <Icon name='close' size={48} color='#FF9500' />
+            <Text className='page-character-list-error-msg'>{error}</Text>
+            <View className='page-character-list-error-retry' onClick={handleRefresh}>
+              <Text>点击重试</Text>
+            </View>
+          </View>
         )}
       </ScrollView>
     </View>

@@ -22,7 +22,7 @@ const router = Router();
  */
 router.post('/share-card', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const { foodRecordId } = req.body;
 
     if (!foodRecordId || typeof foodRecordId !== 'number') {

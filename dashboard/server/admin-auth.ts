@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import prisma from './prisma'
 
 const router = Router()
@@ -33,12 +34,12 @@ async function auditLog(params: {
   try {
     await prisma.dashboardAuditLog.create({
       data: {
-        admin_id: params.adminId,
+        userUuid: params.adminId,
         action: params.action,
-        target_type: params.targetType ?? null,
-        target_id: params.targetId ?? null,
+        targetType: params.targetType ?? null,
+        targetId: params.targetId ?? null,
         details: params.details as any,
-        ip_address: getClientIp(params.req),
+        ipAddress: getClientIp(params.req),
       },
     })
   } catch (error) {
@@ -122,7 +123,7 @@ function requirePermission(permission: string) {
 // ─── Public Routes ──────────────────────────────────────────────────
 
 // POST /api/admin/register — initial super admin registration
-// 安全限制：仅当 admin_users 表为空时允许注册（仅首次部署可用）
+// 安全限制：仅当无管理员用户时允许注册（仅首次部署可用）
 router.post('/register', async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body
@@ -132,24 +133,40 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // 安全守卫：禁止在已有管理员时注册新管理员
-    const totalAdmins = await prisma.dashboardAdminUser.count()
+    const totalAdmins = await prisma.user.count({
+      where: { role: { in: ['admin', 'super_admin'] } },
+    })
     if (totalAdmins > 0) {
       res.status(403).json({ success: false, message: '管理员注册已关闭。如需添加新管理员，请由现有管理员在后台创建。' })
       return
     }
 
-    const existing = await prisma.dashboardAdminUser.findUnique({ where: { username } })
+    const existing = await prisma.user.findFirst({
+      where: { nickname: username },
+    })
     if (existing) {
       res.status(409).json({ success: false, message: '用户名已存在' })
       return
     }
 
-    const password_hash_val = await bcrypt.hash(password, 12)
-    const admin = await prisma.dashboardAdminUser.create({
-      data: { username, password_hash: password_hash_val, role: 'super_admin' },
+    const uuid = crypto.randomUUID()
+    const passwordHash = await bcrypt.hash(password, 12)
+
+    const user = await prisma.user.create({
+      data: {
+        uuid,
+        nickname: username,
+        role: 'super_admin',
+        auths: {
+          create: {
+            authType: 'password',
+            credential: passwordHash,
+          },
+        },
+      },
     })
 
-    res.json({ success: true, data: { id: admin.id, username: admin.username, role: admin.role } })
+    res.json({ success: true, data: { id: user.id, username: user.nickname, role: user.role } })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
   }
@@ -164,27 +181,32 @@ router.post('/login', async (req: Request, res: Response) => {
       return
     }
 
-    const admin = await prisma.dashboardAdminUser.findUnique({ where: { username } })
-    if (!admin) {
+    const user = await prisma.user.findFirst({
+      where: { nickname: username },
+      include: {
+        auths: { where: { authType: 'password' } },
+      },
+    })
+    if (!user || user.auths.length === 0) {
       console.error('[Login] 用户不存在: "' + username + '"')
       res.status(401).json({ success: false, message: '用户名或密码错误' })
       return
     }
-    if (admin.status === 'disabled') {
-      console.error('[Login] 账号已禁用: "' + username + '" (id=' + admin.id + ')')
+    if (user.status === 'disabled') {
+      console.error('[Login] 账号已禁用: "' + username + '" (id=' + user.id + ')')
       res.status(401).json({ success: false, message: '用户名或密码错误' })
       return
     }
 
-    const valid = await bcrypt.compare(password, admin.password_hash)
+    const valid = await bcrypt.compare(password, user.auths[0]!.credential)
     if (!valid) {
-      console.error('[Login] 密码错误: "' + username + '" (id=' + admin.id + ')')
+      console.error('[Login] 密码错误: "' + username + '" (id=' + user.id + ')')
       res.status(401).json({ success: false, message: '用户名或密码错误' })
       return
     }
 
     const token = jwt.sign(
-      { adminId: admin.id, username: admin.username, role: admin.role },
+      { adminId: user.id, username: user.nickname, role: user.role },
       JWT_SECRET,
       { expiresIn: TOKEN_EXPIRY },
     )
@@ -192,21 +214,21 @@ router.post('/login', async (req: Request, res: Response) => {
     // 记录登录日志
     await auditLog({
       req,
-      adminId: admin.id,
+      adminId: user.id,
       action: 'LOGIN',
-      details: { username: admin.username },
+      details: { username: user.nickname },
     })
 
-    console.log('[Login] 登录成功: "' + username + '" (id=' + admin.id + ', role=' + admin.role + ')')
+    console.log('[Login] 登录成功: "' + username + '" (id=' + user.id + ', role=' + user.role + ')')
 
     res.json({
       success: true,
       data: {
         token,
         user: {
-          id: admin.id,
-          username: admin.username,
-          role: admin.role,
+          id: user.id,
+          username: user.nickname,
+          role: user.role,
         },
       },
     })
@@ -223,17 +245,28 @@ router.post('/login', async (req: Request, res: Response) => {
 // GET /api/admin/me — get current admin info
 router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const admin = await prisma.dashboardAdminUser.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: req.admin!.adminId },
-      select: { id: true, username: true, role: true, status: true, created_at: true },
+      select: { id: true, nickname: true, role: true, status: true, createdAt: true },
     })
 
-    if (!admin) {
+    if (!user) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
     }
 
-    res.json({ success: true, data: { user: admin } })
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          username: user.nickname,
+          role: user.role,
+          status: user.status,
+          created_at: user.createdAt.toISOString(),
+        },
+      },
+    })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
   }
@@ -244,22 +277,25 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
   try {
     const { oldPassword, newPassword } = req.body
 
-    const admin = await prisma.dashboardAdminUser.findUnique({ where: { id: req.admin!.adminId } })
-    if (!admin) {
+    const user = await prisma.user.findUnique({
+      where: { id: req.admin!.adminId },
+      include: { auths: { where: { authType: 'password' } } },
+    })
+    if (!user || user.auths.length === 0) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
     }
 
-    const valid = await bcrypt.compare(oldPassword, admin.password_hash)
+    const valid = await bcrypt.compare(oldPassword, user.auths[0]!.credential)
     if (!valid) {
       res.status(400).json({ success: false, message: '旧密码不正确' })
       return
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12)
-    await prisma.dashboardAdminUser.update({
-      where: { id: req.admin!.adminId },
-      data: { password_hash: passwordHash },
+    await prisma.userAuth.update({
+      where: { id: user.auths[0]!.id },
+      data: { credential: passwordHash },
     })
 
     // 记录修改密码日志
@@ -277,15 +313,27 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
 
 // ─── Admin Management Routes (super_admin only, requires 'admin_users') ──
 
-// GET /api/admin/users — list all admin accounts
+// ─── Helper: format user record for admin API response ──────────────────
+function formatAdminUser(user: { id: string; nickname: string | null; role: string; status: string; createdAt: Date; updatedAt: Date }) {
+  return {
+    id: user.id,
+    username: user.nickname ?? user.id.slice(0, 8),
+    role: user.role,
+    status: user.status,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+  }
+}
+
+// GET /api/admin/users — list all admin accounts (role: admin or super_admin)
 router.get('/users', authenticate, requirePermission('admin_users'), async (req: AuthRequest, res: Response) => {
   try {
-    const users = await prisma.dashboardAdminUser.findMany({
-      select: { id: true, username: true, role: true, status: true, created_at: true, updated_at: true },
-      orderBy: { created_at: 'desc' },
+    const users = await prisma.user.findMany({
+      where: { role: { in: ['admin', 'super_admin'] } },
+      orderBy: { createdAt: 'desc' },
     })
 
-    res.json({ success: true, data: { users } })
+    res.json({ success: true, data: { users: users.map(formatAdminUser) } })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
   }
@@ -295,24 +343,34 @@ router.get('/users', authenticate, requirePermission('admin_users'), async (req:
 router.post('/users', authenticate, requirePermission('admin_users'), async (req: AuthRequest, res: Response) => {
   try {
     const { username, password, role } = req.body
-    
+
     if (!username || !password) {
       res.status(400).json({ success: false, message: '用户名和密码不能为空' })
       return
     }
 
-    const existing = await prisma.dashboardAdminUser.findUnique({ where: { username } })
+    // Check if nickname already exists
+    const existing = await prisma.user.findFirst({
+      where: { nickname: username },
+    })
     if (existing) {
       res.status(409).json({ success: false, message: '用户名已存在' })
       return
     }
 
-    const password_hash_val = await bcrypt.hash(password, 12)
+    const passwordHash = await bcrypt.hash(password, 12)
     const validRole = (role && ['super_admin', 'admin', 'viewer'].includes(role)) ? role : 'admin'
-    
-    const admin = await prisma.dashboardAdminUser.create({
-      data: { username, password_hash: password_hash_val, role: validRole },
-      select: { id: true, username: true, role: true, status: true, created_at: true, updated_at: true },
+    const uuid = crypto.randomUUID()
+
+    // Create user + password auth in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: { uuid, nickname: username, role: validRole as 'admin' | 'super_admin' | 'viewer' },
+      })
+      await tx.userAuth.create({
+        data: { userUuid: uuid, authType: 'password', credential: passwordHash },
+      })
+      return user
     })
 
     await auditLog({
@@ -320,11 +378,11 @@ router.post('/users', authenticate, requirePermission('admin_users'), async (req
       adminId: req.admin!.adminId,
       action: 'CREATE_ADMIN',
       targetType: 'admin_user',
-      targetId: admin.id,
+      targetId: result.id,
       details: { username, role: validRole },
     })
 
-    res.status(201).json({ success: true, data: { user: admin } })
+    res.status(201).json({ success: true, data: { user: formatAdminUser(result) } })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
   }
@@ -341,13 +399,18 @@ router.delete('/users/:id', authenticate, requirePermission('admin_users'), asyn
       return
     }
 
-    const target = await prisma.dashboardAdminUser.findUnique({ where: { id: targetId } })
+    const target = await prisma.user.findUnique({ where: { id: targetId } })
     if (!target) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
     }
 
-    await prisma.dashboardAdminUser.delete({ where: { id: targetId } })
+    // Delete user + associated auth records
+    await prisma.$transaction([
+      prisma.userAuth.deleteMany({ where: { userUuid: target.uuid } }),
+      prisma.userSession.deleteMany({ where: { userUuid: target.uuid } }),
+      prisma.user.delete({ where: { id: targetId } }),
+    ])
 
     await auditLog({
       req,
@@ -355,7 +418,7 @@ router.delete('/users/:id', authenticate, requirePermission('admin_users'), asyn
       action: 'DELETE_ADMIN',
       targetType: 'admin_user',
       targetId: targetId,
-      details: { username: target.username, role: target.role },
+      details: { username: target.nickname, role: target.role },
     })
 
     res.json({ success: true, message: '删除成功' })
@@ -381,29 +444,27 @@ router.put('/users/:id/role', authenticate, requirePermission('admin_users'), as
       return
     }
 
-    const target = await prisma.dashboardAdminUser.findUnique({ where: { id: targetId } })
+    const target = await prisma.user.findUnique({ where: { id: targetId } })
     if (!target) {
       res.status(404).json({ success: false, message: '管理员不存在' })
       return
     }
 
-    const updated = await prisma.dashboardAdminUser.update({
+    const updated = await prisma.user.update({
       where: { id: targetId },
-      data: { role },
-      select: { id: true, username: true, role: true, status: true, created_at: true, updated_at: true },
+      data: { role: role as 'admin' | 'super_admin' | 'viewer' },
     })
 
-    // 记录角色变更日志
     await auditLog({
       req,
       adminId: req.admin!.adminId,
       action: 'CHANGE_ROLE',
       targetType: 'admin_user',
       targetId: targetId,
-      details: { fromRole: target.role, toRole: role, targetUsername: target.username },
+      details: { fromRole: target.role, toRole: role, targetUsername: target.nickname },
     })
 
-    res.json({ success: true, data: { user: updated } })
+    res.json({ success: true, data: { user: formatAdminUser(updated) } })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
   }
@@ -414,7 +475,7 @@ router.put('/users/:id/role', authenticate, requirePermission('admin_users'), as
 // GET /api/admin/projects — list all projects
 router.get('/projects', authenticate, requirePermission('projects'), async (req: AuthRequest, res: Response) => {
   try {
-    const projects = await prisma.dashboardProject.findMany({ orderBy: { created_at: 'desc' } })
+    const projects = await prisma.dashboardProject.findMany({ orderBy: { createdAt: 'desc' } })
     res.json({ success: true, data: { projects } })
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message })
@@ -617,16 +678,16 @@ router.get('/audit-logs', authenticate, async (req: AuthRequest, res: Response) 
     const where: Record<string, unknown> = {}
 
     if (adminId) {
-      where.admin_id = adminId
+      where.userUuid = adminId
     }
     if (action) {
       where.action = action
     }
     if (startDate || endDate) {
-      const created_at_filter: Record<string, Date> = {}
-      if (startDate) created_at_filter.gte = new Date(startDate)
-      if (endDate) created_at_filter.lte = new Date(endDate + 'T23:59:59.999Z')
-      where.created_at = created_at_filter
+      const createdAt_filter: Record<string, Date> = {}
+      if (startDate) createdAt_filter.gte = new Date(startDate)
+      if (endDate) createdAt_filter.lte = new Date(endDate + 'T23:59:59.999Z')
+      where.createdAt = createdAt_filter
     }
 
     const currentPage = Math.max(1, parseInt(page || '1'))
@@ -636,10 +697,7 @@ router.get('/audit-logs', authenticate, async (req: AuthRequest, res: Response) 
     const [list, total] = await Promise.all([
       prisma.dashboardAuditLog.findMany({
         where: where as never,
-        include: {
-          admin: { select: { id: true, username: true } },
-        },
-        orderBy: { created_at: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip,
         take: currentPageSize,
       }),

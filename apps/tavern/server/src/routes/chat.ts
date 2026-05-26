@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { requireAuth } from '../middleware/auth'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { buildPrompt } from '../services/prompt-builder.service'
-import { routeChat } from '../services/ai-proxy.service'
+import { routeChat, sanitizeAiText } from '../services/ai-proxy.service'
 import * as contextService from '../services/context.service'
 import prisma from '../utils/prisma'
 
@@ -27,7 +27,6 @@ const sendSchema = z.object({
 
 // POST /api/v1/chat/send - SSE streaming chat
 router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
@@ -41,7 +40,6 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
     const params = sendSchema.parse(req.body)
     const userId = req.user!.userId
 
-    // Get or create session
     let session
     if (params.sessionId) {
       session = await contextService.getSession(params.sessionId, userId)
@@ -62,16 +60,12 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
     sendEvent({ type: 'meta', sessionId: session.id, characterId: params.characterId })
 
-    // Get character and persona for prompt building
-    // Support cardData for local cards (not stored in DB)
     let character: {
       name: string; description: string; prompt?: string | null
-      scenario?: string | null
-      firstMsg?: string | null
+      scenario?: string | null; firstMsg?: string | null
     } | null = null
 
     if (params.cardData) {
-      // Local card: use provided cardData
       character = {
         name: params.cardData.name || '',
         description: params.cardData.description || '',
@@ -79,11 +73,14 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         scenario: params.cardData.scenario || null,
         firstMsg: params.cardData.firstMsg || null,
       }
+    } else if (params.sessionId) {
+      const s = session as { character?: { name: string; description: string; prompt?: string | null; scenario?: string | null; firstMsg?: string | null } | null }
+      character = s.character ?? null
     } else {
-      // Server card: look up from database
-      character = session.character
-        ? session.character
-        : await prisma.tavernCard.findUnique({ where: { id: params.characterId } })
+      character = await prisma.tavernCard.findUnique({
+        where: { id: params.characterId },
+        select: { name: true, description: true, prompt: true, scenario: true, firstMsg: true },
+      }) as typeof character
     }
 
     if (!character) {
@@ -97,26 +94,12 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       persona = await prisma.tavernPersona.findUnique({ where: { id: params.personaId } })
     }
 
-    // Get conversation history (from session if available, otherwise empty for new sessions)
     let history: Array<{ role: string; content: string }> = []
-    if ('messages' in session && session.messages) {
-      history = session.messages.map(m => ({
-        role: m.role,
-        content: m.content,
-      }))
-    } else {
-      // For new session, get existing messages from database
-      const messages = await prisma.tavernChatMessage.findMany({
-        where: { sessionId: session.id },
-        orderBy: { createdAt: 'asc' },
-      })
-      history = messages.map(m => ({
-        role: m.role,
-        content: m.content,
-      }))
+    if (params.sessionId) {
+      const sessionWithMsgs = session as { messages?: { role: string; content: string }[] }
+      history = (sessionWithMsgs.messages ?? []).map(m => ({ role: m.role, content: m.content }))
     }
 
-    // Build prompt
     const prompt = buildPrompt({
       character: {
         name: character.name,
@@ -130,67 +113,95 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       currentMessage: params.message,
     })
 
-    // Save user message
-    await contextService.saveMessage(session.id, 'user', params.message)
+    await contextService.saveMessage(session.id, 'user', sanitizeAiText(params.message), 0, true)
 
-    // Call AI proxy
+    // Client disconnect handler
     let fullResponse = ''
+    let aborted = false
+    req.on('close', () => {
+      if (!aborted && !res.writableEnded) {
+        aborted = true
+      }
+    })
+
     await routeChat({
       userId,
       messages: prompt.messages,
       model: params.model,
       temperature: params.temperature,
       onToken: (token: string) => {
-        fullResponse += token
-        sendEvent({ type: 'token', content: token })
+        if (aborted) return
+        const sanitized = sanitizeAiText(token)
+        fullResponse += sanitized
+        if (sanitized && !res.writableEnded) {
+          sendEvent({ type: 'token', content: sanitized })
+        }
       },
       onDone: async (result) => {
-        // Save AI response
-        const msg = await contextService.saveMessage(session.id, 'character', fullResponse, result.tokens)
-        sendEvent({ type: 'done', sessionId: session.id, messageId: msg.id, tokens: result.tokens })
+        if (aborted) return
+        if (!fullResponse.trim()) {
+          await prisma.tavernChatSession.update({
+            where: { id: session.id },
+            data: { messageCount: { increment: 1 } },
+          })
+          if (!res.writableEnded) {
+            sendEvent({ type: 'error', code: 'AI_ERROR', message: 'AI 返回了空响应' })
+            res.end()
+          }
+          return
+        }
+        const msg = await contextService.saveMessage(session.id, 'character', fullResponse, result.tokens, true)
+        await prisma.tavernChatSession.update({
+          where: { id: session.id },
+          data: {
+            messageCount: { increment: 2 },
+            tokenCount: { increment: result.tokens ?? 0 },
+          },
+        })
+        if (!res.writableEnded) {
+          sendEvent({ type: 'done', sessionId: session.id, messageId: msg.id, tokens: result.tokens })
+        }
 
-        // Update character chat count (only for server-side/official cards)
         if (!params.cardData) {
           await prisma.tavernCard.update({
             where: { id: params.characterId },
             data: { chatCount: { increment: 1 } },
-          }).catch(() => {}) // 静默处理（本地卡片无对应记录）
+          }).catch(() => {})
         }
 
         res.end()
       },
       onError: (err: Error) => {
-        if (err.message === 'QUOTA_EXCEEDED') {
-          sendEvent({ type: 'error', code: 'QUOTA_EXCEEDED', message: '今日免费额度已用完' })
-        } else if (err.message === 'KEY_MISSING') {
-          sendEvent({ type: 'error', code: 'KEY_MISSING', message: '未配置 API Key' })
-        } else {
-          sendEvent({ type: 'error', code: 'AI_ERROR', message: 'AI 服务暂时不可用' })
+        prisma.tavernChatSession.update({
+          where: { id: session.id },
+          data: { messageCount: { increment: 1 } },
+        }).catch(() => {})
+        if (!res.writableEnded) {
+          if (err.message === 'QUOTA_EXCEEDED') {
+            sendEvent({ type: 'error', code: 'QUOTA_EXCEEDED', message: '今日免费额度已用完' })
+          } else if (err.message === 'KEY_MISSING') {
+            sendEvent({ type: 'error', code: 'KEY_MISSING', message: '未配置 API Key' })
+          } else {
+            sendEvent({ type: 'error', code: 'AI_ERROR', message: 'AI 服务暂时不可用' })
+          }
+          res.end()
         }
-        res.end()
       },
     })
-
-    // Handle client disconnect — abort the AI request to free resources
-    let aborted = false
-    req.on('close', () => {
-      if (!aborted && !res.writableEnded) {
-        aborted = true
-        sendEvent({ type: 'error', code: 'CLIENT_DISCONNECT', message: '客户端已断开连接' })
-        res.end()
-      }
-    })
   } catch (err: unknown) {
-    if (err instanceof z.ZodError) {
-      sendEvent({ type: 'error', code: 'INVALID_PARAMS', message: '参数错误' })
-    } else {
-      sendEvent({ type: 'error', code: 'SERVER_ERROR', message: '服务器内部错误' })
+    if (!res.writableEnded) {
+      if (err instanceof z.ZodError) {
+        sendEvent({ type: 'error', code: 'INVALID_PARAMS', message: '参数错误' })
+      } else {
+        sendEvent({ type: 'error', code: 'SERVER_ERROR', message: '服务器内部错误' })
+      }
+      res.end()
     }
-    res.end()
   }
 })
 
-// GET /api/v1/chat/sessions - My sessions list
+// ─── Session Management ────────────────────────────────────────────
+
 router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1
@@ -202,7 +213,6 @@ router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Resp
   }
 })
 
-// GET /api/v1/chat/sessions/:id - Session detail
 router.get('/sessions/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const session = await contextService.getSession(req.params.id, req.user!.userId)
@@ -216,7 +226,6 @@ router.get('/sessions/:id', requireAuth, async (req: AuthenticatedRequest, res: 
   }
 })
 
-// DELETE /api/v1/chat/sessions/:id - Delete session
 router.delete('/sessions/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     await contextService.deleteSession(req.params.id, req.user!.userId)
@@ -226,6 +235,278 @@ router.delete('/sessions/:id', requireAuth, async (req: AuthenticatedRequest, re
       res.status(403).json({ code: 403, message: '无权操作', data: null })
     } else {
       res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+    }
+  }
+})
+
+// ─── Search ────────────────────────────────────────────────────────
+
+router.get('/search', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const q = (req.query.q as string || '').trim()
+    if (!q || q.length < 1) {
+      res.json({ code: 0, data: { items: [], total: 0 }, message: 'ok' })
+      return
+    }
+
+    const userId = req.user!.userId
+    const page = parseInt(req.query.page as string) || 1
+    const pageSize = parseInt(req.query.pageSize as string) || 20
+    const skip = (page - 1) * pageSize
+
+    const [items, total] = await Promise.all([
+      prisma.tavernChatMessage.findMany({
+        where: {
+          session: { userUuid: userId },
+          content: { contains: q },
+        },
+        include: {
+          session: {
+            select: { id: true, cardId: true, character: { select: { name: true } } },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.tavernChatMessage.count({
+        where: {
+          session: { userUuid: userId },
+          content: { contains: q },
+        },
+      }),
+    ])
+
+    res.json({
+      code: 0,
+      data: {
+        items: items.map(m => ({
+          id: m.id,
+          sessionId: m.sessionId,
+          characterName: m.session.character?.name || '未知角色',
+          role: m.role,
+          content: m.content.length > 100 ? m.content.slice(0, 100) + '...' : m.content,
+          createdAt: m.createdAt,
+        })),
+        total,
+        page,
+        pageSize,
+      },
+      message: 'ok',
+    })
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+// ─── Message CRUD ──────────────────────────────────────────────────
+
+const editMessageSchema = z.object({
+  content: z.string().min(1).max(2000),
+})
+
+router.put('/sessions/:sessionId/messages/:messageId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { content } = editMessageSchema.parse(req.body)
+    const userId = req.user!.userId
+
+    const session = await contextService.getSession(req.params.sessionId, userId)
+    if (!session) {
+      res.status(404).json({ code: 404, message: '会话不存在', data: null })
+      return
+    }
+
+    const message = await prisma.tavernChatMessage.findUnique({ where: { id: req.params.messageId } })
+    if (!message || message.sessionId !== req.params.sessionId) {
+      res.status(404).json({ code: 404, message: '消息不存在', data: null })
+      return
+    }
+
+    if (message.role !== 'user') {
+      res.status(403).json({ code: 403, message: '只能编辑自己发送的消息', data: null })
+      return
+    }
+
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000)
+    if (message.createdAt < fiveMinAgo) {
+      res.status(400).json({ code: 400, message: '消息发送超过5分钟，无法编辑', data: null })
+      return
+    }
+
+    const updated = await prisma.tavernChatMessage.update({
+      where: { id: req.params.messageId },
+      data: { content: sanitizeAiText(content) },
+    })
+
+    res.json({ code: 0, message: 'ok', data: updated })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+      return
+    }
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+router.delete('/sessions/:sessionId/messages/:messageId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId
+    const session = await contextService.getSession(req.params.sessionId, userId)
+    if (!session) {
+      res.status(404).json({ code: 404, message: '会话不存在', data: null })
+      return
+    }
+
+    const message = await prisma.tavernChatMessage.findUnique({ where: { id: req.params.messageId } })
+    if (!message || message.sessionId !== req.params.sessionId) {
+      res.status(404).json({ code: 404, message: '消息不存在', data: null })
+      return
+    }
+
+    if (message.role !== 'user') {
+      res.status(403).json({ code: 403, message: '只能删除自己发送的消息', data: null })
+      return
+    }
+
+    await prisma.tavernChatMessage.update({
+      where: { id: req.params.messageId },
+      data: { content: '[消息已删除]' },
+    })
+
+    res.json({ code: 0, message: 'ok', data: null })
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+// ─── Regenerate ────────────────────────────────────────────────────
+
+router.post('/sessions/:sessionId/regenerate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+
+  const sendEvent = (data: unknown) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`)
+  }
+
+  try {
+    const userId = req.user!.userId
+    const session = await contextService.getSession(req.params.sessionId, userId)
+    if (!session) {
+      sendEvent({ type: 'error', code: 'SESSION_NOT_FOUND', message: '会话不存在' })
+      res.end()
+      return
+    }
+
+    const lastAssistantMsg = await prisma.tavernChatMessage.findFirst({
+      where: { sessionId: session.id, role: 'character' },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (!lastAssistantMsg) {
+      sendEvent({ type: 'error', code: 'NO_AI_MESSAGE', message: '没有可重新生成的 AI 回复' })
+      res.end()
+      return
+    }
+
+    await prisma.tavernChatMessage.delete({ where: { id: lastAssistantMsg.id } })
+
+    const history = await prisma.tavernChatMessage.findMany({
+      where: { sessionId: session.id },
+      orderBy: { createdAt: 'asc' },
+      select: { role: true, content: true },
+    })
+
+    const lastUserMsg = history.filter(m => m.role === 'user').pop()
+    if (!lastUserMsg) {
+      sendEvent({ type: 'error', code: 'NO_USER_MESSAGE', message: '没有可重新生成的消息' })
+      res.end()
+      return
+    }
+
+    const s = session as { character?: { name: string; description: string; prompt?: string | null; scenario?: string | null; firstMsg?: string | null } | null }
+    const character = s.character ?? null
+    if (!character) {
+      sendEvent({ type: 'error', code: 'CHARACTER_NOT_FOUND', message: '角色不存在' })
+      res.end()
+      return
+    }
+
+    const historyBeforeLast = history.slice(0, -1)
+    const prompt = buildPrompt({
+      character: {
+        name: character.name,
+        description: character.description,
+        prompt: character.prompt ?? undefined,
+        scenario: character.scenario ?? undefined,
+        firstMsg: character.firstMsg || '',
+      },
+      persona: null,
+      history: historyBeforeLast.map(m => ({ role: m.role, content: m.content })),
+      currentMessage: lastUserMsg.content,
+    })
+
+    sendEvent({ type: 'meta', sessionId: session.id, characterId: session.cardId })
+
+    let fullResponse = ''
+    let aborted = false
+    req.on('close', () => {
+      if (!aborted && !res.writableEnded) {
+        aborted = true
+      }
+    })
+
+    await routeChat({
+      userId,
+      messages: prompt.messages,
+      model: req.body.model || undefined,
+      temperature: req.body.temperature ?? undefined,
+      onToken: (token: string) => {
+        if (aborted) return
+        const sanitized = sanitizeAiText(token)
+        fullResponse += sanitized
+        if (sanitized && !res.writableEnded) {
+          sendEvent({ type: 'token', content: sanitized })
+        }
+      },
+      onDone: async (result) => {
+        if (aborted) return
+        if (!fullResponse.trim()) {
+          if (!res.writableEnded) {
+            sendEvent({ type: 'error', code: 'AI_ERROR', message: 'AI 返回了空响应' })
+            res.end()
+          }
+          return
+        }
+        const msg = await contextService.saveMessage(session.id, 'character', fullResponse, result.tokens, true)
+        if (!res.writableEnded) {
+          sendEvent({ type: 'done', sessionId: session.id, messageId: msg.id, tokens: result.tokens })
+        }
+        res.end()
+      },
+      onError: (err: Error) => {
+        if (!res.writableEnded) {
+          if (err.message === 'QUOTA_EXCEEDED') {
+            sendEvent({ type: 'error', code: 'QUOTA_EXCEEDED', message: '今日免费额度已用完' })
+          } else if (err.message === 'KEY_MISSING') {
+            sendEvent({ type: 'error', code: 'KEY_MISSING', message: '未配置 API Key' })
+          } else {
+            sendEvent({ type: 'error', code: 'AI_ERROR', message: 'AI 服务暂时不可用' })
+          }
+          res.end()
+        }
+      },
+    })
+  } catch (err: unknown) {
+    if (!res.writableEnded) {
+      if (err instanceof z.ZodError) {
+        sendEvent({ type: 'error', code: 'INVALID_PARAMS', message: '参数错误' })
+      } else {
+        sendEvent({ type: 'error', code: 'SERVER_ERROR', message: '服务器内部错误' })
+      }
+      res.end()
     }
   }
 })

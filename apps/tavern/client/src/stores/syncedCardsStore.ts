@@ -21,6 +21,7 @@ interface SyncedCardsState {
   cards: CharacterCard[]
   lastSyncAt: number
   loading: boolean
+  error: string | null
   lastSyncPromise: Promise<SyncResult> | null
   syncTimer: ReturnType<typeof setTimeout> | null
 
@@ -81,6 +82,7 @@ async function doSync(
           cards,
           lastSyncAt: Date.now(),
           loading: false,
+          error: null,
           lastSyncPromise: null,
           syncTimer: null,
         })
@@ -93,8 +95,9 @@ async function doSync(
         resolve({ success: true, count: cards.length })
       } catch (err: unknown) {
         // 同步失败不影响现有缓存
-        set({ loading: false, lastSyncPromise: null, syncTimer: null })
         const msg = err instanceof Error ? err.message : '同步失败，请检查网络'
+        console.error('[syncedCardsStore] sync failed:', msg)
+        set({ loading: false, error: msg, lastSyncPromise: null, syncTimer: null })
         resolve({ success: false, count: get().cards.length, error: msg })
       }
     }
@@ -117,6 +120,7 @@ export const useSyncedCardsStore = create<SyncedCardsState>((set, get) => ({
   cards: [],
   lastSyncAt: 0,
   loading: false,
+  error: null,
   lastSyncPromise: null,
   syncTimer: null,
 

@@ -2,7 +2,7 @@
   height: calc(100vh - var(--tab-bar-height, 120rpx) - 1rpx - env(safe-area-inset-bottom, 0));
   display: flex;
   flex-direction: column;
-  background: #F5F5F5;
+  background: var(--color-bg);
 
   &-empty {
     display: flex;
@@ -25,8 +25,8 @@
 
     &-btn {
       padding: var(--spacing-sm) var(--spacing-lg);
-      background: #07C160;
-      color: #fff;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
       border-radius: var(--radius-pill);
       font-size: var(--font-body-sm);
     }
@@ -39,46 +39,46 @@
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-md);
     padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0));
-    background: #FFFFFF;
-    border-bottom: 1px solid #E5E5E5;
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
 
     &-title {
       font-size: var(--font-title);
       font-weight: var(--font-weight-bold);
-      color: #1A1A1A;
+      color: var(--color-text-primary);
     }
 
     &-btn {
       font-size: var(--font-body-sm);
-      color: #07C160;
+      color: var(--color-primary);
       padding: 4rpx 12rpx;
     }
   }
 
   &-list {
     flex: 1;
-    background: #FFFFFF;
+    background: var(--color-bg-card);
 
     &-item {
       display: flex;
       align-items: center;
       padding: var(--spacing-sm) var(--spacing-md);
-      border-bottom: 1px solid #F0F0F0;
+      border-bottom: 1px solid var(--color-divider);
       position: relative;
 
       &:active {
-        background: #F5F5F5;
+        background: var(--color-bg-surface-hover);
       }
 
       &--pinned {
-        background: #FAFAFA;
+        background: var(--color-bg-elevated);
       }
 
       &-avatar {
         width: 96rpx;
         height: 96rpx;
         border-radius: var(--radius-sm);
-        background: #07C160;
+        background: var(--color-primary);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -88,7 +88,7 @@
 
       &-avatar-text {
         font-size: var(--font-body-lg);
-        color: #fff;
+        color: var(--color-text-inverse);
         font-weight: var(--font-weight-semibold);
       }
 
@@ -106,7 +106,7 @@
 
       &-name {
         font-size: var(--font-body);
-        color: #1A1A1A;
+        color: var(--color-text-primary);
         font-weight: var(--font-weight-medium);
       }
 
@@ -140,8 +140,8 @@
     justify-content: space-between;
     padding: var(--spacing-sm) var(--spacing-md);
     padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0));
-    background: #FFFFFF;
-    border-bottom: 1px solid #E5E5E5;
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
 
     &-back {
       padding: var(--spacing-xs);
@@ -150,7 +150,7 @@
     &-title {
       font-size: var(--font-body);
       font-weight: var(--font-weight-semibold);
-      color: #1A1A1A;
+      color: var(--color-text-primary);
     }
 
     &-spacer {
@@ -161,7 +161,7 @@
   &-messages {
     flex: 1;
     overflow-y: auto;
-    background: #F5F5F5;
+    background: var(--color-bg);
 
     &-inner {
       padding: var(--spacing-md);
@@ -177,7 +177,7 @@
     &-title {
       font-size: var(--font-body);
       font-weight: var(--font-weight-semibold);
-      color: #fff;
+      color: var(--color-text-inverse);
       display: block;
       margin-bottom: var(--spacing-xs);
     }
@@ -195,8 +195,8 @@
     align-items: center;
     padding: var(--spacing-xs) var(--spacing-md);
     padding-bottom: calc(var(--spacing-xs) + env(safe-area-inset-bottom, 0));
-    background: #FFFFFF;
-    border-top: 1px solid #E5E5E5;
+    background: var(--color-bg-card);
+    border-top: 1px solid var(--color-border);
     gap: var(--spacing-xs);
 
     &-voice {
@@ -211,11 +211,11 @@
     &-field {
       flex: 1;
       height: 68rpx;
-      background: #F0F0F0;
+      background: var(--color-bg-muted);
       border-radius: 8rpx;
       padding: 0 var(--spacing-sm);
       font-size: var(--font-body-sm);
-      color: #1A1A1A;
+      color: var(--color-text-primary);
     }
 
     &-actions {
@@ -227,7 +227,7 @@
 
     &-send {
       font-size: var(--font-body-sm);
-      color: #07C160;
+      color: var(--color-primary);
       font-weight: var(--font-weight-semibold);
       padding: 4rpx 12rpx;
     }
@@ -237,26 +237,26 @@
   &-saves-list {
     flex: 1;
     padding: var(--spacing-sm);
-    background: #F5F5F5;
+    background: var(--color-bg);
   }
 
   &-saves-item {
     display: flex;
     align-items: center;
     padding: var(--spacing-md);
-    background: #FFFFFF;
+    background: var(--color-bg-card);
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-sm);
 
     &:active {
-      background: #F5F5F5;
+      background: var(--color-bg-surface-hover);
     }
 
     &-icon {
       width: 80rpx;
       height: 80rpx;
       border-radius: var(--radius-sm);
-      background: #F0F0F0;
+      background: var(--color-bg-muted);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -275,7 +275,7 @@
 
     &-name {
       font-size: var(--font-body);
-      color: #1A1A1A;
+      color: var(--color-text-primary);
       font-weight: var(--font-weight-medium);
       display: block;
       margin-bottom: 4rpx;
@@ -299,7 +299,7 @@
   &-footer {
     padding: var(--spacing-md);
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
-    background: #FFFFFF;
+    background: var(--color-bg-card);
   }
 
   &-footer-btn {
@@ -308,8 +308,8 @@
     justify-content: center;
     gap: var(--spacing-xs);
     padding: var(--spacing-md);
-    background: #07C160;
-    color: #FFFFFF;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
     border-radius: var(--radius-lg);
     font-size: var(--font-body);
     font-weight: var(--font-weight-semibold);
@@ -321,6 +321,24 @@
     &-icon {
       font-size: var(--font-title);
       font-weight: 300;
+    }
+  }
+
+  /* ── 隐私模式提示 ── */
+  &-privacy-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    background: var(--color-warning-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 149, 0, 0.2);
+
+    &-text {
+      font-size: var(--font-body-sm);
+      color: var(--color-warning);
+      font-weight: var(--font-weight-medium);
     }
   }
 }

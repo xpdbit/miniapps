@@ -24,10 +24,19 @@ async function proxyRequest(
   method: 'get' | 'post' | 'put' | 'delete',
 ): Promise<void> {
   try {
-    // req.path 是挂载点之后剩余路径，如 /pending → 去掉前导斜杠得到 pending
+    // req.path 是挂载点之后剩余路径，如 /dashboard/stats → 去掉前导斜杠得到 dashboard/stats
     const subPath = req.path.replace(/^\//, '')
-    // tavern-server 管理接口统一在 /api/v1/admin/ 下
-    const targetUrl = `${TAVERN_API}/admin/${subPath}`
+
+    // 管理类操作需要 /admin/ 前缀，普通操作直接路由到 /v1/ 下
+    // characters: Dashboard 管理面板需要查看所有角色（admin 视图），而非仅自己的角色
+    const adminOps = [
+      'dashboard/', 'model', 'sync-', 'pending', 'approve/', 'reject/',
+      'ban/', 'logs/', 'chats', 'keys', 'import', 'characters', 'users',
+      'announcements', 'reports',
+    ]
+    const needsAdminPrefix = adminOps.some(op => subPath.startsWith(op))
+    const targetPath = needsAdminPrefix ? `admin/${subPath}` : subPath
+    const targetUrl = `${TAVERN_API}/${targetPath}`
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

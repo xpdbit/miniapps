@@ -13,5 +13,5 @@ COPY package*.json ./
 RUN npm ci --production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-EXPOSE 3001
+EXPOSE 3004
 CMD ["node", "dist/app.js"]

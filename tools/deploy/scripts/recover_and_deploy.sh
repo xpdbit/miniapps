@@ -2,7 +2,7 @@
 # =============================================================================
 # mnapp.top 服务器恢复 + 部署脚本
 # 用于服务器 Docker 容器全部停止后的恢复操作
-# 使用方式：ssh root@mnapp.top "bash -s" < recover_and_deploy.sh
+# 使用方式：ssh root@mnapp.top "bash -s" < tools/deploy/scripts/recover_and_deploy.sh
 # =============================================================================
 set -e
 

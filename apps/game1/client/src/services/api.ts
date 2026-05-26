@@ -18,7 +18,7 @@ function getApiBase(): string {
   } catch {
     // process 未定义时忽略
   }
-  return 'http://localhost:3000/api/v1/game1';
+  return 'http://localhost:3004/api/v1/game1';
 }
 
 export const API_BASE = getApiBase();

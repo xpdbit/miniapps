@@ -4,12 +4,15 @@ import { httpClient } from '@/services/httpClient'
 import type { ChatSession, ChatMessage } from '@/types/chat'
 
 const MODEL_STORAGE_KEY = 'tavern_selected_model'
+const PROVIDER_STORAGE_KEY = 'tavern_selected_provider'
 
-function loadSavedModel(): string {
+function loadSavedModel(): { model: string; provider: string } {
   try {
-    return Taro.getStorageSync<string>(MODEL_STORAGE_KEY) || 'qwen-turbo'
+    const model = Taro.getStorageSync<string>(MODEL_STORAGE_KEY) || 'deepseek-chat'
+    const provider = Taro.getStorageSync<string>(PROVIDER_STORAGE_KEY) || 'deepseek'
+    return { model, provider }
   } catch {
-    return 'qwen-turbo'
+    return { model: 'deepseek-chat', provider: 'deepseek' }
   }
 }
 
@@ -19,6 +22,9 @@ interface ChatState {
   messages: ChatMessage[]
   isStreaming: boolean
   selectedModel: string
+  selectedProvider: string
+  /** 用户从角色详情页点击"开始对话"时暂存的角色 ID */
+  pendingCharacterId: string | null
 
   loadSessions: () => Promise<void>
   selectSession: (session: ChatSession) => void
@@ -26,22 +32,28 @@ interface ChatState {
   updateLastMessage: (content: string) => void
   setStreaming: (v: boolean) => void
   clearCurrent: () => void
-  setModel: (model: string) => void
+  setModel: (model: string, provider?: string) => void
+  setPendingCharacter: (characterId: string | null) => void
 }
+
+const saved = loadSavedModel()
 
 export const useChatStore = create<ChatState>((set, get) => ({
   sessions: [],
   currentSession: null,
   messages: [],
   isStreaming: false,
-  selectedModel: loadSavedModel(),
+  selectedModel: saved.model,
+  selectedProvider: saved.provider,
+  pendingCharacterId: null,
 
   loadSessions: async () => {
     try {
       const res = await httpClient.get<{ data: { items: Array<{ id: string }> } }>('/chat/sessions')
       set({ sessions: res.data?.items || [] })
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '加载会话失败'
+      console.error('[chatStore] loadSessions failed:', msg)
     }
   },
 
@@ -64,12 +76,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setStreaming: (v) => set({ isStreaming: v }),
   clearCurrent: () => set({ messages: [], currentSession: null }),
-  setModel: (model) => {
+  setModel: (model, provider) => {
     try {
       Taro.setStorageSync(MODEL_STORAGE_KEY, model)
-    } catch {
-      // ignore
+      if (provider) {
+        Taro.setStorageSync(PROVIDER_STORAGE_KEY, provider)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '保存模型选择失败'
+      console.error('[chatStore] setModel persist failed:', msg)
     }
-    set({ selectedModel: model })
+    set({ selectedModel: model, ...(provider ? { selectedProvider: provider } : {}) })
+  },
+  setPendingCharacter: (characterId) => {
+    set({ pendingCharacterId: characterId })
   },
 }))

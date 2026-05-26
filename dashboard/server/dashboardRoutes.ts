@@ -1,7 +1,13 @@
 // Dashboard Stats API Routes
-// 查询 miniapps 数据库提供仪表盘统计数据
+// 跨库查询 miniapps (User) + food_theme_generator (FTG 业务表) 提供仪表盘统计
 import { Router, type Request, type Response } from 'express'
 import prisma from './prisma'
+import {
+  getFtgStats,
+  getRecognitionTrend,
+  getFoodTypeDistribution,
+  getThemeUsageDistribution,
+} from './prisma-ftg'
 
 const router = Router()
 
@@ -15,16 +21,28 @@ router.get('/stats', async (_req: Request, res: Response) => {
     monthStart.setDate(1)
     monthStart.setHours(0, 0, 0, 0)
 
-    const [totalUsers, totalFoodRecords, totalCheckIns, newUsersToday, recognitionsToday, checkInsToday, newUsersThisMonth] = await prisma.$transaction([
-      prisma.sharedUser.count(),
-      prisma.ftgFoodRecord.count(),
-      prisma.ftgCheckin.count(),
-      prisma.sharedUser.count({ where: { created_at: { gte: todayStart } } }),
-      prisma.ftgFoodRecord.count({ where: { created_at: { gte: todayStart } } }),
-      prisma.ftgCheckin.count({ where: { created_at: { gte: todayStart } } }),
-      prisma.sharedUser.count({ where: { created_at: { gte: monthStart } } }),
+    // miniapps 库：用户统计
+    const [totalUsers, newUsersToday, newUsersThisMonth] = await prisma.$transaction([
+      prisma.user.count(),
+      prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.user.count({ where: { createdAt: { gte: monthStart } } }),
     ])
-    res.json({ success: true, data: { totalUsers, newUsersToday, newUsersThisMonth, totalFoodRecords, recognitionsToday, totalCheckIns, checkInsToday } })
+
+    // food_theme_generator 库：FTG 业务统计
+    const ftgStats = await getFtgStats(todayStart)
+
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        newUsersToday,
+        newUsersThisMonth,
+        totalFoodRecords: ftgStats.totalFoodRecords,
+        recognitionsToday: ftgStats.recognitionsToday,
+        totalCheckIns: ftgStats.totalCheckIns,
+        checkInsToday: ftgStats.checkInsToday,
+      },
+    })
   } catch (e) {
     console.error('[Dashboard] 获取统计概览失败:', e)
     res.status(500).json({ success: false, message: (e as Error).message })
@@ -35,14 +53,14 @@ router.get('/stats', async (_req: Request, res: Response) => {
 router.get('/stats/user-trend', async (_req: Request, res: Response) => {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    const users = await prisma.sharedUser.findMany({
-      where: { created_at: { gte: thirtyDaysAgo } },
-      select: { created_at: true },
-      orderBy: { created_at: 'asc' },
+    const users = await prisma.user.findMany({
+      where: { createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'asc' },
     })
     const grouped: Record<string, number> = {}
     for (const u of users) {
-      const date = u.created_at.toISOString().slice(0, 10)
+      const date = u.createdAt.toISOString().slice(0, 10)
       grouped[date] = (grouped[date] || 0) + 1
     }
     const data = Object.entries(grouped).map(([date, value]) => ({ date, value }))
@@ -57,17 +75,7 @@ router.get('/stats/user-trend', async (_req: Request, res: Response) => {
 router.get('/stats/recognition-trend', async (_req: Request, res: Response) => {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    const records = await prisma.ftgFoodRecord.findMany({
-      where: { created_at: { gte: thirtyDaysAgo } },
-      select: { created_at: true },
-      orderBy: { created_at: 'asc' },
-    })
-    const grouped: Record<string, number> = {}
-    for (const r of records) {
-      const date = r.created_at.toISOString().slice(0, 10)
-      grouped[date] = (grouped[date] || 0) + 1
-    }
-    const data = Object.entries(grouped).map(([date, value]) => ({ date, value }))
+    const data = await getRecognitionTrend(thirtyDaysAgo)
     res.json({ success: true, data })
   } catch (e) {
     console.error('[Dashboard] 获取识别趋势失败:', e)
@@ -78,13 +86,7 @@ router.get('/stats/recognition-trend', async (_req: Request, res: Response) => {
 /** 食物类型分布 */
 router.get('/stats/food-type-distribution', async (_req: Request, res: Response) => {
   try {
-    const result = await prisma.ftgFoodRecord.groupBy({
-      by: ['food_type'],
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 10,
-    })
-    const data = result.map((r) => ({ type: r.food_type, value: r._count.id }))
+    const data = await getFoodTypeDistribution()
     res.json({ success: true, data })
   } catch (e) {
     console.error('[Dashboard] 获取食物类型分布失败:', e)
@@ -95,18 +97,7 @@ router.get('/stats/food-type-distribution', async (_req: Request, res: Response)
 /** 主题使用分布 */
 router.get('/stats/theme-usage-distribution', async (_req: Request, res: Response) => {
   try {
-    const themes = await prisma.ftgTheme.findMany({
-      take: 10,
-      orderBy: { usage_count: 'desc' },
-      select: { name: true, theme_id: true },
-    })
-    const data = await Promise.all(
-      themes.map((t) =>
-        prisma.ftgFoodRecord
-          .count({ where: { theme_id: t.theme_id, is_deleted: false } })
-          .then((count) => ({ type: t.name, value: count })),
-      ),
-    )
+    const data = await getThemeUsageDistribution()
     res.json({ success: true, data })
   } catch (e) {
     console.error('[Dashboard] 获取主题使用分布失败:', e)

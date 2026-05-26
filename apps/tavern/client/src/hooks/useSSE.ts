@@ -22,6 +22,7 @@ export function useSSE(options?: UseSSEOptions) {
     message: string
     sessionId?: string
     model?: string
+    provider?: string
     temperature?: number
     cardData?: {
       name?: string
@@ -59,7 +60,8 @@ export function useSSE(options?: UseSSEOptions) {
           characterId: params.characterId,
           personaId: params.personaId,
           message: params.message,
-          model: params.model || 'tongyi',
+          model: params.model || 'qwen-turbo',
+          provider: params.provider || 'tongyi',
           temperature: params.temperature ?? 0.8,
           cardData: params.cardData,
         },
@@ -68,7 +70,6 @@ export function useSSE(options?: UseSSEOptions) {
           Authorization: `Bearer ${token}`,
         },
         timeout: 120000,
-        enableChunked: true,
         responseType: 'text',
       })
 
@@ -134,6 +135,11 @@ export function useSSE(options?: UseSSEOptions) {
     }
   }, [currentSessionId, options])
 
+  const addCharacterMessage = useCallback((content: string) => {
+    const charMsg: ChatMessage = { role: 'character', content }
+    setMessages(prev => [...prev, charMsg])
+  }, [])
+
   const clearMessages = useCallback(() => {
     setMessages([])
     setCurrentSessionId(null)
@@ -144,12 +150,56 @@ export function useSSE(options?: UseSSEOptions) {
     setIsStreaming(false)
   }, [])
 
+  /** 移除最后一条 AI 消息（用于重新生成） */
+  const removeLastAiMessage = useCallback(() => {
+    setMessages(prev => {
+      // 从末尾找最后一条 character 消息并移除
+      for (let i = prev.length - 1; i >= 0; i--) {
+        const msg = prev[i]
+        if (msg && msg.role === 'character') {
+          return [...prev.slice(0, i), ...prev.slice(i + 1)]
+        }
+      }
+      return prev
+    })
+  }, [])
+
+  /** 编辑指定位置的消息 */
+  const editMessage = useCallback((index: number, content: string) => {
+    setMessages(prev => {
+      if (index < 0 || index >= prev.length) return prev
+      const updated = [...prev]
+      const msg = updated[index]
+      if (msg) {
+        updated[index] = { ...msg, content }
+      }
+      return updated
+    })
+  }, [])
+
+  /** 软删除指定位置的消息 */
+  const deleteMessage = useCallback((index: number) => {
+    setMessages(prev => {
+      if (index < 0 || index >= prev.length) return prev
+      const updated = [...prev]
+      const msg = updated[index]
+      if (msg) {
+        updated[index] = { ...msg, content: '[消息已删除]' }
+      }
+      return updated
+    })
+  }, [])
+
   return {
     messages,
     isStreaming,
     currentSessionId,
     sendMessage,
+    addCharacterMessage,
     clearMessages,
     stopStreaming,
+    removeLastAiMessage,
+    editMessage,
+    deleteMessage,
   }
 }

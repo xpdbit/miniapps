@@ -1,5 +1,5 @@
 /**
- * 食物记录服务 - CRUD、图片上传、搜索、软删除、统计
+ * 食物记录服务 - CRUD、图片上传、搜索、软删除、统�?
  */
 import prisma from '../lib/prisma';
 import type { Prisma, $Enums } from '@prisma/client';
@@ -70,7 +70,7 @@ export interface RecordStats {
 // 常量
 // ============================================================
 
-/** 有效的食物类型列表 */
+/** 有效的食物类型列�?*/
 const VALID_FOOD_TYPES = [
   'grain', 'vegetable', 'fruit', 'meat', 'seafood',
   'dairy', 'nut', 'snack', 'beverage', 'seasoning', 'dish', 'other',
@@ -125,15 +125,15 @@ function validateFoodType(value: unknown): string | undefined {
 
 /**
  * 创建食物记录
- * 如果有图片 buffer，先上传再存储 URL
+ * 如果有图�?buffer，先上传再存�?URL
  */
-export async function create(userId: number, data: Record<string, unknown>) {
+export async function create(userUuid: string, data: Record<string, unknown>) {
   // 1. 处理图片上传
   let imageUrl: string | undefined;
   const buffer = data.imageBuffer;
   if (buffer instanceof Buffer) {
     const storage = getStorageProvider();
-    const key = buildStoragePath(userId, 'food', 'jpg');
+    const key = buildStoragePath(userUuid, 'food', 'jpg');
     imageUrl = await storage.upload(key, buffer, 'image/jpeg');
   }
 
@@ -145,7 +145,7 @@ export async function create(userId: number, data: Record<string, unknown>) {
 
   // 3. 构建创建数据
   const createInput: Prisma.FoodRecordUncheckedCreateInput = {
-    userId,
+    userUuid,
     foodName: String(data.foodName ?? ''),
     foodType: foodType as $Enums.FoodType,
     imageUrl: imageUrl ?? (data.imageUrl as string | undefined),
@@ -167,17 +167,17 @@ export async function create(userId: number, data: Record<string, unknown>) {
     isPublic: toBoolean(data.isPublic),
   };
 
-  return prisma.foodRecord.create({ data: createInput });
+  return prisma.ftgFoodRecord.create({ data: createInput });
 }
 
 /**
  * 根据 ID 获取单条记录
- * 包含用户基本信息（nickname, avatarUrl）
- * 自动校验所有权和 isDeleted 状态
+ * 包含用户基本信息（nickname, avatarUrl�?
+ * 自动校验所有权�?isDeleted 状�?
  */
-export async function getById(id: number, userId: number) {
-  return prisma.foodRecord.findFirst({
-    where: { id, userId, isDeleted: false },
+export async function getById(id: number, userUuid: string) {
+  return prisma.ftgFoodRecord.findFirst({
+    where: { id, userUuid, isDeleted: false },
     include: {
       user: {
         select: { nickname: true, avatarUrl: true },
@@ -188,16 +188,16 @@ export async function getById(id: number, userId: number) {
 
 /**
  * 分页查询用户食物记录
- * 支持 foodType 和 themeId 筛选
+ * 支持 foodType �?themeId 筛�?
  * 使用 offset 分页
  */
-export async function listByUser(userId: number, params: ListRecordParams) {
+export async function listByUser(userUuid: string, params: ListRecordParams) {
   const { page, limit, foodType, themeId } = params;
   const skip = (page - 1) * limit;
 
   // 构建 where 条件
   const where: Prisma.FoodRecordWhereInput = {
-    userId,
+    userUuid,
     isDeleted: false,
   };
 
@@ -209,14 +209,14 @@ export async function listByUser(userId: number, params: ListRecordParams) {
   }
 
   const [records, total] = await Promise.all([
-    prisma.foodRecord.findMany({
+    prisma.ftgFoodRecord.findMany({
       where,
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
       select: LIST_RECORD_SELECT,
     }),
-    prisma.foodRecord.count({ where }),
+    prisma.ftgFoodRecord.count({ where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -232,12 +232,12 @@ export async function listByUser(userId: number, params: ListRecordParams) {
 }
 
 /**
- * 软删除记录
+ * 软删除记�?
  * 先校验所有权，再标记删除
  */
-export async function softDelete(id: number, userId: number): Promise<void> {
-  const record = await prisma.foodRecord.findFirst({
-    where: { id, userId, isDeleted: false },
+export async function softDelete(id: number, userUuid: string): Promise<void> {
+  const record = await prisma.ftgFoodRecord.findFirst({
+    where: { id, userUuid, isDeleted: false },
     select: { id: true },
   });
 
@@ -245,7 +245,7 @@ export async function softDelete(id: number, userId: number): Promise<void> {
     throw new Error('记录不存在或无权操作');
   }
 
-  await prisma.foodRecord.update({
+  await prisma.ftgFoodRecord.update({
     where: { id },
     data: { isDeleted: true, deletedAt: new Date() },
   });
@@ -253,12 +253,12 @@ export async function softDelete(id: number, userId: number): Promise<void> {
 
 /**
  * 搜索食物记录
- * 按食物名称模糊搜索
+ * 按食物名称模糊搜�?
  */
-export async function search(userId: number, keyword: string) {
-  return prisma.foodRecord.findMany({
+export async function search(userUuid: string, keyword: string) {
+  return prisma.ftgFoodRecord.findMany({
     where: {
-      userId,
+      userUuid,
       isDeleted: false,
       foodName: { contains: keyword },
     },
@@ -270,12 +270,12 @@ export async function search(userId: number, keyword: string) {
 
 /**
  * 获取食物记录统计
- * - 按食物类型分组统计数量
- * - 按日期生成趋势数据
+ * - 按食物类型分组统计数�?
+ * - 按日期生成趋势数�?
  */
-export async function getStats(userId: number, dateRange?: DateRange): Promise<RecordStats> {
+export async function getStats(userUuid: string, dateRange?: DateRange): Promise<RecordStats> {
   // 基础 where 条件
-  const baseWhere: Prisma.FoodRecordWhereInput = { userId, isDeleted: false };
+  const baseWhere: Prisma.FoodRecordWhereInput = { userUuid, isDeleted: false };
 
   if (dateRange) {
     baseWhere.createdAt = { gte: dateRange.start, lte: dateRange.end };
@@ -283,8 +283,8 @@ export async function getStats(userId: number, dateRange?: DateRange): Promise<R
 
   // 并行查询：总数 + 类型分布
   const [totalCount, foodTypeDistribution] = await Promise.all([
-    prisma.foodRecord.count({ where: baseWhere }),
-    prisma.foodRecord.groupBy({
+    prisma.ftgFoodRecord.count({ where: baseWhere }),
+    prisma.ftgFoodRecord.groupBy({
       by: ['foodType'],
       where: baseWhere,
       _count: true,
@@ -293,13 +293,13 @@ export async function getStats(userId: number, dateRange?: DateRange): Promise<R
   ]);
 
   // 获取所有记录的日期用于趋势分析
-  const recordsForTrend = await prisma.foodRecord.findMany({
+  const recordsForTrend = await prisma.ftgFoodRecord.findMany({
     where: baseWhere,
     select: { createdAt: true },
     orderBy: { createdAt: 'asc' },
   });
 
-  // 按日期分组统计
+  // 按日期分组统�?
   const dateMap = new Map<string, number>();
   for (const record of recordsForTrend) {
     const dateKey = record.createdAt.toISOString().slice(0, 10);
@@ -320,3 +320,5 @@ export async function getStats(userId: number, dateRange?: DateRange): Promise<R
     dateTrend,
   };
 }
+
+

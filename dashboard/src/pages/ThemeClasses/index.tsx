@@ -369,7 +369,7 @@ const ThemeClasses = () => {
             </Button>
           </Space>
         }
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}

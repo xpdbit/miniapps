@@ -1,12 +1,13 @@
-﻿# apps/tavern/client — 微信小程序 + H5
+﻿# apps/tavern/client — 微信小程序 + H5 Web
 
 ## OVERVIEW
-Taro 4.x 跨平台应用 (React 18 + Zustand 5 + TypeScript + Sass)，AI-Tavern 角色聊天应用。支持微信小程序和 H5 双平台。
+Taro 4.x 跨平台应用 (React 18 + Zustand 5 + TypeScript + Sass)，AI-Tavern 角色聊天应用。支持微信小程序和 H5 Web 双平台。
 核心功能：角色市场浏览、SSE 流式聊天、角色卡创建与管理、自定义人设、双模式 TabBar（酒馆/游戏模式）。
 
 ## STRUCTURE
 ```
 apps/tavern/client/
+├── index.html                # H5 Web 入口 HTML 模板
 ├── src/
 │   ├── app.ts                 # 应用入口 (认证初始化/配额刷新)
 │   ├── app.config.ts          # 小程序配置 (12 pages + 3 tabBar)
@@ -93,8 +94,12 @@ apps/tavern/client/
 ```bash
 npm run dev:weapp        # 微信小程序开发模式 (watch 热重载)
 npm run build:weapp      # 微信小程序生产构建
-npm run dev:h5           # H5 开发模式 (watch 热重载)
-npm run build:h5         # H5 构建
+npm run dev:h5           # H5 Web 开发模式 (watch 热重载, port 5174)
+npm run dev:h5:local     # H5 本地开发 (API → localhost:3002)
+npm run dev:h5:remote    # H5 远程开发 (API → mnapp.top)
+npm run dev:web          # H5 Web 开发快捷命令 (= dev:h5:local)
+npm run build:h5         # H5 Web 开发构建
+npm run build:web        # H5 Web 生产构建 (= build:h5:prod)
 npm run build:h5:prod    # H5 生产构建
 npm run type-check       # TypeScript 类型检查
 npm run lint             # ESLint 代码检查
@@ -104,16 +109,21 @@ npm run generate-icons   # 生成 tabBar 图标
 
 ## NOTES
 - **Taro 4.x** + React 18 + Zustand 5
-- **双平台**: 微信小程序 (weapp) + H5 浏览器
+- **双平台**: 微信小程序 (weapp) + H5 Web 浏览器
+- **H5 Dev Server**: 端口 5174，host 0.0.0.0，支持局域网访问
 - **H5 路由**: hash 模式，配置 8 个自定义路由路径
+- **H5 入口**: `index.html` — 通过 HtmlWebpackPlugin 自动注入 JS/CSS bundles
+- **H5 认证**: 网页版仅支持账号密码登录，微信登录按钮自动隐藏
 - **双模式 TabBar**: 通过 `gameStore.gameMode` 切换 — 酒馆模式(酒馆/开始/我的) ↔ 游戏模式(通信/通讯录/发现/我的)
 - **游戏模式存档**: gameStore 管理 localStorage 持久化存档，含世界设定/选卡/群组/消息
 - **隐私模式**: privacyStore 管理隐私开关，开启后 AI 请求绕过服务器中转，用户本地缓存 API Key
-- **SSE 流式聊天**: useSSE hook 封装 EventSource，支持断线重连和流式消息追加
-- **认证流程**: wx.login() → POST /auth/login → JWT → Taro Storage 持久化 → restoreSession 自动恢复
+- **SSE 流式聊天**: useSSE hook 封装 Taro.request，支持断线重连和流式消息追加
+- **认证流程 (weapp)**: wx.login() → POST /auth/wechat/login → JWT → Taro Storage 持久化 → restoreSession 自动恢复
+- **认证流程 (H5)**: 账号密码 → POST /auth/login → JWT → Taro Storage 持久化 → restoreSession 自动恢复
 - **每日配额**: authStore 管理每日消息配额，切前台时自动刷新
 - **HTTP 客户端**: HttpClient 类封装 Taro.request，自动携带 JWT token，401 响应时触发登出
 - **角色市场**: 支持标签筛选、分页加载、轮播推荐
 - **多模型支持**: 通过 ModelSelector 组件切换 AI 模型
 - **API_BASE_URL 编译时注入**: 通过根目录 `domain.config.js` 配置
 - **H5 兼容性**: 已移除未使用的 `tdesign-miniprogram-taro` 依赖和 `app.config.ts` 中的 `usingComponents` 配置
+- **mp-automator 工作流**: 样式/组件/导航/交互相关修改前，MUST 先通过 mp-automator 检查运行时 DOM。详见根目录 `AGENTS.md` → "微信小程序开发 — mp-automator 强制工作流"

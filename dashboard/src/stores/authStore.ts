@@ -54,8 +54,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const user = await authApi.getMe()
       set({ token, user, isAuthenticated: true, initialized: true })
-    } catch (error) {
-      console.error('[Auth] restoreSession 失败:', error)
+    } catch {
+      // 401 is expected on first attempt — silently try refresh
       // Try refreshing the token
       const refreshToken = localStorage.getItem('refresh_token')
       if (refreshToken) {

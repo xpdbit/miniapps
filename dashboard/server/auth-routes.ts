@@ -7,10 +7,9 @@ import { Router, type Request, type Response } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-import { PrismaClient } from '@prisma/client'
+import prisma from './prisma'
 
 const authRouter = Router()
-const prisma = new PrismaClient()
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production'
 const ACCESS_TOKEN_EXPIRES = '15m'
@@ -109,45 +108,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       return
     }
 
-    // 查找密码认证记录 — credential 存的是 nickname
-    const authRecord = await prisma.userAuth.findFirst({
-      where: {
-        authType: 'password',
-        credential: { not: '' },
-      },
-      include: { user: true },
-    })
-
-    // 遍历找到匹配的（因为 credential 存的是 bcrypt hash，需要逐个比较）
-    // 优化方案：credential 字段改为存 nickname，另外用 password_hash 存哈希
-    // 当前兼容旧数据：先查所有 password 类型，再 bcrypt.compare
-    const allPasswordAuths = await prisma.userAuth.findMany({
-      where: { authType: 'password' },
-      include: { user: true },
-    })
-
-    // 先尝试精确匹配 nickname
-    let matchedAuth = allPasswordAuths.find((a) => a.credential === credential)
-
-    if (!matchedAuth) {
-      // 尝试 bcrypt compare（兼容旧数据格式）
-      for (const auth of allPasswordAuths) {
-        const valid = await bcrypt.compare(credential, auth.credential).catch(() => false)
-        if (valid) {
-          matchedAuth = auth
-          break
-        }
-      }
-    }
-
-    if (!matchedAuth) {
-      res.status(401).json({ code: 401, message: '用户名或密码错误' })
-      return
-    }
-
-    // 验证密码（如果 credential 存的是 nickname，需要重新设计）
-    // 这里需要重新考虑：应该支持 { nickname } 去查 user，再查该 user 的 auths
-    // 简化：直接用 credential 查 users.nickname，再查 user_auths
+    // 通过 nickname 查找用户 → 获取其密码认证 → bcrypt 验证
     const user = await prisma.user.findFirst({
       where: { nickname: credential },
       include: {

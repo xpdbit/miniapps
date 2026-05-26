@@ -1,5 +1,8 @@
 # Game1 Server
 
+> **状态**: current
+> **更新**: 2026-05-24
+
 Game1 挂机放置游戏的后端 API 服务，基于 Express + TypeScript 构建。
 
 ## 技术栈

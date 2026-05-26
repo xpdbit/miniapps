@@ -21,7 +21,7 @@ export function requireAuth(
   const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
-    req.user = { userId: payload.sub, role: payload.role };
+    req.user = { userId: payload.sub, role: payload.role as 'USER' | 'ADMIN' };
     next();
   } catch {
     res.status(401).json({ code: 401, message: '登录已过期，请重新登录', data: null });
@@ -43,7 +43,7 @@ export function optionalAuth(
   const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
-    req.user = { userId: payload.sub, role: payload.role };
+    req.user = { userId: payload.sub, role: payload.role as 'USER' | 'ADMIN' };
   } catch {
     // Token invalid, continue without user
   }

@@ -1,5 +1,8 @@
 # apps/ftg/server — Express 后端 API
 
+> **状态**: current
+> **更新**: 2026-05-24
+
 FTG（Food Theme Generator）后端服务，为 Taro 客户端提供 RESTful API。支持 AI 食物识别、主题模板渲染、打卡记录、成就系统等功能。
 
 属于 `.miniapps` monorepo 的一个子项目，位于 `apps/ftg/server/`。

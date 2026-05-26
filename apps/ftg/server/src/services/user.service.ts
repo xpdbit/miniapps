@@ -33,7 +33,7 @@ export async function upsertUser(openid: string, data?: { nickname?: string; ava
 }
 
 /** Get aggregated user statistics */
-export async function getUserStats(userId: number): Promise<UserStats> {
+export async function getUserStats(userUuid: number): Promise<UserStats> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -48,14 +48,14 @@ export async function getUserStats(userId: number): Promise<UserStats> {
     totalCalories,
     checkins,
   ] = await Promise.all([
-    prisma.foodRecord.count({ where: { userId, isDeleted: false } }),
-    prisma.checkin.count({ where: { userId } }),
-    prisma.userAchievement.count({ where: { userId, isUnlocked: true } }),
-    prisma.foodRecord.groupBy({ by: ['foodType'], where: { userId, isDeleted: false }, _count: true }),
-    prisma.foodRecord.count({ where: { userId, isDeleted: false, createdAt: { gte: startOfMonth } } }),
-    prisma.foodRecord.count({ where: { userId, isDeleted: false, createdAt: { gte: startOfToday } } }),
-    prisma.foodRecord.aggregate({ where: { userId, isDeleted: false }, _sum: { caloriesTotal: true } }),
-    prisma.checkin.findMany({ where: { userId }, orderBy: { checkinDate: 'desc' }, select: { checkinDate: true }, take: 365 }),
+    prisma.ftgFoodRecord.count({ where: { userUuid, isDeleted: false } }),
+    prisma.ftgCheckin.count({ where: { userUuid } }),
+    prisma.ftgUserAchievement.count({ where: { userUuid, isUnlocked: true } }),
+    prisma.ftgFoodRecord.groupBy({ by: ['foodType'], where: { userUuid, isDeleted: false }, _count: true }),
+    prisma.ftgFoodRecord.count({ where: { userUuid, isDeleted: false, createdAt: { gte: startOfMonth } } }),
+    prisma.ftgFoodRecord.count({ where: { userUuid, isDeleted: false, createdAt: { gte: startOfToday } } }),
+    prisma.ftgFoodRecord.aggregate({ where: { userUuid, isDeleted: false }, _sum: { caloriesTotal: true } }),
+    prisma.ftgCheckin.findMany({ where: { userUuid }, orderBy: { checkinDate: 'desc' }, select: { checkinDate: true }, take: 365 }),
   ]);
 
   // Calculate streak from checkin dates
@@ -200,7 +200,7 @@ export async function listUsers(params: {
 
 /** Update user profile (nickname, avatarUrl) */
 export async function updateUserProfile(
-  userId: number,
+  userUuid: number,
   data: { nickname?: string | null; avatarUrl?: string | null },
 ) {
   const updateData: Record<string, unknown> = {};
@@ -209,14 +209,14 @@ export async function updateUserProfile(
   if (Object.keys(updateData).length === 0) return null;
 
   return prisma.user.update({
-    where: { id: userId },
+    where: { id: userUuid },
     data: { ...updateData, updatedAt: new Date() },
     select: { id: true, openid: true, nickname: true, avatarUrl: true, createdAt: true, updatedAt: true },
   });
 }
 
 /**
- * 将旧版头像 URL（https://xxx/uploads/avatars/...）转为新版 API 路径 URL
+ * 将旧版头�?URL（https://xxx/uploads/avatars/...）转为新�?API 路径 URL
  */
 function transformAvatarUrl(avatarUrl: string | null): string {
   if (!avatarUrl) return '';
@@ -228,12 +228,12 @@ function transformAvatarUrl(avatarUrl: string | null): string {
 }
 
 /** Get user public profile */
-export async function getUserProfile(userId: number) {
+export async function getUserProfile(userUuid: number) {
   const [user, totalRecords, achievements, maxCheckin] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { nickname: true, avatarUrl: true } }),
-    prisma.foodRecord.count({ where: { userId, isDeleted: false } }),
-    prisma.userAchievement.count({ where: { userId, isUnlocked: true } }),
-    prisma.checkin.findFirst({ where: { userId }, orderBy: { streakCount: 'desc' }, select: { streakCount: true } }),
+    prisma.user.findUnique({ where: { id: userUuid }, select: { nickname: true, avatarUrl: true } }),
+    prisma.ftgFoodRecord.count({ where: { userUuid, isDeleted: false } }),
+    prisma.ftgUserAchievement.count({ where: { userUuid, isUnlocked: true } }),
+    prisma.ftgCheckin.findFirst({ where: { userUuid }, orderBy: { streakCount: 'desc' }, select: { streakCount: true } }),
   ]);
 
   if (!user) return null;

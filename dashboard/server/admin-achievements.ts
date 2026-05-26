@@ -8,7 +8,7 @@ const router = Router()
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const achievements = await prisma.ftgAchievement.findMany({
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
     const rows = achievements.map((r) => ({
       id: r.achievement_id,

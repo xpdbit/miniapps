@@ -1,18 +1,18 @@
 .page-archive {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
 
   &-header {
     padding: var(--spacing-md);
     padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0));
-    background: #FFFFFF;
+    background: var(--color-bg-card);
 
     &-title {
       font-size: var(--font-title);
       font-weight: var(--font-weight-bold);
-      color: #1A1A1A;
+      color: var(--color-text-primary);
     }
   }
 
@@ -25,19 +25,19 @@
     display: flex;
     align-items: center;
     padding: var(--spacing-md);
-    background: #FFFFFF;
+    background: var(--color-bg-card);
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-sm);
 
     &:active {
-      background: #F5F5F5;
+      background: var(--color-bg-surface-hover);
     }
 
     &-icon {
       width: 80rpx;
       height: 80rpx;
       border-radius: var(--radius-sm);
-      background: #F0F0F0;
+      background: var(--color-bg-muted);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -56,7 +56,7 @@
 
     &-name {
       font-size: var(--font-body);
-      color: #1A1A1A;
+      color: var(--color-text-primary);
       font-weight: var(--font-weight-medium);
       display: block;
       margin-bottom: 4rpx;
@@ -69,7 +69,7 @@
 
     &-delete {
       font-size: var(--font-caption);
-      color: #FF3B30;
+      color: var(--color-danger, #FF3B30);
       padding: var(--spacing-xs);
     }
   }
@@ -77,7 +77,7 @@
   &-footer {
     padding: var(--spacing-md);
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
-    background: #FFFFFF;
+    background: var(--color-bg-card);
   }
 
   &-new-btn {
@@ -86,7 +86,7 @@
     justify-content: center;
     gap: var(--spacing-xs);
     padding: var(--spacing-md);
-    background: #07C160;
+    background: var(--color-primary);
     color: #FFFFFF;
     border-radius: var(--radius-lg);
     font-size: var(--font-body);

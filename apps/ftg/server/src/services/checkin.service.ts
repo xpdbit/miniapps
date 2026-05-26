@@ -1,13 +1,13 @@
-import prisma from '../lib/prisma';
+﻿import prisma from '../lib/prisma';
 
 export async function createCheckin(
-  userId: number,
+  userUuid: number,
   foodRecordId: number,
   location?: { latitude?: number; longitude?: number; locationName?: string }
 ) {
   // 1. Verify food record belongs to user
-  const record = await prisma.foodRecord.findUnique({ where: { id: foodRecordId } });
-  if (!record || record.userId !== userId) {
+  const record = await prisma.ftgFoodRecord.findUnique({ where: { id: foodRecordId } });
+  if (!record || record.userUuid !== userUuid) {
     throw Object.assign(new Error('记录不存在'), { statusCode: 404 });
   }
 
@@ -17,8 +17,8 @@ export async function createCheckin(
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const existingToday = await prisma.checkin.findFirst({
-    where: { userId, checkinDate: { gte: today, lt: tomorrow } },
+  const existingToday = await prisma.ftgCheckin.findFirst({
+    where: { userUuid, checkinDate: { gte: today, lt: tomorrow } },
   });
   if (existingToday) {
     throw Object.assign(new Error('今日已打卡'), { statusCode: 409 });
@@ -26,17 +26,17 @@ export async function createCheckin(
 
   // 3. Calculate streak
   const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
-  const yesterdayCheckin = await prisma.checkin.findFirst({
-    where: { userId, checkinDate: { gte: new Date(yesterdayStr), lt: today } },
+  const yesterdayCheckin = await prisma.ftgCheckin.findFirst({
+    where: { userUuid, checkinDate: { gte: new Date(yesterdayStr), lt: today } },
     orderBy: { checkinDate: 'desc' },
   });
 
   const streakCount = yesterdayCheckin ? (yesterdayCheckin.streakCount + 1) : 1;
 
   // 4. Create checkin
-  const checkin = await prisma.checkin.create({
+  const checkin = await prisma.ftgCheckin.create({
     data: {
-      userId,
+      userUuid,
       foodRecordId,
       latitude: location?.latitude ?? null,
       longitude: location?.longitude ?? null,
@@ -50,38 +50,38 @@ export async function createCheckin(
   return checkin;
 }
 
-export async function listByUser(userId: number, page = 1, limit = 20) {
+export async function listByUser(userUuid: number, page = 1, limit = 20) {
   const skip = (page - 1) * limit;
   const [items, total] = await Promise.all([
-    prisma.checkin.findMany({
-      where: { userId },
+    prisma.ftgCheckin.findMany({
+      where: { userUuid },
       include: { foodRecord: { select: { foodName: true, foodType: true, imageUrl: true } } },
       orderBy: { checkinDate: 'desc' },
       skip,
       take: limit,
     }),
-    prisma.checkin.count({ where: { userId } }),
+    prisma.ftgCheckin.count({ where: { userUuid } }),
   ]);
   return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
 
-export async function getTodayStatus(userId: number) {
+export async function getTodayStatus(userUuid: number) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const checkin = await prisma.checkin.findFirst({
-    where: { userId, checkinDate: { gte: today, lt: tomorrow } },
+  const checkin = await prisma.ftgCheckin.findFirst({
+    where: { userUuid, checkinDate: { gte: today, lt: tomorrow } },
     include: { foodRecord: { select: { foodName: true, foodType: true } } },
   });
 
   return { checkedIn: !!checkin, checkin };
 }
 
-export async function getStreak(userId: number) {
-  const latestCheckin = await prisma.checkin.findFirst({
-    where: { userId },
+export async function getStreak(userUuid: number) {
+  const latestCheckin = await prisma.ftgCheckin.findFirst({
+    where: { userUuid },
     orderBy: { checkinDate: 'desc' },
     select: { streakCount: true, checkinDate: true },
   });

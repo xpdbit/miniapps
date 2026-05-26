@@ -5,21 +5,20 @@ import * as moderationService from '../services/moderation.service'
 import prisma from '../utils/prisma'
 import { z } from 'zod'
 
-// ─── adminToken 认证时 userId 被硬编码为 'admin'，需解析为真实 DB 用户 ID ───
+// ─── adminToken 认证时 userId 被硬编码为 'admin'，直接返回 admin 用户 UUID ───
 let cachedSystemUserId: string | null = null
 
 async function resolveAdminUserId(): Promise<string> {
   if (cachedSystemUserId) return cachedSystemUserId
-  const sysUser = await prisma.sharedUser.upsert({
-    where: { openid: 'builtin_system' },
+  // 查找或创建系统管理员用户（tavern 库自持用户模型）
+  const sysUser = await prisma.tavernUser.upsert({
+    where: { uuid: 'admin-001' },
     create: {
-      uuid: 'builtin_system_uuid',
-      openid: 'builtin_system',
+      uuid: 'admin-001',
       nickname: '酒馆系统',
-      dailyQuota: 99999,
       role: 'ADMIN',
     },
-    update: {}, // 已存在则无需修改
+    update: {},
     select: { id: true },
   })
   cachedSystemUserId = sysUser.id
@@ -118,9 +117,6 @@ router.get('/characters', async (req: AuthenticatedRequest, res: Response) => {
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
-        include: {
-          creator: { select: { id: true, nickname: true } },
-        },
       }),
       prisma.tavernCard.count({ where }),
     ])
@@ -159,7 +155,7 @@ router.post('/characters', async (req: AuthenticatedRequest, res: Response) => {
         firstMsg: data.firstMsg,
         cardType: data.cardType,
         isOfficial: true, // 管理员创建的都是官方卡片
-        creatorId,
+        userUuid: creatorId,
         status: 'PUBLISHED',
       },
     })
@@ -243,9 +239,6 @@ router.post('/export', async (req: AuthenticatedRequest, res: Response) => {
 
     const cards = await prisma.tavernCard.findMany({
       where: { id: { in: ids } },
-      include: {
-        creator: { select: { id: true, nickname: true } },
-      },
     })
 
     res.json({
@@ -269,8 +262,8 @@ router.delete('/characters/:id', async (req: AuthenticatedRequest, res: Response
     await prisma.$transaction([
       prisma.tavernCardLike.deleteMany({ where: { cardId: req.params.id } }),
       prisma.tavernCardFav.deleteMany({ where: { cardId: req.params.id } }),
-      prisma.tavernChatMessage.deleteMany({ where: { session: { characterId: req.params.id } } }),
-      prisma.tavernChatSession.deleteMany({ where: { characterId: req.params.id } }),
+      prisma.tavernChatMessage.deleteMany({ where: { session: { character: { id: req.params.id } } } }),
+      prisma.tavernChatSession.deleteMany({ where: { character: { id: req.params.id } } }),
       prisma.tavernCard.delete({ where: { id: req.params.id } }),
     ])
 
@@ -319,22 +312,20 @@ router.post('/characters/:id/unlock', async (req: AuthenticatedRequest, res: Res
 // GET /api/v1/admin/dashboard/stats - 仪表盘统计
 router.get('/dashboard/stats', async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const [totalCharacters, totalChats, activeUsers, pendingReviews] = await Promise.all([
-      prisma.tavernCard.count(),
+    const [totalCharacters, totalChats, pendingReviews] = await Promise.all([
+      prisma.tavernCard.count({ where: { deletedAt: null } }),
       prisma.tavernChatSession.count(),
-      prisma.sharedUser.count({
-        where: {
-          chatSessions: {
-            some: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 3600_000) } },
-          },
-        },
-      }),
-      prisma.tavernCard.count({ where: { status: 'PENDING' } }),
+      prisma.tavernCard.count({ where: { status: 'PENDING', deletedAt: null } }),
     ])
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const activeUsersResult = await prisma.tavernChatSession.groupBy({
+      by: ['userUuid'],
+      where: { lastMessageAt: { gte: sevenDaysAgo } },
+    })
 
     res.json({
       code: 0,
-      data: { totalCharacters, totalChats, activeUsers, pendingReviews },
+      data: { totalCharacters, totalChats, activeUsers: activeUsersResult.length, pendingReviews },
       message: 'ok',
     })
   } catch (err: any) {
@@ -354,8 +345,8 @@ router.get('/chats', async (req: AuthenticatedRequest, res: Response) => {
     const skip = (page - 1) * pageSize
 
     const where: Record<string, unknown> = {}
-    if (characterId) where.characterId = characterId
-    if (userId) where.userId = userId
+    if (characterId) where.cardId = characterId
+    if (userId) where.userUuid = userId
 
     const [items, total] = await Promise.all([
       prisma.tavernChatSession.findMany({
@@ -364,7 +355,6 @@ router.get('/chats', async (req: AuthenticatedRequest, res: Response) => {
         skip,
         take: pageSize,
         include: {
-          user: { select: { id: true, nickname: true } },
           character: { select: { id: true, name: true } },
         },
       }),
@@ -376,9 +366,9 @@ router.get('/chats', async (req: AuthenticatedRequest, res: Response) => {
       data: {
         items: items.map(s => ({
           id: s.id,
-          userId: s.userId,
-          userName: s.user.nickname || '匿名',
-          characterId: s.characterId,
+          userUuid: s.userUuid,
+          userName: s.userUuid || '匿名',
+          characterId: s.cardId,
           characterName: s.character.name,
           messageCount: s.messageCount,
           createdAt: s.createdAt,
@@ -466,7 +456,6 @@ router.get('/keys', async (req: AuthenticatedRequest, res: Response) => {
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
-        include: { user: { select: { id: true, nickname: true } } },
       }),
       prisma.tavernApiKey.count({ where }),
     ])
@@ -476,8 +465,7 @@ router.get('/keys', async (req: AuthenticatedRequest, res: Response) => {
       data: {
         items: items.map(k => ({
           id: k.id,
-          userId: k.userId,
-          userName: k.user.nickname || '匿名',
+          userUuid: k.userUuid,
           provider: k.provider,
           isActive: k.isActive,
           createdAt: k.createdAt,
@@ -543,7 +531,7 @@ router.post('/import', async (req: AuthenticatedRequest, res: Response) => {
             firstMsg: cardData.firstMsg,
             cardType: cardData.cardType,
             isOfficial: true,
-            creatorId,
+            userUuid: creatorId,
             status: 'PUBLISHED',
           },
         })
@@ -564,6 +552,380 @@ router.post('/import', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
     }
     res.status(500).json({ code: 500, message: (err as Error).message, data: null })
+  }
+})
+
+// ─── 用户管理端点 ──────────────────────────────────────────────────────
+
+// GET /api/v1/admin/users - 用户列表（管理员视图）
+router.get('/users', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1
+    const pageSize = parseInt(req.query.pageSize as string) || 20
+    const search = req.query.search as string | undefined
+    const skip = (page - 1) * pageSize
+
+    // 从 miniapps.users 获取用户列表，join tavern 统计
+    let userQuery = `
+      SELECT u.uuid, u.nickname, u.role, u.status, u.created_at,
+        COALESCE(tcs.session_count, 0) as session_count,
+        COALESCE(tcs.message_count, 0) as message_count,
+        COALESCE(tcs.tokens_used, 0) as tokens_used
+      FROM miniapps.users u
+      LEFT JOIN (
+        SELECT user_uuid,
+          COUNT(*) as session_count,
+          SUM(message_count) as message_count,
+          SUM(token_count) as tokens_used
+        FROM ai_tavern.ChatSession
+        GROUP BY user_uuid
+      ) tcs ON tcs.user_uuid = u.uuid
+    `
+    const countQuery = `SELECT COUNT(*) as total FROM miniapps.users u`
+    const params: string[] = []
+
+    if (search) {
+      userQuery += ` WHERE u.nickname LIKE ?`
+      params.push(`%${search}%`)
+    }
+
+    userQuery += ` ORDER BY u.created_at DESC LIMIT ${pageSize} OFFSET ${skip}`
+
+    const [rows, countResult] = await Promise.all([
+      prisma.$queryRawUnsafe(userQuery, ...params) as Promise<any[]>,
+      prisma.$queryRawUnsafe(
+        search ? `SELECT COUNT(*) as total FROM miniapps.users u WHERE u.nickname LIKE ?` : countQuery,
+        ...(search ? [`%${search}%`] : []),
+      ) as Promise<any[]>,
+    ])
+
+    const total = Number((countResult as any[])[0]?.total ?? 0)
+
+    // 查询每个用户创建的角色卡数量
+    const userUuids = (rows as any[]).map((r: any) => r.uuid)
+    let cardCounts: Record<string, number> = {}
+    if (userUuids.length > 0) {
+      const cardRows = await prisma.$queryRawUnsafe(
+        `SELECT user_uuid, COUNT(*) as cnt FROM ai_tavern.Card WHERE user_uuid IN (${userUuids.map(() => '?').join(',')}) GROUP BY user_uuid`,
+        ...userUuids,
+      ) as any[]
+      for (const row of cardRows) {
+        cardCounts[row.user_uuid] = Number(row.cnt)
+      }
+    }
+
+    const items = (rows as any[]).map((r: any) => ({
+      uuid: r.uuid,
+      nickname: r.nickname,
+      role: r.role,
+      status: r.status,
+      sessionCount: Number(r.session_count),
+      messageCount: Number(r.message_count),
+      tokensUsed: Number(r.tokens_used),
+      cardCount: cardCounts[r.uuid] ?? 0,
+      createdAt: r.created_at,
+    }))
+
+    res.json({ code: 0, data: { items, total, page, pageSize }, message: 'ok' })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[admin] GET /users error:', msg)
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// POST /api/v1/admin/users/:uuid/ban - 封禁/解封用户
+const banUserSchema = z.object({
+  action: z.enum(['ban', 'unban']),
+  reason: z.string().optional().default('管理员操作'),
+})
+
+router.post('/users/:uuid/ban', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { action, reason } = banUserSchema.parse(req.body)
+
+    // 查找用户
+    const userRows = await prisma.$queryRawUnsafe(
+      `SELECT uuid, status FROM miniapps.users WHERE uuid = ? LIMIT 1`,
+      req.params.uuid,
+    ) as any[]
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ code: 404, message: '用户不存在', data: null })
+    }
+
+    const newStatus = action === 'ban' ? 'disabled' : 'active'
+    if (userRows[0].status === newStatus) {
+      return res.json({ code: 0, data: null, message: `用户已是 ${newStatus === 'disabled' ? '封禁' : '正常'} 状态` })
+    }
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE miniapps.users SET status = ? WHERE uuid = ?`,
+      newStatus,
+      req.params.uuid,
+    )
+
+    // 记录审核日志
+    await prisma.tavernModerationLog.create({
+      data: {
+        targetType: 'user',
+        targetId: req.params.uuid,
+        action,
+        reason,
+        userUuid: req.user!.userId,
+      },
+    })
+
+    res.json({ code: 0, data: null, message: action === 'ban' ? '已封禁' : '已解封' })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[admin] POST /users/:uuid/ban error:', msg)
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// PUT /api/v1/admin/users/:uuid/role - 修改用户角色
+const updateRoleSchema = z.object({
+  role: z.enum(['USER', 'ADMIN']),
+})
+
+router.put('/users/:uuid/role', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { role } = updateRoleSchema.parse(req.body)
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE miniapps.users SET role = ? WHERE uuid = ?`,
+      role,
+      req.params.uuid,
+    )
+
+    // 同步更新 tavern_users
+    await prisma.tavernUser.upsert({
+      where: { uuid: req.params.uuid },
+      create: { uuid: req.params.uuid, role },
+      update: { role },
+    })
+
+    res.json({ code: 0, data: null, message: `角色已更新为 ${role}` })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[admin] PUT /users/:uuid/role error:', msg)
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// PUT /api/v1/admin/users/:uuid/tier - 修改用户等级
+const updateTierSchema = z.object({
+  tier: z.enum(['FREE', 'PAID', 'TESTER']),
+})
+
+router.put('/users/:uuid/tier', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { tier } = updateTierSchema.parse(req.body)
+
+    await prisma.tavernUserTier.upsert({
+      where: { userUuid: req.params.uuid },
+      create: { userUuid: req.params.uuid, tier, dailyQuotaMax: tier === 'FREE' ? 20 : tier === 'PAID' ? 50 : 99999 },
+      update: { tier },
+    })
+
+    res.json({ code: 0, data: null, message: `用户等级已更新为 ${tier}` })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// ─── 公告管理 ──────────────────────────────────────────────────────
+
+// 使用 JSON 文件存储公告（无需新增 DB 表）
+import fs from 'fs'
+import path from 'path'
+
+interface Announcement {
+  id: string; title: string; content: string; active: boolean; createdAt: string; updatedAt: string;
+}
+
+const ANNO_FILE = path.resolve(process.cwd(), 'data', 'announcements.json')
+
+function readAnnouncements(): Announcement[] {
+  try { if (fs.existsSync(ANNO_FILE)) return JSON.parse(fs.readFileSync(ANNO_FILE, 'utf-8')) } catch { /* ignore */ }
+  return []
+}
+function writeAnnouncements(list: Announcement[]): void {
+  const dir = path.dirname(ANNO_FILE); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(ANNO_FILE, JSON.stringify(list, null, 2), 'utf-8')
+}
+
+router.get('/announcements', async (_req: AuthenticatedRequest, res: Response) => {
+  try { res.json({ code: 0, data: readAnnouncements(), message: 'ok' }) } catch (err: unknown) { res.status(500).json({ code: 500, message: (err as Error).message, data: null }) }
+})
+
+const annoSchema = z.object({ title: z.string().min(1).max(100), content: z.string().min(1).max(5000) })
+router.post('/announcements', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, content } = annoSchema.parse(req.body)
+    const now = new Date().toISOString()
+    const a: Announcement = { id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6), title, content, active: true, createdAt: now, updatedAt: now }
+    const list = readAnnouncements(); list.unshift(a); writeAnnouncements(list)
+    res.json({ code: 0, data: a, message: '创建成功' })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    res.status(500).json({ code: 500, message: (err as Error).message, data: null })
+  }
+})
+
+router.put('/announcements/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, content, active } = req.body as { title?: string; content?: string; active?: boolean }
+    const list = readAnnouncements(); const idx = list.findIndex(a => a.id === req.params.id)
+    if (idx === -1) return res.status(404).json({ code: 404, message: '公告不存在', data: null })
+    if (title !== undefined) list[idx].title = title
+    if (content !== undefined) list[idx].content = content
+    if (active !== undefined) list[idx].active = active
+    list[idx].updatedAt = new Date().toISOString(); writeAnnouncements(list)
+    res.json({ code: 0, data: list[idx], message: '更新成功' })
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: (err as Error).message, data: null }) }
+})
+
+router.delete('/announcements/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const list = readAnnouncements(); const filtered = list.filter(a => a.id !== req.params.id)
+    if (filtered.length === list.length) return res.status(404).json({ code: 404, message: '公告不存在', data: null })
+    writeAnnouncements(filtered)
+    res.json({ code: 0, data: null, message: '已删除' })
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: (err as Error).message, data: null }) }
+})
+
+// ─── 模型同步与管理 ──────────────────────────────────────────────────
+
+// PUT /api/v1/admin/models/:modelId — 管理模型（开关/改等级/改配额）
+const modelUpdateSchema = z.object({
+  isActive: z.boolean().optional(),
+  minTier: z.enum(['FREE', 'PAID', 'TESTER']).optional(),
+  minLevel: z.number().min(1).max(99).optional(),
+  quotaCost: z.number().min(0).max(999).optional(),
+})
+
+router.put('/models/:modelId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = modelUpdateSchema.parse(req.body)
+    const model = await prisma.tavernModelMeta.update({
+      where: { modelId: req.params.modelId },
+      data: {
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.minTier !== undefined && { minTier: data.minTier }),
+        ...(data.minLevel !== undefined && { minLevel: data.minLevel }),
+        ...(data.quotaCost !== undefined && { quotaCost: data.quotaCost }),
+      },
+    })
+    res.json({ code: 0, data: model, message: '更新成功' })
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ code: 400, message: '参数错误', data: err.errors })
+    }
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// GET /api/v1/admin/announcements — 获取公告列表
+router.get('/announcements', async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    // 使用 system messages 表或 JSON 配置存储公告
+    // 简单实现：从数据库读取，若无专用表则返回空
+    res.json({ code: 0, data: [], message: 'ok' })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// POST /api/v1/admin/models/:id — 管理模型（开关/改等级/改配额）
+
+// POST /api/v1/admin/sync-models — 从各服务商 API 同步最新模型列表
+router.post('/sync-models', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { syncAllModels } = await import('../services/model-sync.service')
+    // 使用系统管理员 UUID（admin-001）以确保能查找到对应的 One API Key
+    const results = await syncAllModels('admin-001')
+    const failed = results.filter(r => r.error)
+    res.json({ code: 0, data: {
+      results,
+      summary: {
+        total: results.length,
+        success: results.length - failed.length,
+        failed: failed.length,
+        added: results.reduce((s, r) => s + r.added, 0),
+        updated: results.reduce((s, r) => s + r.updated, 0),
+      },
+    }, message: '操作成功' })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[admin] sync-models error:', msg)
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// GET /api/v1/admin/models — 模型列表（分页）
+router.get('/models', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 20))
+    const provider = req.query.provider as string | undefined
+    const search = req.query.search as string | undefined
+    const skip = (page - 1) * pageSize
+
+    const where: Record<string, unknown> = {}
+    if (provider) where.provider = provider
+    if (search) {
+      where.OR = [
+        { modelId: { contains: search } },
+        { displayName: { contains: search } },
+      ]
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.tavernModelMeta.findMany({
+        where,
+        orderBy: [{ provider: 'asc' }, { sortOrder: 'asc' }],
+        skip,
+        take: pageSize,
+      }),
+      prisma.tavernModelMeta.count({ where }),
+    ])
+
+    res.json({ code: 0, data: { items, total, page, pageSize }, message: 'ok' })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[admin] GET /models error:', msg)
+    res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// GET /api/v1/admin/model-stats — 获取模型统计信息
+router.get('/model-stats', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const total = await prisma.tavernModelMeta.count()
+    const active = await prisma.tavernModelMeta.count({ where: { isActive: true } })
+    const byProvider = await prisma.tavernModelMeta.groupBy({
+      by: ['provider'],
+      _count: { modelId: true },
+      where: { isActive: true },
+    })
+    res.json({ code: 0, data: { total, active, byProvider }, message: '操作成功' })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[admin] model-stats error:', msg)
+    res.status(500).json({ code: 500, message: msg, data: null })
   }
 })
 

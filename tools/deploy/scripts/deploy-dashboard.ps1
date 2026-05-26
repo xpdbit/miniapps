@@ -21,19 +21,19 @@ npm run build 2>&1
 if ($LASTEXITCODE -ne 0) { throw "Dashboard 构建失败" }
 Write-Host "  ✅ 构建完成" -ForegroundColor Green
 
-# Step 2: 复制到本地 deploy 目录（供提交到仓库）
-Write-Host "`n[2/4] 复制到 deploy/nginx/html/..." -ForegroundColor Yellow
-if (Test-Path "$REPO_ROOT\deploy\nginx\html") {
-    Remove-Item -Recurse -Force "$REPO_ROOT\deploy\nginx\html\*" -ErrorAction SilentlyContinue
+# Step 2: 复制到本地 tools/deploy 目录（供提交到仓库）
+Write-Host "`n[2/4] 复制到 tools/deploy/nginx/html/..." -ForegroundColor Yellow
+if (Test-Path "$REPO_ROOT\tools\deploy\nginx\html") {
+    Remove-Item -Recurse -Force "$REPO_ROOT\tools\deploy\nginx\html\*" -ErrorAction SilentlyContinue
 }
-Copy-Item -Recurse -Path "$REPO_ROOT\dashboard\dist\*" -Destination "$REPO_ROOT\deploy\nginx\html"
-$FILE_COUNT = (Get-ChildItem -Recurse "$REPO_ROOT\deploy\nginx\html" -File).Count
+Copy-Item -Recurse -Path "$REPO_ROOT\dashboard\dist\*" -Destination "$REPO_ROOT\tools\deploy\nginx\html"
+$FILE_COUNT = (Get-ChildItem -Recurse "$REPO_ROOT\tools\deploy\nginx\html" -File).Count
 Write-Host "  ✅ 复制完成，共 $FILE_COUNT 个文件" -ForegroundColor Green
 
 # Step 3: SCP 到服务器
 Write-Host "`n[3/4] SCP 到服务器 ${SERVER}..." -ForegroundColor Yellow
 ssh -o StrictHostKeyChecking=no $SERVER "mkdir -p /opt/ftg/deploy/nginx/html"
-scp -r "$REPO_ROOT\deploy\nginx\html\*" "${SERVER}:/opt/ftg/deploy/nginx/html/"
+scp -r "$REPO_ROOT\tools\deploy\nginx\html\*" "${SERVER}:/opt/ftg/deploy/nginx/html/"
 if ($LASTEXITCODE -ne 0) { throw "SCP 失败" }
 Write-Host "  ✅ SCP 完成" -ForegroundColor Green
 

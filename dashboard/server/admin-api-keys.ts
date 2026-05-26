@@ -8,7 +8,7 @@ const router = Router()
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const keys = await prisma.ftgApiKey.findMany({
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
     res.json({
       success: true,

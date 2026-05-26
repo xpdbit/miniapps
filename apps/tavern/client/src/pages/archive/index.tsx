@@ -17,7 +17,7 @@ export default function ArchivePage() {
     Taro.switchTab({ url: '/pages/chat/index' })
   }
 
-  const handleDelete = async (id: string, e: any) => {
+  const handleDelete = async (id: string, e: { stopPropagation: () => void }) => {
     e.stopPropagation()
     const modalRes = await Taro.showModal({ title: '确认删除', content: '删除后不可恢复' })
     if (!modalRes.confirm) return

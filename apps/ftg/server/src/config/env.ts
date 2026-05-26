@@ -38,6 +38,9 @@ export interface EnvConfig {
 
   /** CORS allowed origins (comma-separated). Default: http://localhost:3000 */
   CORS_ORIGINS: string;
+
+  /** Server public URL (dev: http://localhost:3000, prod: https://mnapp.top) */
+  PUBLIC_URL: string;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -87,4 +90,6 @@ export const env: EnvConfig = {
   ENCRYPTION_KEY: getEnvVar('ENCRYPTION_KEY'),
 
   CORS_ORIGINS: getEnvVar('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,https://mnapp.top,https://ftl.mnapp.top'),
+
+  PUBLIC_URL: getEnvVar('PUBLIC_URL', 'http://localhost:3000'),
 };

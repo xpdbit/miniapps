@@ -14,6 +14,14 @@ import './app.scss';
 
 function App({ children }: PropsWithChildren<object>) {
   useLaunch(async () => {
+    // ── 启动时输出环境和配置 ─────────────────────────
+    console.log('========================================');
+    console.log('  Game1 挂机放置游戏');
+    console.log('========================================');
+    console.log(`  平台:       ${process.env.TARO_ENV || '未知'}`);
+    console.log(`  API 地址:   ${process.env.TARO_APP_API_BASE || '未配置'}`);
+    console.log('========================================');
+
     console.log('[Game1] 应用启动');
 
     // 1. 初始化物品注册表

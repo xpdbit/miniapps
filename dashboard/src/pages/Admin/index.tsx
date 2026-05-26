@@ -244,7 +244,7 @@ const Admin = () => {
       render: (username: string, record: AdminUserItem) => (
         <Space>
           <span>{username}</span>
-          {currentUser?.id === record.id && (
+          {currentUser?.uuid === String(record.id) && (
             <Tag color="blue">当前用户</Tag>
           )}
         </Space>
@@ -284,7 +284,7 @@ const Admin = () => {
       key: 'action',
       width: 220,
       render: (_: unknown, record: AdminUserItem) => {
-        const isSelf = currentUser?.id === record.id
+        const isSelf = currentUser?.uuid === String(record.id)
         return (
           <Space size="small">
             <Button
@@ -398,7 +398,7 @@ const Admin = () => {
         onOk={handleCreateSubmit}
         onCancel={handleCreateCancel}
         confirmLoading={creating}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
@@ -450,7 +450,7 @@ const Admin = () => {
         confirmLoading={roleMutation.isPending}
         okText="确认修改"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <div style={{ marginTop: 16 }}>
           <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>

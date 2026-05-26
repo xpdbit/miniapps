@@ -58,14 +58,19 @@ export class HttpClient {
       return res.data as T
     } catch (err: unknown) {
       // 统一处理所有网络错误，提供友好提示
-      // 始终返回友好错误消息，绝不泄露原始 TypeError/网络错误到控制台
-      const error = err as { errMsg?: string; message?: string }
+      const error = err as { errMsg?: string; message?: string; name?: string }
       const errMsg = error.errMsg || error.message || ''
+      const errName = error.name || ''
       if (errMsg.includes('timeout') || errMsg.includes('超时')) {
         throw new Error('请求超时，请检查网络')
       }
       if (errMsg.includes('fail') || errMsg.includes('fetch') || errMsg.includes('Failed to fetch')) {
         throw new Error('网络连接失败，请检查服务器状态或网络设置')
+      }
+      // JSON 解析错误 — 保留原始信息以便诊断
+      if (errName === 'SyntaxError' || errMsg.includes('SyntaxError') || errMsg.includes('JSON')) {
+        console.error('[httpClient] JSON 解析失败:', errMsg.slice(0, 300))
+        throw new Error('AI 服务响应异常，请重试')
       }
       // 兜底：任何未匹配的网络错误也转为友好消息
       if (errMsg) {

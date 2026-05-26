@@ -7,28 +7,20 @@
 ```
 docs/
 ├── apps/                     # 各应用文档
-│   ├── ftg/
-│   │   ├── client/          # FTG 小程序前端
-│   │   └── server/          # FTG 后端 API
-│   ├── game1/
-│   │   ├── client/          # Game1 小程序前端
-│   │   └── server/          # Game1 后端 API
-│   └── tavern/
-│       ├── client/          # AI-Tavern 小程序前端
-│       └── server/          # AI-Tavern 后端 API
+│   ├── ftg/{client,server}
+│   ├── game1/{client,server}
+│   └── tavern/{client,server}
 ├── dashboard/               # 统一管理后台
-├── plan/                    # 规划文档索引
-├── prisma/                  # 数据库 Schema
-├── server_info/             # 服务器运维信息
+├── database/                # 4 库独立 Schema
+├── ops/                     # 服务器运维 + 部署
 ├── tools/                   # 开发工具
-│   ├── deploy/              # 部署配置与脚本
+│   ├── deploy/
 │   └── supertask/
-├── superpowers/
-│   ├── specs/               # 设计方案
-│   └── plans/               # Agent 工作计划
+├── standards/               # 代码约定、反模式、文档规范
+├── guides/                  # 跨项目指南
 ├── ARCHITECTURE.md          # 系统架构
+├── CHANGELOG.md             # 文档变更日志
 ├── edge.md                  # 文档关联与边界
-├── rules.md                 # 文档编写规则
 ├── urls.md                  # URL 引用清单
 └── README.md                # ← 当前文件
 ```
@@ -41,24 +33,26 @@ docs/
 | **FTG 后端 API** | [apps/ftg/server/](./apps/ftg/server/) | 16 路由模块、17 服务、API 参考 |
 | **Game1 小程序** | [apps/game1/client/](./apps/game1/client/) | 17 引擎模块、12 页面 |
 | **Game1 后端 API** | [apps/game1/server/](./apps/game1/server/) | 云端存档、PVP、成就、10 路由 |
-| **AI-Tavern 小程序** | [apps/tavern/client/](./apps/tavern/client/) | SSE 流式、角色市场、7 页面 |
+| **AI-Tavern 小程序** | [apps/tavern/client/](./apps/tavern/client/) | SSE 流式、角色市场、12 页面 |
 | **AI-Tavern 后端 API** | [apps/tavern/server/](./apps/tavern/server/) | 多 AI Provider、SSE、10 路由 |
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
-| **SuperTask 工具** | [tools/supertask/](./tools/supertask/) | PyQt6 AI 开发监督系统 |
-| **部署工具** | [tools/deploy/](../tools/deploy/) | Docker Compose + Nginx → ECS |
-| **数据库 Schema** | [prisma/](./prisma/) | 统一 14 表 Schema |
+| **SuperTask 工具** 🚫 | [tools/supertask/](./tools/supertask/) | **已存档** — 功能整合至 OCE |
+| **OCE 工具** | [tools/opencode-tui-enhance/](./tools/opencode-tui-enhance/) | PyQt6 OpenCode 监控与看门狗 |
+| **部署工具** | [deploy/](../deploy/) | Docker Compose + Nginx → ECS |
+| **数据库 Schema** | [database/](./database/) | 4 库独立 Schema 概览 |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |
-| **文档编写规则** | [rules.md](./rules.md) | 文档编写规范 |
+| **文档编写规则** | [standards/](./standards/) | 代码约定、反模式、文档规范 |
 | **文档关联边界** | [edge.md](./edge.md) | 文档间关联与边界说明 |
+| **服务器运维** | [ops/](./ops/) | ECS 信息、部署流程 |
 | **URL 引用清单** | [urls.md](./urls.md) | 外部/内部/部署链接 |
 
 ## 关键文件引用
 
-- [AGENTS.md (根)](../AGENTS.md) — AI Agent 知识库（代码约定/反模式/代码地图）
+- [AGENTS.md (根)](../AGENTS.md) — Agent 导航目录（指引找代码/文档/命令）
 - [plan/](../plan/) — 项目规划与任务分解
 - [domain.config.js](../domain.config.js) — 所有 Taro 项目的 API_BASE 编译时配置
 
 ---
 
-> 最后更新: 2026-05-23
-> 修改: 更新 tavern-game-mode-tabbar 设计文档和计划
+> 最后更新: 2026-05-26
+> 修改: 标记 SuperTask 为已存档；新增 OCE、manual、database 文档入口

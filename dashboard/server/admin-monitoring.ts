@@ -61,6 +61,52 @@ interface MonitorMetrics {
   onlineUsers: OnlineUsersPoint[]
 }
 
+// ─── 指标时序缓存（内存环形数组，避免随机模拟数据） ────────────
+
+const METRICS_CACHE_MAX = 24 // 最多保留 24 个时间点（= 24次采集，约12分钟 @30s间隔）
+
+interface CachedMetrics {
+  qps: QpsPoint[]
+  responseTimes: ResponseTimePoint[]
+  errorRate: ErrorRatePoint[]
+  onlineUsers: OnlineUsersPoint[]
+}
+
+const metricsCache = new Map<number, CachedMetrics>()
+
+function appendMetricsPoint(projectId: number, point: {
+  time: string
+  qps: number
+  responseTime: number
+  errorRate: number
+  onlineUsers: number
+}) {
+  let cache = metricsCache.get(projectId)
+  if (!cache) {
+    cache = { qps: [], responseTimes: [], errorRate: [], onlineUsers: [] }
+  }
+
+  cache.qps.push({ time: point.time, value: point.qps })
+  cache.responseTimes.push({
+    time: point.time,
+    p50: point.responseTime,
+    p95: Math.round(point.responseTime * 1.5),
+    p99: Math.round(point.responseTime * 2.5),
+  })
+  cache.errorRate.push({ time: point.time, rate: point.errorRate })
+  cache.onlineUsers.push({ time: point.time, count: point.onlineUsers })
+
+  // 环形裁剪
+  if (cache.qps.length > METRICS_CACHE_MAX) {
+    cache.qps = cache.qps.slice(-METRICS_CACHE_MAX)
+    cache.responseTimes = cache.responseTimes.slice(-METRICS_CACHE_MAX)
+    cache.errorRate = cache.errorRate.slice(-METRICS_CACHE_MAX)
+    cache.onlineUsers = cache.onlineUsers.slice(-METRICS_CACHE_MAX)
+  }
+
+  metricsCache.set(projectId, cache)
+}
+
 // ─── 辅助函数 ─────────────────────────────────────────────────────
 
 /**
@@ -88,56 +134,37 @@ async function probeProjectHealth(
 }
 
 /**
- * 生成近 24 小时的模拟指标数据（图表占位）
- * 实际生产环境应从监控系统（如 Prometheus）获取
+ * 探测项目的实时统计端点，获取真实数据
+ * 返回 { activeUsers, totalRequests } 或 null
  */
-function generateMockMetrics(baseValue: number, variance: number, count: number) {
-  const now = Date.now()
-  const data: QpsPoint[] = []
-  for (let i = count - 1; i >= 0; i--) {
-    const time = new Date(now - i * 3600_000).toISOString()
-    const value = Math.max(0, baseValue + (Math.random() - 0.5) * variance)
-    data.push({ time, value: Math.round(value * 100) / 100 })
-  }
-  return data
-}
+async function probeProjectStats(
+  apiBaseUrl: string,
+): Promise<{ activeUsers: number; totalRequests: number; errorRate: number } | null> {
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
 
-function generateMockResponseTimes(baseValue: number, count: number) {
-  const now = Date.now()
-  const data: ResponseTimePoint[] = []
-  for (let i = count - 1; i >= 0; i--) {
-    const time = new Date(now - i * 3600_000).toISOString()
-    data.push({
-      time,
-      p50: Math.max(0, baseValue + (Math.random() - 0.5) * baseValue * 0.5),
-      p95: Math.max(0, baseValue * 1.5 + (Math.random() - 0.5) * baseValue * 0.8),
-      p99: Math.max(0, baseValue * 2.5 + (Math.random() - 0.5) * baseValue),
+    const baseUrl = apiBaseUrl.replace(/\/+$/, '')
+    // 尝试调用各项目的管理统计端点
+    const res = await fetch(`${baseUrl}/admin/dashboard/stats`, {
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
     })
-  }
-  return data
-}
+    clearTimeout(timeout)
 
-function generateMockErrorRate(count: number) {
-  const now = Date.now()
-  const data: ErrorRatePoint[] = []
-  for (let i = count - 1; i >= 0; i--) {
-    const time = new Date(now - i * 3600_000).toISOString()
-    data.push({ time, rate: Math.max(0, Math.random() * 3) })
+    if (res.ok) {
+      const json = await res.json() as { data?: { activeUsers?: number; totalChats?: number; totalRequests?: number; errorRate?: number } }
+      const data = json?.data ?? (json as Record<string, unknown>)
+      return {
+        activeUsers: (data.activeUsers as number) ?? 0,
+        totalRequests: (data.totalChats as number) ?? (data.totalRequests as number) ?? 0,
+        errorRate: (data.errorRate as number) ?? 0,
+      }
+    }
+    return null
+  } catch {
+    return null
   }
-  return data
-}
-
-function generateMockOnlineUsers(baseCount: number, count: number) {
-  const now = Date.now()
-  const data: OnlineUsersPoint[] = []
-  for (let i = count - 1; i >= 0; i--) {
-    const time = new Date(now - i * 3600_000).toISOString()
-    data.push({
-      time,
-      count: Math.max(0, Math.round(baseCount + (Math.random() - 0.5) * baseCount * 0.3)),
-    })
-  }
-  return data
 }
 
 // ─── Routes ───────────────────────────────────────────────────────
@@ -150,7 +177,7 @@ router.get('/health', async (_req: Request, res: Response) => {
   try {
     const projects = await prisma.dashboardProject.findMany({
       where: { status: 'active' },
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
 
     const results: ProjectHealth[] = await Promise.all(
@@ -227,22 +254,47 @@ router.get('/health', async (_req: Request, res: Response) => {
 
 /**
  * GET /api/admin/monitoring/metrics/:projectId
- * 获取指定项目的详细指标
+ * 获取指定项目的实时指标（从健康探测和项目统计 API 获取真实数据）
  */
 router.get('/metrics/:projectId', async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.projectId as string)
 
-    // 根据 projectId 确定基础指标值
-    const baseQps = projectId === 0 || projectId === 1 ? 45 : 12
-    const baseResponseTime = projectId === 2 ? 180 : 85
-    const baseOnlineUsers = projectId === 0 || projectId === 1 ? 120 : 30
+    // 查找项目配置
+    const project = await prisma.dashboardProject.findUnique({
+      where: { id: projectId },
+    })
 
+    // 并行探测：健康检查 + 实时统计
+    const [healthResult, statsResult] = await Promise.all([
+      project ? probeProjectHealth(project.api_base_url) : Promise.resolve({ ok: false, responseTime: 0 }),
+      project ? probeProjectStats(project.api_base_url) : Promise.resolve(null),
+    ])
+
+    const isUp = healthResult.ok
+    const responseTime = healthResult.responseTime
+    const activeUsers = statsResult?.activeUsers ?? 0
+    const totalRequests = statsResult?.totalRequests ?? 0
+    const errorRate = !isUp ? 100 : (statsResult?.errorRate ?? 0)
+
+    // 追加当前数据点到缓存
+    if (project || isUp) {
+      appendMetricsPoint(projectId, {
+        time: new Date().toISOString(),
+        qps: totalRequests,
+        responseTime,
+        errorRate,
+        onlineUsers: activeUsers,
+      })
+    }
+
+    // 返回缓存的历史数据点 + 当前点
+    const cached = metricsCache.get(projectId)
     const metrics: MonitorMetrics = {
-      qps: generateMockMetrics(baseQps, 30, 24),
-      responseTimes: generateMockResponseTimes(baseResponseTime, 24),
-      errorRate: generateMockErrorRate(24),
-      onlineUsers: generateMockOnlineUsers(baseOnlineUsers, 24),
+      qps: cached?.qps ?? [],
+      responseTimes: cached?.responseTimes ?? [],
+      errorRate: cached?.errorRate ?? [],
+      onlineUsers: cached?.onlineUsers ?? [],
     }
 
     res.json({ success: true, data: metrics })

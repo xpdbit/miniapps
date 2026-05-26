@@ -90,6 +90,17 @@ validateConfig();
 // ─── Start server ───
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(config.port, () => {
+    const envLabel = config.nodeEnv === 'production' ? '生产' : '开发';
+    logger.info(`========================================`);
+    logger.info(`  Game1 Server`);
+    logger.info(`========================================`);
+    logger.info(`  环境:       ${envLabel} (${config.nodeEnv})`);
+    logger.info(`  端口:       ${config.port}`);
+    logger.info(`  公开地址:   ${config.publicUrl}`);
+    logger.info(`  CORS:       ${config.corsOrigin}`);
+    logger.info(`  数据库:     MySQL (game1)`);
+    logger.info(`  Redis:      ${config.redisUrl || '未配置'}`);
+    logger.info(`========================================`);
     logger.info(`Game1 Server started on port ${config.port}`);
     logger.info(`Health check: http://localhost:${config.port}/health`);
   });

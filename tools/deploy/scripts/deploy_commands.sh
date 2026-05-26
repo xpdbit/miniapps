@@ -12,8 +12,8 @@ if [ -f /opt/ftg/deploy/nginx/aliyun-credentials.ini ]; then
 else
     echo "鈿狅笍  闃块噷浜?DNS 鍑瘉鏂囦欢涓嶅瓨鍦紝SSL 鑷姩閰嶇疆灏嗚烦杩?
     echo "   璇峰厛澶嶅埗鏂囦欢锛?
-    echo "   scp deploy/nginx/aliyun-credentials.ini root@mnapp.top:/opt/ftg/deploy/nginx/"
-    echo "   scp deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
+    echo "   scp tools/deploy/nginx/aliyun-credentials.ini root@mnapp.top:/opt/ftg/deploy/nginx/"
+    echo "   scp tools/deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
 fi
 
 # 1. 鏋勫缓 Dashboard 鍓嶇
@@ -97,7 +97,7 @@ if [ -f /opt/ftg/deploy/scripts/setup-ssl.sh ]; then
     fi
 else
     echo "鈿狅笍  setup-ssl.sh 涓嶅瓨鍦紝璺宠繃 SSL 閰嶇疆"
-    echo "   璇峰鍒惰剼鏈? scp deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
+    echo "   请复制脚本: scp tools/deploy/scripts/setup-ssl.sh root@mnapp.top:/opt/ftg/deploy/scripts/"
 fi
 
 # 6. 楠岃瘉

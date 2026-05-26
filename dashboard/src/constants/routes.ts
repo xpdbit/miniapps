@@ -24,10 +24,11 @@ export const ROUTES = {
   AUDIT_LOGS: '/audit-logs',
   PROJECTS: '/projects',
   TAVERN: '/tavern',
-  TAVERN_CHARACTERS: '/tavern/characters',
   TAVERN_CHATS: '/tavern/chats',
   TAVERN_KEYS: '/tavern/keys',
   TAVERN_CARDS: '/tavern/cards',
+  TAVERN_USERS: '/tavern/users',
+  TAVERN_MODELS: '/tavern/models',
   // Game1 路由
   GAME1_DASHBOARD: '/game1/dashboard',
   GAME1_PLAYERS: '/game1/players',
@@ -43,10 +44,11 @@ export const ROUTES = {
 export const MENU_ITEMS: RouteItem[] = [
   { path: ROUTES.DASHBOARD, scope: null, label: '仪表盘' },
   { path: ROUTES.TAVERN, scope: 'tavern', label: 'AI 酒馆' },
-  { path: ROUTES.TAVERN_CHARACTERS, scope: 'tavern', label: '角色管理' },
   { path: ROUTES.TAVERN_CARDS, scope: 'tavern', label: '卡片管理' },
   { path: ROUTES.TAVERN_CHATS, scope: 'tavern', label: '聊天监控' },
   { path: ROUTES.TAVERN_KEYS, scope: 'tavern', label: 'Key 管理' },
+  { path: ROUTES.TAVERN_MODELS, scope: 'tavern', label: '模型管理' },
+  { path: ROUTES.TAVERN_USERS, scope: 'tavern', label: '用户管理' },
   { path: ROUTES.USERS, scope: null, label: '用户管理' },
   // ── FTG 专属 ──
   { path: ROUTES.FOOD_RECORDS, scope: 'ftg', label: '食物记录' },

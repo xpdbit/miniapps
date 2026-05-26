@@ -1,8 +1,10 @@
-import { View, Text, Image, Input, Button, Picker } from '@tarojs/components'
+import { View, Text, Image, Input, Button, Picker, Switch } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
+import { usePrivacyStore } from '@/stores/privacyStore'
+import { useGameStore } from '@/stores/gameStore'
 import { httpClient } from '@/services/httpClient'
 import { Icon } from '@/components'
 import { cn, formatUuid } from '@/utils'
@@ -104,29 +106,58 @@ const PROVIDER_DEFAULT_URLS: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const { user, tier, isLoggedIn, initialized, loginError, retryLogin } = useAuthStore()
+  const { user, tier, isLoggedIn, initialized, loginError } = useAuthStore()
   const { selectedModel, setModel } = useChatStore()
+  const { privacyMode, setPrivacyMode } = usePrivacyStore()
+  const { gameMode, leaveGame, cardsPerRow, setCardsPerRow } = useGameStore()
 
   const [showModelSection, setShowModelSection] = useState(true)
   const [showKeys, setShowKeys] = useState(false)
+  const [showDisplay, setShowDisplay] = useState(true)
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [showModal, setShowModal] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<string>('')
   const [keyValue, setKeyValue] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [verifying, setVerifying] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [models, setModels] = useState<AvailableModel[]>([])
   const [discoveredModels, setDiscoveredModels] = useState<AvailableModel[]>([])
   const [discovering, setDiscovering] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
   const [filterProvider, setFilterProvider] = useState<string>('all')
+  const [darkMode, setDarkMode] = useState(() => {
+    try { return Taro.getStorageSync('tavern_dark_mode') === true || Taro.getStorageSync('tavern_dark_mode') === 'true' } catch { return false }
+  })
+
+  const toggleDarkMode = useCallback((value: boolean) => {
+    setDarkMode(value)
+    try { Taro.setStorageSync('tavern_dark_mode', value) } catch { /* ignore */ }
+    Taro.eventCenter.trigger('darkModeChange', value)
+  }, [])
 
   // 防止组件卸载后 setState
   const isMountedRef = useRef(true)
   useEffect(() => {
     return () => { isMountedRef.current = false }
   }, [])
+
+  // 修复 Taro H5 自定义元素 display:none bug — 必须用 !important 内联样式覆盖
+  useEffect(() => {
+    if (process.env.TARO_ENV !== 'h5') return
+    // 延迟执行，确保 DOM 已渲染
+    const timer = setTimeout(() => {
+      const query = Taro.createSelectorQuery()
+      query.select('.page-profile-header').boundingClientRect()
+      query.exec((res) => {
+        // 触发一次查询确保元素存在后，直接操作 DOM
+        const el = document.querySelector('.page-profile-header') as HTMLElement | null
+        if (el?.style) {
+          el.style.setProperty('display', 'flex', 'important')
+        }
+      })
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [isLoggedIn])
 
   const loadKeys = useCallback(async () => {
     try {
@@ -233,6 +264,12 @@ export default function ProfilePage() {
         baseUrl: baseUrl.trim() || undefined,
       })
       if (res.code === 0) {
+        // 同时保存到本地缓存（隐私模式直连需要）
+        usePrivacyStore.getState().setLocalKey(
+          selectedProvider,
+          keyValue.trim(),
+          baseUrl.trim() || undefined,
+        )
         Taro.showToast({ title: '添加成功', icon: 'success' })
         setShowModal(false)
         setKeyValue('')
@@ -259,10 +296,11 @@ export default function ProfilePage() {
       content: `确定要删除 ${providerName} API Key 吗？`,
     })
     if (!modalRes.confirm) return
-    setDeletingId(id)
     try {
       const res = await httpClient.delete<{ code: number; message: string }>(`/keys/${id}`)
       if (res.code === 0) {
+        // 同时清除本地缓存
+        usePrivacyStore.getState().removeLocalKey(existKey.provider)
         Taro.showToast({ title: '已删除', icon: 'success' })
         loadKeys()
       } else {
@@ -271,15 +309,18 @@ export default function ProfilePage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '删除失败'
       Taro.showToast({ title: msg, icon: 'none' })
-    } finally {
-      setDeletingId(null)
     }
   }, [keys, loadKeys])
   const [showLoginForm, setShowLoginForm] = useState(false)
-  const [loginMode, setLoginMode] = useState<'wechat' | 'password'>('wechat')
+  const [loginMode, setLoginMode] = useState<'wechat' | 'password'>(
+    process.env.TARO_ENV === 'h5' ? 'password' : 'wechat'
+  )
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
+
+  // H5 环境标记
+  const isH5 = process.env.TARO_ENV === 'h5'
 
   // 微信一键登录
   const handleWechatLogin = useCallback(async () => {
@@ -329,7 +370,7 @@ export default function ProfilePage() {
   const nickname = user?.nickname || '酒馆旅人'
   const userUuid = user?.uuid || ''
   const dailyQuota = tier?.maxDailyQuota ?? 20
-  const usedQuota = 0
+  const usedQuota = tier?.dailyQuotaUsed ?? 0
   const remaining = Math.max(0, dailyQuota - usedQuota)
 
   // 服务商 & 模型分组
@@ -378,7 +419,7 @@ export default function ProfilePage() {
   return (
     <View className='page-profile'>
       {/* 用户信息卡片 */}
-      <View className='page-profile-header'>
+      <View className='page-profile-header' style={{ display: 'flex' }}>
         <View className='page-profile-avatar'>
           {user?.avatar_url ? (
             <Image src={user.avatar_url} mode='aspectFill' className='page-profile-avatar-img' />
@@ -429,13 +470,22 @@ export default function ProfilePage() {
                 {loginError || '登录后可解锁全部功能'}
               </Text>
               <View className='page-profile-login-buttons'>
-                <Button className='page-profile-login-btn page-profile-login-btn--wechat' onClick={handleWechatLogin} loading={loggingIn} disabled={loggingIn}>
-                  微信一键登录
-                </Button>
-                <Button className='page-profile-login-btn page-profile-login-btn--password' onClick={() => { setShowLoginForm(true); setLoginMode('password') }} disabled={loggingIn}>
-                  账号密码登录
+                {!isH5 && (
+                  <Button className='page-profile-login-btn page-profile-login-btn--wechat' onClick={handleWechatLogin} loading={loggingIn} disabled={loggingIn}>
+                    微信一键登录
+                  </Button>
+                )}
+                <Button
+                  className={`page-profile-login-btn ${isH5 ? 'page-profile-login-btn--password page-profile-login-btn--primary' : 'page-profile-login-btn--password'}`}
+                  onClick={() => { setShowLoginForm(true); setLoginMode('password') }}
+                  disabled={loggingIn}
+                >
+                  {isH5 ? '登录 AI 酒馆' : '账号密码登录'}
                 </Button>
               </View>
+              {isH5 && (
+                <Text className='page-profile-login-web-hint'>网页版请使用账号密码登录</Text>
+              )}
             </View>
           ) : (
             <View className='page-profile-login-form'>
@@ -443,7 +493,7 @@ export default function ProfilePage() {
                 <Text className='page-profile-login-form-title'>
                   {loginMode === 'wechat' ? '微信登录' : '账号登录'}
                 </Text>
-                <Text className='page-profile-login-form-back' onClick={() => { setShowLoginForm(false); setLoginMode('wechat') }}>
+                <Text className='page-profile-login-form-back' onClick={() => { setShowLoginForm(false); setLoginMode(isH5 ? 'password' : 'wechat') }}>
                   返回
                 </Text>
               </View>
@@ -476,7 +526,7 @@ export default function ProfilePage() {
                 </View>
               )}
 
-              {loginMode === 'wechat' && (
+              {loginMode === 'wechat' && !isH5 && (
                 <View className='page-profile-login-form-body'>
                   <Text className='page-profile-login-wechat-desc'>
                     点击下方按钮将使用微信账号一键登录
@@ -511,6 +561,80 @@ export default function ProfilePage() {
         </View>
       )}
 
+      {/* 隐私与安全 */}
+      <View className='page-profile-section'>
+        <View className='page-profile-section-header'>
+          <Text className='page-profile-section-title'>隐私与安全</Text>
+        </View>
+        <View className='page-profile-section-body'>
+          {/* 数据中转开关 */}
+          <View className='page-profile-privacy-row'>
+            <View className='page-profile-privacy-info'>
+              <Text className='page-profile-privacy-label'>关闭数据中转</Text>
+              <Text className='page-profile-privacy-desc'>
+                AI 请求将不再经过服务器，完全由本地直连 AI 服务商。
+              </Text>
+              <Text className='page-profile-privacy-desc page-profile-privacy-desc--warn'>
+                开启后只能使用自己的 API Key，且不支持群组/多人模式。
+              </Text>
+            </View>
+            <Switch
+              checked={privacyMode}
+              color='#8B5CF6'
+              onChange={(e) => {
+                const enabled = e.detail.value
+                if (enabled) {
+                  Taro.showModal({
+                    title: '开启隐私模式',
+                    content: 'AI 请求将直连服务商，不再经过服务器中转。\n\n仅支持单人模式，需自行配置 API Key。\n\n确定开启吗？',
+                    confirmText: '确定开启',
+                    cancelText: '取消',
+                    success: (modalRes) => {
+                      if (modalRes.confirm) {
+                        setPrivacyMode(true)
+                        Taro.showToast({ title: '隐私模式已开启', icon: 'success', duration: 2000 })
+                      }
+                    },
+                  })
+                } else {
+                  setPrivacyMode(false)
+                  Taro.showToast({ title: '已恢复默认模式', icon: 'none', duration: 1500 })
+                }
+              }}
+            />
+          </View>
+
+          {/* 隐私模式开启后的额外提示 */}
+          {privacyMode && (
+            <View className='page-profile-privacy-notice'>
+              <Icon name='close' size={32} color='#FF9500' />
+              <View className='page-profile-privacy-notice-content'>
+                <Text className='page-profile-privacy-notice-title'>隐私模式已激活</Text>
+                <Text className='page-profile-privacy-notice-desc'>
+                  · AI 对话数据不会经过服务器中转{'\n'}
+                  · 请确保已在下方配置有效的 API Key{'\n'}
+                  · 群组/多人模式功能已禁用
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 暗色模式 */}
+      {isLoggedIn && (
+        <View className='page-profile-section'>
+          <View className='page-profile-model-row'>
+            <Text className='page-profile-model-label'>暗色模式</Text>
+            <Switch
+              checked={darkMode}
+              onChange={e => toggleDarkMode(e.detail.value)}
+              color='#1677ff'
+            />
+          </View>
+        </View>
+      )}
+
       {/* 模型与服务商 */}
       <View className='page-profile-section'>
         <View className='page-profile-section-header' onClick={() => setShowModelSection(!showModelSection)}>
@@ -535,7 +659,7 @@ export default function ProfilePage() {
                   <Text className='page-profile-model-name'>
                     {filterProvider === 'all' ? '全部服务商' : PROVIDERS.find(p => p.key === filterProvider)?.name || filterProvider}
                   </Text>
-                  <Icon name='arrow-down' size={24} color='#999' />
+                  <Icon name='arrow-down' size={24} color='var(--color-icon-muted)' />
                 </View>
               </Picker>
             </View>
@@ -560,7 +684,7 @@ export default function ProfilePage() {
                 >
                   <View className='page-profile-model-value'>
                     <Text className='page-profile-model-name'>{currentModel?.displayName || '选择模型'}</Text>
-                    <Icon name='arrow-down' size={24} color='#999' />
+                    <Icon name='arrow-down' size={24} color='var(--color-icon-muted)' />
                   </View>
                 </Picker>
               ) : (
@@ -629,6 +753,36 @@ export default function ProfilePage() {
         )}
       </View>
 
+      {/* 显示设置 */}
+      <View className='page-profile-section'>
+        <View className='page-profile-section-header' onClick={() => setShowDisplay(!showDisplay)}>
+          <Text className='page-profile-section-title'>显示设置</Text>
+          <Text className='page-profile-section-arrow'>{showDisplay ? '▼' : '▶'}</Text>
+        </View>
+        {showDisplay && (
+          <View className='page-profile-section-body'>
+            <View className='page-profile-model-row'>
+              <Text className='page-profile-model-label'>卡片每行数量</Text>
+              <Picker
+                mode='selector'
+                range={[1, 2, 3, 4]}
+                value={cardsPerRow - 1}
+                onChange={(e) => {
+                  const val = (e.detail.value as number) + 1
+                  setCardsPerRow(val)
+                  Taro.showToast({ title: `已设为每行 ${val} 张`, icon: 'none', duration: 1200 })
+                }}
+              >
+                <View className='page-profile-model-value'>
+                  <Text className='page-profile-model-name'>{cardsPerRow} 张/行</Text>
+                  <Icon name='arrow-down' size={24} color='var(--color-icon-muted)' />
+                </View>
+              </Picker>
+            </View>
+          </View>
+        )}
+      </View>
+
       {/* 菜单列表 */}
       <View className='page-profile-menu'>
         {MENU_ITEMS.map((item, index) => (
@@ -654,6 +808,26 @@ export default function ProfilePage() {
         <Text className='page-profile-footer-text'>AI 酒馆 v1.0.0</Text>
       </View>
 
+      {/* 离开游戏按钮（仅在游戏模式下显示） */}
+      {gameMode && (
+        <View
+          className='page-profile-back-btn'
+          onClick={() => {
+            Taro.showModal({
+              title: '离开游戏',
+              content: '离开游戏后，底部导航将恢复为 酒馆/开始/我的。确定离开？',
+              success: (res) => {
+                if (res.confirm) {
+                  leaveGame()
+                }
+              },
+            })
+          }}
+        >
+          <Text>离开游戏</Text>
+        </View>
+      )}
+
       {/* 添加 Key 弹窗 */}
       {showModal && (
         <View className='page-profile-modal-overlay' onClick={() => setShowModal(false)}>
@@ -661,7 +835,7 @@ export default function ProfilePage() {
             <View className='page-profile-modal-header'>
               <Text className='page-profile-modal-title'>添加 API Key</Text>
               <Text className='page-profile-modal-close' onClick={() => setShowModal(false)}>
-                <Icon name='close' size={32} color='#999' />
+                <Icon name='close' size={32} color='var(--color-icon-muted)' />
               </Text>
             </View>
             <View className='page-profile-modal-body'>

@@ -53,29 +53,30 @@ const Layout = () => {
 
   // ─── 加载项目列表 ───
   useEffect(() => {
-    projectApi.list().then((res) => {
-      const projects = res.data.data.projects
-      setProjects(projects)
+    const restoreCurrent = (list: Project[]) => {
       const stored = sessionStorage.getItem('currentProject')
       if (stored) {
         try {
           const parsed = JSON.parse(stored) as { id: string | number }
-          const exists = projects.find((p) => p.id === String(parsed.id))
-          if (exists) setProject(exists)
+          const exists = list.find((p) => p.id === String(parsed.id))
+          if (exists) { setProject(exists); return }
         } catch { /* ignore parse error */ }
       }
+      // 没有有效存储项目时，默认选中第一个
+      if (list.length > 0) setProject(list[0]!)
+    }
+
+    projectApi.list().then((res) => {
+      let projects = res.data.data.projects
+      // API 返回空列表时使用 fallback（数据库未 seed 的场景）
+      if (!projects || projects.length === 0) {
+        projects = FALLBACK_PROJECTS
+      }
+      setProjects(projects)
+      restoreCurrent(projects)
     }).catch(() => {
       setProjects(FALLBACK_PROJECTS)
-      const stored = sessionStorage.getItem('currentProject')
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as { id: string | number }
-          const exists = FALLBACK_PROJECTS.find((p) => p.id === String(parsed.id))
-          if (exists) setProject(exists)
-        } catch { /* ignore parse error */ }
-      } else if (FALLBACK_PROJECTS.length > 0) {
-        setProject(FALLBACK_PROJECTS[0]!)
-      }
+      restoreCurrent(FALLBACK_PROJECTS)
     })
   }, [setProjects, setProject])
 
@@ -173,7 +174,7 @@ const Layout = () => {
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
           {!isMobile && user && (
             <Text type="secondary" style={{ fontSize: 13, marginRight: 8 }}>
-              {user.username}
+              {user.nickname ?? 'Admin'}
             </Text>
           )}
           <Button

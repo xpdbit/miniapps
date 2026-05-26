@@ -1,3 +1,6 @@
+// 必须在所有 import 之前加载 .env，确保 process.env 在模块初始化前就绪
+import 'dotenv/config'
+
 // =============================================================================
 // Dashboard Admin API Server Entry Point
 // 为 Dashboard 提供独立的管理员认证 API 服务
@@ -79,7 +82,7 @@ app.get('/health', async (_req, res) => {
 })
 
 // ─── 启动时自动同步数据库 schema ─────────────────────────────────────
-// 确保 dashboard_admin_users 等表存在，避免部署时遗漏 prisma db push
+// 确保 users/user_auths 等表与 Prisma Schema 一致，避免部署遗漏 prisma db push
 try {
   execSync('npx prisma db push --schema=../prisma/schema-miniapps.prisma --accept-data-loss', {
     stdio: 'pipe',
@@ -88,15 +91,69 @@ try {
   })
   console.log('[Startup] 数据库 schema 同步完成')
 } catch (err) {
-  const syncErr = err as Error
-  console.error('[Startup] 数据库 schema 同步失败（服务仍将继续启动）:', syncErr.message)
+  const execErr = err as { stderr?: Buffer; message?: string }
+  console.error('[Startup] 数据库 schema 同步失败（服务仍将继续启动）')
+  // 输出完整 stderr 以便诊断（Prisma 错误信息在 stderr 中）
+  if (execErr.stderr) {
+    console.error('[Startup] Prisma 错误详情:\n' + execErr.stderr.toString().trim())
+  } else {
+    console.error('[Startup] 错误:', execErr.message ?? String(err))
+  }
+  console.error('[Startup] ⚠️ 手动修复: cd dashboard && npx prisma db push --schema=../prisma/schema-miniapps.prisma --force-reset')
 }
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+// ─── 启动时自动 seed 默认项目 ────────────────────────────────────────
+// 确保 dashboard_projects 表中至少有 FTG / Game1 / AI-Tavern 三个项目
+// 使用 upsert 按 slug 去重，多次启动不会重复创建
+const DEFAULT_PROJECTS = [
+  { slug: 'ftg', name: 'FTG', apiBaseUrl: '/api/v1/ftl', description: '食物主题生成器' },
+  { slug: 'game1', name: 'Game1', apiBaseUrl: '/api/v1/game1', description: '挂机放置游戏' },
+  { slug: 'tavern', name: 'AI-Tavern', apiBaseUrl: '/api/v1/tavern', description: 'AI 角色聊天' },
+]
+
+async function seedDefaultProjects() {
+  try {
+    for (const p of DEFAULT_PROJECTS) {
+      await prisma.dashboardProject.upsert({
+        where: { slug: p.slug },
+        update: { name: p.name, apiBaseUrl: p.apiBaseUrl, description: p.description },
+        create: p,
+      })
+    }
+    console.log('[Startup] 默认项目 seed 完成')
+  } catch (err) {
+    console.error('[Startup] 默认项目 seed 失败:', (err as Error).message)
+  }
+}
+
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  // 服务启动后自动 seed 默认项目（确保下拉框有可选项目）
+  await seedDefaultProjects()
   console.log(`Dashboard Admin API running on port ${PORT}`)
+  const envLabel = (process.env.NODE_ENV || 'development') === 'production' ? '生产' : '开发';
+  console.log(`========================================`);
+  console.log(`  Dashboard Admin API`);
+  console.log(`========================================`);
+  console.log(`  环境:         ${envLabel} (${process.env.NODE_ENV || 'development'})`);
+  console.log(`  端口:         ${PORT}`);
+  console.log(`  Game1 代理:   ${process.env.GAME1_API_URL || 'http://game1-server:3004/api/v1/game1'}`);
+  console.log(`  Tavern 代理:  ${process.env.TAVERN_API_URL || 'http://tavern-server:3002/api/v1'}`);
+  console.log(`========================================`);
 })
 
 // 与 Nginx 保持长连接复用，防止每个请求新建 TCP 连接
 server.keepAliveTimeout = 65 * 1000; // 65s，匹配 Nginx keepalive_timeout
 server.headersTimeout = 70 * 1000;   // 70s，必须大于 keepAliveTimeout
 server.timeout = 30 * 1000;          // 30s 请求超时，防止慢请求占用连接
+
+// 监听 server 错误（EADDRINUSE 等），提供清晰的诊断信息
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[FATAL] 端口 ${PORT} 已被占用，无法启动服务。`)
+    console.error(`[FATAL] 可能原因：上一次启动的进程未完全退出。`)
+    console.error(`[FATAL] 解决方法：netstat -ano | findstr :${PORT} 查到 PID 后 taskkill /F /PID <pid>`)
+    process.exit(1)
+  }
+  console.error(`[FATAL] 服务启动失败:`, err.message)
+  process.exit(1)
+})

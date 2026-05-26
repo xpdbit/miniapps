@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const axios_1 = __importDefault(require("axios"));
 const router = (0, express_1.Router)();
-const GAME1_API = process.env.GAME1_API_URL || 'http://game1-server:3001/api/v1/game1';
+const GAME1_API = process.env.GAME1_API_URL || 'http://game1-server:3004/api/v1/game1';
 const GAME1_ADMIN_TOKEN = process.env.GAME1_ADMIN_TOKEN || '';
 if (!GAME1_ADMIN_TOKEN) {
     console.warn('[Game1 Proxy] GAME1_ADMIN_TOKEN not set — Game1 admin API calls will fail (403 Forbidden)');

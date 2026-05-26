@@ -1,4 +1,10 @@
-# tools/supertask — AI 自主开发监督系统
+# tools/supertask — AI 自主开发监督系统 🚫 已存档
+
+> **状态**: archived
+> **更新**: 2026-05-26
+>
+> SuperTask 已从仓库移除（代码已清空），功能整合至 [OCE (opencode-tui-enhance)](../opencode-tui-enhance/README.md)。
+> 此文档仅作历史参考，不再维护。
 
 **Python 桌面 GUI 程序**，循环驱动 AI 代理自动探索项目、提出任务，经人工审批后执行开发、文档、推送等操作。
 
@@ -149,9 +155,9 @@ python gui/main.py
 ## 关键文档
 
 - [远景规划](./VISION.md) — 长期演进方向和设计思考
-- [设计文档](../../superpowers/specs/2026-05-12-supertask-pyqt-migration-design.md) — PyQt6 迁移设计
+- [设计文档](../../../plan/specs/2026-05-12-supertask-pyqt-migration-design.md) — PyQt6 迁移设计
 
 ---
 
-> 最后更新: 2026-05-13
-> 修改: 补充定位说明、工作模式（Cycle/Dispatch）、远景章节
+> 最后更新: 2026-05-24
+> 修改: 修复设计文档链接（docs/superpowers/ → plan/specs/）

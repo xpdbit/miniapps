@@ -15,7 +15,7 @@
 
 import axios from 'axios'
 import prisma from '../utils/prisma'
-import { getDecryptedKey } from './key.service'
+import { config } from '../config'
 import { decrypt } from '../utils/crypto'
 
 interface ModelSyncResult {
@@ -36,7 +36,8 @@ const BUILTIN_FREE_MODELS = [
   { modelId: 'qwen-max',             displayName: '通义千问 Max',      provider: 'tongyi',   description: '最强模型，适合极限挑战',     icon: '🔥', minTier: 'FREE' as const, quotaCost: 2, sortOrder: 30 },
   { modelId: 'big-pickle',           displayName: 'Big Pickle',        provider: 'opencode', description: '免费大模型 · OpenCode Go',  icon: '🥒', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 40 },
   { modelId: 'minimax-m2.5-free',    displayName: 'MiniMax M2.5 Free', provider: 'opencode', description: '免费对话 · OpenCode Go',     icon: '🆓', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 50 },
-  { modelId: 'deepseek-v4-flash-free', displayName: 'DeepSeek V4 Flash', provider: 'opencode', description: '免费推理 · OpenCode Go',     icon: '⚙️', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 60 },
+  { modelId: 'deepseek-v4-flash', displayName: 'DeepSeek V4 Flash', provider: 'opencode', description: '免费推理 · OpenCode Go',     icon: '⚡', minTier: 'FREE' as const, quotaCost: 1, sortOrder: 60 },
+  { modelId: 'deepseek-v4-pro',   displayName: 'DeepSeek V4 Pro',   provider: 'opencode', description: '深度推理 · OpenCode Go',     icon: '🧠', minTier: 'FREE' as const, quotaCost: 2, sortOrder: 65 },
 ]
 
 /* ========================================================================
@@ -99,6 +100,19 @@ const SYNCABLE_PROVIDERS: ProviderSyncConfig[] = [
 ]
 
 /* ========================================================================
+ *  系统级 env API Key 映射
+ *  ======================================================================== */
+
+/**
+ * 如果系统在 .env 中配置了某服务商的 API Key，可以直接用于同步模型列表。
+ * key: SYNCABLE_PROVIDERS 中的 provider name
+ * value: 返回该 provider 的 API Key（来自 config）或 null
+ */
+const SYSTEM_API_KEYS: Record<string, string | undefined> = {
+  deepseek: config.deepseekApiKey || undefined,
+}
+
+/* ========================================================================
  *  主同步函数
  *  ======================================================================== */
 
@@ -111,95 +125,138 @@ export async function syncAllModels(adminUserId: string): Promise<ModelSyncResul
   const results: ModelSyncResult[] = []
 
   // 1. 确保内置 FREE 模型存在（始终激活）
-  await syncBuiltinFreeModels()
+  const freeModelCount = await syncBuiltinFreeModels()
 
-  // 2. 逐个服务商同步 PAID 模型
-  for (const config of SYNCABLE_PROVIDERS) {
+  // 2. 批量查询所有活跃 API Key 的 provider（避免逐个查询）
+  const allActiveKeys = await prisma.tavernApiKey.findMany({
+    where: { isActive: true },
+    select: { provider: true, userUuid: true, keyValue: true, baseUrl: true },
+  })
+  const providersWithKeys = new Set(allActiveKeys.map(k => k.provider))
+  
+  // 也检查管理员自己的 key
+  const adminKeys = allActiveKeys.filter(k => k.userUuid === adminUserId)
+  const adminProviders = new Set(adminKeys.map(k => k.provider))
+
+  console.log(`[sync-models] FREE models: ${freeModelCount}, providers with active keys: ${[...providersWithKeys].join(', ') || '(none)'}`)
+
+  // 3. 逐个服务商同步 PAID 模型（仅同步有 key 的服务商）
+  const skippedProviders: string[] = []
+  for (const syncConfig of SYNCABLE_PROVIDERS) {
     try {
-      // 获取任意用户的该服务商 API Key 用于调用 /models
+      // 跳过无 key 的服务商
+      if (!providersWithKeys.has(syncConfig.provider)) {
+        skippedProviders.push(syncConfig.provider)
+        continue
+      }
+
       let apiKey: string | null = null
-      let effectiveBaseUrl = config.baseUrl
-      if (config.needApiKey) {
-        // 尝试用管理员自己的 key
-        const adminKey = await getDecryptedKey(adminUserId, config.provider)
+      let effectiveBaseUrl = syncConfig.baseUrl
+
+      // 检查系统级 env key（如果 .env 中有该服务商的 key，优先使用）
+      const systemKey = SYSTEM_API_KEYS[syncConfig.provider]
+      if (systemKey) {
+        apiKey = systemKey
+      }
+
+      if (!apiKey) {
+        // 优先使用管理员的 key
+        const adminKey = adminKeys.find(k => k.provider === syncConfig.provider)
         if (adminKey) {
-          apiKey = adminKey.key
-          if (config.useCustomBaseUrl) {
-            effectiveBaseUrl = adminKey.baseUrl || effectiveBaseUrl
+          try {
+            const stored = JSON.parse(adminKey.keyValue)
+            apiKey = decrypt(stored.encrypted, stored.iv, stored.tag)
+            if (syncConfig.useCustomBaseUrl) {
+              effectiveBaseUrl = adminKey.baseUrl || effectiveBaseUrl
+            }
+          } catch {
+            continue // 解密失败 → 跳过
           }
         } else {
-          // 管理员没有 key，尝试查找任意用户的有效 key（加密是系统级的，可以解密）
-          const anyKey = await prisma.tavernApiKey.findFirst({
-            where: { provider: config.provider, isActive: true },
-          })
+          // 使用任意用户的 key
+          const anyKey = allActiveKeys.find(k => k.provider === syncConfig.provider)
           if (anyKey) {
             try {
               const stored = JSON.parse(anyKey.keyValue)
               apiKey = decrypt(stored.encrypted, stored.iv, stored.tag)
-              if (config.useCustomBaseUrl) {
+              if (syncConfig.useCustomBaseUrl) {
                 effectiveBaseUrl = anyKey.baseUrl || effectiveBaseUrl
               }
             } catch {
-              results.push({ provider: config.provider, added: 0, updated: 0, deactivated: 0, error: 'API Key 解密失败' })
               continue
             }
-          } else {
-            results.push({ provider: config.provider, added: 0, updated: 0, deactivated: 0, error: '无有效 API Key' })
-            continue
           }
         }
       }
 
-      if (!apiKey && config.needApiKey) {
-        results.push({ provider: config.provider, added: 0, updated: 0, deactivated: 0, error: '无 API Key' })
+      if (!apiKey) {
+        skippedProviders.push(syncConfig.provider)
         continue
       }
 
       // One API 等服务商必须有自定义 baseUrl
-      if (config.useCustomBaseUrl && !effectiveBaseUrl) {
-        results.push({ provider: config.provider, added: 0, updated: 0, deactivated: 0, error: '无自定义 Base URL（请在配置 Key 时填写部署地址）' })
+      if (syncConfig.useCustomBaseUrl && !effectiveBaseUrl) {
+        skippedProviders.push(syncConfig.provider)
         continue
       }
 
       // 调用服务商 API 获取模型列表
-      const models = await fetchProviderModels({ ...config, baseUrl: effectiveBaseUrl }, apiKey!)
+      const models = await fetchProviderModels({ ...syncConfig, baseUrl: effectiveBaseUrl }, apiKey!)
       if (models.length === 0) {
-        results.push({ provider: config.provider, added: 0, updated: 0, deactivated: 0, error: '返回空列表' })
+        results.push({ provider: syncConfig.provider, added: 0, updated: 0, deactivated: 0, error: '返回空列表' })
         continue
       }
 
       // 更新数据库
-      const { added, updated } = await upsertModels(config.provider, models)
-      results.push({ provider: config.provider, added, updated, deactivated: 0 })
+      const { added, updated } = await upsertModels(syncConfig.provider, models)
+      results.push({ provider: syncConfig.provider, added, updated, deactivated: 0 })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
-      results.push({ provider: config.provider, added: 0, updated: 0, deactivated: 0, error: msg })
+      results.push({ provider: syncConfig.provider, added: 0, updated: 0, deactivated: 0, error: msg })
     }
   }
 
-  // 3. 记录同步日志
-  console.log(`[sync-models] Synced ${results.filter(r => !r.error).length} providers, total added=${results.reduce((s,r) => s+r.added, 0)}, updated=${results.reduce((s,r) => s+r.updated, 0)}`)
+  // 4. 记录同步日志
+  const synced = results.filter(r => !r.error)
+  const failed = results.filter(r => r.error)
+
+  if (skippedProviders.length > 0) {
+    console.log(`[sync-models] Skipped ${skippedProviders.length} providers (no API key): ${skippedProviders.join(', ')}`)
+  }
+  console.log(`[sync-models] Synced ${synced.length} providers (${failed.length} had errors), total added=${results.reduce((s,r) => s+r.added, 0)}, updated=${results.reduce((s,r) => s+r.updated, 0)}`)
   return results
 }
 
 /**
  * 同步内置 FREE 模型（永远激活）
+ * 跳过已存在的模型，避免每次启动重复 upsert
  */
-async function syncBuiltinFreeModels(): Promise<void> {
+async function syncBuiltinFreeModels(): Promise<number> {
+  // 批量查询所有已存在的 FREE 模型
+  const existingModels = await prisma.tavernModelMeta.findMany({
+    where: { modelId: { in: BUILTIN_FREE_MODELS.map(m => m.modelId) } },
+    select: { modelId: true },
+  })
+  const existingIds = new Set(existingModels.map(e => e.modelId))
+  
+  let upserted = 0
   for (const m of BUILTIN_FREE_MODELS) {
-    await prisma.tavernModelMeta.upsert({
-      where: { modelId: m.modelId },
-      create: {
-        modelId: m.modelId, displayName: m.displayName, provider: m.provider,
-        description: m.description, icon: m.icon, minTier: m.minTier,
-        minLevel: 1, quotaCost: m.quotaCost, sortOrder: m.sortOrder, isActive: true,
-      },
-      update: {
-        displayName: m.displayName, description: m.description, icon: m.icon,
-        isActive: true,
-      },
-    })
+    if (!existingIds.has(m.modelId)) {
+      await prisma.tavernModelMeta.create({
+        data: {
+          modelId: m.modelId, displayName: m.displayName, provider: m.provider,
+          description: m.description, icon: m.icon, minTier: m.minTier,
+          minLevel: 1, quotaCost: m.quotaCost, sortOrder: m.sortOrder, isActive: true,
+        },
+      })
+      upserted++
+    }
   }
+  
+  if (upserted > 0) {
+    console.log(`[sync-models] Created ${upserted} new FREE models`)
+  }
+  return existingIds.size
 }
 
 /* ========================================================================

@@ -1,5 +1,8 @@
 # 文档编写规则
 
+> **状态**: current（内容已整合至 `docs/standards/` 目录）
+> **更新**: 2026-05-26
+
 > 所有在 `docs/` 目录下新增或修改文档时，必须遵守此规则。
 
 ## 一、文件命名规范
@@ -97,8 +100,8 @@
 | 架构设计、子系统关系 | `docs/ARCHITECTURE.md` |
 | API 接口定义 | `docs/<server>/API.md` |
 | 部署流程、容器编排 | `docs/deploy/README.md` |
-| 设计方案 | `docs/superpowers/specs/` |
-| Agent 工作计划 | `docs/superpowers/plans/` |
+| 设计方案 | `plan/specs/` |
+| Agent 工作计划 | `.sisyphus/plans/` |
 | 代码约定、反模式列表 | 各目录 `AGENTS.md` |
 | 函数/类的行为 | JSDoc 代码注释 |
 
@@ -135,5 +138,5 @@
 
 ---
 
-> 最后更新: 2026-05-18
-> 修改: 从 DOCUMENTATION_RULES.md 精炼重构，合并命名约定与格式规范
+> 最后更新: 2026-05-26
+> 修改: 更新设计方案和计划路径引用（superpowers → plan/.sisyphus）

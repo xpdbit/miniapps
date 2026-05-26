@@ -10,7 +10,7 @@ router.use(requireAuth);
 // GET /api/v1/users/me/stats - user statistics
 router.get('/me/stats', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const stats = await getUserStats(userId);
     res.json({ success: true, errCode: 0, errMsg: 'ok', data: stats });
   } catch (error) {
@@ -21,7 +21,7 @@ router.get('/me/stats', async (req, res) => {
 // GET /api/v1/users/me/profile - user public profile
 router.get('/me/profile', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const profile = await getUserProfile(userId);
     if (!profile) {
       res.status(404).json({ success: false, errCode: 2001, errMsg: '用户不存在', data: null });

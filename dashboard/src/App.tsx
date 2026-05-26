@@ -1,5 +1,5 @@
 import { useEffect, useMemo, lazy, Suspense } from 'react'
-import { ConfigProvider, Skeleton, theme as antTheme } from 'antd'
+import { ConfigProvider, App as AntApp, Skeleton, theme as antTheme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { useThemeStore } from '@/stores/themeStore'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -29,10 +29,11 @@ const Game1Config = lazy(() => import('@/pages/Game1Config'))
 const Game1Achievements = lazy(() => import('@/pages/Game1Achievements'))
 const Game1Pvp = lazy(() => import('@/pages/Game1Pvp'))
 const Tavern = lazy(() => import('@/pages/Tavern'))
-const TavernCharacters = lazy(() => import('@/pages/Tavern/TavernCharacters'))
 const TavernCards = lazy(() => import('@/pages/Tavern/TavernCards'))
 const TavernChats = lazy(() => import('@/pages/Tavern/TavernChats'))
 const TavernKeys = lazy(() => import('@/pages/Tavern/TavernKeys'))
+const TavernUsers = lazy(() => import('@/pages/Tavern/TavernUsers'))
+const TavernModelManager = lazy(() => import('@/pages/Tavern/TavernModelManager'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // ─── 全局加载态 ──────────────────────────────────────
@@ -87,6 +88,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ConfigProvider locale={zhCN} theme={themeConfig}>
+        <AntApp>
         <BrowserRouter>
         <Routes>
           <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -191,14 +193,6 @@ const App = () => {
                 }
               />
               <Route
-                path={ROUTES.TAVERN_CHARACTERS}
-                element={
-                  <Suspense fallback={<PageLoading />}>
-                    <TavernCharacters />
-                  </Suspense>
-                }
-              />
-              <Route
                 path={ROUTES.TAVERN_CARDS}
                 element={
                   <Suspense fallback={<PageLoading />}>
@@ -219,6 +213,22 @@ const App = () => {
                 element={
                   <Suspense fallback={<PageLoading />}>
                     <TavernKeys />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_USERS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernUsers />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_MODELS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernModelManager />
                   </Suspense>
                 }
               />
@@ -275,6 +285,7 @@ const App = () => {
           />
         </Routes>
         </BrowserRouter>
+        </AntApp>
       </ConfigProvider>
     </QueryClientProvider>
   )

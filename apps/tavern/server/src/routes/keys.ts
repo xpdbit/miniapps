@@ -6,7 +6,7 @@ import * as keyService from '../services/key.service';
 const router = Router();
 
 const addSchema = z.object({
-  provider: z.enum(['opencode', 'openai', 'anthropic', 'google', 'zhipu', 'deepseek', 'moonshot', 'minimax', 'openrouter']),
+  provider: z.enum(['opencode', 'openai', 'anthropic', 'google', 'zhipu', 'deepseek', 'moonshot', 'minimax', 'openrouter', 'oneapi']),
   keyValue: z.string().min(1),
   baseUrl: z.string().optional(),
 });
@@ -27,7 +27,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
     // 先保存 Key，确保用户配置不会丢失
     const key = await keyService.addKey(req.user!.userId, data.provider, data.keyValue, data.baseUrl);
     // 后台异步验证 Key 有效性（不阻塞保存，仅用于日志）
-    keyService.verifyKey(data.provider, data.keyValue).then((valid) => {
+    keyService.verifyKey(data.provider, data.keyValue, data.baseUrl).then((valid) => {
       if (!valid) console.warn(`[key] verify ${data.provider}: invalid or unreachable`);
     });
     res.status(201).json({ code: 0, data: key, message: 'ok' });
@@ -36,6 +36,10 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
       return res.status(400).json({ code: 400, message: '参数错误', data: err.errors });
     }
     const message = err instanceof Error ? err.message : 'Unknown error';
+    if (message.startsWith('DUPLICATE:')) {
+      const provider = message.split(':')[1];
+      return res.status(409).json({ code: 409, message: `已存在 ${provider} 的 API Key，请先删除旧的再添加`, data: null });
+    }
     res.status(500).json({ code: 500, message, data: null });
   }
 });

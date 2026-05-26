@@ -24,11 +24,21 @@ export async function generateText(params: GenerateParams): Promise<string> {
     data: params,
     customTimeout: 60000,
   })
+
+  // Validate response structure
+  if (!res || typeof res !== 'object') {
+    console.error('[aiService] 无效响应格式:', typeof res, JSON.stringify(res).slice(0, 200))
+    throw new Error('AI 服务返回了无效数据，请重试')
+  }
+
   if (res.code !== 0) {
     throw new Error(res.message || 'AI 服务请求失败')
   }
-  if (!res.data) {
-    throw new Error('AI 服务响应异常')
+
+  if (!res.data || typeof res.data.text !== 'string') {
+    console.error('[aiService] 响应缺少 text 字段:', JSON.stringify(res).slice(0, 300))
+    throw new Error('AI 服务响应异常，请重试')
   }
+
   return res.data.text
 }

@@ -9,7 +9,7 @@ import Taro from '@tarojs/taro';
 
 /** 服务端 API 基础 URL（生产构建时通过 defineConstants 替换，开发时默认连接已部署的服务器） */
 export const API_BASE =
-  process.env.TARO_APP_API_BASE || 'https://mnapp.top/api/ftl/api/v1';
+  process.env.TARO_APP_API_BASE || 'https://mnapp.top/api/v1/ftl';
 
 /** 默认请求超时时间（毫秒）: 30 秒 */
 export const REQUEST_TIMEOUT = 30000;

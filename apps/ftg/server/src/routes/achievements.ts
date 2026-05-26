@@ -32,7 +32,7 @@ router.get('/', async (_req, res) => {
 // GET /api/v1/achievements/my - 获取当前用户的成就进度
 router.get('/my', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const achievements = await getUserAchievements(userId);
     res.json({ success: true, errCode: 0, errMsg: 'ok', data: achievements });
   } catch (error) {
@@ -43,7 +43,7 @@ router.get('/my', async (req, res) => {
 // POST /api/v1/achievements/check - 检查并解锁成就
 router.post('/check', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.uuid;
     const result = await checkAndUnlock(userId);
     res.json({ success: true, errCode: 0, errMsg: 'ok', data: result });
   } catch (error) {

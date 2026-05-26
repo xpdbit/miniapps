@@ -1,5 +1,8 @@
 # URL 引用清单
 
+> **状态**: current
+> **更新**: 2026-05-24
+
 > 本文件记录 `.miniapps` 中所有外部 URL 引用及其使用位置。
 > 按域名/类别分类，便于追踪和管理。
 
@@ -22,8 +25,8 @@
 | `https://mnapp.top/api/ftl/api/v1/` | ftg-server:3000 | FTG API |
 | `https://mnapp.top/api/ftl/health` | ftg-server:3000 | FTG 健康检查 |
 | `https://mnapp.top/api/ftl/recognition/*` | ppshituv2:5000 | 识别服务代理 |
-| `https://mnapp.top/api/v1/game1/` | game1-server:3001 | Game1 API |
-| `https://mnapp.top/game1/health` | game1-server:3001 | Game1 健康检查 |
+| `https://mnapp.top/api/v1/game1/` | game1-server:3004 | Game1 API |
+| `https://mnapp.top/game1/health` | game1-server:3004 | Game1 健康检查 |
 | `https://mnapp.top/api/tavern/` | tavern-server:3002 | Tavern API |
 | `https://mnapp.top/api/v1/admin/` | ftg-admin:3001 | Admin API |
 | `https://mnapp.top/phpmyadmin/` | phpmyadmin | MySQL 管理 |
@@ -100,17 +103,37 @@
 
 ---
 
-## 八、domain.config.js 动态 URL
+## 八、domain.config.js 动态 URL（本地开发 → localhost，生产 → mnapp.top）
 
-| 项目 | 开发环境 | 生产环境 |
-|------|----------|----------|
-| FTG | `https://mnapp.top/api/ftl/api/v1` | `https://mnapp.top/api/ftl/api/v1` |
-| Game1 | `https://mnapp.top/api/v1/game1` | `https://mnapp.top/api/v1/game1` |
-| Tavern | `https://mnapp.top/api/tavern/api/v1` | `https://mnapp.top/api/tavern/api/v1` |
+| 项目 | 开发环境（DevTools） | 生产环境（真机调试/上线） |
+|------|---------------------|--------------------------|
+| FTG | `http://localhost:3000/api/v1` | `https://mnapp.top/api/ftl/api/v1` |
+| Game1 | `http://localhost:3004/api/v1/game1` | `https://mnapp.top/api/v1/game1` |
+| Tavern | `http://localhost:3002/api/tavern/v1` | `https://mnapp.top/api/tavern/v1` |
 
-CORS 白名单：`mnapp.top`, `ftl.mnapp.top`, `game1.mnapp.top`
+本地各 Server 端口一览：
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| FTG Server | 3000 | npm run dev |
+| Game1 Server | 3004 | npm run dev（改端口避免与 Admin API 冲突） |
+| Tavern Server | 3002 | npm run dev |
+| Dashboard Admin API | 3001 | tsx server/server.ts |
+| Dashboard Vite | 5173 | npm run dev |
+| MySQL (Docker) | 3307 | local_server/docker-compose.yml |
+| Redis (Docker) | 6379 | local_server/docker-compose.yml |
+
+CORS 白名单（含本地开发来源）：`mnapp.top`, `ftl.mnapp.top`, `game1.mnapp.top`, `localhost:3000/3001/3004/3002/5173`
+
+切换环境命令：
+
+```bash
+npm run dev:weapp           # 自动用 localhost（默认）
+npm run dev:weapp:remote    # 用 mnapp.top（真机调试）
+npm run build:weapp:prod    # 用 mnapp.top（生产构建）
+```
 
 ---
 
-> 最后更新: 2026-05-18
-> 修改: 从 url 文件转为 urls.md 格式，精简冗余引用
+> 最后更新: 2026-05-22
+> 修改: 环境配置重构 — DEV 改为 localhost，PROD 保留 mnapp.top，Game1 端口 3001→3004

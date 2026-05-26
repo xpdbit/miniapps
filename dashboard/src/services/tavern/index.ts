@@ -122,6 +122,51 @@ export interface TavernApiKeyListResponse {
   pageSize: number
 }
 
+// ─── 模型管理 Types ─────────────────────────────────────
+
+export interface TavernModelItem {
+  modelId: string
+  displayName: string
+  provider: string
+  description: string | null
+  icon: string | null
+  minTier: 'FREE' | 'PAID' | 'TESTER'
+  minLevel: number
+  quotaCost: number
+  isActive: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TavernModelListResponse {
+  items: TavernModelItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// ─── 用户管理 Types ────────────────────────────────────────
+
+export interface TavernUserItem {
+  uuid: string
+  nickname: string
+  role: string
+  status: string
+  sessionCount: number
+  messageCount: number
+  tokensUsed: number
+  cardCount: number
+  createdAt: string
+}
+
+export interface TavernUserListResponse {
+  items: TavernUserItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 // ─── Admin API ─────────────────────────────────────────────
 
 export const tavernAdminApi = {
@@ -198,4 +243,34 @@ export const tavernAdminApi = {
   /** 批量导入角色卡 JSON */
   importCards: (cards: Record<string, unknown>[]) =>
     adminApiClient.post<{ created: number; failed: number; errors: string[] }>('/admin/tavern/import', { cards }),
+
+  // ── 模型同步 ──
+  /** 手动触发模型同步（从 One API 等服务商拉取最新模型列表） */
+  syncModels: () =>
+    adminApiClient.post<{ results: Array<{ provider: string; added: number; updated: number; deactivated: number; error?: string }>; summary: { total: number; success: number; failed: number; added: number; updated: number } }>('/admin/tavern/sync-models'),
+
+  /** 获取模型列表（分页） */
+  getModels: (params?: { page?: number; pageSize?: number; provider?: string; search?: string }) =>
+    adminApiClient.get<TavernModelListResponse>('/admin/tavern/models', { params }),
+
+  /** 更新模型（开关/等级/配额） */
+  updateModel: (modelId: string, data: { isActive?: boolean; minTier?: 'FREE' | 'PAID' | 'TESTER'; minLevel?: number; quotaCost?: number }) =>
+    adminApiClient.put(`/admin/tavern/models/${modelId}`, data),
+
+  /** 获取模型统计信息 */
+  getModelStats: () =>
+    adminApiClient.get<{ total: number; active: number; byProvider: Array<{ provider: string; _count: { modelId: number } }> }>('/admin/tavern/model-stats'),
+
+  // ── 用户管理 ──
+  /** 获取用户列表 */
+  getUsers: (params?: { page?: number; pageSize?: number; search?: string }) =>
+    adminApiClient.get<TavernUserListResponse>('/admin/tavern/users', { params }),
+
+  /** 封禁/解封用户 */
+  banUser: (uuid: string, action: 'ban' | 'unban', reason?: string) =>
+    adminApiClient.post(`/admin/tavern/users/${uuid}/ban`, { action, reason: reason || '管理员操作' }),
+
+  /** 修改用户角色 */
+  updateUserRole: (uuid: string, role: 'USER' | 'ADMIN') =>
+    adminApiClient.put(`/admin/tavern/users/${uuid}/role`, { role }),
 }

@@ -137,6 +137,18 @@ function setupGlobalErrorHandler(): void {
 
 function App({ children }: PropsWithChildren<object>) {
   useLaunch(() => {
+    // ── 启动时输出环境和配置 ─────────────────────────
+    console.log('========================================');
+    console.log('  FTG 食物主题生成器');
+    console.log('========================================');
+    const apiBase = process.env.TARO_APP_API_BASE || '未配置';
+    const mockAuth = process.env.TARO_APP_MOCK_AUTH === 'true' ? '已启用' : '已禁用';
+    const taroEnv = process.env.TARO_ENV || '未知';
+    console.log(`  平台:       ${taroEnv}`);
+    console.log(`  API 地址:   ${apiBase}`);
+    console.log(`  Mock 认证:  ${mockAuth}`);
+    console.log('========================================');
+
     initCloudBase();
     setupGlobalErrorHandler();
     setupUnhandledRejectionHandler();

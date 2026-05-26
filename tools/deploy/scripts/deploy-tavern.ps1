@@ -23,20 +23,20 @@ Write-Host "  ✅ 源码复制完成" -ForegroundColor Green
 
 # Step 2: 复制 Nginx 配置
 Write-Host "`n[2/6] 复制 Nginx 配置..." -ForegroundColor Yellow
-scp "$REPO\deploy\nginx\nginx.conf" "${SERVER}:/opt/ftg/deploy/nginx/"
+scp "$REPO\tools\deploy\nginx\nginx.conf" "${SERVER}:/opt/ftg/deploy/nginx/"
 Write-Host "  ✅ Nginx 配置复制完成" -ForegroundColor Green
 
 # Step 3: 复制环境变量
 Write-Host "`n[3/6] 复制环境变量..." -ForegroundColor Yellow
-scp "$REPO\deploy\.env" "${SERVER}:/opt/ftg/deploy/"
+scp "$REPO\tools\deploy\.env" "${SERVER}:/opt/ftg/deploy/"
 Write-Host "  ✅ .env 复制完成" -ForegroundColor Green
 
 # Step 4: 复制部署脚本
 Write-Host "`n[4/6] 复制部署脚本..." -ForegroundColor Yellow
-scp "$REPO\deploy\scripts\deploy-tavern.sh" "${SERVER}:/opt/ftg/deploy/scripts/"
-scp "$REPO\deploy\scripts\deploy.sh" "${SERVER}:/opt/ftg/deploy/scripts/"
-scp "$REPO\deploy_commands.sh" "${SERVER}:/opt/ftg/"
-scp "$REPO\recover_and_deploy.sh" "${SERVER}:/opt/ftg/"
+scp "$REPO\tools\deploy\scripts\deploy-tavern.sh" "${SERVER}:/opt/ftg/deploy/scripts/"
+scp "$REPO\tools\deploy\scripts\deploy.sh" "${SERVER}:/opt/ftg/deploy/scripts/"
+scp "$REPO\tools\deploy\scripts\deploy_commands.sh" "${SERVER}:/opt/ftg/"
+scp "$REPO\tools\deploy\scripts\recover_and_deploy.sh" "${SERVER}:/opt/ftg/"
 Write-Host "  ✅ 脚本复制完成" -ForegroundColor Green
 
 # Step 5: SSH 执行一键修复

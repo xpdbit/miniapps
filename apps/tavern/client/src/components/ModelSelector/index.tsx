@@ -30,6 +30,7 @@ interface ModelsApiResponse {
 
 /** 内置兜底模型列表（服务端 API 不可用时使用） */
 const FALLBACK_MODELS: ModelItem[] = [
+  { modelId: 'deepseek-chat', displayName: 'DeepSeek Chat', provider: 'deepseek', icon: '🧠', free: true },
   { modelId: 'qwen-turbo', displayName: '通义千问 Turbo', provider: 'tongyi', icon: '⚡', free: true },
   { modelId: 'qwen-plus', displayName: '通义千问 Plus', provider: 'tongyi', icon: '✨', free: true },
   { modelId: 'qwen-max', displayName: '通义千问 Max', provider: 'tongyi', icon: '🔥', free: true },

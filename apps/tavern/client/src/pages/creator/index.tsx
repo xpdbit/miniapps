@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Icon } from '@/components'
 import type { IconName } from '@/components/Icon'
 import { useLocalCardsStore } from '@/stores/localCardsStore'
-import type { CardType, LocalCard } from '@/types/character'
+import type { CardType } from '@/types/character'
 import { CARD_TYPE_LABELS } from '@/types/character'
 import './index.scss'
 
@@ -147,7 +147,7 @@ export default function CreatorPage() {
     <View className='page-creator'>
       <View className='page-creator-header'>
         <View className='page-creator-back' onClick={() => Taro.navigateBack()}>
-          <Icon name='arrow-left' size={36} color='#666' />
+          <Icon name='arrow-left' size={36} color='var(--color-icon-muted)' />
         </View>
         <Text className='page-creator-header-title'>
           {isEdit ? '编辑' : '创建'}{CARD_TYPE_LABELS[form.cardType]}卡
@@ -317,7 +317,7 @@ export default function CreatorPage() {
             <View className='page-creator-preview-type'>
               <Icon
                 name={TYPE_ICONS[form.cardType]}
-                size={36} color='#007AFF'
+                size={36} color='var(--color-icon-action)'
               />
               <Text>{CARD_TYPE_LABELS[form.cardType]}卡</Text>
             </View>

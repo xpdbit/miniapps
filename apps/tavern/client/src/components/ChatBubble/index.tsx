@@ -1,5 +1,6 @@
 ﻿import { View, Text, Image } from '@tarojs/components'
 import { cn } from '@/utils'
+import ChatMarkdown from '@/components/ChatMarkdown'
 import './index.scss'
 
 interface ChatBubbleProps {
@@ -39,7 +40,7 @@ export default function ChatBubble({
           <Text className='chat-bubble-name'>{characterName}</Text>
         )}
         <View className={cn('chat-bubble-content', isStreaming && 'chat-bubble-content--streaming')}>
-          <Text>{content}</Text>
+          <ChatMarkdown content={content} />
           {isStreaming && (
             <View className='chat-bubble-dots'>
               <View className='chat-bubble-dot' />

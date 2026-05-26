@@ -36,7 +36,7 @@ router.post('/start', upload.single('image'), async (req, res) => {
     }
 
     const themeId = (req.body.themeId as string) || 'theme_classic';
-    const result = await startPipeline(req.user!.userId, req.file.buffer, themeId);
+    const result = await startPipeline(req.user!.uuid, req.file.buffer, themeId);
 
     res.status(202).json({
       success: true,
@@ -61,7 +61,7 @@ router.post('/start', upload.single('image'), async (req, res) => {
  */
 router.get('/:id/status', async (req, res) => {
   try {
-    const status = await getPipelineStatus(req.params.id, req.user!.userId);
+    const status = await getPipelineStatus(req.params.id, req.user!.uuid);
 
     if (!status) {
       res.status(404).json({

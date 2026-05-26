@@ -34,11 +34,18 @@ adminApiClient.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response
+      const reqUrl: string = error.config?.url || ''
       switch (status) {
         case 401:
           // 当在登录页面时，401 可能是密码错误而非 token 过期
           // 此时不清除 token，避免登录错误导致已登录用户被登出
           if (!window.location.pathname.startsWith('/login')) {
+            // 代理路由（tavern / game1）的 401 来自下游服务，不是 Dashboard 认证失败
+            // 不清除 token，仅显示错误提示
+            if (reqUrl.startsWith('/admin/tavern') || reqUrl.startsWith('/admin/game1')) {
+              message.error(data?.message || '下游服务认证失败，请检查服务配置')
+              break
+            }
             removeToken()
             message.error(data?.message || '登录已过期，请重新登录')
             window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`

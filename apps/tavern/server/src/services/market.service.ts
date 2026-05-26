@@ -4,9 +4,8 @@ import { Prisma } from '@prisma/client'
 const cardSelect = {
   id: true, name: true, avatar: true, description: true,
   tags: true, chatCount: true, likeCount: true, favCount: true,
-  cardType: true, isOfficial: true,
+  cardType: true, isOfficial: true, userUuid: true,
   createdAt: true,
-  creator: { select: { id: true, nickname: true } },
 }
 
 export async function listMarket(params: {
@@ -101,9 +100,6 @@ export async function getTags() {
 export async function getMarketCard(cardId: string) {
   return prisma.tavernCard.findUnique({
     where: { id: cardId, status: 'PUBLISHED' },
-    include: {
-      creator: { select: { id: true, nickname: true, avatar: true } },
-    },
   })
 }
 
@@ -115,10 +111,9 @@ export async function getAllOfficialCards() {
     select: {
       id: true, name: true, avatar: true, description: true,
       prompt: true, firstMsg: true, scenario: true,
-      tags: true, cardType: true, isOfficial: true,
+      tags: true, cardType: true, isOfficial: true, userUuid: true,
       chatCount: true, likeCount: true, favCount: true,
       createdAt: true, updatedAt: true,
-      creator: { select: { id: true, nickname: true } },
     },
     orderBy: { updatedAt: 'desc' },
   })

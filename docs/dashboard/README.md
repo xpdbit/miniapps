@@ -1,5 +1,8 @@
 # dashboard — 统一管理后台
 
+> **状态**: current
+> **更新**: 2026-05-24
+
 集中管理所有微信小程序项目的管理后台（FTG / Game1 / AI-Tavern）。
 
 ## 技术栈
@@ -99,7 +102,7 @@ npx tsx server/server.ts
 
 生产环境 Nginx:
   /api/v1/admin/* ──→ ftg-admin:3001
-  /api/v1/game1/*   ──→ game1-server:3001
+  /api/v1/game1/*   ──→ game1-server:3004
   /api/tavern/*     ──→ tavern-server:3002
 ```
 

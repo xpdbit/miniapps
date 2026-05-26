@@ -23,6 +23,7 @@ const baseConfig = {
     '@tarojs/plugin-html',
   ],
   defineConstants: {
+    'process.env.TARO_ENV': JSON.stringify(process.env.TARO_ENV || 'weapp'),
     'process.env.TARO_APP_API_BASE': JSON.stringify(process.env.TARO_APP_API_BASE || domain.GAME1.DEV),
   },
   framework: 'react',
@@ -78,6 +79,25 @@ const baseConfig = {
           generateScopedName: '[name]__[local]___[hash:base64:5]',
         },
       },
+    },
+    webpackChain(chain) {
+      chain.resolve.alias
+        .set('@', path.resolve(__dirname, '..', 'src'))
+        .set('@utils', path.resolve(__dirname, '..', 'src/utils'))
+        .set('@components', path.resolve(__dirname, '..', 'src/components'))
+        .set('@services', path.resolve(__dirname, '..', 'src/services'))
+        .set('@types', path.resolve(__dirname, '..', 'src/types'))
+        .set('@constants', path.resolve(__dirname, '..', 'src/constants'))
+        .set('@stores', path.resolve(__dirname, '..', 'src/stores'))
+        // core-js-pure 3.x 已移除 web/ 路径，映射到兼容 shim
+        .set('core-js-pure/web/url', path.resolve(__dirname, '..', 'h5-polyfills', 'url-shim'))
+        .set('core-js-pure/web/url-search-params', path.resolve(__dirname, '..', 'h5-polyfills', 'url-search-params-shim'));
+
+      // 显式启用 HMR plugin
+      if (process.env.NODE_ENV !== 'production') {
+        const webpack = require('webpack')
+        chain.plugin('hmr').before('fastRefreshPlugin').use(webpack.HotModuleReplacementPlugin)
+      }
     },
   },
 };

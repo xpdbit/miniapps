@@ -33,7 +33,7 @@ router.get('/', async (req: Request, res: Response) => {
       createdAtFilter.lte = new Date(`${req.query.endDate as string}T23:59:59`)
     }
     if (Object.keys(createdAtFilter).length > 0) {
-      where.created_at = createdAtFilter
+      where.createdAt = createdAtFilter
     }
 
     // 默认不显示已删除记录
@@ -45,7 +45,7 @@ router.get('/', async (req: Request, res: Response) => {
       prisma.ftgFoodRecord.findMany({
         where,
         include: { user: { select: { uuid: true, nickname: true } } },
-        orderBy: { created_at: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip: offset,
         take: pageSize,
       }),

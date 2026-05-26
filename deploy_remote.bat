@@ -46,7 +46,7 @@ echo    3. 确保「详情」→「本地设置」中：
 echo       - 不校验合法域名、TLS 版本及 HTTPS 证书 ☑
 echo    4. 点击编译/预览
 echo.
-echo  API 地址: https://mnapp.top/api/ftl/api/v1
+echo  API 地址: https://mnapp.top/api/v1/ftl
 echo.
 pause
 goto menu
@@ -66,7 +66,7 @@ if /i not "%confirm%"=="Y" goto menu
 
 echo.
 echo 执行部署...
-ssh -o StrictHostKeyChecking=no root@mnapp.top "bash -s" < deploy_commands.sh
+ssh -o StrictHostKeyChecking=no root@mnapp.top "bash -s" < tools/deploy/scripts/deploy_commands.sh
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo 部署失败！请检查 SSH 连接。
@@ -89,7 +89,7 @@ echo.
 set /p confirm="确认继续? (Y/N): "
 if /i not "%confirm%"=="Y" goto menu
 
-ssh -o StrictHostKeyChecking=no root@mnapp.top "bash -s" < recover_and_deploy.sh
+ssh -o StrictHostKeyChecking=no root@mnapp.top "bash -s" < tools/deploy/scripts/recover_and_deploy.sh
 pause
 goto menu
 
@@ -114,7 +114,7 @@ if /i not "%confirm%"=="Y" goto menu
 ssh -o StrictHostKeyChecking=no root@mnapp.top "bash /opt/ftg/deploy/scripts/setup-ssl.sh"
 echo.
 echo SSL 配置完成！
-echo 验证: curl -I https://mnapp.top/api/ftl/health
+echo 验证: curl -I https://mnapp.top/api/v1/ftl/health
 pause
 goto menu
 
@@ -124,10 +124,10 @@ echo =============================================
 echo  复制配置文件到服务器
 echo =============================================
 echo.
-echo  将本地 deploy/ 目录下的最新配置复制到服务器...
+echo  将本地 tools/deploy/ 目录下的最新配置复制到服务器...
 echo.
 
-set DEPLOY_DIR=E:\.Code\.miniapps\deploy
+set DEPLOY_DIR=E:\.Code\.miniapps\tools\deploy
 
 echo  [1] 部署脚本
 echo  [2] Nginx 配置与证书

@@ -5,3 +5,6 @@ export { default as EmptyState } from './EmptyState';
 export { Icon } from './Icon';
 export type { IconName } from './Icon';
 export { default as Skeleton } from './Skeleton';
+export { default as ModelSelector } from './ModelSelector';
+export { default as ChatMarkdown } from './ChatMarkdown';
+export { default as DesktopSidebar } from './DesktopSidebar';

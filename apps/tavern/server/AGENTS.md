@@ -35,6 +35,7 @@ apps/tavern/server/
 
 ## CONVENTIONS
 同根目录：TypeScript strict，2 空格缩进，LF 换行，UTF-8，`@/*` 路径别名，Prisma ORM，独立 `npm install`。额外：Zod 参数校验，AES-256-GCM 加密 API Key，Helmet + rate-limit 安全中间件，SSE 流式响应，uuid 用户引用（非自增 ID）。
+- **CORS**: `CORS_ORIGIN` 环境变量支持逗号分隔多来源（如 `http://localhost:5173,http://localhost:5174`），分别用于 Dashboard 和 Tavern H5 前端。部署时需确保包含所有前端域名。
 
 ## ANTI-PATTERNS
 - ❌ **占位注释** — `src/routes/chat.ts:149` `// Clean up if needed` — 客户端断开处理未实现

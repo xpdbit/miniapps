@@ -391,7 +391,7 @@ const Themes = () => {
         }}
         width={480}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         {previewHtml ? (
           <iframe

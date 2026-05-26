@@ -17,6 +17,7 @@ export const config = {
   },
   adminToken: process.env.ADMIN_TOKEN || 'admin-token',
   logLevel: process.env.LOG_LEVEL || 'info',
+  publicUrl: process.env.PUBLIC_URL || 'http://localhost:3004',
 } as const;
 
 export type Config = typeof config;

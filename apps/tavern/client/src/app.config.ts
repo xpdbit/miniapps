@@ -9,6 +9,9 @@
     'pages/creator/index',
     'pages/profile/index',
     'pages/persona/index',
+    'pages/chats/index',
+    'pages/contacts/index',
+    'pages/discover/index',
   ],
   window: {
     navigationBarTitleText: 'AI 酒馆',

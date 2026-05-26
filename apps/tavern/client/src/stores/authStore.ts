@@ -13,6 +13,7 @@ export interface TierInfo {
   tier: 'FREE' | 'PAID' | 'TESTER'
   level: number
   maxDailyQuota: number
+  dailyQuotaUsed: number
   maxSessions: number
   maxCharacters: number
   maxPersonas: number
@@ -132,7 +133,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ token: savedToken })
       const res = await httpClient.get<{ code: number; data: { user: UserInfo } }>('/auth/me')
       if (res.code === 0 && res.data?.user) {
-        set({ user: res.data.user, isLoggedIn: true, initialized: true })
+        const data = res.data as { user: UserInfo; tier?: TierInfo }
+        set({ user: data.user, tier: data.tier || null, isLoggedIn: true, initialized: true })
       } else {
         throw new Error('Session invalid')
       }
@@ -147,7 +149,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await httpClient.get<{ code: number; data: { user: UserInfo } }>('/auth/me')
       if (res.code === 0 && res.data?.user) {
-        set({ user: res.data.user })
+        const data = res.data as { user: UserInfo; tier?: TierInfo }
+        set({ user: data.user, tier: data.tier || get().tier })
       }
     } catch {
       // ignore

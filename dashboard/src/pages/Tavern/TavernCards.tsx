@@ -364,13 +364,18 @@ export default function TavernCards() {
               <Empty description="暂无卡片" style={{ padding: 40 }} />
             ) : (
               items.map((card) => {
-                const isSelected = selectedCard?.id === card.id
                 const typeLabel = CARD_TYPE_LABELS[card.cardType ?? ''] ?? card.cardType ?? '角色卡'
 
                 return (
                   <div
                     key={card.id}
-                    onClick={() => handleSelectCard(card)}
+                    onClick={() => {
+                      setSelectedIds((prev) =>
+                        prev.includes(card.id)
+                          ? prev.filter((id) => id !== card.id)
+                          : [...prev, card.id]
+                      )
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -378,11 +383,11 @@ export default function TavernCards() {
                       padding: '10px 12px',
                       cursor: 'pointer',
                       borderBottom: '1px solid #f0f0f0',
-                      background: isSelected ? '#e6f4ff' : undefined,
+                      background: selectedCard?.id === card.id ? '#e6f4ff' : selectedIds.includes(card.id) ? '#f0f5ff' : undefined,
                       transition: 'background 0.15s',
                     }}
-                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#fafafa' }}
-                    onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                    onMouseEnter={(e) => { if (selectedCard?.id !== card.id) e.currentTarget.style.background = '#fafafa' }}
+                    onMouseLeave={(e) => { if (selectedCard?.id !== card.id) e.currentTarget.style.background = 'transparent' }}
                   >
                     <Checkbox
                       checked={selectedIds.includes(card.id)}
@@ -396,7 +401,13 @@ export default function TavernCards() {
                         )
                       }}
                     />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{ flex: 1, minWidth: 0 }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSelectCard(card)
+                      }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Text strong style={{ fontSize: 13 }} ellipsis>{card.name}</Text>
                         {card.locked && <Tag color="orange" style={{ margin: 0, fontSize: 10, lineHeight: '14px' }}>锁定</Tag>}
@@ -606,7 +617,7 @@ export default function TavernCards() {
         onCancel={handleCloseImport}
         footer={null}
         width={720}
-        destroyOnClose
+        destroyOnHidden
       >
         {/* 文件上传 */}
         <Upload.Dragger
@@ -728,7 +739,7 @@ export default function TavernCards() {
         onCancel={() => setFormOpen(false)}
         onOk={handleFormSubmit}
         width={600}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical">
           <Form.Item label="UUID">
