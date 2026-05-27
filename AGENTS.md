@@ -1,7 +1,7 @@
 ﻿# 项目知识库 — 导航
 
 > **状态**: current
-> **更新**: 2026-05-26
+> **更新**: 2026-05-27
 >
 > 本文档是 Agent 的导航入口。只存指引，不存详细内容。
 > 详细约定、反模式、架构等在 `docs/` 中维护。
@@ -29,7 +29,7 @@
 | 架构图、数据流、跨项目关系 | `docs/ARCHITECTURE.md` |
 | 服务器运维、部署流程 | `docs/ops/` |
 | 设计文档、方案选型 | `plan/specs/` |
-| 当前进行中的任务 | `plan/active/` （如不存在则查 `plan/README.md`） |
+| 当前进行中的任务 | `plan/current_task.md` |
 | 未成熟的想法 | `plan/ideas/` |
 | 文档编写规范 | `docs/standards/` |
 
@@ -63,6 +63,24 @@
 涉及任何小程序样式/组件/导航/交互修改前，MUST 先用自动化工具检查运行时状态。
 
 详细工作流见 `docs/standards/CONVENTIONS.md` → mp-automator 强制工作流。
+
+---
+
+## Playwright 截图
+
+调用 Playwright MCP 的 `browser_take_screenshot` 时，**MUST** 在 `filename` 参数中加 `tmp/` 前缀：
+
+```
+browser_take_screenshot(filename="tmp/xxx.png", ...)
+```
+
+`browser_snapshot` 同理，**MUST** 加 `tmp/` 前缀：
+
+```
+browser_snapshot(filename="tmp/xxx.yml", ...)
+```
+
+根目录截图和快照文件会破坏工作区整洁，且 `tmp/` 已在 `.gitignore` 中忽略，不会误提交。
 
 ---
 

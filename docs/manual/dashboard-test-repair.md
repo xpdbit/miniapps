@@ -2,7 +2,7 @@
 
 > **用途**: Agent 自主测试与修复操作手册  
 > **状态**: current
-> **更新**: 2026-05-24 (从 `docs/dashboard/` 迁移至 `docs/manual/`)
+> **更新**: 2026-05-27 (从 `docs/dashboard/` 迁移至 `docs/manual/`)
 > **测试工具链**: Playwright → Sisyphus Pro → local_dev
 > **注意**：所有的命令行任务均交给子AGENT另开线程执行，避免主AGENT线程堵塞！
 

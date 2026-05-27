@@ -12,7 +12,7 @@
 |------|-----|
 | 服务名称 | Game1 Server |
 | 源码路径 | `apps/game1/server/` |
-| 端口 | 3001（容器内部/开发） |
+| 端口 | 3004（容器内部/开发） |
 | 生产入口 | `https://mnapp.top/api/v1/game1/` |
 | Docker 容器名 | `game1-server`（`deploy/docker-compose.yml`） |
 
@@ -44,4 +44,4 @@
 
 ---
 
-> 最后更新: 2026-05-18
+> 最后更新: 2026-05-27

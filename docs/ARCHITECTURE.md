@@ -1,7 +1,7 @@
 # 系统架构
 
 > **状态**: current
-> **更新**: 2026-05-26
+> **更新**: 2026-05-27
 
 ## 高层面架构（多项目视图）
 
@@ -53,7 +53,7 @@
 │  │  │(JWT)     │  │(Taro.req)│  │  (user/record/checkin)│ │  │
 │  │  └──────────┘  └──────────┘  └──────────────────────┘ │  │
 │  │                         │                               │  │
-│  │              Zustand Stores (7 stores)                  │  │
+│  │              Zustand Store (authStore)                   │  │
 │  └─────────────────────────┬───────────────────────────────┘  │
 │                           │  HTTP GET/POST (JWT Bearer)       │
 └───────────────────────────┼───────────────────────────────────┘
@@ -365,8 +365,8 @@ Tavern Server (apps/tavern/server, Express + TypeScript)
   │                    #           tier/official/ai + personas/export)
   ├── services/        # 14 服务 (ai-proxy/character/context/export/key/market/moderation/
   │                    #          persona/prompt-builder/social/tier/model-discovery/model-sync)
-  └── Prisma           # 20+ 表 (TavernUser/Card/CharacterCard/ChatSession/ChatMessage/
-                       #         Persona/ApiKey/ModerationLog/Like/Follow/UserTier/ModelMeta...)
+  └── Prisma           # 13 表 (TavernUser/Card/Like/Fav/Persona/ChatSession/ChatMessage/
+                         #         ModerationLog/CardRevision/ApiKey/UserTier/ModelMeta/UserProfile)
          │
          ▼
 Dashboard Tavern 管理 (通过 tavern-proxy 代理到 tavern-server)

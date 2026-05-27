@@ -1,7 +1,7 @@
 # FTG 后端 API 参考
 
 > **状态**: current
-> **更新**: 2026-05-24
+> **更新**: 2026-05-27
 >
 > 基础路径：所有路由挂载在 `/api/v1` 前缀下。
 > 响应格式：`{ success: boolean, errCode: number, errMsg: string, data: any }`

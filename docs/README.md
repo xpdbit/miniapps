@@ -38,7 +38,7 @@ docs/
 | **AI-Tavern 后端 API** | [apps/tavern/server/](./apps/tavern/server/) | 多 AI Provider、SSE、10 路由 |
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
 | **SuperTask 工具** 🚫 | [tools/supertask/](./tools/supertask/) | **已存档** — 功能整合至 OCE |
-| **OCE 工具** | [tools/opencode-tui-enhance/](./tools/opencode-tui-enhance/) | PyQt6 OpenCode 监控与看门狗 |
+| **OCE 工具** | [tools/oce/](../tools/oce/) | PyQt6 OpenCode 监控与看门狗 |
 | **部署工具** | [tools/deploy/](../tools/deploy/) | Docker Compose + Nginx → ECS |
 | **数据库 Schema** | [database/](./database/) | 4 库独立 Schema 概览 |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |
@@ -55,5 +55,5 @@ docs/
 
 ---
 
-> 最后更新: 2026-05-26
-> 修改: 标记 SuperTask 为已存档；新增 OCE、manual、database 文档入口
+> 最后更新: 2026-05-27
+> 修改: 全量文档同步 — 修复 Game1 端口号、AGENTS.md 引用、ARCHITECTURE.md stores 数量；统一日期戳

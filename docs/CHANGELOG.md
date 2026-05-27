@@ -1,7 +1,23 @@
 # 文档变更日志
 
 > **状态**: current
-> **更新**: 2026-05-26
+> **更新**: 2026-05-27
+
+## 2026-05-27 — 全量文档同步与勘误（日期/端口/表数/引用）
+
+### 核心变化
+
+| 操作 | 详情 |
+|------|------|
+| **修复 Game1 端口号** | `docs/ops/servers.md` 和 `docs/ops/game1-server/README.md` 中 Game1 Server 端口从 3001 更正为 3004 |
+| **修复 ARCHITECTURE.md stores 数** | FTG "Zustand Stores (7 stores)" → "Zustand Store (authStore)" |
+| **修复 ARCHITECTURE.md 表数** | Tavern "20+ 表" → "13 表"（与实际 Prisma Schema 一致） |
+| **修复 tavern.md 表数** | 20+ → 13，同步实际 schema |
+| **修复 database/README.md** | tavern Schema 路径从 `schema-ai-tavern.prisma` 更正为 `apps/tavern/server/prisma/schema.prisma` |
+| **修复 AGENTS.md 引用** | `plan/active/` → `plan/current_task.md` |
+| **统一日期戳** | 全量 docs/ 文件日期同步至 2026-05-27（含 ops 子文档从 05-18 更新） |
+
+---
 
 ## 2026-05-26 — 文档同步：Tavern 客户端变更 + 全量审查
 

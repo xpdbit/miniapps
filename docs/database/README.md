@@ -1,7 +1,7 @@
 # 数据库
 
 > **状态**: current
-> **更新**: 2026-05-24
+> **更新**: 2026-05-27
 > 项目使用 4 个独立 MySQL 数据库，各有独立 Prisma Schema。
 
 ## 架构总览
@@ -10,7 +10,7 @@
 |--------|--------------|------|------|
 | `miniapps` | `schema-miniapps.prisma` | 公用（用户/认证/会话/管理后台） | 5 表 |
 | `food_theme_generator` | `schema-food-theme-generator.prisma` | FTG | 11 表 |
-| `ai_tavern` | `schema-ai-tavern.prisma` | AI-Tavern | 13 表 |
+| `ai_tavern` | `apps/tavern/server/prisma/schema.prisma` | AI-Tavern | 13 表 |
 | `game1` | `schema-game1.prisma` | Game1 | 7 表 |
 
 ## ORM 版本

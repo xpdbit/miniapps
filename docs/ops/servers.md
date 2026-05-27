@@ -12,6 +12,7 @@
 | **系统** | Ubuntu 22.04 |
 | **配置** | 2c / 2g / 3MB/s |
 | **磁盘** | 40GB (系统盘) |
+| **磁盘** | 40GB (系统盘) |
 | **公网 IP** | 47.94.108.150 |
 | **域名** | mnapp.top (已备案) |
 | **SSH** | `ssh root@mnapp.top` |
@@ -66,7 +67,7 @@ df -h /                                                 # 磁盘空间
 | 服务 | 端口 | 源码路径 | 生产入口 |
 |------|------|----------|----------|
 | FTG Server | 3000 | `apps/ftg/server/` | `https://mnapp.top/api/ftl/api/v1/` |
-| Game1 Server | 3001 | `apps/game1/server/` | `https://mnapp.top/api/v1/game1/` |
+| Game1 Server | 3004 | `apps/game1/server/` | `https://mnapp.top/api/v1/game1/` |
 | Tavern Server | 3002 | `apps/tavern/server/` | `https://mnapp.top/api/tavern/` |
 | Dashboard Admin | 3001(prod:3003) | `dashboard/server/` | `https://mnapp.top/api/v1/admin/` |
 
@@ -74,4 +75,4 @@ df -h /                                                 # 磁盘空间
 
 ---
 
-> 最后更新: 2026-05-24
+> 最后更新: 2026-05-27
