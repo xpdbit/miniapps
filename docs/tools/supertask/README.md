@@ -3,7 +3,7 @@
 > **状态**: archived
 > **更新**: 2026-05-26
 >
-> SuperTask 已从仓库移除（代码已清空），功能整合至 [OCE (opencode-tui-enhance)](../opencode-tui-enhance/README.md)。
+> SuperTask 已从仓库移除（代码已清空），功能整合至 [OCE (opencode-tui-enhance)](../oce/README.md)。
 > 此文档仅作历史参考，不再维护。
 
 **Python 桌面 GUI 程序**，循环驱动 AI 代理自动探索项目、提出任务，经人工审批后执行开发、文档、推送等操作。

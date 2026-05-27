@@ -55,7 +55,7 @@ src/
 
 > **清理**: `builtin` 路由已移除（死路由，从未被 routes/index.ts 导入）。
 
-## 数据库 (8 表)
+## 数据库 (13 表)
 
 User, CharacterCard, ChatSession, ChatMessage, Persona, ApiKey, ModerationLog, 点赞收藏关联表。
 

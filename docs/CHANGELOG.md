@@ -11,9 +11,10 @@
 |------|------|
 | **OCE 工具迁移** | `tools/opencode-tui-enhance` 已从仓库删除（D），迁移至 `tools/oce/`（新） |
 | **Tavern 客户端文档同步** | 新增组件 ChatMarkdown/DesktopLoginModal/DesktopSidebar/ThemeToggle/WebNavBar；新增 Store themeStore；H5 支持完善 |
-| **Tavern 服务端文档同步** | 路由 10→14 模块（新增 reports/upload，删除 builtin 死路由），服务 10→14 模块 |
+| **Tavern 服务端文档同步** | 路由 10→14 模块（新增 reports/upload，删除 builtin 死路由），服务 10→14 模块，数据库 8→13 表 |
 | **Dashboard 文档同步** | 新增 TavernModelManager/TavernUsers 页面，监控页更新 |
-| **ANTI-PATTERNS 更新** | builtin.ts 死路由已删除 → 标记已清理 |
+| **ANTI-PATTERNS 更新** | builtin.ts 死路由已删除 → 标记已清理；personas.ts 死路由条目已修正（实际已导入）|
+| **编码修复** | `docs/apps/tavern/server/README.md` 编码损坏已修复（UTF-8）|
 | **统一日期戳** | 全量 docs/ 文件日期同步至 2026-05-28 |
 
 ---
