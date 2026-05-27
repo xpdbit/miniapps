@@ -1,7 +1,7 @@
 # AI-Tavern 后端服务
 
 > **状态**: current
-> **更新**: 2026-05-27
+> **更新**: 2026-05-28
 
 AI 角色聊天后端，支持多 AI 提供商、SSE 流式对话、角色卡市场与审核。
 
@@ -27,8 +27,8 @@ src/
 ├── config/              # 环境变量校验 + 敏感词表
 ├── lib/                 # JWT 工具
 ├── middleware/           # 认证 / 错误处理 / Zod 校验
-├── routes/              # 10 路由模块
-├── services/            # 10 服务模块
+├── routes/              # 14 路由模块
+├── services/            # 14 服务模块
 ├── types/               # AuthPayload / ApiResponse
 └── utils/               # crypto / logger / prisma / response
 ```
@@ -48,6 +48,12 @@ src/
 **审核系统** — 管理员发布 / 审批 / 封禁 / 日志审计。
 
 **导入导出** — V2 JSON 格式导入导出，兼容第三方角色卡交换。
+
+**数据报表** — 用户举报内容，支持分类（inappropriate / spam / copyright / other），写入审核日志。
+
+**文件上传** — base64 JSON 模式上传图片，支持 png / jpeg / webp / gif，限 5MB。
+
+> **清理**: `builtin` 路由已移除（死路由，从未被 routes/index.ts 导入）。
 
 ## 数据库 (8 表)
 

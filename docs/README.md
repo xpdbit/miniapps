@@ -16,7 +16,7 @@ docs/
 ├── ops/                     # 服务器运维 + 部署
 ├── standards/               # 代码约定、反模式、文档规范
 ├── tools/                   # 开发工具
-│   ├── opencode-tui-enhance/
+│   ├── opencode-tui-enhance/ # 🚫 已迁移至 oce/
 │   └── supertask/           # 🚫 已存档
 ├── ARCHITECTURE.md          # 系统架构
 ├── CHANGELOG.md             # 文档变更日志
@@ -55,5 +55,5 @@ docs/
 
 ---
 
-> 最后更新: 2026-05-27
-> 修改: 全量文档同步 — 修复 Game1 端口号、AGENTS.md 引用、ARCHITECTURE.md stores 数量；统一日期戳
+> 最后更新: 2026-05-28
+> 修改: 全量文档同步 — 工具迁移、新组件/路由/页面、ANTI-PATTERNS 更新

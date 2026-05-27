@@ -1,7 +1,7 @@
 # 反模式列表
 
 > **状态**: current
-> **更新**: 2026-05-27
+> **更新**: 2026-05-28
 > 从 `AGENTS.md` 迁出的完整反模式。新增反模式请追加到此文件。
 
 ## 当前反模式
@@ -27,7 +27,7 @@
 - ❌ **Grafana 容器名拼写错误** — `apps/ftg/server/docker-compose.monitoring.yml` 中 `container_name: ftp-grafana` 应为 `ftg-grafana`
 - ❌ **game1-server Dockerfile 不一致** — 生产阶段使用 `node:20-alpine`（其他 server 用 `node:20-slim`），且缺少 healthcheck
 - ❌ **dashboard docker-compose 不完整** — `dashboard/docker-compose.yml` 仅构建前端，缺少 Admin API 服务
-- ❌ **tavern-server 死路由文件** — `personas.ts` 和 `builtin.ts` 存在于 routes/ 但未被 routes/index.ts 导入
+- ❌ **tavern-server 死路由文件** — `personas.ts` 存在于 routes/ 但未被 routes/index.ts 导入（builtin.ts 已删除 ✓）
 - ❌ **Dashboard 无 ESLint 配置** — 最严格的项目反而缺失
 - ❌ **Game1 Client 无 lint 脚本** — package.json 有 eslint 但 scripts 中 lint 指向缺失的 eslint config
 
@@ -39,7 +39,8 @@
 - ✅ `@ts-ignore` / `@ts-expect-error` — 未发现
 - ✅ 无必要的 `eslint-disable` 注释 — 未发现
 - ✅ 硬编码密钥 — `.sisyphus/aliyun-mysql-clear.js` 已处理
+- ✅ **tavern-server builtin.ts 死路由** — 文件已从仓库删除
 
 ---
 
-> 最后更新: 2026-05-27
+> 最后更新: 2026-05-28

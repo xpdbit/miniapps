@@ -1,7 +1,7 @@
 # AI-Tavern 后端 API 文档
 
 > **状态**: current
-> **更新**: 2026-05-27
+> **更新**: 2026-05-28
 
 所有接口挂载于 `/api/v1` 前缀下，响应统一格式：
 
@@ -148,11 +148,9 @@ SSE 事件流：
 
 ---
 
-## 内置角色 (builtin)
+## 内置角色 (builtin) — 已移除
 
-| 方法 | 路径 | 认证 | 说明 |
-|------|------|------|------|
-| GET | `/api/v1/builtin/characters` | - | 获取系统内置角色列表 |
+> **注意**: `builtin` 路由已移除（死路由，从未被 routes/index.ts 导入）。
 
 ---
 
@@ -170,6 +168,45 @@ SSE 事件流：
 |------|------|------|------|
 | GET | `/api/v1/characters/:id/export` | 需登录 | 导出角色卡 (V2 JSON 格式) |
 | POST | `/api/v1/characters/import` | 需登录 | 导入角色卡 (V2 JSON) |
+
+---
+
+## 举报 (reports)
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/api/v1/reports` | 需登录 | 举报不当内容（支持 card / user / message 三类目标） |
+
+### POST /reports 请求体
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| targetType | enum | 是 | 举报目标类型：`card` / `user` / `message` |
+| targetId | string | 是 | 目标 ID |
+| reason | string | 是 | 举报原因 (1-500 字) |
+| category | enum | 否 | 分类：`inappropriate` / `spam` / `copyright` / `other`（默认 `inappropriate`） |
+
+---
+
+## 文件上传 (upload)
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/api/v1/upload` | 需登录 | 上传文件（base64 JSON 模式，仅限图片，最大 5MB） |
+
+### POST /upload 请求体
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| filename | string | 是 | 文件名 (1-200 字) |
+| mimeType | enum | 是 | `image/png` / `image/jpeg` / `image/webp` / `image/gif` |
+| data | string | 是 | base64 编码的文件数据（不含 `data:...` 前缀） |
+
+### 响应
+
+```json
+{ "code": 0, "message": "ok", "data": { "url": "/uploads/xxx.png", "filename": "xxx.png", "size": 12345 } }
+```
 
 ---
 

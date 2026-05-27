@@ -1,7 +1,7 @@
 # dashboard — 统一管理后台
 
 > **状态**: current
-> **更新**: 2026-05-27
+> **更新**: 2026-05-28
 
 集中管理所有微信小程序项目的管理后台（FTG / Game1 / AI-Tavern）。
 
@@ -22,7 +22,7 @@
 - 用户管理 (跨项目)
 - FTG: 食物记录审查 / 主题 Class 系统 / 主题模板编辑 / 成就管理 / API 密钥
 - Game1: 玩家管理 / 游戏配置 / 成就审核 / PVP 数据
-- AI-Tavern: 角色卡审核 / API 密钥审计
+- AI-Tavern: 角色卡审核 / API 密钥审计 / AI 模型管理 / 用户管理
 - 数据统计看板 (按项目过滤)
 - 审计日志 / 系统监控
 
@@ -51,7 +51,7 @@ npx tsx server/server.ts
 |------|---------------|-----------|------|
 | **FTG** | Users, FoodRecords, Themes, ThemeClasses, Stats, ApiKeys | Admin API 直查 shared DB | ✅ 线上 |
 | **Game1** | Game1Players, Game1Config, Game1Achievements, Game1Pvp | Admin API → game1-proxy → game1-server | 🚧 开发 |
-| **AI-Tavern** | Tavern (characters, keys) | Admin API → tavern-proxy → tavern-server | 🚧 开发 |
+| **AI-Tavern** | Tavern (characters, keys, models, users) | Admin API → tavern-proxy → tavern-server | 🚧 开发 |
 
 ## 页面目录
 
@@ -70,7 +70,9 @@ npx tsx server/server.ts
 | Game1 Achievements | `/game1/achievements` | Game1 成就管理 |
 | Game1 Pvp | `/game1/pvp` | Game1 PVP 数据 |
 | Tavern | `/tavern` | AI-Tavern 角色审核 + API 密钥审计 |
-| Monitoring | `/monitoring` | 系统监控 |
+| Tavern Model Manager | `/tavern/models` | AI 模型管理 |
+| Tavern Users | `/tavern/users` | Tavern 用户管理 |
+| Monitoring | `/monitoring` | 系统监控（含服务端指标采集与性能监控） |
 | Audit Logs | `/audit-logs` | 操作审计日志 |
 | Projects | `/projects` | 项目管理 |
 | Settings | `/settings` | 系统配置 |
@@ -119,3 +121,7 @@ npx tsx server/server.ts
 Docker 构建拆分:
 - `Dockerfile`: Vite 构建 → Nginx 静态文件 (SPA)
 - `Dockerfile.admin`: tsc 编译 → Node.js 运行 (Admin API)
+
+---
+> **最后更新**: 2026-05-28
+> 修改: 同步新增 Tavern 管理页面、监控页更新

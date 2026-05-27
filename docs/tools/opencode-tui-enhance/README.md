@@ -1,4 +1,6 @@
-# tools/opencode-tui-enhance — OpenCode 桌面监控与看门狗
+> 🚫 **已废弃** — 此工具已从仓库删除，已迁移至 `tools/oce/`。
+
+# tools/opencode-tui-enhance — OpenCode 桌面监控与看门狗（已废弃）
 
 **Python PyQt6 桌面 GUI 程序**，监控 OpenCode 运行时状态，检测 DeepSeek v4 场景下的中断/堵塞/误判问题，提供会话追踪、进程看护、自动恢复能力。
 
@@ -174,5 +176,5 @@ FluentWindow (qfluentwidgets Theme.DARK 默认背景 #202020)
 
 ---
 
-> 最后更新: 2026-05-27
-> 修改: 全量文档同步 — 日期戳统一
+> 最后更新: 2026-05-28
+> 修改: 已废弃 — 工具迁移至 tools/oce/

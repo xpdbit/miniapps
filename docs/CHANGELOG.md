@@ -1,7 +1,22 @@
 # 文档变更日志
 
 > **状态**: current
-> **更新**: 2026-05-27
+> **更新**: 2026-05-28
+
+## 2026-05-28 — 全量文档同步：工具迁移、新组件/路由/页面
+
+### 核心变化
+
+| 操作 | 详情 |
+|------|------|
+| **OCE 工具迁移** | `tools/opencode-tui-enhance` 已从仓库删除（D），迁移至 `tools/oce/`（新） |
+| **Tavern 客户端文档同步** | 新增组件 ChatMarkdown/DesktopLoginModal/DesktopSidebar/ThemeToggle/WebNavBar；新增 Store themeStore；H5 支持完善 |
+| **Tavern 服务端文档同步** | 路由 10→14 模块（新增 reports/upload，删除 builtin 死路由），服务 10→14 模块 |
+| **Dashboard 文档同步** | 新增 TavernModelManager/TavernUsers 页面，监控页更新 |
+| **ANTI-PATTERNS 更新** | builtin.ts 死路由已删除 → 标记已清理 |
+| **统一日期戳** | 全量 docs/ 文件日期同步至 2026-05-28 |
+
+---
 
 ## 2026-05-27 — 全量文档同步与勘误（日期/端口/表数/引用）
 

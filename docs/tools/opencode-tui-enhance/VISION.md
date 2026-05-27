@@ -1,4 +1,6 @@
-# OCE 远景规划 — OpenCode 稳定性补丁层的闭环
+> 🚫 **已废弃** — 此工具已从仓库删除，已迁移至 `tools/oce/`。
+
+# OCE 远景规划 — OpenCode 稳定性补丁层的闭环（已废弃）
 
 > 本文档记录 OCE 的长期演进设想。核心命题：**如何让 OpenCode + DeepSeek v4 在不可靠的底座上可靠运行。**
 
@@ -282,5 +284,5 @@ def is_regression(current_diff: DiffStat, history: list[DiffStat]) -> bool:
 
 ---
 
-> 最后更新: 2026-05-26
-> 修改: 初始版本 — 基于 Senior Dev 评估与 OCE 代码审查
+> 最后更新: 2026-05-28
+> 修改: 已废弃 — 工具迁移至 tools/oce/
