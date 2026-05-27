@@ -40,6 +40,6 @@ apps/tavern/server/
 ## ANTI-PATTERNS
 - ❌ **占位注释** — `src/routes/chat.ts:149` `// Clean up if needed` — 客户端断开处理未实现
 - ❌ **CI 路径过滤器错误（3处）** — paths + working-directory + cache-dependency-path 均使用 `servers/tavern-server/`，实际路径 `apps/tavern/server/`，CI 永不触发
-- ❌ **死路由文件** — `personas.ts` 和 `builtin.ts` 存在于 routes/ 但未被 routes/index.ts 导入
+- ✅ **死路由文件（已修复）** — `builtin.ts` 已删除；`personas.ts` 已正确定义并导入至 routes/index.ts
 - ❌ **no-explicit-any: off** — 唯一关闭此规则的项目，类型检查最宽松
 - ❌ **无 Prettier 配置** — 缺少 `.prettierrc`，其他 Server 项目已配置
