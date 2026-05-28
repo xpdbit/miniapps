@@ -7,6 +7,7 @@ import {
   UserOutlined,
   MenuOutlined,
   LogoutOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
@@ -22,9 +23,9 @@ import type { Project } from '@/types'
 
 /** 默认项目列表（API 加载失败时的 fallback） */
 const FALLBACK_PROJECTS: Project[] = [
-  { id: 'ftg', name: 'FTG', slug: 'ftg', apiBaseUrl: '/api/ftl', description: '食物主题生成器', status: 'active', createdAt: '', updatedAt: '' },
+  { id: 'ftg', name: 'FTG', slug: 'ftg', apiBaseUrl: '/api/v1/ftl', description: '食物主题生成器', status: 'active', createdAt: '', updatedAt: '' },
   { id: 'game1', name: 'Game1', slug: 'game1', apiBaseUrl: '/api/v1/game1', description: '挂机放置游戏', status: 'active', createdAt: '', updatedAt: '' },
-  { id: 'tavern', name: 'AI-Tavern', slug: 'tavern', apiBaseUrl: '/api/tavern', description: 'AI 角色聊天', status: 'active', createdAt: '', updatedAt: '' },
+  { id: 'tavern', name: 'AI-Tavern', slug: 'tavern', apiBaseUrl: '/api/v1/tavern', description: 'AI 角色聊天', status: 'active', createdAt: '', updatedAt: '' },
 ]
 
 const { Header, Sider, Content } = AntLayout
@@ -34,6 +35,7 @@ const { Text } = Typography
 const NAV_ITEMS: { key: string; icon: React.ReactNode; label: string }[] = [
   { key: ROUTES.DASHBOARD, icon: <DashboardOutlined />, label: '总览' },
   { key: ROUTES.PROJECTS, icon: <SettingOutlined />, label: '配置' },
+  { key: ROUTES.AI_MANAGER, icon: <RobotOutlined />, label: 'AI 管理' },
   { key: ROUTES.MONITORING, icon: <MonitorOutlined />, label: '监控' },
   { key: ROUTES.USERS, icon: <UserOutlined />, label: '用户管理' },
 ]

@@ -19,6 +19,7 @@ import agentRoutes from './agent-routes'
 import monitoringRoutes from './admin-monitoring'
 import game1Routes from './routes/game1-proxy'
 import tavernRoutes from './routes/tavern-proxy'
+import aiManagerRoutes from './admin-ai-manager'
 
 const app = express()
 const PORT = parseInt(process.env.ADMIN_PORT || '3001', 10)
@@ -31,44 +32,63 @@ app.use((req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start
     // 仅记录 /api/admin 路径的请求，避免 SPA 静态文件噪音
-    if (req.path.startsWith('/api/admin') || req.path.startsWith('/health')) {
+    if (req.path.startsWith('/api/v1/admin') || req.path.startsWith('/health')) {
       console.log(`[REQ] ${req.method} ${req.path} → ${res.statusCode} (${duration}ms)`)
     }
   })
   next()
 })
 
-// 挂载统一认证路由（/api/auth/*）— 所有项目共享
-app.use('/api/auth', authRouter)
+// ─── v1 路由挂载（主要） ──────────────────────────────────────────
+
+// 挂载统一认证路由（/api/v1/auth/*）— 所有项目共享
+app.use('/api/v1/auth', authRouter)
 
 // 挂载管理员认证路由
+app.use('/api/v1/admin', adminAuth)
+
+// 挂载仪表盘统计路由（/api/v1/admin/dashboard/*）
+// 统一在 /api/v1/admin 下，方便前端使用单一 baseURL 访问所有 Admin API
+app.use('/api/v1/admin/dashboard', dashboardRoutes)
+
+// 挂载食物记录管理路由（/api/v1/admin/food-records/*）
+app.use('/api/v1/admin/food-records', foodRecordRoutes)
+
+// 挂载 API 密钥管理路由（/api/v1/admin/api-keys/*）
+app.use('/api/v1/admin/api-keys', apiKeyRoutes)
+
+// 挂载成就管理路由（/api/v1/admin/achievements/*）
+app.use('/api/v1/admin/achievements', achievementRoutes)
+
+// 挂载 AGENT 调试通道（/api/v1/admin/agent/*）
+app.use('/api/v1/admin/agent', agentRoutes)
+
+// 挂载监控路由（/api/v1/admin/monitoring/*）
+app.use('/api/v1/admin/monitoring', monitoringRoutes)
+
+// 挂载 Game1 代理路由（/api/v1/admin/game1/* → game1-server）
+app.use('/api/v1/admin/game1', game1Routes)
+
+// 挂载 Tavern 代理路由（/api/v1/admin/tavern/* → tavern-server）
+app.use('/api/v1/admin/tavern', tavernRoutes)
+
+// ─── 向后兼容路由挂载（旧 /api/* 路径） ─────────────────────────────
+app.use('/api/auth', authRouter)
 app.use('/api/admin', adminAuth)
-
-// 挂载仪表盘统计路由（/api/admin/dashboard/*）
-// 统一在 /api/admin 下，方便前端使用单一 baseURL 访问所有 Admin API
 app.use('/api/admin/dashboard', dashboardRoutes)
-
-// 挂载食物记录管理路由（/api/admin/food-records/*）
 app.use('/api/admin/food-records', foodRecordRoutes)
-
-// 挂载 API 密钥管理路由（/api/admin/api-keys/*）
 app.use('/api/admin/api-keys', apiKeyRoutes)
-
-// 挂载成就管理路由（/api/admin/achievements/*）
 app.use('/api/admin/achievements', achievementRoutes)
-
-// 挂载 AGENT 调试通道（/api/admin/agent/*）
 app.use('/api/admin/agent', agentRoutes)
-
-// 挂载监控路由（/api/admin/monitoring/*）
 app.use('/api/admin/monitoring', monitoringRoutes)
-
-// 挂载 Game1 代理路由（/api/admin/game1/* → game1-server）
-// 使用独立子路径挂载点，防止 Express5 多 Router 共享 /api/admin 触发 405 机制
 app.use('/api/admin/game1', game1Routes)
-
-// 挂载 Tavern 代理路由（/api/admin/tavern/* → tavern-server）
 app.use('/api/admin/tavern', tavernRoutes)
+
+// 挂载 AI Provider 管理路由（/api/v1/admin/ai-manager/*）
+app.use('/api/v1/admin/ai-manager', aiManagerRoutes)
+
+// 向后兼容（旧 /api/admin/ai-manager/* 路径）
+app.use('/api/admin/ai-manager', aiManagerRoutes)
 
 // 健康检查端点
 app.get('/health', async (_req, res) => {
@@ -126,9 +146,49 @@ async function seedDefaultProjects() {
   }
 }
 
+// ─── 启动时自动 seed 默认 AI Provider ──────────────────────────────
+// 确保 dashboard_ai_providers 表中至少有一组默认提供商
+// 只在表为空时插入，幂等操作
+const DEFAULT_AI_PROVIDERS = [
+  { provider: 'tongyi', name: '通义千问', baseUrl: '', sortOrder: 10 },
+  { provider: 'opencode', name: 'OpenCode Go', baseUrl: 'https://opencode.ai/zen/go/v1', sortOrder: 20 },
+  { provider: 'openai', name: 'OpenAI', baseUrl: 'https://api.openai.com', sortOrder: 30 },
+  { provider: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', sortOrder: 40 },
+  { provider: 'anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com', sortOrder: 50 },
+  { provider: 'google', name: 'Google', baseUrl: 'https://generativelanguage.googleapis.com', sortOrder: 60 },
+  { provider: 'zhipu', name: '智谱', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', sortOrder: 70 },
+  { provider: 'moonshot', name: '月之暗面', baseUrl: 'https://api.moonshot.cn', sortOrder: 80 },
+  { provider: 'minimax', name: 'MiniMax', baseUrl: 'https://api.minimaxi.com', sortOrder: 90 },
+  { provider: 'openrouter', name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api', sortOrder: 100 },
+  { provider: 'oneapi', name: 'One API', baseUrl: '', sortOrder: 110 },
+]
+
+async function seedDefaultAiProviders() {
+  try {
+    const count = await prisma.dashboardAiProvider.count()
+    if (count > 0) {
+      console.log(`[Startup] AI Provider 已存在 ${count} 条，跳过 seed`)
+      return
+    }
+    await prisma.dashboardAiProvider.createMany({
+      data: DEFAULT_AI_PROVIDERS.map(p => ({
+        ...p,
+        isActive: true,
+        apiKey: null,
+        config: null,
+      })),
+    })
+    console.log(`[Startup] 默认 AI Provider seed 完成（${DEFAULT_AI_PROVIDERS.length} 个）`)
+  } catch (err) {
+    console.error('[Startup] 默认 AI Provider seed 失败:', (err as Error).message)
+  }
+}
+
 const server = app.listen(PORT, '0.0.0.0', async () => {
   // 服务启动后自动 seed 默认项目（确保下拉框有可选项目）
   await seedDefaultProjects()
+  // 服务启动后自动 seed 默认 AI Provider（确保 AI 管理页面有可选提供商）
+  await seedDefaultAiProviders()
   console.log(`Dashboard Admin API running on port ${PORT}`)
   const envLabel = (process.env.NODE_ENV || 'development') === 'production' ? '生产' : '开发';
   console.log(`========================================`);

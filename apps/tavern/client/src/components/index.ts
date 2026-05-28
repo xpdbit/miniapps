@@ -8,3 +8,4 @@ export { default as Skeleton } from './Skeleton';
 export { default as ModelSelector } from './ModelSelector';
 export { default as ChatMarkdown } from './ChatMarkdown';
 export { default as DesktopSidebar } from './DesktopSidebar';
+export { default as DesktopSelect } from './DesktopSelect';

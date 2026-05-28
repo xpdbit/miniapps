@@ -31,7 +31,7 @@ function navigateTab(url: string) {
 /** SVG 转 data URI */
 function svgToDataUri(svg: string, color: string): string {
   const colored = svg.replace(/__COLOR__/g, color);
-  return `data:image/svg+xml;utf-8,${encodeURIComponent(colored)}`;
+  return `data:image/svg+xml,${encodeURIComponent(colored)}`;
 }
 
 /* ---- Tavern Mode SVGs ---- */

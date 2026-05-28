@@ -33,7 +33,7 @@ const TavernCards = lazy(() => import('@/pages/Tavern/TavernCards'))
 const TavernChats = lazy(() => import('@/pages/Tavern/TavernChats'))
 const TavernKeys = lazy(() => import('@/pages/Tavern/TavernKeys'))
 const TavernUsers = lazy(() => import('@/pages/Tavern/TavernUsers'))
-const TavernModelManager = lazy(() => import('@/pages/Tavern/TavernModelManager'))
+const AiManager = lazy(() => import('@/pages/AiManager'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // ─── 全局加载态 ──────────────────────────────────────
@@ -217,6 +217,10 @@ const App = () => {
                 }
               />
               <Route
+                path={ROUTES.TAVERN_MODELS}
+                element={<Navigate to={`${ROUTES.AI_MANAGER}?tab=models`} replace />}
+              />
+              <Route
                 path={ROUTES.TAVERN_USERS}
                 element={
                   <Suspense fallback={<PageLoading />}>
@@ -224,11 +228,12 @@ const App = () => {
                   </Suspense>
                 }
               />
+              {/* ── AI 管理 ── */}
               <Route
-                path={ROUTES.TAVERN_MODELS}
+                path={ROUTES.AI_MANAGER}
                 element={
                   <Suspense fallback={<PageLoading />}>
-                    <TavernModelManager />
+                    <AiManager />
                   </Suspense>
                 }
               />

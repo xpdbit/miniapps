@@ -12,13 +12,6 @@ import { Icon, ModelSelector } from '@/components'
 import type { CardType, CharacterCard, LocalCard } from '@/types/character'
 import './index.scss'
 
-/**
- * 卡片网格间距 (px) — 与 app.scss 中 --spacing-sm 保持一致。
- * 若修改 app.scss 中的 --spacing-sm，此处需同步更新。
- * @see apps/tavern/client/src/app.scss:108 `--spacing-sm: 16px`
- */
-const CARD_GAP_PX = 16
-
 /* ========================================================================
  *  AI 响应 JSON 提取器 — 健壮版
  *  1. 优先尝试 markdown 代码块（```json ... ```）
@@ -215,12 +208,15 @@ export default function GameSetupPage() {
     maps: [],
     backgrounds: [],
   })
+  const [mounted, setMounted] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [generating, setGenerating] = useState(false)
 
+  useEffect(() => { setMounted(true) }, [])
+
   const syncedStore = useSyncedCardsStore()
   const localStore = useLocalCardsStore()
-  const { createSave, updateSaveGroups, enableGameMode, cardsPerRow } = useGameStore()
+  const { createSave, updateSaveGroups, enableGameMode } = useGameStore()
   const { selectedModel } = useChatStore()
   const { privacyMode } = usePrivacyStore()
 
@@ -363,9 +359,6 @@ export default function GameSetupPage() {
     selectedCards.backgrounds.length >= 1
 
   const renderCardGrid = () => {
-    // 动态计算每张卡宽度：(100% / N) - gap * (N-1) / N
-    const cardWidth = `calc(${100 / cardsPerRow}% - ${(CARD_GAP_PX * (cardsPerRow - 1)) / cardsPerRow}px)`
-
     return (
       <ScrollView className='game-setup-grid' scrollY>
         <View className='game-setup-grid-inner'>
@@ -374,19 +367,13 @@ export default function GameSetupPage() {
             return (
               <View
                 key={card.id}
-                className={`game-setup-card ${isSelected ? 'game-setup-card--selected' : ''}`}
-                style={{ width: cardWidth }}
+                className={`game-setup-card ${mounted ? 'game-setup-card--visible' : ''} ${isSelected ? 'game-setup-card--selected' : ''}`}
                 onClick={() => toggleCard(card)}
               >
-              <View className='game-setup-card-avatar'>
-                {card.avatar ? (
-                  <Image src={card.avatar} mode='aspectFill' className='game-setup-card-avatar-img' />
-                ) : (
-                  <Text className='game-setup-card-avatar-text'>{(card.name || '?')[0]}</Text>
-                )}
+              <View className='game-setup-card-body'>
+                <Text className='game-setup-card-name'>{card.name}</Text>
+                <Text className='game-setup-card-desc'>{card.description || ''}</Text>
               </View>
-              <Text className='game-setup-card-name'>{card.name}</Text>
-              <Text className='game-setup-card-desc'>{card.description?.slice(0, 30) || ''}</Text>
               {isSelected && <View className='game-setup-card-check'>✓</View>}
             </View>
           )

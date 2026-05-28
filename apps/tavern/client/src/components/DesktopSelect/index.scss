@@ -1,0 +1,134 @@
+/* ============================================================
+   DesktopSelect — 桌面端自定义下拉选择器
+   ============================================================ */
+
+.desktop-select {
+  position: relative;
+  display: inline-block;
+  min-width: 140px;
+}
+
+/* ── Trigger ── */
+.desktop-select__trigger {
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.desktop-select__value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  transition: border-color var(--duration-fast) ease;
+}
+
+.desktop-select__trigger--open .desktop-select__value,
+.desktop-select__value:hover {
+  border-color: var(--color-primary);
+}
+
+.desktop-select__text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-select__arrow {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  transition: transform var(--duration-slow) ease;
+  line-height: 1;
+  flex-shrink: 0;
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+/* ── Dropdown ── */
+.desktop-select__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  min-width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 500;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: desktop-select-fade-in var(--duration-fast) ease;
+}
+
+@keyframes desktop-select-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.desktop-select__option {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background var(--duration-fast) ease;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+
+  &:hover {
+    background: var(--color-bg-surface-hover);
+  }
+
+  &:active {
+    background: var(--color-bg-muted);
+  }
+
+  &--selected {
+    color: var(--color-primary);
+    font-weight: 600;
+    background: var(--color-primary-bg);
+
+    &:hover {
+      background: var(--color-primary-bg);
+    }
+  }
+}
+
+.desktop-select__option-label {
+  pointer-events: none;
+}
+
+/* ── Dark mode ── */
+.desktop-sidebar--dark .desktop-select__dropdown,
+html.dark-mode .desktop-select__dropdown,
+body.dark-mode .desktop-select__dropdown {
+  background: var(--color-bg-card);
+  border-color: var(--color-border);
+}
+
+.desktop-sidebar--dark .desktop-select__option:hover,
+html.dark-mode .desktop-select__option:hover,
+body.dark-mode .desktop-select__option:hover {
+  background: var(--color-bg-surface-hover);
+}
+
+.desktop-sidebar--dark .desktop-select__option--selected,
+html.dark-mode .desktop-select__option--selected,
+body.dark-mode .desktop-select__option--selected {
+  background: var(--color-primary-bg);
+}

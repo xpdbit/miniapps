@@ -17,6 +17,7 @@ import axios from 'axios'
 import prisma from '../utils/prisma'
 import { config } from '../config'
 import { decrypt } from '../utils/crypto'
+import { getProviderApiKey } from './admin-config.service'
 
 interface ModelSyncResult {
   provider: string
@@ -104,12 +105,13 @@ const SYNCABLE_PROVIDERS: ProviderSyncConfig[] = [
  *  ======================================================================== */
 
 /**
- * 如果系统在 .env 中配置了某服务商的 API Key，可以直接用于同步模型列表。
+ * 从 Dashboard Admin API 获取系统级 API Key（环境变量作为降级）
  * key: SYNCABLE_PROVIDERS 中的 provider name
- * value: 返回该 provider 的 API Key（来自 config）或 null
+ * value: 返回该 provider 的 API Key（来自 Dashboard Admin 或 config）或 null
  */
-const SYSTEM_API_KEYS: Record<string, string | undefined> = {
-  deepseek: config.deepseekApiKey || undefined,
+async function getSystemApiKeys(): Promise<Record<string, string | undefined>> {
+  const deepseekKey = await getProviderApiKey('deepseek').catch(() => undefined) || config.deepseekApiKey || undefined
+  return { deepseek: deepseekKey }
 }
 
 /* ========================================================================
@@ -142,6 +144,7 @@ export async function syncAllModels(adminUserId: string): Promise<ModelSyncResul
 
   // 3. 逐个服务商同步 PAID 模型（仅同步有 key 的服务商）
   const skippedProviders: string[] = []
+  const systemApiKeys = await getSystemApiKeys()
   for (const syncConfig of SYNCABLE_PROVIDERS) {
     try {
       // 跳过无 key 的服务商
@@ -153,8 +156,8 @@ export async function syncAllModels(adminUserId: string): Promise<ModelSyncResul
       let apiKey: string | null = null
       let effectiveBaseUrl = syncConfig.baseUrl
 
-      // 检查系统级 env key（如果 .env 中有该服务商的 key，优先使用）
-      const systemKey = SYSTEM_API_KEYS[syncConfig.provider]
+      // 检查系统级 key（Dashboard Admin API → 环境变量）
+      const systemKey = systemApiKeys[syncConfig.provider]
       if (systemKey) {
         apiKey = systemKey
       }

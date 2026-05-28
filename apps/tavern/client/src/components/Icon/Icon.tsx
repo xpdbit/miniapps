@@ -95,7 +95,7 @@ const ICON_SVGS: Record<IconName, string> = {
 
 function svgToDataUri(svgTemplate: string, color: string): string {
   const colored = svgTemplate.replace(/__COLOR__/g, color);
-  return `data:image/svg+xml;utf8,${encodeURIComponent(colored)}`;
+  return `data:image/svg+xml,${encodeURIComponent(colored)}`;
 }
 
 /**
@@ -116,6 +116,18 @@ function resolveColor(color: string): string {
   return color;
 }
 
+/**
+ * Taro H5 下 <taro-image-core> 对 inline style 支持不佳，
+ * 用 px 硬编码避免图标尺寸异常。
+ *
+ * rpx → px 转换使用与 Taro CSS 相同的比例：screenWidth / 750，
+ * 不做截断，确保与 CSS rpx 层表现一致。
+ */
+function rpx2px(rpx: number): number {
+  if (typeof window === 'undefined') return rpx;
+  return rpx * (window.innerWidth / 750);
+}
+
 const Icon: FC<IconProps> = ({
   name,
   size = 48,
@@ -126,6 +138,7 @@ const Icon: FC<IconProps> = ({
   if (!template) return null;
 
   const resolvedColor = resolveColor(color);
+  const pxSize = rpx2px(size);
 
   return (
     <Image
@@ -133,8 +146,8 @@ const Icon: FC<IconProps> = ({
       mode='aspectFit'
       className={`icon icon--${name} ${className}`.trim()}
       style={{
-        width: `${size}rpx`,
-        height: `${size}rpx`,
+        width: `${pxSize}px`,
+        height: `${pxSize}px`,
       }}
     />
   );

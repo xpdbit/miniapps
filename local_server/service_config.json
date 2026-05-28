@@ -1,0 +1,8 @@
+{
+  "enabled": [
+    "Dashboard Front",
+    "Dashboard Admin",
+    "Tavern Server",
+    "Tavern H5 Web"
+  ]
+}

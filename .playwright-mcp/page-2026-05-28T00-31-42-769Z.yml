@@ -1,0 +1,91 @@
+- generic [ref=e5]:
+  - banner "侧边导航栏" [ref=e6]:
+    - button "返回首页" [ref=e8] [cursor=pointer]:
+      - generic [ref=e10]: AI 酒馆
+    - generic [ref=e12]:
+      - img "搜索" [ref=e13]
+      - textbox "搜索角色..." [ref=e129]
+    - generic [ref=e15]:
+      - generic [ref=e17]:
+        - button "切换到主菜单模式" [pressed]:
+          - generic: 主菜单
+        - button "切换到游戏模式" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 游戏中
+      - navigation "酒馆模式导航" [ref=e20]:
+        - link "导航到酒馆" [ref=e21] [cursor=pointer]:
+          - generic [ref=e23]: 酒馆
+        - link "导航到开始" [ref=e24] [cursor=pointer]:
+          - generic [ref=e26]: 开始
+        - link "导航到我的" [ref=e27] [cursor=pointer]:
+          - generic [ref=e29]: 我的
+    - generic [ref=e30]:
+      - generic [ref=e31]: 工具
+      - navigation "工具导航" [ref=e32]:
+        - link "导航到我的角色" [ref=e33] [cursor=pointer]:
+          - generic [ref=e35]: 我的角色
+        - link "导航到创建角色" [ref=e36] [cursor=pointer]:
+          - generic [ref=e38]: 创建角色
+        - link "导航到人设管理" [ref=e39] [cursor=pointer]:
+          - generic [ref=e41]: 人设管理
+        - link "导航到角色归档" [ref=e42] [cursor=pointer]:
+          - generic [ref=e44]: 角色归档
+        - link "导航到游戏设置" [ref=e45] [cursor=pointer]:
+          - generic [ref=e47]: 游戏设置
+    - button "个人主页" [ref=e262] [cursor=pointer]:
+      - generic [ref=e51]: A
+      - generic [ref=e52]:
+        - generic [ref=e53]: admin
+        - generic [ref=e54]: 已登录
+    - generic [ref=e56]:
+      - generic [ref=e57]: 主题切换
+      - switch "切换暗色模式" [ref=e58] [cursor=pointer]
+    - generic [ref=e61]: AI 酒馆 v1.0.0
+  - generic [ref=e559]:
+    - generic [ref=e560]:
+      - img [ref=e563]
+      - generic [ref=e564]: 创建角色卡
+    - generic [ref=e565]:
+      - generic [ref=e566]:
+        - generic [ref=e567]: "1"
+        - generic [ref=e568]: 基本信息
+      - generic [ref=e569]:
+        - generic [ref=e570]: "2"
+        - generic [ref=e571]: 详细设定
+      - generic [ref=e572]:
+        - generic [ref=e573]: "3"
+        - generic [ref=e574]: 对话设定
+      - generic [ref=e575]:
+        - generic [ref=e576]: "4"
+        - generic [ref=e577]: 预览发布
+    - generic [ref=e578]:
+      - generic [ref=e579]:
+        - generic [ref=e580]: 卡片名称 *
+        - textbox "给你的角色卡取个名字" [ref=e582]
+      - generic [ref=e583]:
+        - generic [ref=e584]: 卡片类型
+        - generic [ref=e585]:
+          - generic [ref=e586] [cursor=pointer]:
+            - img [ref=e588]
+            - generic [ref=e589]: 角色
+          - generic [ref=e590] [cursor=pointer]:
+            - img [ref=e592]
+            - generic [ref=e593]: 机制
+          - generic [ref=e594] [cursor=pointer]:
+            - img [ref=e596]
+            - generic [ref=e597]: 地图
+          - generic [ref=e598] [cursor=pointer]:
+            - img [ref=e600]
+            - generic [ref=e601]: 背景
+      - generic [ref=e602]:
+        - generic [ref=e603]: 标签（可选）
+        - generic [ref=e604]:
+          - generic [ref=e605]: 萌娘
+          - generic [ref=e606]: 科幻
+          - generic [ref=e607]: 古风
+          - generic [ref=e608]: 奇幻
+          - generic [ref=e609]: 现实
+          - generic [ref=e610]: 动物
+          - generic [ref=e611]: 侦探
+          - generic [ref=e612]: 冒险
+          - generic [ref=e613]: 治愈
+      - generic [ref=e614]: 下一步

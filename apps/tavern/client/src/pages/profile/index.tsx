@@ -1,4 +1,5 @@
-import { View, Text, Image, Input, Button, Picker, Switch } from '@tarojs/components'
+import { View, Text, Image, Input, Button, Switch } from '@tarojs/components'
+import DesktopSelect from '@/components/DesktopSelect'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
@@ -646,12 +647,10 @@ export default function ProfilePage() {
             {/* 服务商选择 */}
             <View className='page-profile-model-row'>
               <Text className='page-profile-model-label'>服务商</Text>
-              <Picker
-                mode='selector'
-                range={providerNames}
+              <DesktopSelect
+                options={providerNames}
                 value={providerIndex}
-                onChange={(e) => {
-                  const idx = e.detail.value as number
+                onChange={(idx) => {
                   setFilterProvider(providerNames[idx] ?? 'all')
                 }}
               >
@@ -661,22 +660,19 @@ export default function ProfilePage() {
                   </Text>
                   <Icon name='arrow-down' size={24} color='var(--color-icon-muted)' />
                 </View>
-              </Picker>
+              </DesktopSelect>
             </View>
 
             {/* 模型选择 */}
             <View className='page-profile-model-row'>
               <Text className='page-profile-model-label'>当前模型</Text>
               {hasModelsForProvider ? (
-                <Picker
-                  mode='selector'
-                  range={modelNames}
+                <DesktopSelect
+                  options={modelNames}
                   value={modelIndex}
-                  onChange={(e) => {
-                    const idx = e.detail.value as number
+                  onChange={(idx) => {
                     const model = filteredModels[idx]
                     if (model) {
-                      // 同时保存模型 ID 和服务商，确保动态发现的模型也能正确路由
                       setModel(model.modelId, model.provider)
                       Taro.showToast({ title: `已切换为 ${model.displayName}`, icon: 'none', duration: 1500 })
                     }
@@ -686,7 +682,7 @@ export default function ProfilePage() {
                     <Text className='page-profile-model-name'>{currentModel?.displayName || '选择模型'}</Text>
                     <Icon name='arrow-down' size={24} color='var(--color-icon-muted)' />
                   </View>
-                </Picker>
+                </DesktopSelect>
               ) : (
                 <View className='page-profile-model-value'>
                   <Text className='page-profile-model-name page-profile-model-name--muted'>该服务商暂无可用模型</Text>
@@ -763,21 +759,19 @@ export default function ProfilePage() {
           <View className='page-profile-section-body'>
             <View className='page-profile-model-row'>
               <Text className='page-profile-model-label'>卡片每行数量</Text>
-              <Picker
-                mode='selector'
-                range={[1, 2, 3, 4]}
+              <DesktopSelect
+                options={[1, 2, 3, 4]}
                 value={cardsPerRow - 1}
-                onChange={(e) => {
-                  const val = (e.detail.value as number) + 1
-                  setCardsPerRow(val)
-                  Taro.showToast({ title: `已设为每行 ${val} 张`, icon: 'none', duration: 1200 })
+                onChange={(idx) => {
+                  setCardsPerRow(idx + 1)
+                  Taro.showToast({ title: `已设为每行 ${idx + 1} 张`, icon: 'none', duration: 1200 })
                 }}
               >
                 <View className='page-profile-model-value'>
                   <Text className='page-profile-model-name'>{cardsPerRow} 张/行</Text>
                   <Icon name='arrow-down' size={24} color='var(--color-icon-muted)' />
                 </View>
-              </Picker>
+              </DesktopSelect>
             </View>
           </View>
         )}

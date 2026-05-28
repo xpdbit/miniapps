@@ -111,10 +111,10 @@ docker ps --format 'table {{.Names}}\t{{.Status}}'
 
 echo ""
 echo "鍋ュ悍妫€鏌?"
-curl -s http://localhost/api/admin/health 2>/dev/null || echo "Admin API 鍚姩涓?.."
+curl -s http://localhost/api/v1/admin/health 2>/dev/null || echo "Admin API 鍚姩涓?.."
 curl -s -o /dev/null -w "Nginx HTTP: %{http_code}\n" http://localhost/ 2>/dev/null || echo "Nginx 鍚姩涓?.."
 curl -s -o /dev/null -w "Nginx HTTPS: %{http_code}\n" https://localhost/health --connect-timeout 5 2>/dev/null || echo "HTTPS 鍚姩涓?.."
-# AI Tavern 鍋ュ悍妫€鏌?TAVERN_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
+# AI Tavern 鍋ュ悍妫€鏌?TAVERN_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
 echo "Tavern API: HTTP ${TAVERN_HEALTH} $( [ "$TAVERN_HEALTH" = "200" ] && echo '鉁? || echo '鈿狅笍' )"
 
 echo ""

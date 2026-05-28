@@ -1,0 +1,76 @@
+- generic [ref=e5]:
+  - banner "侧边导航栏" [ref=e6]:
+    - button "返回首页" [ref=e8] [cursor=pointer]:
+      - generic [ref=e10]: AI 酒馆
+    - generic [ref=e12]:
+      - img "搜索" [ref=e13]
+      - textbox "搜索角色..." [ref=e129]
+    - generic [ref=e15]:
+      - generic [ref=e17]:
+        - button "切换到主菜单模式" [pressed]:
+          - generic: 主菜单
+        - button "切换到游戏模式" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 游戏中
+      - navigation "酒馆模式导航" [ref=e20]:
+        - link "导航到酒馆" [ref=e21] [cursor=pointer]:
+          - generic [ref=e23]: 酒馆
+        - link "导航到开始" [ref=e24] [cursor=pointer]:
+          - generic [ref=e26]: 开始
+        - link "导航到我的" [ref=e27] [cursor=pointer]:
+          - generic [ref=e29]: 我的
+    - generic [ref=e30]:
+      - generic [ref=e31]: 工具
+      - navigation "工具导航" [ref=e32]:
+        - link "导航到我的角色" [ref=e33] [cursor=pointer]:
+          - generic [ref=e35]: 我的角色
+        - link "导航到创建角色" [ref=e36] [cursor=pointer]:
+          - generic [ref=e38]: 创建角色
+        - link "导航到人设管理" [ref=e39] [cursor=pointer]:
+          - generic [ref=e41]: 人设管理
+        - link "导航到角色归档" [ref=e42] [cursor=pointer]:
+          - generic [ref=e44]: 角色归档
+        - link "导航到游戏设置" [ref=e45] [cursor=pointer]:
+          - generic [ref=e47]: 游戏设置
+    - button "个人主页" [ref=e1416] [cursor=pointer]:
+      - generic [ref=e51]: A
+      - generic [ref=e52]:
+        - generic [ref=e53]: admin
+        - generic [ref=e54]: 已登录
+    - generic [ref=e56]:
+      - generic [ref=e57]: 主题切换
+      - switch "切换暗色模式" [ref=e58] [cursor=pointer]
+    - generic [ref=e61]: AI 酒馆 v1.0.0
+  - generic [ref=e1611]:
+    - generic [ref=e1613]: 选择角色卡
+    - generic [ref=e1614]:
+      - generic [ref=e1615]: "1"
+      - generic [ref=e1616]: "2"
+      - generic [ref=e1617]: "3"
+      - generic [ref=e1618]: "4"
+    - generic [ref=e1619]:
+      - generic [ref=e1620]: 已选 0/5 （最少 1 个）
+      - generic [ref=e1622]:
+        - generic [ref=e1623] [cursor=pointer]:
+          - generic [ref=e1625]: 幸
+          - generic [ref=e1626]: 幸存者·林峰
+          - generic [ref=e1627]: 前特种部队成员，在丧尸危机爆发后成为了幸存者营地的领袖。他冷
+        - generic [ref=e1628] [cursor=pointer]:
+          - generic [ref=e1630]: 神
+          - generic [ref=e1631]: 神秘人·X
+          - generic [ref=e1632]: 没人知道他的真名，也没人知道他的来历。他总是戴着一副防毒面具
+        - generic [ref=e1633] [cursor=pointer]:
+          - generic [ref=e1635]: 骑
+          - generic [ref=e1636]: 骑手·阿杰
+          - generic [ref=e1637]: 前外卖骑手，对这座城市的大街小巷了如指掌。疫情爆发后，他依靠
+        - generic [ref=e1638] [cursor=pointer]:
+          - generic [ref=e1640]: 工
+          - generic [ref=e1641]: 工程师·老赵
+          - generic [ref=e1642]: 四十岁的中年结构工程师，平日里是个沉默寡言的技术宅。末世来临
+        - generic [ref=e1643] [cursor=pointer]:
+          - generic [ref=e1645]: 医
+          - generic [ref=e1646]: 医学生·苏雨
+          - generic [ref=e1647]: 医科大学在校生，疫情爆发时正在市医院实习。她见证了医疗体系的
+    - generic [ref=e1648]:
+      - generic [ref=e1649]: 已选 0/5
+      - generic:
+        - generic: 下一步

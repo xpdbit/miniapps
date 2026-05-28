@@ -56,10 +56,10 @@ Write-Host " 验证 API 端点:" -ForegroundColor Cyan
 Write-Host "----------------------------------------------------" -ForegroundColor Cyan
 
 $endpoints = @(
-    "https://mnapp.top/api/tavern/health",
-    "https://mnapp.top/api/tavern/api/v1/market/featured",
-    "https://mnapp.top/api/tavern/api/v1/market/tags",
-    "https://mnapp.top/api/tavern/api/v1/market?page=1&pageSize=20&sort=latest"
+    "https://mnapp.top/api/v1/tavern/health",
+    "https://mnapp.top/api/v1/tavern/market/featured",
+    "https://mnapp.top/api/v1/tavern/market/tags",
+    "https://mnapp.top/api/v1/tavern/market?page=1&pageSize=20&sort=latest"
 )
 
 foreach ($url in $endpoints) {

@@ -2,6 +2,7 @@ import axios from 'axios'
 import { config } from '../config'
 import prisma from '../utils/prisma'
 import { getDecryptedKey } from './key.service'
+import { getProviderApiKey, getProviderBaseUrl } from './admin-config.service'
 
 export interface ChatCompletionMessage {
   role: string
@@ -125,6 +126,18 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
       return
     }
 
+    // 从 Dashboard Admin API 获取 AI Provider 配置（含 API Key），环境变量作为降级
+    const [dashscopeKey, opencodeKey, deepseekKey] = await Promise.all([
+      getProviderApiKey('tongyi').catch(() => null),
+      getProviderApiKey('opencode').catch(() => null),
+      getProviderApiKey('deepseek').catch(() => null),
+    ])
+    const opencodeBaseUrl = await getProviderBaseUrl('opencode').catch(() => null)
+    const effectiveDashscopeKey = dashscopeKey || config.dashscopeApiKey || ''
+    const effectiveOpencodeKey = opencodeKey || config.opencodeApiKey || ''
+    const effectiveDeepseekKey = deepseekKey || config.deepseekApiKey || ''
+    const effectiveOpencodeBaseUrl = opencodeBaseUrl || config.opencodeBaseUrl
+
     // 解析模型对应的提供商
     let modelKey = model || 'deepseek-chat'
     let provider = MODEL_PROVIDER_MAP[modelKey]
@@ -143,7 +156,8 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
     }
 
     // Fallback: DashScope key 未配置或为占位符时，自动回退到 DeepSeek Free
-    if (provider === 'tongyi' && (!config.dashscopeApiKey || config.dashscopeApiKey === 'sk_dev_key' || config.dashscopeApiKey === '')) {
+    // 同时检查 Dashboard Admin API 和环境变量
+    if (provider === 'tongyi' && (!effectiveDashscopeKey || effectiveDashscopeKey === 'sk_dev_key' || effectiveDashscopeKey === '')) {
       console.warn('[ai-proxy] DashScope key 未配置，模型 ' + modelKey + ' 已自动回退到 deepseek-chat')
       provider = 'deepseek_free'
       modelKey = 'deepseek-chat'
@@ -168,19 +182,19 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
       if (provider === 'tongyi') {
         // DashScope 自动回退：不可用时降级到 DeepSeek Free
         try {
-          await callDashScope(messages, modelKey, temperature, onToken, onDone)
+          await callDashScope(messages, modelKey, temperature, onToken, onDone, effectiveDashscopeKey)
         } catch (err) {
           console.warn('[ai-proxy] DashScope 请求失败(' + (err instanceof Error ? err.message : String(err)) + ')，自动回退到 deepseek-chat')
-          await callDeepSeekFree(messages, 'deepseek-chat', temperature, onToken, onDone)
+          await callDeepSeekFree(messages, 'deepseek-chat', temperature, onToken, onDone, effectiveDeepseekKey)
         }
       } else if (provider === 'deepseek_free') {
         // DeepSeek Free 自动回退：不可用时降级到 OpenCode Go（最终兜底）
         try {
-          await callDeepSeekFree(messages, modelKey, temperature, onToken, onDone)
+          await callDeepSeekFree(messages, modelKey, temperature, onToken, onDone, effectiveDeepseekKey)
         } catch (err) {
           console.warn('[ai-proxy] DeepSeek Free 请求失败(' + (err instanceof Error ? err.message : String(err)) + ')，自动回退到 big-pickle (OpenCode Go)')
           try {
-            await callOpenCodeGo(messages, 'big-pickle', temperature, onToken, onDone)
+            await callOpenCodeGo(messages, 'big-pickle', temperature, onToken, onDone, effectiveOpencodeKey, effectiveOpencodeBaseUrl)
           } catch (err2) {
             const msg = (err2 instanceof Error ? err2.message : String(err2))
             console.error('[ai-proxy] 所有免费 AI 提供商均不可用: ' + msg)
@@ -190,10 +204,10 @@ export async function routeChat(params: AiProxyParams): Promise<void> {
       } else {
         // opencode — 自动回退机制：OpenCode Go 不可用时降级到 DeepSeek Free
         try {
-          await callOpenCodeGo(messages, modelKey, temperature, onToken, onDone)
+          await callOpenCodeGo(messages, modelKey, temperature, onToken, onDone, effectiveOpencodeKey, effectiveOpencodeBaseUrl)
         } catch (err) {
           console.warn('[ai-proxy] OpenCode Go 请求失败(' + (err instanceof Error ? err.message : String(err)) + ')，自动回退到 deepseek-chat')
-          await callDeepSeekFree(messages, 'deepseek-chat', temperature, onToken, onDone)
+          await callDeepSeekFree(messages, 'deepseek-chat', temperature, onToken, onDone, effectiveDeepseekKey)
         }
       }
 
@@ -236,6 +250,7 @@ async function callDashScope(
   temperature: number | undefined,
   onToken: (token: string) => void,
   onDone: (result: { tokens: number }) => void,
+  apiKey: string,
 ): Promise<void> {
   const response = await axios.post(
     'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
@@ -250,7 +265,7 @@ async function callDashScope(
     },
     {
       headers: {
-        Authorization: `Bearer ${config.dashscopeApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       responseType: 'stream',
@@ -307,13 +322,12 @@ async function callOpenCodeGo(
   temperature: number | undefined,
   onToken: (token: string) => void,
   onDone: (result: { tokens: number }) => void,
+  apiKey: string,
+  baseUrl: string,
 ): Promise<void> {
-  const apiKey = config.opencodeApiKey
   if (!apiKey) {
     throw new Error('OpenCode Go API Key 未配置')
   }
-
-  const baseUrl = config.opencodeBaseUrl
   const response = await axios.post(
     `${baseUrl}/chat/completions`,
     {
@@ -386,8 +400,8 @@ async function callDeepSeekFree(
   temperature: number | undefined,
   onToken: (token: string) => void,
   onDone: (result: { tokens: number }) => void,
+  apiKey: string,
 ): Promise<void> {
-  const apiKey = config.deepseekApiKey
   if (!apiKey) {
     throw new Error('DeepSeek API Key 未配置')
   }

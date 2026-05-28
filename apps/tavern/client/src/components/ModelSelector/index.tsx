@@ -1,4 +1,5 @@
-import { View, Text, Picker } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
+import DesktopSelect from '@/components/DesktopSelect'
 import { useEffect, useState, useCallback } from 'react'
 import { useChatStore } from '@/stores/chatStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -107,12 +108,10 @@ const ModelSelector: FC<ModelSelectorProps> = ({ compact = false, onModelChange,
   return (
     <View className={containerClass}>
       {!compact && <Text className='model-selector__label'>模型</Text>}
-      <Picker
-        mode='selector'
-        range={modelNames}
+      <DesktopSelect
+        options={modelNames}
         value={modelIndex}
-        onChange={(e) => {
-          const idx = e.detail.value as unknown as number
+        onChange={(idx) => {
           const model = models[idx]
           if (model) {
             setModel(model.modelId, model.provider)
@@ -129,7 +128,7 @@ const ModelSelector: FC<ModelSelectorProps> = ({ compact = false, onModelChange,
           </Text>
           <Text className='model-selector__arrow'>▾</Text>
         </View>
-      </Picker>
+      </DesktopSelect>
     </View>
   )
 }

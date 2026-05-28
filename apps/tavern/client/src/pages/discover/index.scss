@@ -1,0 +1,200 @@
+.page-discover {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+
+  &-header {
+    padding: 28rpx 32rpx 16rpx;
+    background: var(--color-bg);
+    border-bottom: 1rpx solid var(--color-divider, var(--color-border-subtle));
+    &-title {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      letter-spacing: -0.3px;
+    }
+  }
+
+  &-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28rpx 32rpx;
+    margin: 8rpx 16rpx;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: 1rpx solid var(--color-border-subtle, #E8E2D8);
+    transition: all 0.2s ease;
+    &:hover {
+      background: var(--color-bg-surface-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    &:active { background: var(--color-bg-surface-hover); }
+
+    &-left {
+      display: flex;
+      align-items: center;
+      gap: 24rpx;
+    }
+
+    &-icon { font-size: 48rpx; width: 48rpx; text-align: center; display: flex; align-items: center; justify-content: center; }
+
+    &-info { display: flex; flex-direction: column; gap: 4rpx; }
+    &-label { font-size: 28rpx; color: var(--color-text-primary); }
+    &-desc { font-size: 22rpx; color: var(--color-text-tertiary); }
+    &-arrow { font-size: 36rpx; color: var(--color-text-tertiary); display: flex; align-items: center; }
+  }
+
+  &-section {
+    padding: 8rpx 0;
+  }
+
+  &-divider {
+    height: 1rpx;
+    background: var(--color-divider, var(--color-border-subtle));
+    margin: 0 16rpx 0 104rpx;
+  }
+
+  /* ── 最近动态 ── */
+  &-moment {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-base) var(--spacing-xs) 88rpx;
+
+    &-icon {
+      width: 36rpx;
+      height: 36rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    &-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-text {
+      font-size: var(--font-body-sm);
+      color: var(--color-text-secondary);
+      line-height: var(--line-height-normal);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    &-time {
+      font-size: var(--font-caption);
+      color: var(--color-text-tertiary);
+      margin-top: 2px;
+      display: block;
+    }
+  }
+
+  /* ── Empty state wrapper ── */
+  &-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40rpx 32rpx;
+  }
+
+}
+
+/* ── Desktop layout ── */
+@media (min-width: 1024px) {
+  .page-discover {
+    max-width: 100%;
+    margin: var(--spacing-lg) 0;
+    width: 100%;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-base);
+    background: var(--color-bg-card);
+    overflow-x: hidden;
+    padding-bottom: 0;
+    height: auto;
+    min-height: 400px;
+  }
+
+  .page-discover-header {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+    padding: 18px 24px 14px;
+  }
+
+  .page-discover-header-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .page-discover-list {
+    padding-bottom: 0;
+  }
+
+  .page-discover-item {
+    padding: 16px 24px;
+    gap: 14px;
+    transition: background 0.15s ease, transform 0.15s ease;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-bg-surface-hover);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
+  }
+
+  .page-discover-empty {
+    padding: 80px 0;
+    flex: 1;
+  }
+
+  .page-discover .custom-tab-bar {
+    display: none;
+  }
+
+  .page-discover-item-icon {
+    font-size: 22px;
+    width: 28px;
+  }
+
+  .page-discover-item-label {
+    font-size: 15px;
+  }
+
+  .page-discover-item-desc {
+    font-size: 13px;
+  }
+
+  .page-discover-divider {
+    margin-left: 66px;
+    height: 1px;
+  }
+
+  .page-discover-moment {
+    padding-left: 66px;
+  }
+
+  .page-discover-moment-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .page-discover-item-arrow {
+    font-size: 20px;
+  }
+}

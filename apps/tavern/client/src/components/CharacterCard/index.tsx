@@ -1,4 +1,4 @@
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import { useState, useEffect, useMemo } from 'react'
 import { cn } from '@/utils'
 import './index.scss'
@@ -21,7 +21,7 @@ export interface CharacterCardProps {
 
 export default function CharacterCard(props: CharacterCardProps) {
   const {
-    id, name, description,
+    id, name, description, avatar,
     subtitle, onClick, showBorder, selected,
     compact, likeCount, chatCount,
   } = props
@@ -69,10 +69,21 @@ export default function CharacterCard(props: CharacterCardProps) {
       onClick={() => onClick?.(id)}
     >
       <View className='character-card-body'>
-        <Text className='character-card-name'>{name}</Text>
-        {displaySubtitle && (
-          <Text className='character-card-subtitle'>{displaySubtitle}</Text>
-        )}
+        <View
+          className={`character-card-avatar ${!avatar ? 'character-card-avatar--default' : ''}`}
+        >
+          {avatar ? (
+            <Image className='character-card-avatar-img' src={avatar} mode='aspectFill' />
+          ) : (
+            <Text className='character-card-avatar-text'>{name?.charAt(0).toUpperCase() ?? '?'}</Text>
+          )}
+        </View>
+        <View className='character-card-body-inner'>
+          <Text className='character-card-name'>{name}</Text>
+          {displaySubtitle && (
+            <Text className='character-card-subtitle'>{displaySubtitle}</Text>
+          )}
+        </View>
       </View>
 
       {hasStats && (

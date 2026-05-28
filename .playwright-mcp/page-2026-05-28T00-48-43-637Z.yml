@@ -1,0 +1,100 @@
+- generic [ref=e5]:
+  - banner "侧边导航栏" [ref=e6]:
+    - button "返回首页" [ref=e8] [cursor=pointer]:
+      - generic [ref=e10]: AI 酒馆
+    - generic [ref=e12]:
+      - img "搜索" [ref=e13]
+      - textbox "搜索角色..." [ref=e129]
+    - generic [ref=e15]:
+      - generic [ref=e17]:
+        - button "切换到主菜单模式" [pressed]:
+          - generic: 主菜单
+        - button "切换到游戏模式" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 游戏中
+      - navigation "酒馆模式导航" [ref=e20]:
+        - link "导航到酒馆" [ref=e21] [cursor=pointer]:
+          - generic [ref=e23]: 酒馆
+        - link "导航到开始" [ref=e24] [cursor=pointer]:
+          - generic [ref=e26]: 开始
+        - link "导航到我的" [ref=e27] [cursor=pointer]:
+          - generic [ref=e29]: 我的
+    - generic [ref=e30]:
+      - generic [ref=e31]: 工具
+      - navigation "工具导航" [ref=e32]:
+        - link "导航到我的角色" [ref=e33] [cursor=pointer]:
+          - generic [ref=e35]: 我的角色
+        - link "导航到创建角色" [ref=e36] [cursor=pointer]:
+          - generic [ref=e38]: 创建角色
+        - link "导航到人设管理" [ref=e39] [cursor=pointer]:
+          - generic [ref=e41]: 人设管理
+        - link "导航到角色归档" [ref=e42] [cursor=pointer]:
+          - generic [ref=e44]: 角色归档
+        - link "导航到游戏设置" [ref=e45] [cursor=pointer]:
+          - generic [ref=e47]: 游戏设置
+    - button "个人主页" [ref=e1416] [cursor=pointer]:
+      - generic [ref=e51]: A
+      - generic [ref=e52]:
+        - generic [ref=e53]: admin
+        - generic [ref=e54]: 已登录
+    - generic [ref=e56]:
+      - generic [ref=e57]: 主题切换
+      - switch "切换暗色模式" [ref=e58] [cursor=pointer]
+    - generic [ref=e61]: AI 酒馆 v1.0.0
+  - generic [ref=e1651]:
+    - generic [ref=e1653] [cursor=pointer]: 退出登录
+    - generic [ref=e1654]:
+      - generic [ref=e1656]: 隐私与安全
+      - generic [ref=e1658]:
+        - generic [ref=e1659]:
+          - generic [ref=e1660]: 关闭数据中转
+          - generic [ref=e1661]: AI 请求将不再经过服务器，完全由本地直连 AI 服务商。
+          - generic [ref=e1662]: 开启后只能使用自己的 API Key，且不支持群组/多人模式。
+        - checkbox [ref=e1664]
+    - generic [ref=e1666] [cursor=pointer]:
+      - generic [ref=e1667]: 暗色模式
+      - checkbox [ref=e1669]
+    - generic [ref=e1670]:
+      - generic [ref=e1671]:
+        - generic [ref=e1672]: 模型与服务商
+        - generic [ref=e1673]: ▼
+      - generic [ref=e1674]:
+        - generic [ref=e1675] [cursor=pointer]:
+          - generic [ref=e1676]: 服务商
+          - generic [ref=e1679]:
+            - generic [ref=e1680]: 全部服务商
+            - img [ref=e1682]
+        - generic [ref=e1683] [cursor=pointer]:
+          - generic [ref=e1684]: 当前模型
+          - generic [ref=e1687]:
+            - generic [ref=e1688]: 通义千问 Turbo
+            - img [ref=e1690]
+        - generic [ref=e1691]:
+          - generic [ref=e1692]: "API Key: 0/12 已配置"
+          - generic [ref=e1693]: 展开 ›
+        - generic [ref=e1695] [cursor=pointer]: 保存配置
+    - generic [ref=e1696]:
+      - generic [ref=e1697]:
+        - generic [ref=e1698]: 显示设置
+        - generic [ref=e1699]: ▼
+      - generic [ref=e1701] [cursor=pointer]:
+        - generic [ref=e1702]: 卡片每行数量
+        - generic [ref=e1705]:
+          - generic [ref=e1706]: 2 张/行
+          - img [ref=e1708]
+    - generic [ref=e1709]:
+      - generic [ref=e1710] [cursor=pointer]:
+        - generic [ref=e1711]:
+          - img [ref=e1713]
+          - generic [ref=e1714]: 我的角色
+        - generic [ref=e1715]: ›
+      - generic [ref=e1716] [cursor=pointer]:
+        - generic [ref=e1717]:
+          - img [ref=e1719]
+          - generic [ref=e1720]: 创建角色
+        - generic [ref=e1721]: ›
+      - generic [ref=e1722] [cursor=pointer]:
+        - generic [ref=e1723]:
+          - img [ref=e1725]
+          - generic [ref=e1726]: 人设管理
+        - generic [ref=e1727]: ›
+    - generic [ref=e1729]: AI 酒馆 v1.0.0

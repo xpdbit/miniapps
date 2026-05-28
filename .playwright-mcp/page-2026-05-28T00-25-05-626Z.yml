@@ -1,0 +1,127 @@
+- generic [ref=e5]:
+  - banner "侧边导航栏" [ref=e6]:
+    - button "返回首页" [ref=e8] [cursor=pointer]:
+      - generic [ref=e10]: AI 酒馆
+    - generic [ref=e12]:
+      - img "搜索" [ref=e13]
+      - textbox "搜索角色..." [ref=e129]
+    - generic [ref=e15]:
+      - generic [ref=e17]:
+        - button "切换到主菜单模式" [pressed]:
+          - generic: 主菜单
+        - button "切换到游戏模式" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 游戏中
+      - navigation "酒馆模式导航" [ref=e20]:
+        - link "导航到酒馆" [ref=e21] [cursor=pointer]:
+          - generic [ref=e23]: 酒馆
+        - link "导航到开始" [ref=e24] [cursor=pointer]:
+          - generic [ref=e26]: 开始
+        - link "导航到我的" [ref=e27] [cursor=pointer]:
+          - generic [ref=e29]: 我的
+    - generic [ref=e30]:
+      - generic [ref=e31]: 工具
+      - navigation "工具导航" [ref=e32]:
+        - link "导航到我的角色" [ref=e33] [cursor=pointer]:
+          - generic [ref=e35]: 我的角色
+        - link "导航到创建角色" [ref=e36] [cursor=pointer]:
+          - generic [ref=e38]: 创建角色
+        - link "导航到人设管理" [ref=e39] [cursor=pointer]:
+          - generic [ref=e41]: 人设管理
+        - link "导航到角色归档" [ref=e42] [cursor=pointer]:
+          - generic [ref=e44]: 角色归档
+        - link "导航到游戏设置" [ref=e45] [cursor=pointer]:
+          - generic [ref=e47]: 游戏设置
+    - button "点击登录" [ref=e49] [cursor=pointer]:
+      - generic [ref=e51]: "?"
+      - generic [ref=e52]:
+        - generic [ref=e53]: 未登录
+        - generic [ref=e54]: 点击登录
+    - generic [ref=e56]:
+      - generic [ref=e57]: 主题切换
+      - switch "切换暗色模式" [ref=e58] [cursor=pointer]
+    - dialog "欢迎回来" [ref=e239]:
+      - generic [ref=e240]:
+        - generic [ref=e243]: AI 酒馆
+        - button "关闭登录窗口" [ref=e244] [cursor=pointer]:
+          - img [ref=e246]
+      - generic [ref=e248]:
+        - generic [ref=e249]: 欢迎回来
+        - generic [ref=e250]: 登录后与 AI 角色畅聊，解锁全部功能
+        - generic [ref=e251]:
+          - generic [ref=e252]: 用户名
+          - textbox "输入用户名" [active] [ref=e254]: admin
+        - generic [ref=e255]:
+          - generic [ref=e256]: 密码
+          - textbox "输入密码" [ref=e258]: Admin123!
+        - generic [ref=e259]: 登录
+      - generic [ref=e261]: 网页版 · 账号密码登录
+    - generic [ref=e61]: AI 酒馆 v1.0.0
+  - generic [ref=e145]:
+    - generic [ref=e146]:
+      - generic [ref=e148]: 酒
+      - generic [ref=e149]: 酒馆旅人
+      - generic [ref=e150]:
+        - generic [ref=e151]:
+          - generic [ref=e152]: "20"
+          - generic [ref=e153]: 今日剩余
+        - generic [ref=e155]:
+          - generic [ref=e156]: "20"
+          - generic [ref=e157]: 总次数
+    - generic [ref=e160]:
+      - img [ref=e162]
+      - generic [ref=e163]: 登录后可解锁全部功能
+      - generic [ref=e165]: 登录 AI 酒馆
+      - generic [ref=e166]: 网页版请使用账号密码登录
+    - generic [ref=e167]:
+      - generic [ref=e169]: 隐私与安全
+      - generic [ref=e171]:
+        - generic [ref=e172]:
+          - generic [ref=e173]: 关闭数据中转
+          - generic [ref=e174]: AI 请求将不再经过服务器，完全由本地直连 AI 服务商。
+          - generic [ref=e175]: 开启后只能使用自己的 API Key，且不支持群组/多人模式。
+        - checkbox [ref=e177]
+    - generic [ref=e178]:
+      - generic [ref=e179]:
+        - generic [ref=e180]: 模型与服务商
+        - generic [ref=e181]: ▼
+      - generic [ref=e182]:
+        - generic [ref=e183] [cursor=pointer]:
+          - generic [ref=e184]: 服务商
+          - generic [ref=e187]:
+            - generic [ref=e188]: 全部服务商
+            - img [ref=e190]
+        - generic [ref=e191] [cursor=pointer]:
+          - generic [ref=e192]: 当前模型
+          - generic [ref=e195]:
+            - generic [ref=e196]: 选择模型
+            - img [ref=e198]
+        - generic [ref=e199]:
+          - generic [ref=e200]: "API Key: 0/12 已配置"
+          - generic [ref=e201]: 展开 ›
+        - generic [ref=e203] [cursor=pointer]: 保存配置
+    - generic [ref=e204]:
+      - generic [ref=e205]:
+        - generic [ref=e206]: 显示设置
+        - generic [ref=e207]: ▼
+      - generic [ref=e209] [cursor=pointer]:
+        - generic [ref=e210]: 卡片每行数量
+        - generic [ref=e213]:
+          - generic [ref=e214]: 2 张/行
+          - img [ref=e216]
+    - generic [ref=e217]:
+      - generic [ref=e218] [cursor=pointer]:
+        - generic [ref=e219]:
+          - img [ref=e221]
+          - generic [ref=e222]: 我的角色
+        - generic [ref=e223]: ›
+      - generic [ref=e224] [cursor=pointer]:
+        - generic [ref=e225]:
+          - img [ref=e227]
+          - generic [ref=e228]: 创建角色
+        - generic [ref=e229]: ›
+      - generic [ref=e230] [cursor=pointer]:
+        - generic [ref=e231]:
+          - img [ref=e233]
+          - generic [ref=e234]: 人设管理
+        - generic [ref=e235]: ›
+    - generic [ref=e237]: AI 酒馆 v1.0.0

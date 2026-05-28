@@ -11,7 +11,7 @@ import axios from 'axios'
 import { getToken, removeToken } from '../utils/token'
 import { message } from 'antd'
 
-const ADMIN_API_BASE_URL = '/api'
+const ADMIN_API_BASE_URL = '/api/v1'
 
 const adminApiClient = axios.create({
   baseURL: ADMIN_API_BASE_URL,

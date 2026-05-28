@@ -54,6 +54,25 @@
   opacity: 0.5;
 }
 
+/* ── 清除按钮（搜索栏内） ── */
+.market-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xs);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &:active {
+    opacity: 0.4;
+  }
+}
+
 /* ── 刷新按钮（搜索栏内） ── */
 .market-search-refresh {
   display: flex;
@@ -200,26 +219,7 @@
 }
 
 /* ���� �鿴���鰴ť ���� */
-.market-grid-detail-btn {
-  position: absolute;
-  bottom: 12rpx;
-  right: 12rpx;
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: var(--radius-full);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: all var(--transition-fast);
 
-  &:active {
-    background: var(--color-primary-bg);
-    transform: scale(0.85);
-  }
-}
 
 /* ���� ���������� ���� */
 .market-content {

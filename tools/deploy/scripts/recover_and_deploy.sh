@@ -155,14 +155,14 @@ else
     echo "⚠️  index.html 不存在"
 fi
 echo -n "Admin API: "
-ADMIN_CODE=$(curl -s http://localhost/api/admin/health 2>/dev/null && echo "" || echo "未就绪")
+ADMIN_CODE=$(curl -s http://localhost/api/v1/admin/health 2>/dev/null && echo "" || echo "未就绪")
 echo -n "登录测试: "
-curl -s -X POST http://localhost/api/admin/login \
+curl -s -X POST http://localhost/api/v1/admin/login \
     -H 'Content-Type: application/json' \
     -d '{"username":"admin","password":"Admin123!"}' 2>/dev/null | head -c 100
 echo ""
 echo -n "Tavern API: "
-TAVERN_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
+TAVERN_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/tavern/health --connect-timeout 5 2>/dev/null || echo "000")
 echo "HTTP ${TAVERN_CODE} $( [ "$TAVERN_CODE" = "200" ] && echo '✅' || echo '⚠️' )"
 
 echo ""
@@ -170,7 +170,7 @@ echo "=========================================="
 echo " 恢复完成!"
 echo "=========================================="
 echo " Dashboard:  https://mnapp.top/"
-echo " API:        https://mnapp.top/api/ftl/api/v1/"
+echo " API:        https://mnapp.top/api/v1/ftl/"
 echo " Game1:      https://game1.mnapp.top/"
 echo " 默认管理员: admin / Admin123!"
 echo "=========================================="

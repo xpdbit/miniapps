@@ -2,6 +2,7 @@ import { createServer, default as app } from './app';
 import { config } from './config';
 import logger from './utils/logger';
 import { execSync } from 'child_process';
+import { getProviderApiKey } from './services/admin-config.service';
 
 // 使用 createServer() 以启用正确的超时配置（SSE 长连接支持）
 const server = createServer();
@@ -93,9 +94,17 @@ server.on('error', (err: NodeJS.ErrnoException) => {
   }
 });
 
-server.listen(config.port, () => {
+server.listen(config.port, async () => {
   serverListening = true;
   logger.info(`服务器运行在端口 ${config.port}`);
+
+  // 从 Dashboard Admin API 获取 AI Provider 配置（环境变量作为降级）
+  const [dashscopeKey, opencodeKey] = await Promise.all([
+    getProviderApiKey('tongyi').catch(() => null),
+    getProviderApiKey('opencode').catch(() => null),
+  ])
+  const effectiveDashscopeKey = dashscopeKey || config.dashscopeApiKey
+  const effectiveOpencodeKey = opencodeKey || config.opencodeApiKey
 
   const envLabel = process.env.NODE_ENV === 'production' ? '生产' : '开发';
   logger.info(`========================================`);
@@ -107,15 +116,15 @@ server.listen(config.port, () => {
   logger.info(`  CORS:         ${Array.isArray(config.corsOrigin) ? config.corsOrigin.join(', ') : config.corsOrigin}`);
   logger.info(`  数据库:       MySQL (ai_tavern)`);
   logger.info(`  Redis:        ${config.redisUrl || '未配置'}`);
-  logger.info(`  通义千问:     ${config.dashscopeApiKey ? '已配置' : '未配置'}`);
-  logger.info(`  OpenCode:     ${config.opencodeApiKey ? '已配置' : '未配置'}`);
+  logger.info(`  通义千问:     ${effectiveDashscopeKey ? '已配置' : '未配置'}`);
+  logger.info(`  OpenCode:     ${effectiveOpencodeKey ? '已配置' : '未配置'}`);
   logger.info(`========================================`);
 
   // 启动时配置验证
-  if (!config.dashscopeApiKey) {
+  if (!effectiveDashscopeKey) {
     logger.warn('⚠ DASHSCOPE_API_KEY 未配置 — 通义千问（免费默认）将不可用');
   }
-  if (!config.opencodeApiKey) {
+  if (!effectiveOpencodeKey) {
     logger.warn('⚠ OPENCODE_API_KEY 未配置 — OpenCode Go（免费默认）将不可用');
   }
 

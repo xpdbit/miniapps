@@ -142,3 +142,23 @@ model DashboardAuditLog {
   @@index([createdAt(sort: Desc)])
   @@map("dashboard_audit_logs")
 }
+
+// ============================================================
+// 6. dashboard_ai_providers — AI Provider 统一配置管理
+// 替代原来各项目独立的环境变量配置，集中管理所有 AI 提供商
+// ============================================================
+model DashboardAiProvider {
+  id          String   @id @default(uuid())
+  provider    String   @unique  // 'tongyi','opencode','openai','deepseek','anthropic','google','zhipu','moonshot','minimax','openrouter','oneapi'
+  name        String            // 显示名称，如 '通义千问'
+  apiKey      String?           // API Key（系统级，所有用户共享）
+  baseUrl     String?           // 自定义 Base URL（默认使用内置值）
+  config      Json?             // 负载均衡配置: { qpsLimit?: number, hourlyLimit?: number, dailyLimit?: number, weight?: number, fallbackProviders?: string[] }
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  modelsScope String?   @map("models_scope")  // 模型发现范围: 'builtin' | 'api' | 'all'
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("dashboard_ai_providers")
+}

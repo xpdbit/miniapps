@@ -1,0 +1,31 @@
+models:
+  default_model: deepseek/deepseek-v4-pro
+  stage_model:
+    exploration: deepseek/deepseek-chat
+    proposal_generation: deepseek/deepseek-chat
+    proposal_evaluation: deepseek/deepseek-v4-pro
+    code_execution: deepseek/deepseek-v4-pro
+    diff_summary: deepseek/deepseek-chat
+    documentation: deepseek/deepseek-v3-0324
+    supervisor: deepseek/deepseek-chat
+agent:
+  timeout: 1800
+  max_concurrent: 1
+  consecutive_failure_limit: 2
+automation:
+  default_time_limit_minutes: 120
+  cycle_interval_seconds: 5
+  use_worktree: false
+  auto_commit: false
+  iteration_model: opencode-go/deepseek-v4-flash
+supervisor:
+  fast_interval_seconds: 600
+  slow_interval_seconds: 3600
+  process_stale_seconds: 300
+  consecutive_failure_limit: 3
+  disk_warn_gb: 5
+  disk_error_gb: 1
+  log_max_mb: 100
+logs:
+  level: INFO
+  retention_days: 30

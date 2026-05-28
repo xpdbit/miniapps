@@ -55,7 +55,7 @@ function mapAdminUser(admin: { id: string; username: string; role: string }): Au
 
 export async function login(data: LoginRequest): Promise<{ access_token: string; refresh_token: string; user: AuthUserInfo }> {
   try {
-    const response = await axios.post<AdminLoginResponse>('/api/admin/login', {
+    const response = await axios.post<AdminLoginResponse>('/api/v1/admin/login', {
       username: data.username,
       password: data.password,
     })
@@ -79,7 +79,7 @@ export async function login(data: LoginRequest): Promise<{ access_token: string;
 
 export async function getMe(): Promise<AuthUserInfo> {
   try {
-    const response = await axios.get<AdminMeResponse>('/api/admin/me', {
+    const response = await axios.get<AdminMeResponse>('/api/v1/admin/me', {
       headers: { Authorization: `Bearer ${getToken() || ''}` },
     })
     if (!response.data.success || !response.data.data?.user) {

@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "_comment": "oce 快捷启动配置 — 修改后重启 oce 生效",
+  "infra": [
+    {
+      "name": "MySQL",
+      "type": "docker",
+      "container": "local-mysql",
+      "port": 3307,
+      "compose_file": "local_server/docker-compose.yml"
+    },
+    {
+      "name": "Redis",
+      "type": "docker",
+      "container": "local-redis",
+      "port": 6379,
+      "compose_file": "local_server/docker-compose.yml"
+    }
+  ],
+  "services": [
+    {
+      "name": "FTG Server",
+      "type": "npm",
+      "dir": "apps/ftg/server",
+      "command": "npm run dev",
+      "port": 3000,
+      "build": "npm run build",
+      "description": "FTG 后端 API 服务"
+    },
+    {
+      "name": "Game1 Server",
+      "type": "npm",
+      "dir": "apps/game1/server",
+      "command": "npm run dev",
+      "port": 3004,
+      "build": "npm run build",
+      "description": "Game1 后端 API 服务"
+    },
+    {
+      "name": "Tavern Server",
+      "type": "npm",
+      "dir": "apps/tavern/server",
+      "command": "npm run dev",
+      "port": 3002,
+      "build": "npm run build",
+      "description": "AI-Tavern 后端 API 服务"
+    },
+    {
+      "name": "Dashboard Admin",
+      "type": "npm",
+      "dir": "dashboard",
+      "command": "npm run dev:admin",
+      "port": 3001,
+      "build": "npm run build",
+      "description": "Dashboard 管理端 API"
+    },
+    {
+      "name": "Dashboard Front",
+      "type": "npm",
+      "dir": "dashboard",
+      "command": "npm run dev",
+      "port": 5173,
+      "build": "npm run build",
+      "description": "Dashboard 前端页面"
+    },
+    {
+      "name": "Tavern H5 Web",
+      "type": "npm",
+      "dir": "apps/tavern/client",
+      "command": "npm run dev:web",
+      "port": 5174,
+      "build": "npm run build:web",
+      "description": "Tavern H5 网页版"
+    }
+  ],
+  "enabled": [
+    "Tavern Server",
+    "Dashboard Admin",
+    "Dashboard Front",
+    "Tavern H5 Web"
+  ]
+}

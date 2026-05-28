@@ -1,0 +1,54 @@
+/* ============================================================
+   WebNavBar — H5 顶部导航栏
+   仅在屏幕宽度 >= 768px 时显示（桌面 >= 1024px 隐藏）
+   ============================================================ */
+
+.web-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
+  background: var(--color-bg-card, #FFFFFF);
+  border-bottom: 1px solid var(--color-border, #E5DDD4);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background var(--transition-base, 0.3s ease), border-color var(--transition-base, 0.3s ease);
+}
+
+.dark-mode .web-navbar {
+  background: var(--color-bg-elevated, #1C2128);
+  border-bottom-color: var(--color-border, #30363D);
+}
+
+.web-navbar-home-btn {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-xs);
+  transition: all var(--transition-fast, 0.15s ease);
+
+  &:hover {
+    opacity: 0.7;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary, #C49A6C);
+    outline-offset: 2px;
+  }
+}
+
+.web-navbar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #2D2A26);
+  letter-spacing: 0.5px;
+}

@@ -228,7 +228,7 @@ html.dark-mode #app, body.dark-mode #app {
   .desktop-app-content .page-profile-header { display: none !important; }
 
   .desktop-app-content { flex: 1; min-width: 0; display: flex; flex-direction: column;
-    max-width: 1200px; margin: 0 auto; padding: 0 32px; overflow-y: auto; scroll-behavior: smooth; }
+    max-width: 1200px; margin: 0 auto; overflow-y: auto; scroll-behavior: smooth; }
 
   /* ALL pages: flex fill + no fixed height */
   .page-market, .page-chat, .page-archive, .game-setup, .page-creator, .page-profile,
@@ -240,15 +240,18 @@ html.dark-mode #app, body.dark-mode #app {
   /* ---- Market grid ---- */
   .page-market .market-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 20px !important; justify-content: center; }
   .market-search { position: relative; padding: 16px 0 12px !important; }
-  .market-search-wrapper { height: 42PX !important; min-height: 42PX !important;
+  .market-search-wrapper { height: 44PX !important; min-height: 44PX !important;
     padding: 0 14px !important; gap: 8px !important; border-radius: var(--radius-md) !important; align-items: center !important;
     background: var(--color-bg-card) !important; border: 1px solid var(--color-border) !important;
     box-shadow: var(--shadow-sm) !important; transition: border-color 0.15s ease, box-shadow 0.15s ease !important; }
-  .market-search-wrapper:focus-within { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px var(--color-primary-glow), var(--shadow-sm) !important; }
+  .market-search-wrapper:focus-within { border-color: var(--color-primary) !important; box-shadow: 0 0 0 4px var(--color-primary-glow), var(--shadow-sm) !important; }
   .market-search-wrapper .icon { width: 20px !important; height: 20px !important; }
   .market-search-input { color: var(--color-text-primary) !important; height: 36PX !important; font-size: 14px !important; }
   .market-search-input::placeholder { color: var(--color-text-placeholder) !important; opacity: 1; font-size: 14px !important; }
   .market-search-refresh > .icon { width: 18px !important; height: 18px !important; }
+  .market-search-clear { display: flex; align-items: center; justify-content: center; padding: 2px; cursor: pointer; opacity: 0.6; transition: opacity 0.15s ease; }
+  .market-search-clear:hover { opacity: 1; }
+  .market-search-clear > .icon { width: 16px !important; height: 16px !important; }
 
   /* ---- Market container: centered with max-width ---- */
   .page-market { max-width: 1100px !important; margin: 0 auto !important; width: 100% !important; }
@@ -270,26 +273,27 @@ html.dark-mode #app, body.dark-mode #app {
 
   .market-character-area { padding-bottom: var(--spacing-md) !important; gap: var(--spacing-md) !important; }
   .market-sub-panel, .market-sub-panel-content, .market-create-panel { padding-bottom: var(--spacing-lg) !important; }
-  .market-grid-item { min-height: 180px !important; }
+  .market-grid-item { display: flex !important; flex-direction: column !important; min-height: 180px !important; }
   .market-grid-item:hover { border-color: var(--color-primary) !important; box-shadow: 0 2px 12px rgba(196, 154, 108, 0.15) !important; }
-  .market-grid-detail-btn { width: 28px !important; height: 28px !important; }
-  .market-grid-detail-btn .icon { width: 16px !important; height: 16px !important; }
   .market-section-title::before { display: none !important; }
   .market-section-title { padding-left: 0 !important; }
   .market-error-state { padding: var(--spacing-3xl) var(--spacing-lg) !important; }
   .market-error-message { font-size: var(--font-body-lg) !important; color: var(--color-text-secondary) !important; }
 
   /* ---- Character cards ---- */
-  .character-card { opacity: 1 !important; transform: none !important; aspect-ratio: 4 / 3 !important;
-    padding: var(--spacing-base) !important; cursor: pointer !important; }
+  .character-card { opacity: 1 !important; transform: none !important; flex: 1 !important;
+    padding: var(--spacing-base) !important; cursor: pointer !important; overflow: hidden !important; }
   .character-card:hover { background: var(--color-bg-surface-hover) !important; }
   .character-card::before { width: 3px !important; top: 14px !important; bottom: 14px !important; }
   .character-card-subtitle { color: var(--color-text-secondary) !important; font-size: 12px !important; }
   .character-card-name { font-size: 15px !important; font-weight: 600 !important; line-height: 1.35 !important; }
   .character-card-stats { gap: 6px !important; }
   .character-card-stat { font-size: 11px !important; }
-  .character-card-body { gap: 8px !important; }
+  .character-card-body { gap: 12px !important; align-items: flex-start !important; }
   .character-card-body .character-card-subtitle { -webkit-line-clamp: 3 !important; }
+  .character-card-avatar { width: 40px !important; min-width: 40px !important; height: 40px !important; }
+  .character-card-avatar-text { font-size: 16px !important; }
+  .character-card-body-inner { gap: 4px !important; }
 
   /* ---- Market tags / filter pills desktop ---- */
   .market-tags-row { padding: 0 0 !important; gap: 8px !important; }
@@ -619,12 +623,9 @@ html.dark-mode #app, body.dark-mode #app {
   body.dark-mode .page-chat-input-field {
     background: var(--color-bg-input) !important; border-color: var(--color-border) !important; color: var(--color-text-primary) !important; }
 
-  html.dark-mode .game-setup-card,
-  body.dark-mode .game-setup-card {
-    background: var(--color-bg-elevated) !important; border-color: var(--color-border) !important; }
-  html.dark-mode .game-setup-card:hover,
-  body.dark-mode .game-setup-card:hover {
-    background: var(--color-bg-surface-hover) !important; }
+  html.dark-mode .game-setup-card--selected,
+  body.dark-mode .game-setup-card--selected {
+    background: rgba(196, 154, 108, 0.08) !important; }
 
   html.dark-mode .page-creator-card-type-option:not(.active),
   body.dark-mode .page-creator-card-type-option:not(.active) {
@@ -641,4 +642,13 @@ html.dark-mode #app, body.dark-mode #app {
   html.dark-mode .page-chat-saves-item:hover,
   body.dark-mode .page-chat-saves-item:hover {
     background: var(--color-bg-surface-hover) !important; }
+}
+
+/* ============================================================
+   桌面端布局 — Taro H5 路由修复
+   Taro 的 .taro_router > .taro_page 选择器在 desktop-app-content
+   内部不生效，需额外匹配以防止历史页面堆积。
+   ============================================================ */
+.desktop-app-content > .taro_page.taro_page_show.taro_page_stationed:not(:last-child) {
+  display: none;
 }

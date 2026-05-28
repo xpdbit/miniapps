@@ -1,0 +1,23 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+ENV NODE_OPTIONS="--max-old-space-size=256"
+COPY package.json ./
+RUN npm install --prefer-offline --no-audit --no-fund --loglevel=error
+COPY prisma/ ./prisma/
+RUN npx prisma generate --no-hints --schema=./prisma/schema-miniapps.prisma
+COPY tsconfig.json ./
+COPY server/ ./server/
+RUN NODE_OPTIONS="--max-old-space-size=384" npx tsc server/server.ts --outDir dist --esModuleInterop --module commonjs --target es2020 --skipLibCheck --resolveJsonModule
+
+FROM node:20-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libssl3 && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+RUN node -e "const p=require('./package.json'); delete p.type; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2))"
+COPY --from=builder /app/prisma ./prisma
+RUN npx prisma generate --schema=./prisma/schema-miniapps.prisma
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD node -e "require('http').get('http://localhost:3001/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+CMD ["node", "dist/server.js"]

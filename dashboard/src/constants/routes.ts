@@ -35,6 +35,7 @@ export const ROUTES = {
   GAME1_CONFIG: '/game1/config',
   GAME1_ACHIEVEMENTS: '/game1/achievements',
   GAME1_PVP: '/game1/pvp',
+  AI_MANAGER: '/ai-manager',
 } as const
 
 /**
@@ -47,7 +48,6 @@ export const MENU_ITEMS: RouteItem[] = [
   { path: ROUTES.TAVERN_CARDS, scope: 'tavern', label: '卡片管理' },
   { path: ROUTES.TAVERN_CHATS, scope: 'tavern', label: '聊天监控' },
   { path: ROUTES.TAVERN_KEYS, scope: 'tavern', label: 'Key 管理' },
-  { path: ROUTES.TAVERN_MODELS, scope: 'tavern', label: '模型管理' },
   { path: ROUTES.TAVERN_USERS, scope: 'tavern', label: '用户管理' },
   { path: ROUTES.USERS, scope: null, label: '用户管理' },
   // ── FTG 专属 ──

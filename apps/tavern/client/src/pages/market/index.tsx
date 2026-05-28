@@ -85,16 +85,16 @@ export default function MarketPage() {
       )
     : officialCards
 
-  const handleCardClick = useCallback((id: string) => {
-    Taro.navigateTo({ url: `/pages/character/detail/index?id=${id}` })
-  }, [])
-
   const handleCreateCard = useCallback((cardType: CardType) => {
     Taro.navigateTo({ url: `/pages/creator/index?cardType=${cardType}` })
   }, [])
 
   const handleSearchInput = useCallback((e: { detail: { value: string } }) => {
     setSearchQuery(e.detail.value)
+  }, [])
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('')
   }, [])
 
   const showError = syncedStore.error && !loading && filteredOfficialCards.length === 0
@@ -121,17 +121,7 @@ export default function MarketPage() {
               }
             }}
           />
-          {isOfficial && (
-            <View
-              className='market-grid-detail-btn'
-              onClick={(e) => {
-                e.stopPropagation()
-                handleCardClick(card.id)
-              }}
-            >
-              <Icon name='arrow-right' size={28} color='var(--color-icon-action)' />
-            </View>
-          )}
+
         </View>
       ))}
     </View>
@@ -146,10 +136,15 @@ export default function MarketPage() {
               <Icon name='search' size={40} color='var(--color-icon-muted)' />
               <Input
                 className='market-search-input'
-                placeholder='搜索角色...'
+                placeholder='搜索卡片...'
                 value={searchQuery}
                 onInput={handleSearchInput}
               />
+              {searchQuery.length > 0 && (
+                <View className='market-search-clear' onClick={handleClearSearch}>
+                  <Icon name='close' size={28} color='var(--color-icon-muted)' />
+                </View>
+              )}
               <View
                 className={`market-search-refresh ${refreshing ? 'market-search-refresh--spinning' : ''}`}
                 onClick={handleRefresh}

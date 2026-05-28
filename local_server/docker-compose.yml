@@ -1,0 +1,78 @@
+# =============================================================================
+# 本地开发基础设施 — MySQL 8.0 + Redis 7
+# 只跑数据库中间件，各 Server 在宿主机直接 npm run dev 热重载
+# =============================================================================
+# 使用方式：
+#   docker compose up -d          # 启动
+#   docker compose down           # 停止（保留数据卷）
+#   docker compose down -v        # 停止并清空数据（谨慎！）
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # MySQL 8.0 — 4 个独立数据库
+  # 端口 3307 避免与宿主机已有 MySQL 冲突
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: local-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_local}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 首次启动时自动创建 4 个数据库
+      - ./init/01-create-dbs.sql:/docker-entrypoint-initdb.d/01-create-dbs.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # 限制资源，避免笔记本风扇狂转
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    # MySQL 8.0 优化配置 — 低内存占用的开发调优
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --innodb-log-buffer-size=8M
+      - --max-connections=20
+      - --performance-schema=OFF
+      - --table-open-cache=128
+      - --innodb-buffer-pool-instances=1
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 — 缓存 / Session 存储
+  # 无密码，仅限本地访问（只在 localhost 监听）
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: local-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
