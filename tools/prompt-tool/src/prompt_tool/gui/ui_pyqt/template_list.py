@@ -30,6 +30,7 @@ class TemplateListPanel(QWidget):
         self._tree = QTreeWidget()
         self._tree.setHeaderHidden(True)
         self._tree.itemClicked.connect(self._on_item_clicked)
+        self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
         layout.addWidget(self._tree, 1)
 
         btn_add = QPushButton("+ 新建模板")
@@ -72,4 +73,19 @@ class TemplateListPanel(QWidget):
             self.template_selected.emit(data)
 
     def _on_new_template(self) -> None:
-        QMessageBox.information(self, "新建", "模板编辑器将在后续版本实现")
+        from prompt_tool.gui.ui_pyqt.editor_dialog import EditorDialog
+        dlg = EditorDialog(self._prompts_dir, parent=self)
+        if dlg.exec() == EditorDialog.DialogCode.Accepted:
+            self.refresh()
+
+    def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
+        data = item.data(0, Qt.ItemDataRole.UserRole)
+        if data:
+            from prompt_tool.gui.ui_pyqt.editor_dialog import EditorDialog
+            dlg = EditorDialog(
+                self._prompts_dir,
+                filename=data["filename"],
+                parent=self,
+            )
+            if dlg.exec() == EditorDialog.DialogCode.Accepted:
+                self.refresh()
