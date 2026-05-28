@@ -26,7 +26,7 @@ class TestLoadTemplate:
     def test_load_invalid_schema(self, prompts_dir: Path) -> None:
         path = str(prompts_dir / "review.yaml")
         prompts_dir.joinpath("bad.yaml").write_text("name: 12345\ntemplate: hi")
-        with pytest.raises(TemplateLoadError, match="validation"):
+        with pytest.raises(TemplateLoadError, match="(?i)validation"):
             load_template(str(prompts_dir / "bad.yaml"))
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TypedDict
 
 import yaml
 from pydantic import ValidationError
@@ -15,6 +16,12 @@ logger = logging.getLogger(__name__)
 
 class TemplateLoadError(Exception):
     pass
+
+
+class TemplateLoadResult(TypedDict):
+    filename: str
+    path: str
+    schema: TemplateSchema
 
 
 def load_template(path: str) -> TemplateSchema:
@@ -32,12 +39,12 @@ def load_template(path: str) -> TemplateSchema:
         raise TemplateLoadError(f"Validation error in {path}: {e}") from e
 
 
-def load_all_templates(prompts_dir: str) -> list[dict]:
-    """Load all valid .yaml/.yml templates from directory. Returns list of dicts with 'schema'."""
+def load_all_templates(prompts_dir: str) -> list[TemplateLoadResult]:
+    """Load all valid .yaml/.yml templates from directory. Returns list of TemplateLoadResult."""
     d = Path(prompts_dir)
     if not d.is_dir():
         return []
-    results: list[dict] = []
+    results: list[TemplateLoadResult] = []
     for f in sorted(d.iterdir()):
         if f.suffix not in (".yaml", ".yml"):
             continue
