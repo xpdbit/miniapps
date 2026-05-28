@@ -2,6 +2,9 @@ import { Router, Response } from 'express'
 import { requireAdmin } from '../middleware/auth'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import * as moderationService from '../services/moderation.service'
+import { getAllTemplates } from '../services/ai-scripts/registry'
+import { gameStateStore } from '../services/ai-scripts/game-state-store'
+import { parseEventLog } from '../services/ai-scripts/parser'
 import prisma from '../utils/prisma'
 import { z } from 'zod'
 
@@ -926,6 +929,67 @@ router.get('/model-stats', requireAdmin, async (_req: AuthenticatedRequest, res:
     const msg = err instanceof Error ? err.message : 'Unknown error'
     console.error('[admin] model-stats error:', msg)
     res.status(500).json({ code: 500, message: msg, data: null })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════
+// AI Script 管理端点
+// ═══════════════════════════════════════════════════════════════
+
+// GET /api/v1/admin/ai-scripts/registry — 事件注册表
+router.get('/ai-scripts/registry', async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const templates = getAllTemplates()
+    res.json({ code: 0, data: templates, message: 'ok' })
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+// GET /api/v1/admin/ai-scripts/state/:saveId — 游戏状态
+router.get('/ai-scripts/state/:saveId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const state = await gameStateStore.getState(req.params.saveId)
+    if (!state) {
+      res.status(404).json({ code: 404, message: '状态不存在', data: null })
+      return
+    }
+    res.json({ code: 0, data: state, message: 'ok' })
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+// PUT /api/v1/admin/ai-scripts/state/:saveId — 编辑游戏状态
+router.put('/ai-scripts/state/:saveId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    await gameStateStore.setState(req.params.saveId, req.body)
+    res.json({ code: 0, data: null, message: '状态已更新' })
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+// GET /api/v1/admin/ai-scripts/logs/:saveId — 事件日志
+router.get('/ai-scripts/logs/:saveId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 500)
+    const offset = parseInt(req.query.offset as string) || 0
+    const messages = await prisma.tavernChatMessage.findMany({
+      where: { sessionId: req.params.saveId, role: 'system' },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+      select: { id: true, content: true, createdAt: true },
+    })
+    const logs = messages.map((msg) => ({
+      id: msg.id,
+      createdAt: msg.createdAt,
+      events: parseEventLog(msg.content),
+    }))
+    res.json({ code: 0, data: logs, message: 'ok' })
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
   }
 })
 

@@ -13,6 +13,7 @@ import officialRoutes from './official';
 import personaRoutes from './personas';
 import uploadRoutes from './upload';
 import reportRoutes from './reports';
+import aiScriptRoutes from './ai-scripts';
 
 const router = Router();
 
@@ -60,6 +61,9 @@ router.use('/v1/upload', uploadRoutes);
 // Report routes
 router.use('/v1/reports', reportRoutes);
 
+// AI Script management routes
+router.use('/v1/ai-scripts', aiScriptRoutes);
+
 // Backward-compatible routes (旧 URL 格式兼容，过渡期后移除)
 router.use('/api/v1', tierRoutes);
 router.use('/api/v1', exportRoutes);
@@ -74,6 +78,7 @@ router.use('/api/v1/admin', adminRoutes);
 router.use('/api/v1/official', officialRoutes);
 router.use('/api/v1/upload', uploadRoutes);
 router.use('/api/v1/reports', reportRoutes);
+router.use('/api/v1/ai-scripts', aiScriptRoutes);
 
 // Backward-compatible routes: legacy URL pattern (/api/tavern/v1/*)
 // 某些旧版客户端配置将 tavern 和 v1 顺序写反，兼容此模式
@@ -90,6 +95,7 @@ router.use('/api/tavern/v1/admin', adminRoutes);
 router.use('/api/tavern/v1/official', officialRoutes);
 router.use('/api/tavern/v1/upload', uploadRoutes);
 router.use('/api/tavern/v1/reports', reportRoutes);
+router.use('/api/tavern/v1/ai-scripts', aiScriptRoutes);
 
 // Health check for dev direct-access
 router.get('/api/v1/tavern/health', (_req, res) => {
@@ -113,5 +119,6 @@ router.use('/api/v1/tavern/admin', adminRoutes);
 router.use('/api/v1/tavern/official', officialRoutes);
 router.use('/api/v1/tavern/upload', uploadRoutes);
 router.use('/api/v1/tavern/reports', reportRoutes);
+router.use('/api/v1/tavern/ai-scripts', aiScriptRoutes);
 
 export default router;

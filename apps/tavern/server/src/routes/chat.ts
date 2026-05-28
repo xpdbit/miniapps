@@ -5,6 +5,7 @@ import type { AuthenticatedRequest } from '../middleware/auth'
 import { buildPrompt } from '../services/prompt-builder.service'
 import { routeChat, sanitizeAiText } from '../services/ai-proxy.service'
 import * as contextService from '../services/context.service'
+import { parseAiScriptResponse, serializeEventLog, gameStateStore } from '../services/ai-scripts'
 import prisma from '../utils/prisma'
 
 const router = Router()
@@ -23,6 +24,9 @@ const sendSchema = z.object({
     prompt: z.string().optional(),
     scenario: z.string().optional(),
   }).optional(),
+  // AI Script 游戏模式支持
+  saveId: z.string().optional(),
+  characterIds: z.array(z.string()).optional(),
 })
 
 // POST /api/v1/chat/send - SSE streaming chat
@@ -100,6 +104,37 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       history = (sessionWithMsgs.messages ?? []).map(m => ({ role: m.role, content: m.content }))
     }
 
+    // AI Script: load game state if in game mode
+    const hasGameMode = !!(params.saveId && params.characterIds?.length)
+    let gameState = null
+    if (hasGameMode) {
+      const characters = params.characterIds!.map((id) => ({
+        id,
+        name: id,
+        location: '酒馆',
+        mood: 75,
+        energy: 80,
+        health: 90,
+        hunger: 70,
+      }))
+      gameState = await gameStateStore.getOrInit(params.saveId!, characters)
+      // Ensure the current character exists
+      if (gameState && !gameState.characters[params.characterId]) {
+        gameState.characters[params.characterId] = {
+          id: params.characterId,
+          name: character.name,
+          location: '酒馆',
+          mood: 75,
+          energy: 80,
+          health: 90,
+          hunger: 70,
+          stats: {},
+          inventory: [],
+          flags: {},
+        }
+      }
+    }
+
     const prompt = buildPrompt({
       character: {
         name: character.name,
@@ -108,9 +143,11 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         scenario: character.scenario,
         firstMsg: character.firstMsg || '',
       },
+      characterId: params.characterId,
       persona: persona ? { name: persona.name, description: persona.description } : null,
       history,
       currentMessage: params.message,
+      gameState,
     })
 
     await contextService.saveMessage(session.id, 'user', sanitizeAiText(params.message), 0, true)
@@ -150,6 +187,11 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
           }
           return
         }
+
+        // AI Script: parse and execute events from AI response
+        const parsed = parseAiScriptResponse(fullResponse)
+        fullResponse = parsed.narrative
+
         const msg = await contextService.saveMessage(session.id, 'character', fullResponse, result.tokens, true)
         await prisma.tavernChatSession.update({
           where: { id: session.id },
@@ -158,8 +200,25 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
             tokenCount: { increment: result.tokens ?? 0 },
           },
         })
+
+        // AI Script: execute events and persist as system messages
+        if (hasGameMode && parsed.events.length > 0) {
+          await gameStateStore.applyEvents(params.saveId!, parsed.events)
+          const eventLog = serializeEventLog(parsed.events)
+          await contextService.saveMessage(session.id, 'system', eventLog, 0, true)
+        }
+
         if (!res.writableEnded) {
           sendEvent({ type: 'done', sessionId: session.id, messageId: msg.id, tokens: result.tokens })
+        }
+
+        // AI Script: send events + state to client
+        if (hasGameMode && parsed.events.length > 0) {
+          sendEvent({ type: 'events', events: parsed.events })
+          const updatedState = await gameStateStore.getState(params.saveId!)
+          if (updatedState) {
+            sendEvent({ type: 'state', state: updatedState })
+          }
         }
 
         if (!params.cardData) {
