@@ -34,8 +34,8 @@ docs/
 | **FTG 后端 API** | [apps/ftg/server/](./apps/ftg/server/) | 16 路由模块、17 服务、API 参考 |
 | **Game1 小程序** | [apps/game1/client/](./apps/game1/client/) | 17 引擎模块、12 页面 |
 | **Game1 后端 API** | [apps/game1/server/](./apps/game1/server/) | 云端存档、PVP、成就、10 路由 |
-| **AI-Tavern 小程序** | [apps/tavern/client/](./apps/tavern/client/) | SSE 流式、角色市场、12 页面 |
-| **AI-Tavern 后端 API** | [apps/tavern/server/](./apps/tavern/server/) | 多 AI Provider、SSE、14 路由 |
+| **AI-Tavern 小程序** | [apps/tavern/client/](./apps/tavern/client/) | SSE 流式、角色市场、AI Script 事件驱动、12 页面 |
+| **AI-Tavern 后端 API** | [apps/tavern/server/](./apps/tavern/server/) | 多 AI Provider、SSE、AI Script 引擎、15 路由 |
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
 | **SuperTask 工具** 🚫 | [tools/supertask/](./tools/supertask/) | **已存档** — 功能整合至 OCE |
 | **OCE 工具** | [tools/oce/](../tools/oce/) | PyQt6 OpenCode 监控与看门狗 |
@@ -56,4 +56,4 @@ docs/
 ---
 
 > 最后更新: 2026-05-28
-> 修改: 全量文档同步 — 工具迁移、新组件/路由/页面、ANTI-PATTERNS 更新
+> 修改: 新增 AI Script 系统文档 — 事件注册表/GameStateStore/客户端 Hook/Dashboard 管理页面

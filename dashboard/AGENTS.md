@@ -65,7 +65,8 @@ dashboard/
 | 权限定义 | `src/constants/permissions.ts` | 含 GAME1_PLAYERS / CONFIG / ACHIEVEMENTS / PVP 权限 |
 | 状态管理 | `src/stores/` | authStore / themeStore / projectStore（当前项目） |
 | Game1 代理 | `server/routes/game1-proxy.ts` | 配置 `GAME1_ADMIN_TOKEN` 匹配 game1-server ADMIN_TOKEN |
-| Tavern 代理 | `server/routes/tavern-proxy.ts` | 配置 `TAVERN_ADMIN_TOKEN` 匹配 tavern-server admin JWT |
+| Tavern 代理 | `server/routes/tavern-proxy.ts` | 配置 `TAVERN_ADMIN_TOKEN` 匹配 tavern-server admin JWT，支持 ai-scripts 管理路由 |
+| AI Script 管理 | `src/pages/Tavern/TavernAiScripts.tsx` | 3 标签页：事件注册表/游戏状态/事件日志 |
 | Prisma Schema | `prisma/schema.prisma` | AdminUser / Project / AuditLog + miniapps 公用表 |
 | 认证路由 | `server/auth-routes.ts` | 登录/注册/me 端点，统一 miniapps 数据库 |
 | 项目 API | `src/services/projectApi.ts` | 项目切换/列表 API |

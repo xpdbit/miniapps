@@ -76,10 +76,12 @@ apps/tavern/client/
 | 通信页面 | `src/pages/chats/` | 游戏模式-通信列表 |
 | 通讯录页面 | `src/pages/contacts/` | 游戏模式-联系人 |
 | 发现页面 | `src/pages/discover/` | 游戏模式-发现/朋友圈 |
-| SSE 流式 | `src/hooks/useSSE.ts` | EventSource 封装/断线重连 |
+| SSE 流式 | `src/hooks/useSSE.ts` | EventSource 封装/断线重连，支持 events + state 事件 |
+| AI Script 客户端 | `src/hooks/useAiScript.ts` | 响应 AI Script 事件，更新本地游戏状态，触发 UI 反馈 |
+| AI Script 类型 | `src/types/ai-script.ts` | 客户端事件类型定义 (ScriptEvent/GameWorldState) |
 | 认证状态 | `src/stores/authStore.ts` | 微信登录/JWT/每日配额 |
 | HTTP 客户端 | `src/services/httpClient.ts` | JWT 自动携带/401 拦截 |
-| 类型定义 | `src/types/` | character.ts/chat.ts/game.ts |
+| 类型定义 | `src/types/` | character.ts/chat.ts/game.ts/ai-script.ts |
 
 ## CONVENTIONS
 - Taro 4.x API，构建命令 `taro build --type weapp` / `taro build --type h5`

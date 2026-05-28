@@ -84,5 +84,27 @@ browser_snapshot(filename="tmp/xxx.yml", ...)
 
 ---
 
+## 命令执行规则
+
+所有可能耗时或阻塞的命令（build/watch/serve/deploy/test 等），**MUST** 使用以下方式在**新窗口中异步执行**，防止阻塞 Agent 会话：
+
+```
+Start-Process -WindowStyle Normal -FilePath "cmd" -ArgumentList "/c <command>"
+```
+
+示例：
+```
+Start-Process -WindowStyle Normal -FilePath "cmd" -ArgumentList "/c npm run dev"
+Start-Process -WindowStyle Normal -FilePath "cmd" -ArgumentList "/c bash deploy.sh"
+```
+
+**规则：**
+- 快速命令（grep、ls、git status 等）可正常同步执行
+- 构建/运行/部署/监听类命令 → MUST 在新窗口异步执行
+- 涉及交互式输入的命令 → MUST 在新窗口异步执行
+- 禁止使用 `Wait-Process` 或 `-Wait` 参数等待新窗口中的命令完成
+
+---
+
 > **维护规则**: 新增功能/模块 → 写入所属子项目 `apps/*/AGENTS.md`，不要写入此文件。
 > 新增约定/反模式 → 写入 `docs/standards/`，此文件只加一行导航链接。
