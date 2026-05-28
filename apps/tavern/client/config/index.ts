@@ -69,7 +69,7 @@ const baseConfig = {
     router: {
       mode: 'hash',
       customRoutes: {
-        '/pages/market/index': '/market',
+        '/pages/cards/index': '/cards',
         '/pages/chat/index': '/chat',
         '/pages/character/index': '/character',
         '/pages/character/detail/index': '/character/detail',
