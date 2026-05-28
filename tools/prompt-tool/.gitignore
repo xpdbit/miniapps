@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+logs/*.md
+!logs/.gitkeep
+state/*
+!state/.gitkeep
+.pytest_cache/
