@@ -7,6 +7,7 @@ from prompt_tool.core.template_loader import (
     load_template,
     load_all_templates,
     template_path_for,
+    save_template,
     TemplateLoadError,
 )
 
@@ -54,3 +55,35 @@ class TestTemplatePathFor:
     def test_nonexistent(self, prompts_dir: Path) -> None:
         path = template_path_for(str(prompts_dir), "nonexistent")
         assert path == str(prompts_dir / "nonexistent.yaml")
+
+
+class TestSaveTemplate:
+    def test_save_new(self, prompts_dir: Path) -> None:
+        schema = TemplateSchema(
+            name="New",
+            template="Hello {{x}}",
+            variables=[{"name": "x", "label": "X"}],
+        )
+        path = save_template(str(prompts_dir / "new.yaml"), schema)
+        assert path == str(prompts_dir / "new.yaml")
+        loaded = load_template(path)
+        assert loaded.name == "New"
+        assert loaded.template == "Hello {{x}}"
+
+    def test_save_and_reload_roundtrip(self, prompts_dir: Path) -> None:
+        original = TemplateSchema(
+            name="Roundtrip",
+            template="{% if flag %}{{val}}{% endif %}",
+            tags=["test"],
+            category="dev",
+            variables=[
+                {"name": "flag", "label": "Flag", "type": "boolean"},
+                {"name": "val", "label": "Value", "type": "text"},
+            ],
+        )
+        path = save_template(str(prompts_dir / "roundtrip.yaml"), original)
+        loaded = load_template(path)
+        assert loaded.name == original.name
+        assert loaded.template == original.template
+        assert len(loaded.variables) == len(original.variables)
+        assert loaded.variables[0].name == original.variables[0].name

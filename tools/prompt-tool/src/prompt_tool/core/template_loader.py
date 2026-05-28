@@ -59,3 +59,15 @@ def load_all_templates(prompts_dir: str) -> list[TemplateLoadResult]:
 def template_path_for(prompts_dir: str, name: str) -> str:
     """Get the file path for a template name (adds .yaml extension)."""
     return str(Path(prompts_dir) / f"{name}.yaml")
+
+
+def save_template(path: str, schema: TemplateSchema) -> str:
+    """Save a TemplateSchema to a YAML file."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    data = schema.model_dump(exclude_none=True)
+    p.write_text(
+        yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+    return str(p)
