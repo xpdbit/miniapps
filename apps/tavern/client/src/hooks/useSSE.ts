@@ -3,11 +3,16 @@ import Taro from '@tarojs/taro'
 import { API_BASE_URL } from '@/constants'
 import { useAuthStore } from '@/stores/authStore'
 import type { ChatMessage, SSEMessage } from '@/types/chat'
+import type { ScriptEvent, GameWorldState } from '@/types/ai-script'
 
 interface UseSSEOptions {
   onToken?: (token: string) => void
   onDone?: (sessionId: string) => void
   onError?: (code: string, message: string) => void
+  /** AI Script: 收到事件列表时回调 */
+  onEvents?: (events: ScriptEvent[]) => void
+  /** AI Script: 收到状态快照时回调 */
+  onState?: (state: GameWorldState) => void
 }
 
 export function useSSE(options?: UseSSEOptions) {
@@ -118,10 +123,23 @@ export function useSSE(options?: UseSSEOptions) {
                 break
               case 'error':
                 setIsStreaming(false)
-                // Remove the placeholder AI message on error
                 setMessages(prev => prev.slice(0, -1))
                 options?.onError?.(event.code || 'UNKNOWN', event.message || '未知错误')
                 break
+              case 'events': {
+                const ev = event as SSEMessage & { events?: ScriptEvent[] }
+                if (ev.events) {
+                  options?.onEvents?.(ev.events)
+                }
+                break
+              }
+              case 'state': {
+                const sv = event as SSEMessage & { state?: GameWorldState }
+                if (sv.state) {
+                  options?.onState?.(sv.state)
+                }
+                break
+              }
             }
           } catch {
             // ignore parse errors for individual lines

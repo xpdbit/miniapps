@@ -22,7 +22,7 @@ export interface ChatSession {
 }
 
 export interface SSEMessage {
-  type: 'meta' | 'token' | 'done' | 'error'
+  type: 'meta' | 'token' | 'done' | 'error' | 'events' | 'state'
   sessionId?: string
   characterId?: string
   content?: string
@@ -30,4 +30,6 @@ export interface SSEMessage {
   tokens?: number
   code?: string
   message?: string
+  events?: Array<{ type: string; payload: Record<string, unknown> }>
+  state?: Record<string, unknown>
 }
