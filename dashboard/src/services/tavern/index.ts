@@ -273,4 +273,21 @@ export const tavernAdminApi = {
   /** 修改用户角色 */
   updateUserRole: (uuid: string, role: 'USER' | 'ADMIN') =>
     adminApiClient.put(`/admin/tavern/users/${uuid}/role`, { role }),
+
+  // ── AI Script 管理 ──
+  /** 获取事件注册表 */
+  getAiScriptRegistry: () =>
+    adminApiClient.get<Array<{ type: string; description: string; parameters: Record<string, unknown> }>>('/admin/tavern/ai-scripts/registry'),
+
+  /** 获取游戏状态 */
+  getAiScriptState: (saveId: string) =>
+    adminApiClient.get(`/admin/tavern/ai-scripts/state/${saveId}`),
+
+  /** 更新游戏状态 */
+  updateAiScriptState: (saveId: string, data: Record<string, unknown>) =>
+    adminApiClient.put(`/admin/tavern/ai-scripts/state/${saveId}`, data),
+
+  /** 获取事件日志 */
+  getAiScriptLogs: (saveId: string, params?: { limit?: number; offset?: number }) =>
+    adminApiClient.get(`/admin/tavern/ai-scripts/logs/${saveId}`, { params }),
 }

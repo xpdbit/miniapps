@@ -33,7 +33,9 @@ const TavernCards = lazy(() => import('@/pages/Tavern/TavernCards'))
 const TavernChats = lazy(() => import('@/pages/Tavern/TavernChats'))
 const TavernKeys = lazy(() => import('@/pages/Tavern/TavernKeys'))
 const TavernUsers = lazy(() => import('@/pages/Tavern/TavernUsers'))
+const TavernAiScripts = lazy(() => import('@/pages/Tavern/TavernAiScripts'))
 const AiManager = lazy(() => import('@/pages/AiManager'))
+const System = lazy(() => import('@/pages/System'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // ─── 全局加载态 ──────────────────────────────────────
@@ -92,9 +94,17 @@ const App = () => {
         <BrowserRouter>
         <Routes>
           <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+          <Route path="/" element={<Navigate to={ROUTES.SYSTEM} replace />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
+              <Route
+                path={ROUTES.SYSTEM}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <System />
+                  </Suspense>
+                }
+              />
               <Route
                 path={ROUTES.DASHBOARD}
                 element={
@@ -225,6 +235,14 @@ const App = () => {
                 element={
                   <Suspense fallback={<PageLoading />}>
                     <TavernUsers />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_AI_SCRIPTS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernAiScripts />
                   </Suspense>
                 }
               />

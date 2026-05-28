@@ -1,5 +1,5 @@
 /** 项目作用域标识 */
-export type ProjectScope = 'ftg' | 'game1' | 'tavern' | null
+export type ProjectScope = 'ftg' | 'game1' | 'tavern' | 'system' | null
 
 interface RouteItem {
   path: string
@@ -29,6 +29,7 @@ export const ROUTES = {
   TAVERN_CARDS: '/tavern/cards',
   TAVERN_USERS: '/tavern/users',
   TAVERN_MODELS: '/tavern/models',
+  TAVERN_AI_SCRIPTS: '/tavern/ai-scripts',
   // Game1 路由
   GAME1_DASHBOARD: '/game1/dashboard',
   GAME1_PLAYERS: '/game1/players',
@@ -36,6 +37,7 @@ export const ROUTES = {
   GAME1_ACHIEVEMENTS: '/game1/achievements',
   GAME1_PVP: '/game1/pvp',
   AI_MANAGER: '/ai-manager',
+  SYSTEM: '/system',
 } as const
 
 /**
@@ -43,13 +45,23 @@ export const ROUTES = {
  * scope=null 表示跨项目通用
  */
 export const MENU_ITEMS: RouteItem[] = [
-  { path: ROUTES.DASHBOARD, scope: null, label: '仪表盘' },
+  // ── 系统管理（scope: system）──
+  { path: ROUTES.SYSTEM, scope: 'system', label: '系统概览' },
+  { path: ROUTES.DASHBOARD, scope: 'system', label: '仪表盘' },
+  { path: ROUTES.PROJECTS, scope: 'system', label: '项目管理' },
+  { path: ROUTES.AI_MANAGER, scope: 'system', label: 'AI 管理' },
+  { path: ROUTES.MONITORING, scope: 'system', label: '系统监控' },
+  { path: ROUTES.USERS, scope: 'system', label: '用户管理' },
+  { path: ROUTES.ADMIN, scope: 'system', label: '管理员' },
+  { path: ROUTES.AUDIT_LOGS, scope: 'system', label: '审计日志' },
+  // ── Tavern 专属 ──
   { path: ROUTES.TAVERN, scope: 'tavern', label: 'AI 酒馆' },
   { path: ROUTES.TAVERN_CARDS, scope: 'tavern', label: '卡片管理' },
   { path: ROUTES.TAVERN_CHATS, scope: 'tavern', label: '聊天监控' },
   { path: ROUTES.TAVERN_KEYS, scope: 'tavern', label: 'Key 管理' },
+  { path: ROUTES.TAVERN_AI_SCRIPTS, scope: 'tavern', label: 'AI Script' },
   { path: ROUTES.TAVERN_USERS, scope: 'tavern', label: '用户管理' },
-  { path: ROUTES.USERS, scope: null, label: '用户管理' },
+  { path: ROUTES.USERS, scope: 'tavern', label: '用户管理' },
   // ── FTG 专属 ──
   { path: ROUTES.FOOD_RECORDS, scope: 'ftg', label: '食物记录' },
   { path: ROUTES.THEMES, scope: 'ftg', label: '主题管理' },
@@ -62,11 +74,6 @@ export const MENU_ITEMS: RouteItem[] = [
   { path: ROUTES.GAME1_CONFIG, scope: 'game1', label: '游戏配置' },
   { path: ROUTES.GAME1_ACHIEVEMENTS, scope: 'game1', label: '成就管理' },
   { path: ROUTES.GAME1_PVP, scope: 'game1', label: 'PVP 排行' },
-  // ── 管理功能（跨项目，仅 super_admin）──
-  { path: ROUTES.PROJECTS, scope: null, label: '项目管理' },
-  { path: ROUTES.MONITORING, scope: null, label: '系统监控' },
-  { path: ROUTES.ADMIN, scope: null, label: '管理员' },
-  { path: ROUTES.AUDIT_LOGS, scope: null, label: '审计日志' },
 ]
 
 /** 找不到匹配项目时的兜底路由 */
