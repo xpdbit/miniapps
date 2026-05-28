@@ -8,6 +8,8 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSplitter
 from PyQt6.QtCore import Qt
 
+from prompt_tool.core.template_engine import parse_template
+from prompt_tool.core.renderer import render
 from prompt_tool.gui.ui_pyqt.template_list import TemplateListPanel
 from prompt_tool.gui.ui_pyqt.form_panel import FormPanel
 from prompt_tool.gui.ui_pyqt.preview_panel import PreviewPanel
@@ -23,6 +25,7 @@ class MainWindow(QMainWindow):
         # Determine .prompts/ path
         self._prompts_dir = self._resolve_prompts_dir()
         self._current_template: dict | None = None
+        self._parsed_nodes: list | None = None
 
         # 3-panel layout
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -55,15 +58,12 @@ class MainWindow(QMainWindow):
         schema = template_info["schema"]
         self._form_panel.load_variables(schema.variables)
         self._preview_panel.show_template(schema.template)
+        self._parsed_nodes = parse_template(schema.template)
 
     def _on_values_changed(self, values: dict) -> None:
-        if not self._current_template:
+        if not self._current_template or self._parsed_nodes is None:
             return
-        schema = self._current_template["schema"]
-        from prompt_tool.core.template_engine import parse_template
-        from prompt_tool.core.renderer import render
-        nodes = parse_template(schema.template)
-        result = render(nodes, values)
+        result = render(self._parsed_nodes, values)
         self._preview_panel.show_rendered(result)
 
 

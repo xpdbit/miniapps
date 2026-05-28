@@ -2,7 +2,7 @@
 """Tests for renderer."""
 import pytest
 from prompt_tool.core.template_engine import parse_template
-from prompt_tool.core.renderer import render, RenderError
+from prompt_tool.core.renderer import render
 
 
 class TestRender:
