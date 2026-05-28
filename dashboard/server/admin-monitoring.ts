@@ -6,6 +6,7 @@
 import { Router, type Request, type Response } from 'express'
 import * as os from 'os'
 import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
 import prisma from './prisma'
 import { authenticate } from './admin-auth'
 
@@ -72,9 +73,9 @@ interface CachedMetrics {
   onlineUsers: OnlineUsersPoint[]
 }
 
-const metricsCache = new Map<number, CachedMetrics>()
+const metricsCache = new Map<string, CachedMetrics>()
 
-function appendMetricsPoint(projectId: number, point: {
+function appendMetricsPoint(projectId: string, point: {
   time: string
   qps: number
   responseTime: number
@@ -108,6 +109,23 @@ function appendMetricsPoint(projectId: number, point: {
 }
 
 // ─── 辅助函数 ─────────────────────────────────────────────────────
+
+/**
+ * 解析项目的健康检查基础 URL
+ * 优先使用 apiBaseUrl（如果是绝对 URL），否则按 slug 映射到已知服务器
+ */
+function getHealthBaseUrl(slug: string, apiBaseUrl: string): string {
+  if (apiBaseUrl.startsWith('http://') || apiBaseUrl.startsWith('https://')) {
+    return apiBaseUrl
+  }
+  // 按 slug 映射到已知服务器（开发环境用 localhost，生产用 Docker 环境变量配置）
+  const urlMap: Record<string, string> = {
+    ftg: process.env.HEALTH_FTG_URL || 'http://localhost:3000',
+    game1: process.env.HEALTH_GAME1_URL || 'http://localhost:3004',
+    tavern: process.env.HEALTH_TAVERN_URL || 'http://localhost:3002',
+  }
+  return urlMap[slug] || apiBaseUrl
+}
 
 /**
  * 探测项目的健康端点，返回状态和响应时间
@@ -182,7 +200,7 @@ router.get('/health', async (_req: Request, res: Response) => {
 
     const results: ProjectHealth[] = await Promise.all(
       projects.map(async (project) => {
-        const healthResult = await probeProjectHealth(project.api_base_url)
+        const healthResult = await probeProjectHealth(getHealthBaseUrl(project.slug, project.apiBaseUrl))
         const status = healthResult.ok
           ? healthResult.responseTime < 1000
             ? ('healthy' as const)
@@ -258,7 +276,7 @@ router.get('/health', async (_req: Request, res: Response) => {
  */
 router.get('/metrics/:projectId', async (req: Request, res: Response) => {
   try {
-    const projectId = parseInt(req.params.projectId as string)
+    const projectId = req.params.projectId as string
 
     // 查找项目配置
     const project = await prisma.dashboardProject.findUnique({
@@ -267,8 +285,8 @@ router.get('/metrics/:projectId', async (req: Request, res: Response) => {
 
     // 并行探测：健康检查 + 实时统计
     const [healthResult, statsResult] = await Promise.all([
-      project ? probeProjectHealth(project.api_base_url) : Promise.resolve({ ok: false, responseTime: 0 }),
-      project ? probeProjectStats(project.api_base_url) : Promise.resolve(null),
+      project ? probeProjectHealth(getHealthBaseUrl(project.slug, project.apiBaseUrl)) : Promise.resolve({ ok: false, responseTime: 0 }),
+      project ? probeProjectStats(getHealthBaseUrl(project.slug, project.apiBaseUrl)) : Promise.resolve(null),
     ])
 
     const isUp = healthResult.ok
@@ -351,39 +369,127 @@ router.get('/alert-rules', async (_req: Request, res: Response) => {
   }
 })
 
+// ─── 平台适配辅助函数 ──────────────────────────────────────────────
+
+const IS_WINDOWS = process.platform === 'win32'
+const IS_LINUX = process.platform === 'linux'
+
+/**
+ * 跨平台获取 CPU 使用率（0-100）
+ * 通过 os.cpus() 的 idle/total 差值计算，无需外部命令
+ * 使用 await setTimeout 避免阻塞事件循环
+ */
+async function getCpuUsagePercent(): Promise<number> {
+  try {
+    const cpusBefore = os.cpus().map(c => {
+      const t = c.times
+      return { idle: t.idle, total: t.user + t.nice + t.sys + t.idle + t.irq }
+    })
+    await new Promise(resolve => setTimeout(resolve, 100))
+    const cpusAfter = os.cpus().map((c, i) => {
+      const t = c.times
+      const b = cpusBefore[i]!
+      const total = t.user + t.nice + t.sys + t.idle + t.irq
+      return { idle: t.idle - b.idle, total: total - b.total }
+    })
+    const sumIdle = cpusAfter.reduce((s, c) => s + c.idle, 0)
+    const sumTotal = cpusAfter.reduce((s, c) => s + c.total, 0)
+    if (sumTotal <= 0) return 0
+    return Math.round((1 - sumIdle / sumTotal) * 100)
+  } catch {
+    return 0
+  }
+}
+
+/** 获取准确的空闲内存（Linux 使用 MemAvailable，Windows/macOS 使用 os.freemem()） */
+function getFreeMemory(): number {
+  if (IS_LINUX) {
+    try {
+      const meminfo = readFileSync('/proc/meminfo', 'utf-8')
+      const match = meminfo.match(/MemAvailable:\s+(\d+)/)
+      if (match) return parseInt(match[1]!, 10) * 1024
+    } catch {
+      // fall through to os.freemem()
+    }
+  }
+  return os.freemem()
+}
+
+/** Windows: 通过 fsutil 获取 C: 盘磁盘信息（中英文通用解析） */
+function getWindowsDiskInfo(): { total: number; used: number; free: number; percent: number } {
+  try {
+    const result = execSync('fsutil volume diskfree c:\\', { encoding: 'utf-8', timeout: 5000 })
+    // 提取所有行中的逗号分隔数字（适配中英文输出）
+    const numbers = [...result.matchAll(/:[\s]*([\d,]+)/g)]
+      .map(m => parseInt(m[1]!.replace(/,/g, ''), 10))
+      .filter(n => !isNaN(n) && n > 0)
+    // fsutil 输出通常第1条=可用/空闲, 第2条=总大小, 第3条=同可用
+    // 取第2条为 total，第1条为 free
+    if (numbers.length >= 2) {
+      const total = numbers[1]!
+      const free = numbers[0]!
+      const used = Math.max(0, total - free)
+      const percent = total > 0 ? Math.round((used / total) * 100) : 0
+      return { total, used, free, percent }
+    }
+  } catch {
+    // 磁盘信息获取失败
+  }
+  return { total: 0, used: 0, free: 0, percent: 0 }
+}
+
+/** Linux: 通过 df -k 获取根分区磁盘信息 */
+function getLinuxDiskInfo(): { total: number; used: number; free: number; percent: number } {
+  try {
+    const df = execSync('df -k /', { encoding: 'utf-8', timeout: 3000 })
+    const lines = df.trim().split('\n')
+    if (lines.length >= 2) {
+      const parts = lines[1]!.split(/\s+/)
+      if (parts.length >= 4) {
+        const total = parseInt(parts[1]!, 10) * 1024
+        const used = parseInt(parts[2]!, 10) * 1024
+        const free = parseInt(parts[3]!, 10) * 1024
+        const percent = total > 0 ? Math.round((used / total) * 100) : 0
+        return { total, used, free, percent }
+      }
+    }
+  } catch {
+    // 磁盘信息获取失败
+  }
+  return { total: 0, used: 0, free: 0, percent: 0 }
+}
+
 /**
  * GET /api/admin/monitoring/system-metrics
  * 获取服务器系统资源指标（CPU / 内存 / 磁盘 / 运行时间）
+ * 兼容 Windows / Linux 平台
  */
 router.get('/system-metrics', async (_req: Request, res: Response) => {
   try {
     const totalMem = os.totalmem()
-    const freeMem = os.freemem()
-    const usedMem = totalMem - freeMem
-    const memPercent = Math.round((usedMem / totalMem) * 100)
 
     const cpus = os.cpus()
-    const loadAvg = os.loadavg()
 
-    let diskTotal = 0
-    let diskUsed = 0
-    let diskFree = 0
-    let diskPercent = 0
-    try {
-      const df = execSync('df -k /', { encoding: 'utf-8', timeout: 3000 })
-      const lines = df.trim().split('\n')
-      if (lines.length >= 2) {
-        const parts = lines[1]!.split(/\s+/)
-        if (parts.length >= 4) {
-          diskTotal = parseInt(parts[1]!, 10) * 1024
-          diskUsed = parseInt(parts[2]!, 10) * 1024
-          diskFree = parseInt(parts[3]!, 10) * 1024
-          diskPercent = diskTotal > 0 ? Math.round((diskUsed / diskTotal) * 100) : 0
-        }
-      }
-    } catch {
-      // 磁盘信息获取失败，保持默认值
-    }
+    // CPU 使用率：跨平台通过 os.cpus() 差值计算，非阻塞
+    const cpuUsagePercent = await getCpuUsagePercent()
+
+    // CPU 负载均值（平台适配）
+    const [loadAvg1m, loadAvg5m, loadAvg15m] = IS_WINDOWS
+      ? [0, 0, 0]  // Windows 无 loadavg 概念，如实返回 0
+      : (() => {
+          const [a, b, c] = os.loadavg()
+          return [
+            Math.round(a! * 100) / 100,
+            Math.round(b! * 100) / 100,
+            Math.round(c! * 100) / 100,
+          ]
+        })()
+
+    // ── 磁盘信息（平台适配） ──
+    const disk = IS_WINDOWS ? getWindowsDiskInfo() : getLinuxDiskInfo()
+
+    // ── 内存信息（Linux 使用更准确的 MemAvailable） ──
+    const freeMem = getFreeMemory()
 
     res.json({
       success: true,
@@ -391,22 +497,22 @@ router.get('/system-metrics', async (_req: Request, res: Response) => {
         cpu: {
           model: cpus[0]?.model || 'Unknown',
           cores: cpus.length,
-          loadAvg1m: Math.round(loadAvg[0]! * 100) / 100,
-          loadAvg5m: Math.round(loadAvg[1]! * 100) / 100,
-          loadAvg15m: Math.round(loadAvg[2]! * 100) / 100,
-          usagePercent: Math.round(Math.min(100, (loadAvg[0]! / cpus.length) * 100)),
+          loadAvg1m,
+          loadAvg5m,
+          loadAvg15m,
+          usagePercent: cpuUsagePercent,
         },
         memory: {
           total: totalMem,
-          used: usedMem,
+          used: totalMem - freeMem,
           free: freeMem,
-          percent: memPercent,
+          percent: Math.round(((totalMem - freeMem) / totalMem) * 100),
         },
         disk: {
-          total: diskTotal,
-          used: diskUsed,
-          free: diskFree,
-          percent: diskPercent,
+          total: disk.total,
+          used: disk.used,
+          free: disk.free,
+          percent: disk.percent,
         },
         uptime: os.uptime(),
         process: {

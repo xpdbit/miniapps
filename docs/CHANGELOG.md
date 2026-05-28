@@ -2,6 +2,20 @@
 
 > **状态**: current
 > **更新**: 2026-05-28
+> 
+> ## 2026-05-28 — 系统监控修复：CPU/内存/磁盘指标错误 + 健康探测宕机修复
+
+### 核心变化
+
+| 操作 | 详情 |
+|------|------|
+| **修复 CPU 使用率始终为 0%** | `os.loadavg()` 在 Windows 返回 `[0,0,0]`，改为 `os.cpus()` 差值计算，跨平台适配 |
+| **修复磁盘信息始终为 0** | `df -k /` 是 Linux-only 命令，Windows 改为 `fsutil volume diskfree` 解析，中英文通用 |
+| **修复内存百分比 Linux 过高** | Linux 使用 `/proc/meminfo` 的 `MemAvailable` 替代 `MemFree`，反映真实可用内存 |
+| **修复 busy-wait 阻塞事件循环** | CPU 测量的 `while(spin)` 改为 `await setTimeout`，非阻塞 100ms 采样 |
+| **修复服务健康探测永远宕机** | `project.api_base_url` 字段名错误（应为 `apiBaseUrl`），导致所有健康探测失败 |
+| **修复 projectId 类型不匹配** | 后端使用 UUID 字符串但前端/缓存用 number，统一为 string |
+| **修复健康探测 URL 解析** | `apiBaseUrl` 可能是前端相对路径，新增 `getHealthBaseUrl()` 按 slug 映射到实际服务器 URL |
 
 ## 2026-05-28 — 全量文档同步：工具迁移、新组件/路由/页面
 

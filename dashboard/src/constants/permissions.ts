@@ -17,6 +17,8 @@ export const PERMISSIONS = {
   GAME1_CONFIG: 'game1_config',
   GAME1_ACHIEVEMENTS: 'game1_achievements',
   GAME1_PVP: 'game1_pvp',
+  // 系统管理权限
+  SYSTEM: 'system',
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
@@ -30,6 +32,7 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   super_admin: Object.values(PERMISSIONS),
   admin: [
+    PERMISSIONS.SYSTEM,
     PERMISSIONS.DASHBOARD,
     PERMISSIONS.USERS,
     PERMISSIONS.RECORDS,
@@ -60,6 +63,7 @@ export function hasPermission(role: string | undefined, permission: Permission):
 
 /** 路由路径 → 所需权限的映射 */
 export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
+  '/system': PERMISSIONS.SYSTEM,
   '/dashboard': PERMISSIONS.DASHBOARD,
   '/users': PERMISSIONS.USERS,
   '/food-records': PERMISSIONS.RECORDS,

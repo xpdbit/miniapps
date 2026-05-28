@@ -15,7 +15,7 @@ export interface ServiceHealth {
 
 /** 项目整体健康信息 */
 export interface ProjectHealth {
-  projectId: number
+  projectId: string
   projectName: string
   status: ServiceStatus
   responseTime: number
@@ -103,7 +103,7 @@ export const monitorApi = {
     adminApiClient.get<{ success: boolean; data: ProjectHealth[] }>('/admin/monitoring/health'),
 
   /** 获取指定项目的详细指标 */
-  getProjectMetrics: (projectId: number) =>
+  getProjectMetrics: (projectId: string) =>
     adminApiClient.get<{ success: boolean; data: MonitorMetrics }>(`/admin/monitoring/metrics/${projectId}`),
 
   /** 获取告警规则 */

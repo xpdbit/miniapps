@@ -32,6 +32,7 @@ const ProjectSwitcher = () => {
   const currentProject = useProjectStore((s) => s.currentProject)
   const projects = useProjectStore((s) => s.projects)
   const setProject = useProjectStore((s) => s.setProject)
+  const isSystemMode = useProjectStore((s) => s.isSystemMode)
 
   const handleChange = (value: string) => {
     const selected = projects.find((p) => p.id === value)
@@ -46,21 +47,50 @@ const ProjectSwitcher = () => {
     }
   }
 
+  // 系统模式：缩小为圆点标记
+  if (isSystemMode()) {
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 24,
+          height: 24,
+          opacity: 0.35,
+          cursor: 'default',
+        }}
+        title="系统管理"
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: 'currentColor',
+          }}
+        />
+      </span>
+    )
+  }
+
   return (
     <Select<string>
       value={currentProject?.id ?? undefined}
       placeholder="选择项目"
       onChange={handleChange}
       style={{ width: 200 }}
-      options={projects.map((p) => ({
-        label: (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {p.status === 'active' ? <CheckIcon /> : <CrossIcon />}
-            {p.name}
-          </span>
-        ),
-        value: p.id,
-      }))}
+      options={projects
+        .filter((p) => p.id !== 'system')
+        .map((p) => ({
+          label: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {p.status === 'active' ? <CheckIcon /> : <CrossIcon />}
+              {p.name}
+            </span>
+          ),
+          value: p.id,
+        }))}
       prefix={<SwapOutlined />}
     />
   )

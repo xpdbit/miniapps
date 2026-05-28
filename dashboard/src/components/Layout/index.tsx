@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Layout as AntLayout, Button, Menu, theme, Modal, Space, Typography, Drawer } from 'antd'
+import { Layout as AntLayout, Button, Modal, theme, Space, Typography, Drawer } from 'antd'
 import {
-  DashboardOutlined,
-  SettingOutlined,
-  MonitorOutlined,
-  UserOutlined,
+  ControlOutlined,
   MenuOutlined,
   LogoutOutlined,
-  RobotOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
@@ -28,17 +24,32 @@ const FALLBACK_PROJECTS: Project[] = [
   { id: 'tavern', name: 'AI-Tavern', slug: 'tavern', apiBaseUrl: '/api/v1/tavern', description: 'AI 角色聊天', status: 'active', createdAt: '', updatedAt: '' },
 ]
 
+/** 系统管理虚拟项目 */
+const SYSTEM_PROJECT: Project = {
+  id: 'system',
+  name: '系统管理',
+  slug: 'system',
+  apiBaseUrl: '',
+  description: '系统管理后台',
+  status: 'active',
+  createdAt: '',
+  updatedAt: '',
+}
+
+/** 系统管理相关路由（用于按钮高亮判断） */
+const SYSTEM_ROUTES = [
+  ROUTES.SYSTEM,
+  ROUTES.DASHBOARD,
+  ROUTES.PROJECTS,
+  ROUTES.AI_MANAGER,
+  ROUTES.MONITORING,
+  ROUTES.USERS,
+  ROUTES.ADMIN,
+  ROUTES.AUDIT_LOGS,
+]
+
 const { Header, Sider, Content } = AntLayout
 const { Text } = Typography
-
-/** 顶部导航菜单项 */
-const NAV_ITEMS: { key: string; icon: React.ReactNode; label: string }[] = [
-  { key: ROUTES.DASHBOARD, icon: <DashboardOutlined />, label: '总览' },
-  { key: ROUTES.PROJECTS, icon: <SettingOutlined />, label: '配置' },
-  { key: ROUTES.AI_MANAGER, icon: <RobotOutlined />, label: 'AI 管理' },
-  { key: ROUTES.MONITORING, icon: <MonitorOutlined />, label: '监控' },
-  { key: ROUTES.USERS, icon: <UserOutlined />, label: '用户管理' },
-]
 
 const Layout = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
@@ -49,23 +60,30 @@ const Layout = () => {
   const currentProject = useProjectStore((state) => state.currentProject)
   const setProjects = useProjectStore((state) => state.setProjects)
   const setProject = useProjectStore((state) => state.setProject)
-  const { token: { colorBgContainer } } = theme.useToken()
+  const { token: { colorBgContainer, colorPrimary } } = theme.useToken()
   const isMobile = useMobile(1024)
   const { isDark, toggleTheme } = useThemeStore()
 
   // ─── 加载项目列表 ───
   useEffect(() => {
     const restoreCurrent = (list: Project[]) => {
-      const stored = sessionStorage.getItem('currentProject')
+      const stored = localStorage.getItem('dashboard_last_project')
       if (stored) {
         try {
           const parsed = JSON.parse(stored) as { id: string | number }
-          const exists = list.find((p) => p.id === String(parsed.id))
-          if (exists) { setProject(exists); return }
+          // 如果恢复的是真实项目，确保它存在于列表中
+          if (parsed.id !== 'system') {
+            const exists = list.find((p) => p.id === String(parsed.id))
+            if (exists) { setProject(exists); return }
+          } else {
+            // 恢复系统模式
+            setProject(SYSTEM_PROJECT)
+            return
+          }
         } catch { /* ignore parse error */ }
       }
-      // 没有有效存储项目时，默认选中第一个
-      if (list.length > 0) setProject(list[0]!)
+      // 没有有效存储项目时，默认进系统管理
+      setProject(SYSTEM_PROJECT)
     }
 
     projectApi.list().then((res) => {
@@ -81,6 +99,18 @@ const Layout = () => {
       restoreCurrent(FALLBACK_PROJECTS)
     })
   }, [setProjects, setProject])
+
+  /** 判断当前路径是否属于系统管理范围 */
+  const isSystemActive = useMemo(
+    () => SYSTEM_ROUTES.some((route) => location.pathname.startsWith(route)),
+    [location.pathname]
+  )
+
+  const handleSystemClick = useCallback(() => {
+    if (currentProject?.id === 'system') return // 已激活则不重复操作
+    setProject(SYSTEM_PROJECT)
+    navigate(ROUTES.SYSTEM)
+  }, [currentProject?.id, setProject, navigate])
 
   const handleLogout = () => {
     Modal.confirm({
@@ -104,35 +134,8 @@ const Layout = () => {
     setMobileDrawerOpen(false)
   }, [])
 
-  const handleNavClick = useCallback((info: { key: string }) => {
-    navigate(info.key)
-    if (isMobile) {
-      closeMobileDrawer()
-    }
-  }, [navigate, isMobile, closeMobileDrawer])
-
-  /** 当前选中的导航 key */
-  const selectedKey = useMemo(() => {
-    // 匹配当前路径的高亮项
-    const matching = NAV_ITEMS.find((item) => location.pathname.startsWith(item.key))
-    return matching?.key ?? ''
-  }, [location.pathname])
-
-  // ─── 桌面端导航菜单 ───
-  const navMenu = (
-    <Menu
-      mode="horizontal"
-      selectedKeys={[selectedKey]}
-      items={NAV_ITEMS}
-      onClick={handleNavClick}
-      style={{
-        flex: 1,
-        border: 'none',
-        background: 'transparent',
-        minWidth: 0,
-      }}
-    />
-  )
+  // 侧边栏内容（供桌面端 Sider 和移动端 Drawer 复用）
+  const sidebarContent = currentProject && <Sidebar />
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
@@ -152,7 +155,7 @@ const Layout = () => {
           zIndex: 100,
         }}
       >
-        {/* 左侧：导航 + 项目选择 */}
+        {/* 左侧：ProjectSwitcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
           {isMobile ? (
             <>
@@ -164,15 +167,26 @@ const Layout = () => {
               <ProjectSwitcher />
             </>
           ) : (
-            <>
-              <ProjectSwitcher />
-              {navMenu}
-            </>
+            <ProjectSwitcher />
           )}
         </div>
 
-        {/* 右侧：主题 + 退出 */}
+        {/* 右侧：系统管理 + 主题 + 退出 */}
         <Space size={4}>
+          <Button
+            type="text"
+            icon={<ControlOutlined />}
+            onClick={handleSystemClick}
+            style={{
+              fontWeight: isSystemActive ? 600 : 400,
+              color: isSystemActive ? colorPrimary : undefined,
+              background: isSystemActive
+                ? (isDark ? 'rgba(22,119,255,0.15)' : 'rgba(22,119,255,0.08)')
+                : undefined,
+            }}
+          >
+            系统管理
+          </Button>
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
           {!isMobile && user && (
             <Text type="secondary" style={{ fontSize: 13, marginRight: 8 }}>
@@ -190,7 +204,7 @@ const Layout = () => {
         </Space>
       </Header>
 
-      {/* ─── 移动端抽屉导航 ─── */}
+      {/* ─── 移动端抽屉导航（展示侧边栏内容） ─── */}
       <Drawer
         title="导航菜单"
         placement="left"
@@ -199,13 +213,7 @@ const Layout = () => {
         width={260}
         styles={{ body: { padding: 0 } }}
       >
-        <Menu
-          mode="vertical"
-          selectedKeys={[selectedKey]}
-          items={NAV_ITEMS}
-          onClick={handleNavClick}
-          style={{ border: 'none' }}
-        />
+        {sidebarContent}
       </Drawer>
 
       {/* ─── 主区域（侧栏 + 内容） ─── */}

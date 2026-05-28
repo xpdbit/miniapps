@@ -71,7 +71,7 @@ const Monitoring = () => {
   const queryClient = useQueryClient()
 
   // --- 状态 ---
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const drawerWidth = useResponsiveWidth(MODAL_WIDTH)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailProject, setDetailProject] = useState<ProjectHealth | null>(null)
@@ -87,7 +87,7 @@ const Monitoring = () => {
   })
 
   // 自动选中第一个项目
-  const effectiveProjectId = useMemo<number | undefined>(() => {
+  const effectiveProjectId = useMemo<string | undefined>(() => {
     if (selectedProjectId != null) return selectedProjectId
     return projectsHealth[0]?.projectId
   }, [projectsHealth, selectedProjectId])
@@ -183,7 +183,7 @@ const Monitoring = () => {
     queryClient.invalidateQueries({ queryKey: ['monitoring'] })
   }, [queryClient])
 
-  const handleSelectProject = useCallback((id: number) => {
+  const handleSelectProject = useCallback((id: string) => {
     setSelectedProjectId(id)
   }, [])
 

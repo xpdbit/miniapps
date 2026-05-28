@@ -16,6 +16,7 @@ import {
   SlidersOutlined,
   ThunderboltOutlined,
   ContainerOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES, MENU_ITEMS, type ProjectScope } from '@/constants/routes'
@@ -56,6 +57,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   [ROUTES.MONITORING]: <MonitorOutlined />,
   [ROUTES.ADMIN]: <SettingOutlined />,
   [ROUTES.AUDIT_LOGS]: <AuditOutlined />,
+  [ROUTES.SYSTEM]: <DashboardOutlined />,
+  [ROUTES.AI_MANAGER]: <RobotOutlined />,
 }
 
 /** 瀹屾暣鑿滃崟閰嶇疆 */
@@ -69,6 +72,7 @@ const getMenuItems = (): MenuItemConfig[] => MENU_ITEMS.map((item) => ({
 
 /** 璺敱 鈫?鏉冮檺鏄犲皠锛堝弽鍚戝紩鐢級 */
 const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
+  [ROUTES.SYSTEM]: PERMISSIONS.SYSTEM,
   [ROUTES.DASHBOARD]: PERMISSIONS.DASHBOARD,
   [ROUTES.USERS]: PERMISSIONS.USERS,
   [ROUTES.FOOD_RECORDS]: PERMISSIONS.RECORDS,
@@ -89,10 +93,10 @@ const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
 
 /**
  * 鏍规嵁褰撳墠閫変腑椤圭洰杩囨护鑿滃崟
- * - currentProject=null锛堝叏灞€锛? 鍙樉绀?scope=null 鐨勯」鐩?
- * - currentProject=FTG: 鏄剧ず scope=null + scope=ftg
- * - currentProject=Game1: 鏄剧ず scope=null + scope=game1
- * - currentProject=Tavern: 鏄剧ず scope=null + scope=tavern
+ * - currentProject=system锛氭樉绀?scope=system 鐨勭郴缁熺鐞嗚彍鍗?
+ * - currentProject=FTG: 鏄剧ず scope=ftg 鐨勯」鐩笓灞炶彍鍗?
+ * - currentProject=Game1: 鏄剧ず scope=game1 鐨勯」鐩笓灞炶彍鍗?
+ * - currentProject=Tavern: 鏄剧ず scope=tavern 鐨勯」鐩笓灞炶彍鍗?
  */
 const getProjectScope = (projectName: string | undefined): ProjectScope => {
   if (!projectName) return null
@@ -100,6 +104,7 @@ const getProjectScope = (projectName: string | undefined): ProjectScope => {
   if (name.includes('ftg') || name.includes('food')) return 'ftg'
   if (name.includes('game1') || name.includes('game')) return 'game1'
   if (name.includes('tavern') || name.includes('ai')) return 'tavern'
+  if (name === '系统管理' || name === 'system') return 'system'
   return null
 }
 
@@ -153,7 +158,7 @@ const Sidebar = () => {
               letterSpacing: 1,
             }}
           >
-            {activeScope === 'ftg' ? 'FTG' : activeScope === 'game1' ? 'GAME1' : 'TAVERN'}
+            {activeScope === 'system' ? '系统管理' : activeScope === 'ftg' ? 'FTG' : activeScope === 'game1' ? 'GAME1' : 'TAVERN'}
           </Text>
           <div
             style={{
