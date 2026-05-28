@@ -14,7 +14,7 @@ import './index.scss';
 
 /** 原生 tabBar 页面（在 app.config.ts 中声明），可用 Taro.switchTab */
 const NATIVE_TAB_PAGES = new Set([
-  'pages/market/index',
+  'pages/cards/index',
   'pages/chat/index',
   'pages/profile/index',
 ]);
@@ -46,7 +46,7 @@ const DISCOVER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24
 
 /* ---- Mode Tab Lists ---- */
 const TAVERN_TAB_LIST = [
-  { pagePath: 'pages/market/index', text: '酒馆', svgIcon: GALLERY_SVG },
+  { pagePath: 'pages/cards/index', text: '酒馆', svgIcon: GALLERY_SVG },
   { pagePath: 'pages/chat/index', text: '开始', svgIcon: CHAT_SVG },
   { pagePath: 'pages/profile/index', text: '我的', svgIcon: USER_SVG },
 ];
@@ -60,7 +60,7 @@ const GAME_TAB_LIST = [
 
 /** 酒馆模式专属页面（始终显示酒馆 tab，不随 gameMode 切换） */
 const TAVERN_ONLY_PAGES = new Set([
-  'pages/market/index',
+  'pages/cards/index',
   'pages/chat/index',
 ]);
 

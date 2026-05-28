@@ -1,6 +1,7 @@
 import { View, Text, Image } from '@tarojs/components'
 import { useState, useEffect, useMemo } from 'react'
 import { cn } from '@/utils'
+import { Icon } from '@/components'
 import './index.scss'
 
 export interface CharacterCardProps {
@@ -90,7 +91,7 @@ export default function CharacterCard(props: CharacterCardProps) {
         <View className='character-card-stats'>
           {likeCount !== undefined && (
             <View className='character-card-stat'>
-              <Text>♥ </Text>
+              <Icon name='heart' size={24} color='#E63946' />
               <Text className='character-card-stat-value'>{likeCount}</Text>
             </View>
           )}
@@ -99,7 +100,7 @@ export default function CharacterCard(props: CharacterCardProps) {
           )}
           {chatCount !== undefined && (
             <View className='character-card-stat'>
-              <Text>✦ </Text>
+              <Icon name='chat' size={24} color='var(--color-text-tertiary)' />
               <Text className='character-card-stat-value'>{chatCount}</Text>
             </View>
           )}

@@ -19,10 +19,10 @@ type SessionWithMiniIncludes = Prisma.TavernChatSessionGetPayload<{
 }>
 
 export async function createSession(params: CreateSessionParams) {
-  // 仅查 name 和 firstMsg，不拖全字段（省去 create 中 include character 的冗余 SELECT）
+  // 查角色名称用于会话标题
   const card = await prisma.tavernCard.findUnique({
     where: { id: params.characterId },
-    select: { name: true, firstMsg: true },
+    select: { name: true },
   })
   if (!card) throw new Error('CHARACTER_NOT_FOUND')
 
@@ -39,17 +39,6 @@ export async function createSession(params: CreateSessionParams) {
       title: `与 ${card.name} 的对话`,
     },
   })
-
-  // 保存角色卡 firstMsg（有则存）
-  if (card.firstMsg) {
-    await prisma.tavernChatMessage.create({
-      data: {
-        sessionId: session.id,
-        role: 'character',
-        content: card.firstMsg,
-      },
-    })
-  }
 
   return session
 }

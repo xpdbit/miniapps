@@ -5,8 +5,6 @@ export interface CharacterData {
   name: string
   description: string
   prompt?: string | null
-  scenario?: string | null
-  firstMsg: string
 }
 
 export interface PersonaData {
@@ -127,9 +125,6 @@ export function buildPrompt(params: {
   ]
   if (params.character.prompt) {
     systemParts.push('', '【提示词】', params.character.prompt)
-  }
-  if (params.character.scenario) {
-    systemParts.push('', '【场景】', params.character.scenario)
   }
   let systemContent = systemParts.join('\n')
 

@@ -20,9 +20,7 @@ const sendSchema = z.object({
   cardData: z.object({
     name: z.string().optional(),
     description: z.string().optional(),
-    firstMsg: z.string().optional(),
     prompt: z.string().optional(),
-    scenario: z.string().optional(),
   }).optional(),
   // AI Script 游戏模式支持
   saveId: z.string().optional(),
@@ -66,7 +64,6 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
     let character: {
       name: string; description: string; prompt?: string | null
-      scenario?: string | null; firstMsg?: string | null
     } | null = null
 
     if (params.cardData) {
@@ -74,17 +71,15 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         name: params.cardData.name || '',
         description: params.cardData.description || '',
         prompt: params.cardData.prompt || null,
-        scenario: params.cardData.scenario || null,
-        firstMsg: params.cardData.firstMsg || null,
       }
     } else if (params.sessionId) {
-      const s = session as { character?: { name: string; description: string; prompt?: string | null; scenario?: string | null; firstMsg?: string | null } | null }
+      const s = session as { character?: { name: string; description: string; prompt?: string | null } | null }
       character = s.character ?? null
     } else {
       character = await prisma.tavernCard.findUnique({
         where: { id: params.characterId },
-        select: { name: true, description: true, prompt: true, scenario: true, firstMsg: true },
-      }) as typeof character
+        select: { name: true, description: true, prompt: true },
+      })
     }
 
     if (!character) {
@@ -140,8 +135,6 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         name: character.name,
         description: character.description,
         prompt: character.prompt,
-        scenario: character.scenario,
-        firstMsg: character.firstMsg || '',
       },
       characterId: params.characterId,
       persona: persona ? { name: persona.name, description: persona.description } : null,
@@ -485,7 +478,7 @@ router.post('/sessions/:sessionId/regenerate', requireAuth, async (req: Authenti
       return
     }
 
-    const s = session as { character?: { name: string; description: string; prompt?: string | null; scenario?: string | null; firstMsg?: string | null } | null }
+    const s = session as { character?: { name: string; description: string; prompt?: string | null } | null }
     const character = s.character ?? null
     if (!character) {
       sendEvent({ type: 'error', code: 'CHARACTER_NOT_FOUND', message: '角色不存在' })
@@ -499,8 +492,6 @@ router.post('/sessions/:sessionId/regenerate', requireAuth, async (req: Authenti
         name: character.name,
         description: character.description,
         prompt: character.prompt ?? undefined,
-        scenario: character.scenario ?? undefined,
-        firstMsg: character.firstMsg || '',
       },
       persona: null,
       history: historyBeforeLast.map(m => ({ role: m.role, content: m.content })),

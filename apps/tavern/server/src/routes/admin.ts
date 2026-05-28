@@ -138,8 +138,6 @@ const createCardSchema = z.object({
   tags: z.array(z.string()).optional().default([]),
   avatar: z.string().optional(),
   prompt: z.string().optional(),
-  scenario: z.string().optional(),
-  firstMsg: z.string().optional().default(''),
   cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
 })
 
@@ -154,8 +152,6 @@ router.post('/characters', async (req: AuthenticatedRequest, res: Response) => {
         tags: data.tags,
         avatar: data.avatar,
         prompt: data.prompt,
-        scenario: data.scenario,
-        firstMsg: data.firstMsg,
         cardType: data.cardType,
         isOfficial: true, // 管理员创建的都是官方卡片
         userUuid: creatorId,
@@ -178,8 +174,6 @@ const updateCardSchema = z.object({
   tags: z.array(z.string()).optional(),
   avatar: z.string().optional(),
   prompt: z.string().optional(),
-  scenario: z.string().optional(),
-  firstMsg: z.string().optional(),
   cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional(),
 })
 
@@ -194,8 +188,6 @@ router.put('/characters/:id', async (req: AuthenticatedRequest, res: Response) =
         ...(data.tags !== undefined && { tags: data.tags }),
         ...(data.avatar !== undefined && { avatar: data.avatar }),
         ...(data.prompt !== undefined && { prompt: data.prompt }),
-        ...(data.scenario !== undefined && { scenario: data.scenario }),
-        ...(data.firstMsg !== undefined && { firstMsg: data.firstMsg }),
         ...(data.cardType !== undefined && { cardType: data.cardType }),
       },
     })
@@ -506,8 +498,6 @@ const importSchema = z.object({
     tags: z.array(z.string()).optional().default([]),
     avatar: z.string().optional(),
     prompt: z.string().optional(),
-    scenario: z.string().optional(),
-    firstMsg: z.string().optional().default(''),
     cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
   })).min(1).max(100),
 })
@@ -530,8 +520,6 @@ router.post('/import', async (req: AuthenticatedRequest, res: Response) => {
             tags: cardData.tags,
             avatar: cardData.avatar,
             prompt: cardData.prompt,
-            scenario: cardData.scenario,
-            firstMsg: cardData.firstMsg,
             cardType: cardData.cardType,
             isOfficial: true,
             userUuid: creatorId,

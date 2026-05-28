@@ -14,7 +14,7 @@ apps/tavern/client/
 │   ├── app.scss               # 全局样式 & CSS 变量 (暗色主题)
 │   ├── custom-tab-bar/        # 自定义底部栏 (双模式)
 │   ├── pages/                 # 12 个页面
-│   │   ├── market/            # 角色市场 (浏览/搜索/标签/轮播)
+│   │   ├── cards/              # 卡片集 (浏览/搜索/标签/轮播)
 │   │   ├── chat/              # 聊天页面 (SSE 流式/会话管理)
 │   │   ├── archive/           # 聊天归档
 │   │   ├── game-setup/        # 游戏模式设置
@@ -36,7 +36,7 @@ apps/tavern/client/
 │   │   ├── aiClient.ts        # AI 流式调用客户端
 │   │   ├── aiService.ts       # AI 服务 (含发现模型)
 │   │   ├── characterService.ts # 角色卡 CRUD
-│   │   ├── marketService.ts   # 角色市场 API
+│   │   ├── marketService.ts   # 卡片集 API
 │   │   └── personaService.ts  # 人设 API
 │   ├── stores/                # Zustand 状态管理 (8 stores)
 │   │   ├── authStore.ts       # 认证状态 (微信登录/JWT/每日配额)
@@ -62,7 +62,7 @@ apps/tavern/client/
 ## WHERE TO LOOK
 | 关注点 | 位置 | 说明 |
 |--------|------|------|
-| 角色市场 | `src/pages/market/` + `src/services/marketService.ts` | 角色卡浏览/搜索/标签/轮播 |
+| 卡片集 | `src/pages/cards/` + `src/services/marketService.ts` | 角色卡浏览/搜索/标签/轮播 |
 | 聊天页面 | `src/pages/chat/` + `src/hooks/useSSE.ts` | SSE 流式聊天/会话管理 |
 | 角色创建 | `src/pages/creator/` + `src/services/characterService.ts` | 角色卡编辑/发布 |
 | 角色详情 | `src/pages/character/` + `src/pages/character/detail/` | 角色详情/收藏 |

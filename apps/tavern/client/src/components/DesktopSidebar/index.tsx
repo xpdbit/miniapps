@@ -48,7 +48,7 @@ interface NavItem {
 /* ===== Navigation Config ===== */
 
 const TAVERN_NAV: NavItem[] = [
-  { pagePath: 'pages/market/index', text: '酒馆', svgIcon: TAVERN_ICON },
+  { pagePath: 'pages/cards/index', text: '卡片集', svgIcon: TAVERN_ICON },
   { pagePath: 'pages/chat/index', text: '开始', svgIcon: CHAT_ICON },
   { pagePath: 'pages/profile/index', text: '我的', svgIcon: USER_ICON },
 ]
@@ -66,7 +66,7 @@ function getCurrentRoute(): string {
     if (hash) {
       const topLevel = hash.split('/')[0] || ''
       const routeMap: Record<string, string> = {
-        market: 'pages/market/index',
+        market: 'pages/cards/index',
         chat: 'pages/chat/index',
         chats: 'pages/chats/index',
         contacts: 'pages/contacts/index',
@@ -144,10 +144,28 @@ export default function DesktopSidebar() {
   const [activeIndex, setActiveIndex] = useState(-1)
   const [showLogin, setShowLogin] = useState(false)
 
+  /** 子路由 → 父级导航项映射 */
+  const SUB_ROUTE_PARENT: Record<string, string> = {
+    character: 'pages/cards/index',
+    creator: 'pages/cards/index',
+    archive: 'pages/cards/index',
+    persona: 'pages/profile/index',
+    'game-setup': 'pages/cards/index',
+  }
+
   const syncActiveIndex = useCallback(() => {
     const route = getCurrentRoute()
     if (!route) return
-    const idx = navItems.findIndex((item) => route.endsWith(item.pagePath))
+    // 优先精确匹配
+    let idx = navItems.findIndex((item) => route.endsWith(item.pagePath))
+    // 未命中时按首段路径匹配父级导航
+    if (idx === -1) {
+      const firstSegment = route.split('/')[1]
+      const parentPath = firstSegment ? SUB_ROUTE_PARENT[firstSegment] : undefined
+      if (parentPath) {
+        idx = navItems.findIndex((item) => item.pagePath === parentPath)
+      }
+    }
     setActiveIndex(idx !== -1 ? idx : -1)
   }, [navItems])
 
@@ -211,12 +229,12 @@ export default function DesktopSidebar() {
     if (gameMode) {
       Taro.reLaunch({ url: '/pages/chats/index' })
     } else {
-      Taro.switchTab({ url: '/pages/market/index' })
+      Taro.switchTab({ url: '/pages/cards/index' })
     }
   }
 
   const iconColor = (isActive: boolean) =>
-    isActive ? '#C49A6C' : darkMode ? '#8B949E' : '#7A7570'
+    isActive ? 'var(--color-primary)' : darkMode ? '#8B949E' : '#7A7570'
 
   const handleKeyDown =
     (action: () => void) => (e: React.KeyboardEvent) => {
@@ -238,7 +256,7 @@ export default function DesktopSidebar() {
       .slice(0, 5)
   }, [sessions])
 
-  const showRecentChats = recentSessions.length > 1
+  const showRecentChats = recentSessions.length > 0
 
   return (
     <View

@@ -1,6 +1,6 @@
 ﻿const config = {
   pages: [
-    'pages/market/index',
+    'pages/cards/index',
     'pages/chat/index',
     'pages/archive/index',
     'pages/game-setup/index',
@@ -27,7 +27,7 @@
     borderStyle: 'white',
     list: [
       {
-        pagePath: 'pages/market/index',
+        pagePath: 'pages/cards/index',
         text: '酒馆',
         iconPath: 'assets/icons/market.png',
         selectedIconPath: 'assets/icons/market-active.png',

@@ -9,10 +9,8 @@ const router = Router()
 const createSchema = z.object({
   name: z.string().min(1).max(50),
   description: z.string().min(1).max(2000),
-  firstMsg: z.string().min(1).max(500),
   avatar: z.string().optional(),
-  prompt: z.string().max(5000).optional(),
-  scenario: z.string().max(1000).optional(),
+  prompt: z.string().max(10000).optional(),
   tags: z.array(z.string().max(20)).max(10).optional(),
   cardType: z.enum(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND']).optional().default('CHARACTER'),
 })
@@ -202,8 +200,6 @@ router.post('/:id/revisions/:revisionId/rollback', requireAuth, async (req: Auth
         name: snapshot.name as string,
         description: snapshot.description as string,
         prompt: snapshot.prompt as string | null,
-        scenario: snapshot.scenario as string | null,
-        firstMsg: snapshot.firstMsg as string | null,
         version: { increment: 1 },
       },
     })

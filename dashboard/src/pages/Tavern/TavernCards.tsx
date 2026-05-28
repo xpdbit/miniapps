@@ -280,8 +280,6 @@ export default function TavernCards() {
     const dc = detailCard as unknown as Record<string, unknown>
     return [
       { label: 'prompt', value: dc.prompt },
-      { label: 'scenario', value: dc.scenario },
-      { label: 'firstMsg', value: dc.firstMsg },
       { label: 'cardSpec', value: dc.cardSpec },
       { label: 'modelPreference', value: dc.modelPreference },
       { label: 'temperature', value: dc.temperature },
@@ -643,8 +641,7 @@ export default function TavernCards() {
     "name": "示例角色",
     "description": "角色描述...",
     "cardType": "CHARACTER",
-    "prompt": "你是一个...（角色设定提示词）",
-    "firstMsg": "开场白...",
+    "prompt": "你是一个...（角色设定提示词，含场景设定和开场白）",
     "tags": ["科幻", "治愈"]
   }
 ]`}

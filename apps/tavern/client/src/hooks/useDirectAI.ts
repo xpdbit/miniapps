@@ -45,9 +45,7 @@ export function useDirectAI(options?: UseDirectAIOptions) {
       cardData?: {
         name?: string
         description?: string
-        firstMsg?: string
         prompt?: string
-        scenario?: string
       }
       personaData?: {
         name?: string
@@ -375,15 +373,13 @@ async function streamAnthropic(
  *  本地系统提示词构建
  * ================================================================ */
 function buildSystemPrompt(
-  cardData?: { name?: string; description?: string; firstMsg?: string; prompt?: string; scenario?: string },
+  cardData?: { name?: string; description?: string; prompt?: string },
   personaData?: { name?: string; description?: string },
 ): string {
   const parts: string[] = ['你正在扮演以下角色，请严格按照设定进行回复。']
   if (cardData?.name) parts.push(`\n【角色名称】${cardData.name}`)
   if (cardData?.description) parts.push(`【角色描述】${cardData.description}`)
   if (cardData?.prompt) parts.push(`【对话提示】${cardData.prompt}`)
-  if (cardData?.scenario) parts.push(`【场景设定】${cardData.scenario}`)
-  if (cardData?.firstMsg) parts.push(`【开场白示例】${cardData.firstMsg}`)
   if (personaData?.name) {
     parts.push(`\n【用户人设】${personaData.name}`)
     if (personaData?.description) parts.push(`人设描述：${personaData.description}`)

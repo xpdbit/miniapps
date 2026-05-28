@@ -32,8 +32,8 @@ export async function getCharacterDetail(id: string) {
 
 // Create character
 export async function createCharacter(data: {
-  name: string; description: string; firstMsg: string
-  avatar?: string; prompt?: string; scenario?: string
+  name: string; description: string
+  avatar?: string; prompt?: string
   tags?: string[]
   cardType?: string
 }, userUuid: string) {
@@ -41,10 +41,8 @@ export async function createCharacter(data: {
     data: {
       name: data.name,
       description: data.description,
-      firstMsg: data.firstMsg,
       avatar: data.avatar,
       prompt: data.prompt,
-      scenario: data.scenario,
       tags: data.tags ?? [],
       cardType: (data.cardType as Prisma.EnumCardTypeFilter['equals']) || 'CHARACTER',
       userUuid,
@@ -56,8 +54,8 @@ export async function createCharacter(data: {
 
 // Update character
 export async function updateCharacter(id: string, userUuid: string, data: {
-  name?: string; description?: string; firstMsg?: string
-  avatar?: string; prompt?: string; scenario?: string
+  name?: string; description?: string
+  avatar?: string; prompt?: string
   tags?: string[]
   cardType?: string
 }) {
@@ -66,8 +64,8 @@ export async function updateCharacter(id: string, userUuid: string, data: {
   if (card.userUuid !== userUuid) throw new Error('FORBIDDEN')
 
   const updateData: Prisma.TavernCardUpdateInput = {
-    name: data.name, description: data.description, firstMsg: data.firstMsg,
-    avatar: data.avatar, prompt: data.prompt, scenario: data.scenario, tags: data.tags,
+    name: data.name, description: data.description,
+    avatar: data.avatar, prompt: data.prompt, tags: data.tags,
   }
   if (data.cardType) {
     updateData.cardType = data.cardType as Prisma.EnumCardTypeFilter['equals']

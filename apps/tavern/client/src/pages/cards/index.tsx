@@ -31,7 +31,7 @@ const SUB_TABS: { key: SubTabType; label: string; icon: IconName }[] = [
 
 
 
-export default function MarketPage() {
+export default function CardsPage() {
   const [subTab, setSubTab] = useState<SubTabType>('character')
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -128,7 +128,7 @@ export default function MarketPage() {
   )
 
   return (
-    <View className='page-market'>
+    <View className='page-cards'>
       {subTab === 'character' && (
         <View className='market-character-area'>
           <View className='market-search'>

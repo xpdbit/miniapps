@@ -110,7 +110,7 @@ export async function getAllOfficialCards() {
     where: { isOfficial: true, status: 'PUBLISHED' },
     select: {
       id: true, name: true, avatar: true, description: true,
-      prompt: true, firstMsg: true, scenario: true,
+      prompt: true,
       tags: true, cardType: true, isOfficial: true, userUuid: true,
       chatCount: true, likeCount: true, favCount: true,
       createdAt: true, updatedAt: true,

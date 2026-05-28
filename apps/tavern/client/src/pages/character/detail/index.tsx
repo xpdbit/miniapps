@@ -32,6 +32,7 @@ export default function CharacterDetailPage() {
   const [error, setError] = useState(false)
   const [view, setView] = useState<ViewMode>(mode === 'chat' ? 'chat' : 'detail')
   const [input, setInput] = useState('')
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
 
   // 是否从通讯录直接进入聊天模式（WeChat 风格）
   const directChat = mode === 'chat'
@@ -96,12 +97,10 @@ export default function CharacterDetailPage() {
         if (existingHistory.length > 0) {
           directAI.loadHistory(character.id)
         } else {
-          const greeting = character.firstMsg || '你好'
-          directAI.addCharacterMessage(greeting)
+          directAI.addCharacterMessage('你好')
         }
       } else {
-        const greeting = character.firstMsg || '你好'
-        sse.addCharacterMessage(greeting)
+        sse.addCharacterMessage('你好')
       }
     }
   }, [directChat, character, view, activeChat.messages.length, privacyMode])
@@ -138,7 +137,7 @@ export default function CharacterDetailPage() {
     setView('chat')
 
     // 隐私模式：优先恢复历史对话，无历史才显示开场白
-    const greeting = character.firstMsg || '你好'
+    const greeting = '你好'
     if (privacyMode && character) {
       const existingHistory = loadLocalMessages(character.id)
       if (existingHistory.length > 0) {
@@ -157,9 +156,7 @@ export default function CharacterDetailPage() {
             cardData: {
               name: character.name,
               description: character.description,
-              firstMsg: character.firstMsg,
               prompt: character.prompt,
-              scenario: character.scenario,
             },
           })
         }, 50)
@@ -185,9 +182,7 @@ export default function CharacterDetailPage() {
         cardData: {
           name: character.name,
           description: character.description,
-          firstMsg: character.firstMsg,
           prompt: character.prompt,
-          scenario: character.scenario,
         },
       })
     } else {
@@ -199,9 +194,7 @@ export default function CharacterDetailPage() {
         cardData: {
           name: character.name,
           description: character.description,
-          firstMsg: character.firstMsg,
           prompt: character.prompt,
-          scenario: character.scenario,
         },
       })
     }
@@ -238,9 +231,7 @@ export default function CharacterDetailPage() {
         cardData: {
           name: character.name,
           description: character.description,
-          firstMsg: character.firstMsg,
           prompt: character.prompt,
-          scenario: character.scenario,
         },
       })
     } else {
@@ -297,9 +288,7 @@ export default function CharacterDetailPage() {
         cardData: {
           name: character.name,
           description: character.description,
-          firstMsg: character.firstMsg,
           prompt: character.prompt,
-          scenario: character.scenario,
         },
       })
     } else {
@@ -373,9 +362,49 @@ export default function CharacterDetailPage() {
     }
   }
 
+  // 卡片集进入模式：返回卡片集
+  const handleCardsBack = () => {
+    try {
+      Taro.navigateBack()
+    } catch {
+      Taro.switchTab({ url: '/pages/cards/index' })
+    }
+  }
+
   // "更多"按钮：从聊天模式切换到角色详情
   const handleShowDetail = () => {
     setView('detail')
+  }
+
+  /** 更多菜单：举报 */
+  const handleReport = () => {
+    setShowMoreMenu(false)
+    Taro.showModal({
+      title: '举报角色',
+      content: '请描述举报原因',
+      success: (modalRes) => {
+        if (modalRes.confirm) {
+          Taro.showToast({ title: '举报已提交', icon: 'success' })
+        }
+      },
+    })
+  }
+
+  /** 更多菜单：导出聊天记录 */
+  const handleExportChat = () => {
+    setShowMoreMenu(false)
+    if (activeChat.messages.length === 0) {
+      Taro.showToast({ title: '暂无聊天记录', icon: 'none' })
+      return
+    }
+    const exportData = JSON.stringify({
+      character: { id: character?.id, name: character?.name },
+      messages: activeChat.messages.map(m => ({ role: m.role, content: m.content })),
+      exportedAt: new Date().toISOString(),
+    }, null, 2)
+    Taro.setClipboardData({ data: exportData })
+      .then(() => Taro.showToast({ title: '已复制到剪贴板', icon: 'success' }))
+      .catch(() => Taro.showToast({ title: '导出失败', icon: 'none' }))
   }
 
   // 加载中
@@ -417,7 +446,7 @@ export default function CharacterDetailPage() {
           </View>
           {directChat && (
             <View className='page-character-detail-chat-header-more' onClick={handleShowDetail}>
-              <Text className='page-character-detail-chat-header-more-text'>⋯</Text>
+              <Icon name='menu' size={36} color='var(--color-primary)' />
             </View>
           )}
         </View>
@@ -474,20 +503,32 @@ export default function CharacterDetailPage() {
   }
 
   // ================================================================
-  //  Detail View — 角色信息 + 模型选择 + 开始对话
+  //  Detail View — 重构布局
+  //  第1行: 头像(左) + 名字/标签/统计(右)
+  //  第3行: 角色描述
+  //  第4行: 提示词（合并场景设定+开场白）
+  //  第5行: 对话测试（模型在对话中选择）
   // ================================================================
   const {
     name,
     avatar,
     description,
     prompt,
-    scenario,
-    firstMsg,
     tags,
     status,
     chatCount,
     likeCount,
-  } = character
+    favCount,
+  } = character as CharacterCard & { scenario?: string; firstMsg?: string }
+
+  // 合并提示词展示（兼容旧数据 scenario/firstMsg 尚未迁入 prompt）
+  const mergedPrompt = (() => {
+    const parts: string[] = []
+    if (prompt) parts.push(prompt)
+    if (character && 'scenario' in character && character.scenario) parts.push(`\n\n【场景设定】${character.scenario}`)
+    if (character && 'firstMsg' in character && character.firstMsg) parts.push(`\n\n【开场白】${character.firstMsg}`)
+    return parts.join('')
+  })()
 
   return (
     <ScrollView scrollY className='page-character-detail'>
@@ -503,7 +544,15 @@ export default function CharacterDetailPage() {
           <View className='page-character-detail-chat-header-spacer' />
         </View>
       )}
-      {/* 头部：头像 + 名字 + 标签 */}
+      {/* 从卡片集进入：返回卡片集 */}
+      {!directChat && (
+        <View className='page-character-detail-back-row' onClick={handleCardsBack}>
+          <Text className='page-character-detail-back-arrow'>←</Text>
+          <Text className='page-character-detail-back-text'>返回卡片集</Text>
+        </View>
+      )}
+
+      {/* 第1行：头像(左) + 名字/标签/统计(右) */}
       <View className='page-character-detail-header'>
         <View className='page-character-detail-avatar'>
           {avatar ? (
@@ -515,77 +564,55 @@ export default function CharacterDetailPage() {
           )}
         </View>
 
-        <Text className='page-character-detail-name'>{name}</Text>
-
-        {status && status !== 'PUBLISHED' && (
-          <Text className='page-character-detail-status-badge'>
-            {STATUS_LABELS[status] || status}
-          </Text>
-        )}
-
-        {tags && tags.length > 0 && (
-          <View className='page-character-detail-tags'>
-            {tags.map((tag, i) => (
-              <Text key={i} className='page-character-detail-tag'>{tag}</Text>
-            ))}
+        <View className='page-character-detail-info'>
+          <View className='page-character-detail-info-top'>
+            <Text className='page-character-detail-name'>{name}</Text>
+            {status && status !== 'PUBLISHED' && (
+              <Text className='page-character-detail-status-badge'>
+                {STATUS_LABELS[status] || status}
+              </Text>
+            )}
           </View>
-        )}
 
-        {/* 统计 */}
-        <View className='page-character-detail-stats'>
-          <Text className='page-character-detail-stat'>
-            聊 {formatCount(chatCount || 0)}
-          </Text>
-          <Text className='page-character-detail-stat'>
-            <Icon name='heart' size={24} color='#E63946' /> {formatCount(likeCount || 0)}
-          </Text>
-        </View>
-      </View>
-
-      {/* 信息区块 */}
-      <View className='page-character-detail-body'>
-        {/* 角色描述 */}
-        <View className='page-character-detail-section'>
-          <Text className='page-character-detail-section-title'>角色描述</Text>
-          <Text className='page-character-detail-section-content'>
-            {description}
-          </Text>
-        </View>
-
-        {/* 提示词 */}
-        {prompt && (
-          <View className='page-character-detail-section'>
-            <Text className='page-character-detail-section-title'>提示词</Text>
-            <Text className='page-character-detail-section-content'>
-              {prompt}
-            </Text>
-          </View>
-        )}
-
-        {/* 场景设定 */}
-        {scenario && (
-          <View className='page-character-detail-section'>
-            <Text className='page-character-detail-section-title'>场景设定</Text>
-            <Text className='page-character-detail-section-content'>
-              {scenario}
-            </Text>
-          </View>
-        )}
-
-        {/* 开场白 */}
-        {firstMsg && (
-          <View className='page-character-detail-section'>
-            <Text className='page-character-detail-section-title'>开场白</Text>
-            <View className='page-character-detail-first-msg'>
-              <Text>{firstMsg}</Text>
+          {tags && tags.length > 0 && (
+            <View className='page-character-detail-tags'>
+              {tags.map((tag, i) => (
+                <Text key={i} className='page-character-detail-tag'>{tag}</Text>
+              ))}
             </View>
-          </View>
-        )}
+          )}
 
+          <View className='page-character-detail-stats'>
+            <Text className='page-character-detail-stat'>
+              ♥ {formatCount(likeCount || 0)}
+            </Text>
+            <Text className='page-character-detail-stat'>
+              ★ {formatCount(favCount || 0)}
+            </Text>
+          </View>
+        </View>
       </View>
 
-      {/* 操作按钮 */}
-      <View className='page-character-detail-actions'>
+      {/* 第3行：角色描述 */}
+      <View className='page-character-detail-section'>
+        <Text className='page-character-detail-section-title'>角色描述</Text>
+        <Text className='page-character-detail-section-content'>
+          {description}
+        </Text>
+      </View>
+
+      {/* 第4行：提示词（合并） */}
+      {mergedPrompt && (
+        <View className='page-character-detail-section'>
+          <Text className='page-character-detail-section-title'>提示词</Text>
+          <Text className='page-character-detail-section-content'>
+            {mergedPrompt}
+          </Text>
+        </View>
+      )}
+
+      {/* 第5行：对话测试 */}
+      <View className='page-character-detail-chat-test'>
         <View className='page-character-detail-model-row'>
           <Text className='page-character-detail-model-label'>对话模型</Text>
           <ModelSelector compact />
@@ -599,45 +626,34 @@ export default function CharacterDetailPage() {
             开始对话
           </Button>
         )}
+      </View>
+
+      {/* 操作区 */}
+      <View className='page-character-detail-actions'>
         <Button className='page-character-detail-publish-btn' onClick={() => {
           Taro.navigateTo({ url: `/pages/creator/index?id=${character.id}` })
         }}
         >
           编辑角色
         </Button>
-        <Button className='page-character-detail-report-btn' onClick={() => {
-          Taro.showActionSheet({
-            itemList: ['举报不当内容', '导出聊天记录'],
-            success: (res) => {
-              if (res.tapIndex === 0) {
-                Taro.showModal({
-                  title: '举报角色',
-                  content: '请描述举报原因',
-                  success: (modalRes) => {
-                    if (modalRes.confirm) {
-                      Taro.showToast({ title: '举报已提交', icon: 'success' })
-                    }
-                  },
-                })
-              } else if (res.tapIndex === 1) {
-                if (activeChat.messages.length === 0) {
-                  Taro.showToast({ title: '暂无聊天记录', icon: 'none' })
-                  return
-                }
-                const exportData = JSON.stringify({
-                  character: { id: character.id, name: character.name },
-                  messages: activeChat.messages.map(m => ({ role: m.role, content: m.content })),
-                  exportedAt: new Date().toISOString(),
-                }, null, 2)
-                Taro.setClipboardData({ data: exportData })
-                  .then(() => Taro.showToast({ title: '已复制到剪贴板', icon: 'success' }))
-                  .catch(() => Taro.showToast({ title: '导出失败', icon: 'none' }))
-              }
-            },
-          })
-        }}>
-          更多
-        </Button>
+        <View className='page-character-detail-more-wrapper'>
+          <Button className='page-character-detail-more-btn' onClick={() => setShowMoreMenu(prev => !prev)}>
+            更多
+          </Button>
+          {showMoreMenu && (
+            <View className='page-character-detail-more-layer'>
+              <View className='page-character-detail-more-overlay' onClick={() => setShowMoreMenu(false)} />
+              <View className='page-character-detail-more-dropdown'>
+                <View className='page-character-detail-more-dropdown-item' onClick={handleReport}>
+                  <Text>举报不当内容</Text>
+                </View>
+                <View className='page-character-detail-more-dropdown-item' onClick={handleExportChat}>
+                  <Text>导出聊天记录</Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
       </View>
     </ScrollView>
   )

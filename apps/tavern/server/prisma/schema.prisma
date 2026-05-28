@@ -70,8 +70,6 @@ model TavernCard {
   avatar           String?    @map("avatar_url")
   cardType         CardType   @default(CHARACTER) @map("card_type")
   prompt           String?    @db.Text
-  scenario         String?    @db.Text
-  firstMsg         String?    @map("first_msg")
   tags             Json
   isOfficial       Boolean    @default(false) @map("is_official")
   status           CardStatus @default(DRAFT)

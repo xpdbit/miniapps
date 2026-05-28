@@ -30,7 +30,7 @@ export default function WebNavBar() {
       Taro.reLaunch({ url: '/pages/chats/index' })
     } else {
       // 非游戏状态 → 回到酒馆页面
-      Taro.switchTab({ url: '/pages/market/index' })
+      Taro.switchTab({ url: '/pages/cards/index' })
     }
   }
 

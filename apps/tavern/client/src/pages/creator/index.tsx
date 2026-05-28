@@ -26,8 +26,6 @@ interface CreatorForm {
   name: string
   description: string
   prompt: string
-  firstMsg: string
-  scenario: string
   tags: string[]
   cardType: CardType
 }
@@ -37,8 +35,6 @@ function emptyForm(cardType: CardType): CreatorForm {
     name: '',
     description: '',
     prompt: '',
-    firstMsg: '',
-    scenario: '',
     tags: [],
     cardType,
   }
@@ -68,8 +64,6 @@ export default function CreatorPage() {
           name: card.name || '',
           description: card.description || '',
           prompt: card.prompt || '',
-          firstMsg: card.firstMsg || '',
-          scenario: card.scenario || '',
           tags: card.tags || [],
           cardType: card.cardType || cardType,
         })
@@ -101,8 +95,6 @@ export default function CreatorPage() {
         description: form.description,
         cardType: form.cardType,
         prompt: form.prompt,
-        scenario: form.scenario,
-        firstMsg: form.firstMsg,
         tags: form.tags,
       }
 
@@ -139,8 +131,7 @@ export default function CreatorPage() {
   const steps = [
     { title: '基本信息', icon: '1' },
     { title: '详细设定', icon: '2' },
-    { title: '对话设定', icon: '3' },
-    { title: '预览发布', icon: '4' },
+    { title: '预览发布', icon: '3' },
   ]
 
   return (
@@ -250,25 +241,6 @@ export default function CreatorPage() {
             />
           </View>
 
-          <View className='page-creator-field'>
-            <Text className='page-creator-label'>
-              {form.cardType === 'CHARACTER' ? '场景设定' :
-               form.cardType === 'MECHANISM' ? '触发条件' :
-               form.cardType === 'MAP' ? '区域划分' : '历史背景'}
-            </Text>
-            <Textarea
-              className='page-creator-textarea'
-              value={form.scenario}
-              onInput={e => updateField('scenario', e.detail.value)}
-              placeholder={
-                form.cardType === 'CHARACTER' ? '故事发生的场景...' :
-                form.cardType === 'MECHANISM' ? '机制触发的条件和方式...' :
-                form.cardType === 'MAP' ? '地图的区域分布与连接...' : '世界的历史与重要事件...'
-              }
-              maxlength={1000}
-            />
-          </View>
-
           <View className='page-creator-nav'>
             <Button className='page-creator-prev-btn' onClick={() => setStep(1)}>上一步</Button>
             <Button className='page-creator-next-btn' onClick={() => setStep(3)}>下一步</Button>
@@ -276,42 +248,8 @@ export default function CreatorPage() {
         </View>
       )}
 
-      {/* Step 3: Dialogue */}
+      {/* Step 3: Preview & Publish */}
       {step === 3 && (
-        <View className='page-creator-form'>
-          <View className='page-creator-field'>
-            <Text className='page-creator-label'>
-              {form.cardType === 'CHARACTER' ? '开场白' :
-               form.cardType === 'MECHANISM' ? '机制描述' :
-               form.cardType === 'MAP' ? '入口描述' : '世界观引言'}
-            </Text>
-            <Textarea
-              className='page-creator-textarea'
-              value={form.firstMsg}
-              onInput={e => updateField('firstMsg', e.detail.value)}
-              placeholder={
-                form.cardType === 'CHARACTER' ? '角色对玩家说的第一句话...' :
-                form.cardType === 'MECHANISM' ? '向玩家解释这个机制...' :
-                form.cardType === 'MAP' ? '玩家进入地图时的描述...' : '对世界观的简要介绍...'
-              }
-              maxlength={500}
-            />
-            <Text className='page-creator-hint'>
-              {form.cardType === 'CHARACTER' ? '这是用户开始对话时角色说的第一句话' :
-               form.cardType === 'MECHANISM' ? '向玩家说明这个机制如何运作' :
-               form.cardType === 'MAP' ? '玩家探索地图时的初始描述' : '介绍这个世界的背景故事'}
-            </Text>
-          </View>
-
-          <View className='page-creator-nav'>
-            <Button className='page-creator-prev-btn' onClick={() => setStep(2)}>上一步</Button>
-            <Button className='page-creator-next-btn' onClick={() => setStep(4)}>下一步</Button>
-          </View>
-        </View>
-      )}
-
-      {/* Step 4: Preview & Publish */}
-      {step === 4 && (
         <View className='page-creator-form'>
           <View className='page-creator-preview-card'>
             <View className='page-creator-preview-type'>
@@ -328,13 +266,11 @@ export default function CreatorPage() {
                 <Text key={t} className='page-creator-preview-tag'>{t}</Text>
               ))}
             </View>
-            <View className='page-creator-preview-first'>
-              <Text className='page-creator-preview-first-text'>{form.firstMsg || '暂未设置开场内容'}</Text>
-            </View>
+
           </View>
 
           <View className='page-creator-nav'>
-            <Button className='page-creator-prev-btn' onClick={() => setStep(3)}>上一步</Button>
+            <Button className='page-creator-prev-btn' onClick={() => setStep(2)}>上一步</Button>
             <Button
               className='page-creator-submit-btn'
               onClick={handleSubmit}
