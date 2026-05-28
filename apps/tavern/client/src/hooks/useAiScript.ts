@@ -19,9 +19,32 @@ export interface AiScriptActions {
 
 const LOCAL_STATE_KEY = 'tavern_ai_script_state'
 
+/** 双机制存储：优先 localStorage（H5），降级到 Taro API（小程序） */
+function storageGet(key: string): string | null {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(key)
+    }
+  } catch { /* ignore */ }
+  try {
+    const v = Taro.getStorageSync(key)
+    return typeof v === 'string' ? v : v ? JSON.stringify(v) : null
+  } catch { return null }
+}
+
+function storageSet(key: string, value: unknown): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(value))
+      return
+    }
+  } catch { /* ignore */ }
+  try { Taro.setStorageSync(key, value) } catch { /* ignore */ }
+}
+
 function loadLocalState(): GameWorldState | null {
   try {
-    const raw = localStorage.getItem(LOCAL_STATE_KEY)
+    const raw = storageGet(LOCAL_STATE_KEY)
     if (!raw) return null
     return JSON.parse(raw) as GameWorldState
   } catch {
@@ -31,7 +54,7 @@ function loadLocalState(): GameWorldState | null {
 
 function saveLocalState(state: GameWorldState): void {
   try {
-    localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state))
+    storageSet(LOCAL_STATE_KEY, state)
   } catch {
     // ignore storage errors
   }

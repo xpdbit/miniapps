@@ -5,7 +5,7 @@
 // ============================================================
 
 import type { AiScriptResponse, ScriptEvent } from '@/types/ai-script'
-import { isValidEventType } from './registry'
+import { isValidEventType, getTemplate } from './registry'
 
 /**
  * Sanitize a JSON string before parsing:
@@ -33,6 +33,39 @@ function sanitizeJsonCandidate(raw: string): string {
 }
 
 /**
+ * Validate event payload parameters against registry schema.
+ * Returns true if valid or if no template found (lenient fallback).
+ */
+function validateEventPayload(type: string, payload: Record<string, unknown>): boolean {
+  const template = getTemplate(type)
+  if (!template) return true // unknown type, skip validation
+
+  const paramDefs = template.parameters
+  for (const [key, def] of Object.entries(paramDefs)) {
+    if (def.required && (payload[key] === undefined || payload[key] === null)) {
+      return false
+    }
+    // Validate type
+    if (payload[key] !== undefined) {
+      switch (def.type) {
+        case 'string':
+          if (typeof payload[key] !== 'string') return false
+          // Check enum constraint
+          if (def.enum && !def.enum.includes(payload[key] as string)) return false
+          break
+        case 'number':
+          if (typeof payload[key] !== 'number') return false
+          break
+        case 'boolean':
+          if (typeof payload[key] !== 'boolean') return false
+          break
+      }
+    }
+  }
+  return true
+}
+
+/**
  * Validate a single event against the registry
  */
 function validateEvent(raw: unknown): ScriptEvent | null {
@@ -41,7 +74,9 @@ function validateEvent(raw: unknown): ScriptEvent | null {
   if (typeof maybe.type !== 'string') return null
   if (!isValidEventType(maybe.type)) return null
   if (!maybe.payload || typeof maybe.payload !== 'object') return null
-  return { type: maybe.type as ScriptEvent['type'], payload: maybe.payload as Record<string, unknown> }
+  const payload = maybe.payload as Record<string, unknown>
+  if (!validateEventPayload(maybe.type, payload)) return null
+  return { type: maybe.type as ScriptEvent['type'], payload }
 }
 
 /**
