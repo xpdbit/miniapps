@@ -49,6 +49,7 @@ async function callAIForCharacter(
   history: Array<{ role: string; content: string }>,
   onToken: (token: string) => void,
   signal: { aborted: boolean },
+  gameMode?: { saveId: string; characterIds: string[] },
 ): Promise<string> {
   const token = getToken()
   if (!token) throw new Error('未登录')
@@ -72,6 +73,7 @@ async function callAIForCharacter(
           prompt: cardData.prompt,
           scenario: cardData.scenario,
         },
+        ...(gameMode ? { saveId: gameMode.saveId, characterIds: gameMode.characterIds } : {}),
       },
       enableChunked: true,
       timeout: 120000,
@@ -200,6 +202,7 @@ export default function ChatPage() {
             // Stream tokens to UI via temporary message update
           },
           abortSignal,
+          save ? { saveId: save.id, characterIds: memberIds } : undefined,
         )
       } catch (err) {
         console.warn('[AI Group] failed for', memberId, err)

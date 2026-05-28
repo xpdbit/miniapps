@@ -131,20 +131,57 @@ export function serializeEventLog(events: ScriptEvent[]): string {
 
 /**
  * Deserialize event strings from ChatMessage back to events
+ * Uses brace-level matching instead of regex to handle payloads containing "}"
  */
 export function parseEventLog(content: string): ScriptEvent[] {
   const events: ScriptEvent[] = []
-  const regex = /\[EVENT\]\s*(\S+)\s*\|\s*(\{.*?\})\s*\[\/EVENT\]/g
-  let match: RegExpExecArray | null
-  while ((match = regex.exec(content)) !== null) {
-    const type = match[1]
-    if (!type || !isValidEventType(type)) continue
+  const markerStart = '[EVENT] '
+  const markerEnd = ' [/EVENT]'
+
+  let pos = 0
+  while (pos < content.length) {
+    const startIdx = content.indexOf(markerStart, pos)
+    if (startIdx === -1) break
+
+    const afterType = startIdx + markerStart.length
+    const pipeIdx = content.indexOf(' | ', afterType)
+    if (pipeIdx === -1) { pos = afterType; continue }
+
+    const type = content.slice(afterType, pipeIdx).trim()
+    if (!type || !isValidEventType(type)) { pos = pipeIdx + 3; continue }
+
+    // Find matching closing brace using depth counting
+    const jsonStart = pipeIdx + 3
+    if (jsonStart >= content.length || content[jsonStart] !== '{') { pos = jsonStart; continue }
+
+    let depth = 0
+    let inStr = false
+    let escaped = false
+    let jsonEnd = -1
+    for (let i = jsonStart; i < content.length; i++) {
+      const ch = content[i]
+      if (escaped) { escaped = false; continue }
+      if (ch === '\\') { escaped = true; continue }
+      if (ch === '"' && !inStr) { inStr = true; continue }
+      if (ch === '"' && inStr) { inStr = false; continue }
+      if (inStr) continue
+      if (ch === '{') depth++
+      if (ch === '}') depth--
+      if (depth === 0) { jsonEnd = i; break }
+    }
+
+    if (jsonEnd === -1) { pos = jsonStart; continue } // unclosed brace
+
+    const jsonStr = content.slice(jsonStart, jsonEnd + 1)
     try {
-      const payload = JSON.parse(match[2]!)
+      const payload = JSON.parse(jsonStr)
       events.push({ type: type as ScriptEvent['type'], payload })
     } catch {
       // skip malformed event entries
     }
+
+    pos = jsonEnd + 1
   }
+
   return events
 }
