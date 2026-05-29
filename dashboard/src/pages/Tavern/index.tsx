@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Tag, Card, Row, Col, Statistic, Button, Space, message, Tooltip } from 'antd'
-import { CommentOutlined, AppstoreOutlined, UserOutlined, KeyOutlined, FileTextOutlined, CloudDownloadOutlined } from '@ant-design/icons'
+import { CommentOutlined, AppstoreOutlined, UserOutlined, KeyOutlined, FileTextOutlined, CloudDownloadOutlined, BookOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { ROUTES } from '@/constants/routes'
 import PageHeader from '@/components/PageHeader'
 import { PageSkeleton } from '@/components/PageSkeleton'
@@ -107,9 +107,15 @@ export default function TavernPage() {
           <Button icon={<UserOutlined />} onClick={() => navigate(ROUTES.TAVERN_USERS)}>
             用户管理
           </Button>
-          <Button icon={<AppstoreOutlined />} onClick={() => navigate(ROUTES.TAVERN_MODELS)}>
-            模型管理
-          </Button>
+           <Button icon={<AppstoreOutlined />} onClick={() => navigate(ROUTES.TAVERN_MODELS)}>
+             模型管理
+           </Button>
+           <Button icon={<ThunderboltOutlined />} onClick={() => navigate(ROUTES.TAVERN_AI_SCRIPTS)}>
+             AI Script
+           </Button>
+           <Button icon={<BookOutlined />} onClick={() => navigate(ROUTES.TAVERN_SCENARIOS)} type="primary" ghost>
+             Scenario 剧本
+           </Button>
         </Space>
       </Card>
 

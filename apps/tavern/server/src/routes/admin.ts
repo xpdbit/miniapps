@@ -5,6 +5,9 @@ import * as moderationService from '../services/moderation.service'
 import { getAllTemplates } from '../services/ai-scripts/registry'
 import { gameStateStore } from '../services/ai-scripts/game-state-store'
 import { parseEventLog } from '../services/ai-scripts/parser'
+import { scenarioLoader } from '../services/ai-scripts/scenario-loader'
+import { CharacterGenerator } from '../services/ai-scripts/character-generator'
+import { success } from '../utils/response'
 import prisma from '../utils/prisma'
 import { z } from 'zod'
 
@@ -979,6 +982,210 @@ router.get('/ai-scripts/logs/:saveId', async (req: AuthenticatedRequest, res: Re
   } catch (err: unknown) {
     res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
   }
+})
+
+// ── Scenario 管理（通过 /api/v1/admin/ai-scripts/scenarios/*） ──
+
+/**
+ * GET /api/v1/admin/ai-scripts/scenarios — 获取所有剧本列表
+ */
+router.get('/ai-scripts/scenarios', async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const list = scenarioLoader.list()
+    res.json(success(list))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+/**
+ * GET /api/v1/admin/ai-scripts/scenarios/:id — 获取单个剧本
+ */
+router.get('/ai-scripts/scenarios/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scenario = scenarioLoader.get(req.params.id)
+    if (!scenario) {
+      res.status(404).json({ code: 404, message: '剧本不存在', data: null })
+      return
+    }
+    res.json(success(scenario))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+/**
+ * POST /api/v1/admin/ai-scripts/scenarios/:id/init — 初始化游戏
+ */
+router.post('/ai-scripts/scenarios/:id/init', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scenario = scenarioLoader.get(req.params.id)
+    if (!scenario) {
+      res.status(404).json({ code: 404, message: '剧本不存在', data: null })
+      return
+    }
+    const generator = new CharacterGenerator()
+    const characters = await generator.resolveAll(scenario.characters)
+    const dimensions: Record<string, number> = {}
+    for (const dim of scenario.world.dimensions) {
+      dimensions[dim.key] = scenario.initialState.dimensions[dim.key]
+        ?? Math.floor((dim.range[0] + dim.range[1]) / 2)
+    }
+    res.json(success({
+      scenario: { meta: scenario.meta, world: scenario.world, rules: scenario.rules },
+      characters,
+      initialState: { dimensions, time: scenario.initialState.time, weather: scenario.initialState.weather },
+      firstMessage: scenario.promptTemplate.firstMessage,
+    }))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+/**
+ * POST /api/v1/admin/ai-scripts/scenarios/validate — 校验
+ */
+router.post('/ai-scripts/scenarios/validate', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = scenarioLoader.validate(req.body)
+    res.json(success(result))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+/**
+ * POST /api/v1/admin/ai-scripts/scenarios — 创建剧本
+ */
+router.post('/ai-scripts/scenarios', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = scenarioLoader.validate(req.body)
+    if (!result.valid) {
+      res.status(400).json({ code: 400, message: '剧本配置不合法', errors: result.errors, data: null })
+      return
+    }
+    scenarioLoader.save(req.body)
+    res.json(success({ id: req.body.meta.id }))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+/**
+ * PUT /api/v1/admin/ai-scripts/scenarios/:id — 更新剧本
+ */
+router.put('/ai-scripts/scenarios/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const existing = scenarioLoader.get(req.params.id)
+    if (!existing) {
+      res.status(404).json({ code: 404, message: '剧本不存在', data: null })
+      return
+    }
+    const result = scenarioLoader.validate(req.body)
+    if (!result.valid) {
+      res.status(400).json({ code: 400, message: '剧本配置不合法', errors: result.errors, data: null })
+      return
+    }
+    scenarioLoader.save(req.body)
+    res.json(success({ id: req.body.meta.id }))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+/**
+ * DELETE /api/v1/admin/ai-scripts/scenarios/:id — 删除剧本
+ */
+router.delete('/ai-scripts/scenarios/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const deleted = scenarioLoader.delete(req.params.id)
+    if (!deleted) {
+      res.status(400).json({ code: 400, message: '不能删除内置剧本', data: null })
+      return
+    }
+    res.json(success('ok'))
+  } catch (err: unknown) {
+    res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null })
+  }
+})
+
+// ── Scenario 管理（简写路径 /scenarios/*，匹配 tavern-proxy adminOps）──
+
+/**
+ * GET /api/v1/admin/scenarios — 获取所有剧本列表
+ */
+router.get('/scenarios', async (_req: AuthenticatedRequest, res: Response) => {
+  try { res.json(success(scenarioLoader.list())) } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
+})
+
+/**
+ * GET /api/v1/admin/scenarios/:id — 获取单个剧本
+ */
+router.get('/scenarios/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scenario = scenarioLoader.get(req.params.id)
+    if (!scenario) { res.status(404).json({ code: 404, message: '剧本不存在', data: null }); return }
+    res.json(success(scenario))
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
+})
+
+/**
+ * POST /api/v1/admin/scenarios/:id/init — 初始化游戏
+ */
+router.post('/scenarios/:id/init', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scenario = scenarioLoader.get(req.params.id)
+    if (!scenario) { res.status(404).json({ code: 404, message: '剧本不存在', data: null }); return }
+    const generator = new CharacterGenerator()
+    const characters = await generator.resolveAll(scenario.characters)
+    const dimensions: Record<string, number> = {}
+    for (const dim of scenario.world.dimensions) dimensions[dim.key] = scenario.initialState.dimensions[dim.key] ?? Math.floor((dim.range[0] + dim.range[1]) / 2)
+    res.json(success({ scenario: { meta: scenario.meta, world: scenario.world, rules: scenario.rules }, characters, initialState: { dimensions, time: scenario.initialState.time, weather: scenario.initialState.weather }, firstMessage: scenario.promptTemplate.firstMessage }))
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
+})
+
+/**
+ * POST /api/v1/admin/scenarios/validate — 校验
+ */
+router.post('/scenarios/validate', async (req: AuthenticatedRequest, res: Response) => {
+  try { res.json(success(scenarioLoader.validate(req.body))) } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
+})
+
+/**
+ * POST /api/v1/admin/scenarios — 创建剧本
+ */
+router.post('/scenarios', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = scenarioLoader.validate(req.body)
+    if (!result.valid) { res.status(400).json({ code: 400, message: '剧本配置不合法', errors: result.errors, data: null }); return }
+    scenarioLoader.save(req.body)
+    res.json(success({ id: req.body.meta.id }))
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
+})
+
+/**
+ * PUT /api/v1/admin/scenarios/:id — 更新剧本
+ */
+router.put('/scenarios/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const existing = scenarioLoader.get(req.params.id)
+    if (!existing) { res.status(404).json({ code: 404, message: '剧本不存在', data: null }); return }
+    const result = scenarioLoader.validate(req.body)
+    if (!result.valid) { res.status(400).json({ code: 400, message: '剧本配置不合法', errors: result.errors, data: null }); return }
+    scenarioLoader.save(req.body)
+    res.json(success({ id: req.body.meta.id }))
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
+})
+
+/**
+ * DELETE /api/v1/admin/scenarios/:id — 删除剧本
+ */
+router.delete('/scenarios/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const deleted = scenarioLoader.delete(req.params.id)
+    if (!deleted) { res.status(400).json({ code: 400, message: '不能删除内置剧本', data: null }); return }
+    res.json(success('ok'))
+  } catch (err: unknown) { res.status(500).json({ code: 500, message: err instanceof Error ? err.message : 'Unknown error', data: null }) }
 })
 
 export default router
