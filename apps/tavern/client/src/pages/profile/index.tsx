@@ -809,7 +809,7 @@ export default function ProfilePage() {
           onClick={() => {
             Taro.showModal({
               title: '离开游戏',
-              content: '离开游戏后，底部导航将恢复为 酒馆/开始/我的。确定离开？',
+              content: '离开游戏后，底部导航将恢复为 卡片集/酒馆/我的。确定离开？',
               success: (res) => {
                 if (res.confirm) {
                   leaveGame()
