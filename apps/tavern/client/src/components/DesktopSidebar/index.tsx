@@ -76,7 +76,7 @@ function getCurrentRoute(): string {
         creator: 'pages/creator/index',
         character: 'pages/character/index',
         persona: 'pages/persona/index',
-        'game-setup': 'pages/game-setup/index',
+        'game-setup': 'pages/scenario-select/index',
       }
       return routeMap[topLevel] || hash
     }
@@ -150,7 +150,6 @@ export default function DesktopSidebar() {
     creator: 'pages/cards/index',
     archive: 'pages/cards/index',
     persona: 'pages/profile/index',
-    'game-setup': 'pages/cards/index',
   }
 
   const syncActiveIndex = useCallback(() => {

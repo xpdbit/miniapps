@@ -62,6 +62,7 @@ export const MENU_ITEMS: RouteItem[] = [
   { path: ROUTES.TAVERN_CHATS, scope: 'tavern', label: '聊天监控' },
   { path: ROUTES.TAVERN_KEYS, scope: 'tavern', label: 'Key 管理' },
   { path: ROUTES.TAVERN_AI_SCRIPTS, scope: 'tavern', label: 'AI Script' },
+  { path: ROUTES.TAVERN_SCENARIOS, scope: 'tavern', label: 'Scenario 剧本' },
   { path: ROUTES.TAVERN_USERS, scope: 'tavern', label: '用户管理' },
   { path: ROUTES.USERS, scope: 'tavern', label: '用户管理' },
   // ── FTG 专属 ──
