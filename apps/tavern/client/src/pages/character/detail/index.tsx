@@ -616,7 +616,7 @@ export default function CharacterDetailPage() {
           </Button>
         ) : (
           <Button className='page-character-detail-chat-btn' onClick={handleStartChat}>
-            开始对话
+             测试
           </Button>
         )}
       </View>

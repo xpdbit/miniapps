@@ -88,6 +88,7 @@ function deriveInitialState(): GameWorldState | null {
   }
 
   return {
+    dimensions: {},
     world: {
       time: { hour: 8, day: 1, season: 'spring' },
       weather: 'sunny',
@@ -177,6 +178,18 @@ function applyEventsToState(state: GameWorldState, events: ScriptEvent[]): void 
         break
       }
       // ui.prompt is handled separately (requires user interaction)
+      case 'dimension.modify': {
+        const key = payload.dimension as string
+        const delta = payload.delta as number
+        if (typeof key === 'string' && typeof delta === 'number') {
+          useGameStore.getState().modifyDimension(key, delta)
+        }
+        break
+      }
+      case 'kingdom.event': {
+        Taro.eventCenter.trigger('kingdom-event', payload)
+        break
+      }
       case 'ui.prompt':
       case 'character.emote':
       case 'character.engage':
