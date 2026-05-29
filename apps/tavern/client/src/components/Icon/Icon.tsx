@@ -100,20 +100,56 @@ function svgToDataUri(svgTemplate: string, color: string): string {
 
 /**
  * Resolve a CSS variable reference (e.g., "var(--color-icon-muted)") to its actual value.
- * Falls back to the raw string if resolution fails or in non-browser environments.
+ * Tries in order:
+ *   1. document.documentElement (<html>)
+ *   2. document.querySelector('page') (Taro defines CSS vars on <page>)
+ * Falls back to a neutral color (#999999) if resolution fails, preventing broken SVG rendering.
  */
 function resolveColor(color: string): string {
   if (!color.startsWith('var(--')) return color;
   try {
     if (typeof document !== 'undefined') {
-      const match = color.match(/var\((--[\w-]+)\)/);
-      if (match) {
-        const resolved = getComputedStyle(document.documentElement).getPropertyValue(match[1]).trim();
+      // Extract var name, ignoring optional fallback value (e.g., var(--xxx, #fallback))
+      const match = color.match(/var\((--[\w-]+)/);
+      if (match?.[1]) {
+        const varName = match[1];
+        // Try :root / <html> first
+        let resolved = getComputedStyle(document.documentElement)
+          .getPropertyValue(varName)
+          .trim();
+        if (resolved) return resolved;
+        // Try <page> element — Taro H5 defines CSS vars on <page>
+        const pageEl =
+          typeof document.querySelector === 'function'
+            ? document.querySelector('page')
+            : null;
+        if (pageEl) {
+          resolved = getComputedStyle(pageEl)
+            .getPropertyValue(varName)
+            .trim();
+          if (resolved) return resolved;
+        }
+        // Try #app element — Taro H5 also scopes CSS vars to #app
+        const appEl =
+          typeof document.querySelector === 'function'
+            ? document.querySelector('#app')
+            : null;
+        if (appEl) {
+          resolved = getComputedStyle(appEl)
+            .getPropertyValue(varName)
+            .trim();
+          if (resolved) return resolved;
+        }
+        // Try document.body as final fallback
+        resolved = getComputedStyle(document.body)
+          .getPropertyValue(varName)
+          .trim();
         if (resolved) return resolved;
       }
     }
   } catch { /* ignore resolution failures */ }
-  return color;
+  // Return a sensible neutral color instead of raw 'var(--xxx)' which breaks SVG
+  return '#999999';
 }
 
 /**

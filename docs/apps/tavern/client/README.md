@@ -1,7 +1,7 @@
 # AI-Tavern 客户端 — 说明与规划
 
 > **状态**: current
-> **更新**: 2026-05-28
+> **更新**: 2026-05-29
 > 项目路径: `apps/tavern/client/`
 
 ---
@@ -174,9 +174,9 @@ H5 模式下使用 **hash 模式**，配置了自定义路由路径：
 ### 3.3 页面功能详表
 
 | 页面 | Tab | 功能 | 状态 |
-|---|---|---|---|
-| **market** | 酒馆 tab | 角色市场浏览、按类型筛选（角色/机制/地图/背景）、搜索、刷新、本地卡片管理 | ✅ 已实现 |
-| **chat** | 开始 tab | SSE 流式对话、会话管理、模型选择、角色选择 | ✅ 已实现 |
+|---|---|---|---|---|
+| **cards** | 卡片集 tab | 角色卡浏览、按类型筛选（角色/机制/地图/背景）、搜索、刷新、本地卡片管理 | ✅ 已实现 |
+| **chat** | 酒馆 tab | SSE 流式对话、会话管理、模型选择、角色选择 | ✅ 已实现 |
 | **archive** | — | 聊天归档列表 | ✅ 已实现 |
 | **character** | — | 角色列表 | ✅ 已实现 |
 | **character/detail** | — | 角色详情（设定、对话风格、开始对话入口） | ✅ 已实现 |
@@ -475,7 +475,7 @@ delete<T>(url)        // DELETE
 // CustomTabBar 组件通过 gameStore.gameMode 切换两种模式
 
 // 酒馆模式（Tavern Mode）
-tabList: [酒馆(market), 开始(chat), 我的(profile)]
+tabList: [卡片集(cards), 酒馆(chat), 我的(profile)]
 
 // 游戏模式（Game Mode）
 tabList: [通信(chats), 通讯录(contacts), 发现(discover), 我的(profile)]
@@ -536,8 +536,8 @@ app.componentDidShow()
 
 角色创建：
   creator/index
-    → localCardsStore.createCard() (本地存储)
-    → 或 characterService.create() (发布到服务器)
+    → 已登录 → characterService.create() (服务器端存储)
+    → 未登录 → localCardsStore.createCard() (本地存储降级)
 ```
 
 ---
@@ -907,5 +907,5 @@ npm run generate-icons         # 生成 tabBar 图标
 
 ---
 
-> **最后更新**: 2026-05-28
-> **修改**: 同步新增组件/Store/Hook、更新规模数字
+> **最后更新**: 2026-05-29
+> **修改**: 侧边栏"开始"→"酒馆"、路由同步至 */tavern、移除卡片集返回按钮、Profile 按钮尺寸调整、全宽布局、搜索居中对齐、卡片子标签风格对齐、Creator 服务端保存、下拉菜单溢出修复、硬编码颜色替换为 CSS 变量

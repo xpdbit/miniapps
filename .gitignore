@@ -48,6 +48,9 @@ coverage/
 __pycache__/
 *.pyc
 
+# Playwright MCP 截图缓存
+.playwright-mcp/
+
 # 临时文件
 tmp/
 temp/

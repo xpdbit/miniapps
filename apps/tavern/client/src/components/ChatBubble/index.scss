@@ -71,7 +71,7 @@
   /* User bubble: green, right-aligned */
   &--user &-content {
     background: #07C160;
-    color: #FFFFFF;
+    color: var(--color-text-inverse);
     border-radius: 10rpx;
   }
 
@@ -92,8 +92,8 @@
 
   /* Character bubble: white, left-aligned */
   &--character &-content {
-    background: #FFFFFF;
-    color: #1A1A1A;
+    background: var(--color-bg-card);
+    color: var(--color-text-primary);
     border-radius: 10rpx;
     box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
   }
@@ -105,7 +105,7 @@
     top: 20rpx;
     left: -12rpx;
     border: 12rpx solid transparent;
-    border-right: 12rpx solid #FFFFFF;
+    border-right: 12rpx solid var(--color-bg-card);
     border-top: 0;
   }
 

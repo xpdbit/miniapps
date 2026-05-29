@@ -14,8 +14,8 @@
   left: 0;
   right: 0;
   z-index: 200;
-  background: #FCF9F6;
-  border-top: 1rpx solid #E5DDD4;
+  background: var(--color-bg-elevated);
+  border-top: 1rpx solid var(--color-border);
   box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
@@ -62,13 +62,13 @@
 /* ---- Active tab state ---- */
 .custom-tab-bar .tab-item--active .tab-label,
 .index--custom-tab-bar .index--tab-item--active .index--tab-label {
-  color: #C49A6C;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .custom-tab-bar .tab-item--active .tab-icon-wrap,
 .index--custom-tab-bar .index--tab-item--active .index--tab-icon-wrap {
-  filter: drop-shadow(0 2rpx 8rpx rgba(196, 154, 108, 0.2));
+  filter: drop-shadow(0 2rpx 8rpx var(--color-primary-glow));
 }
 
 /* ---- Icon wrapper ---- */
@@ -94,7 +94,7 @@
 .custom-tab-bar .tab-label,
 .index--custom-tab-bar .index--tab-label {
   font-size: 20rpx;
-  color: #A8A39E;
+  color: var(--color-text-tertiary);
   line-height: 1;
   font-weight: 500;
   transition: color 0.2s ease, font-weight 0.2s ease;
@@ -116,4 +116,24 @@
 .custom-tab-bar--four .tab-label,
 .index--custom-tab-bar--four .index--tab-label {
   font-size: 18rpx;
+}
+
+/* ============================================================
+   DARK MODE — Tab bar overrides
+   ============================================================ */
+
+/* Stronger shadow in dark mode */
+html.dark-mode .custom-tab-bar,
+body.dark-mode .custom-tab-bar,
+html.dark-mode .index--custom-tab-bar,
+body.dark-mode .index--custom-tab-bar {
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.25);
+}
+
+/* Stronger active icon glow in dark mode */
+html.dark-mode .custom-tab-bar .tab-item--active .tab-icon-wrap,
+body.dark-mode .custom-tab-bar .tab-item--active .tab-icon-wrap,
+html.dark-mode .index--custom-tab-bar .index--tab-item--active .index--tab-icon-wrap,
+body.dark-mode .index--custom-tab-bar .index--tab-item--active .index--tab-icon-wrap {
+  filter: drop-shadow(0 2rpx 10rpx rgba(196, 154, 108, 0.35));
 }

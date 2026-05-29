@@ -23,6 +23,7 @@ page {
   --color-bg-elevated: #FCF9F6;
   --color-bg-surface: #FFFFFF;
   --color-bg-surface-hover: #F5F1EB;
+  --color-bg-secondary: #F5F1EB;
   --color-bg-input: #FFFFFF;
   --color-bg-overlay: rgba(0, 0, 0, 0.35);
   --color-bg-muted: #F3EFE8;
@@ -35,6 +36,9 @@ page {
   --color-text-secondary: #7A7570;
   --color-text-tertiary: #A8A39E;
   --color-text-placeholder: #C4BFB8;
+  --color-icon-muted: #9E9A94;
+  --color-icon-action: var(--color-primary);
+  --color-icon-disabled: #C4BFB8;
   --color-text-inverse: #FFFFFF;
   --color-text: var(--color-text-primary);
   --color-success: #3FB950;
@@ -153,7 +157,7 @@ scroll-view { width: auto; }
 .loading-inline__spinner { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .loading-inline__text { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
 .loading-overlay--parent { position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(248, 244, 239, 0.8); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  background: var(--color-bg-elevated); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 
 /* ============================================================
    DARK MODE — Global (mobile + desktop)
@@ -174,6 +178,10 @@ html.dark-mode #app, body.dark-mode #app {
   --color-text-secondary: #8B949E;
   --color-text-tertiary: #6E7681;
   --color-text-placeholder: #484F58;
+  --color-icon-muted: #6E7681;
+  --color-icon-action: var(--color-primary);
+  --color-icon-disabled: #484F58;
+  --color-bg-secondary: #1C2128;
   --color-text-inverse: #0D1117;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-base: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -202,7 +210,9 @@ html.dark-mode #app, body.dark-mode #app {
     --color-bg-muted: #F3EFE8; --color-border: #E5DDD4; --color-divider: #EDE8E1;
     --color-border-subtle: #D5CFC6; --color-border-focus: var(--color-primary);
     --color-text-primary: #2D2A26; --color-text-secondary: #7A7570; --color-text-tertiary: #A8A39E;
-    --color-text-placeholder: #C4BFB8; --color-text-inverse: #FFFFFF;
+    --color-text-placeholder: #C4BFB8; --color-icon-muted: #9E9A94;
+    --color-icon-action: var(--color-primary); --color-icon-disabled: #C4BFB8;
+    --color-text-inverse: #FFFFFF;
     --color-success: #3FB950; --color-warning: #C49A6C; --color-error: #E5534B; --color-danger: #E5534B; --color-info: #58A6FF;
     --spacing-2xs: 2px; --spacing-xs: 6px; --spacing-sm: 12px; --spacing-base: 18px; --spacing-md: 24px;
     --spacing-lg: 36px; --spacing-xl: 48px; --spacing-2xl: 64px; --spacing-3xl: 80px;
@@ -217,7 +227,8 @@ html.dark-mode #app, body.dark-mode #app {
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08); --shadow-base: 0 4px 16px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12); --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.14);
     --glass-bg: rgba(255, 255, 255, 0.55); --glass-bg-strong: rgba(255, 255, 255, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.6); --glass-shadow: 0 1px 24px rgba(0, 0, 0, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.6);     --glass-shadow: 0 1px 24px rgba(0, 0, 0, 0.06);
+    --shadow-glow-hover: 0 4px 12px rgba(196, 154, 108, 0.3);
   }
 
   #app { max-width: none; margin: 0; box-shadow: none; border-radius: 0; background: var(--color-bg); overflow-x: hidden; }
@@ -228,17 +239,19 @@ html.dark-mode #app, body.dark-mode #app {
   .desktop-app-content .page-profile-header { display: none !important; }
 
   .desktop-app-content { flex: 1; min-width: 0; display: flex; flex-direction: column;
-    max-width: 1200px; margin: 0 auto; overflow-y: auto; scroll-behavior: smooth; }
+    max-width: none; margin: 0; overflow-y: auto; scroll-behavior: smooth;
+    padding: 0 var(--spacing-md); }
 
   /* ALL pages: flex fill + no fixed height */
-  .page-market, .page-chat, .page-archive, .game-setup, .page-creator, .page-profile,
+  .page-market, .page-cards, .page-chat, .page-archive, .game-setup, .page-creator, .page-profile,
   .page-character-list, .page-character-detail, .page-persona, .page-chats, .page-contacts, .page-discover {
     min-height: 0 !important; height: auto !important; flex: 1 1 0% !important;
     display: flex !important; flex-direction: column !important; padding-bottom: 0 !important;
   }
 
   /* ---- Market grid ---- */
-  .page-market .market-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 20px !important; justify-content: center; }
+  .page-market .market-grid,
+  .page-cards .market-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 20px !important; justify-content: center; }
   .market-search { position: relative; padding: 16px 0 12px !important; }
   .market-search-wrapper { height: 44PX !important; min-height: 44PX !important;
     padding: 0 14px !important; gap: 8px !important; border-radius: var(--radius-md) !important; align-items: center !important;
@@ -246,7 +259,7 @@ html.dark-mode #app, body.dark-mode #app {
     box-shadow: var(--shadow-sm) !important; transition: border-color 0.15s ease, box-shadow 0.15s ease !important; }
   .market-search-wrapper:focus-within { border-color: var(--color-primary) !important; box-shadow: 0 0 0 4px var(--color-primary-glow), var(--shadow-sm) !important; }
   .market-search-wrapper .icon { width: 20px !important; height: 20px !important; }
-  .market-search-input { color: var(--color-text-primary) !important; height: 36PX !important; font-size: 14px !important; }
+  .market-search-input { color: var(--color-text-primary) !important; height: 36PX !important; font-size: 14px !important; line-height: 36PX !important; padding: 0 !important; display: flex !important; align-items: center !important; }
   .market-search-input::placeholder { color: var(--color-text-placeholder) !important; opacity: 1; font-size: 14px !important; }
   .market-search-refresh > .icon { width: 18px !important; height: 18px !important; }
   .market-search-clear { display: flex; align-items: center; justify-content: center; padding: 2px; cursor: pointer; opacity: 0.6; transition: opacity 0.15s ease; }
@@ -254,7 +267,8 @@ html.dark-mode #app, body.dark-mode #app {
   .market-search-clear > .icon { width: 16px !important; height: 16px !important; }
 
   /* ---- Market container: centered with max-width ---- */
-  .page-market { max-width: 1100px !important; margin: 0 auto !important; width: 100% !important; }
+  .page-market,
+  .page-cards { max-width: 1100px !important; margin: 0 auto !important; width: 100% !important; }
 
   /* ---- Market sub-tabs: inline horizontal nav at TOP ---- */
   .market-sub-tabs { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important;
@@ -268,6 +282,11 @@ html.dark-mode #app, body.dark-mode #app {
   .market-sub-tab-label { font-size: 13px !important; font-weight: 500 !important; color: var(--color-text-secondary) !important; }
   .market-sub-tab--active .market-sub-tab-label { color: var(--color-text-inverse) !important; }
   .market-sub-tabs-divider { height: 24px !important; margin: 0 4px !important; }
+  /* Cards page: content panels after sub-tabs (order: -1 on .market-sub-tabs above) */
+  .page-cards > .market-character-area,
+  .page-cards > .market-sub-panel-content,
+  .page-cards > .market-create-panel { order: 1 !important; }
+
   .market-sub-tab--back { width: auto !important; padding: 6px 14px !important; gap: 6px !important; background: transparent !important; }
   .market-sub-tab:hover:not(.market-sub-tab--active) { background: var(--color-bg-surface-hover); }
 
@@ -310,7 +329,7 @@ html.dark-mode #app, body.dark-mode #app {
   .market-load-more { font-size: 13px !important; padding: 20px !important; }
 
   /* ---- Profile ---- */
-  .page-profile { max-width: 720px !important; margin: var(--spacing-lg) auto !important; width: 100% !important; }
+  .page-profile { max-width: none !important; width: 100% !important; margin: 0 !important; padding: var(--spacing-lg) var(--spacing-xl) !important; }
   .page-profile-header { display: flex !important; padding: 48px 36px 32px !important; }
   .page-profile-avatar { width: 80px !important; height: 80px !important; border: 3px solid rgba(255, 255, 255, 0.8) !important;
     box-shadow: 0 0 32px var(--color-primary-glow) !important; margin-bottom: 16px !important; }
@@ -322,11 +341,11 @@ html.dark-mode #app, body.dark-mode #app {
   .page-profile-quota-label { font-size: 12px !important; }
   .page-profile-quota-bar { width: 280px !important; height: 6px !important; }
   .page-profile-menu { margin: 20px 0 !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; }
-  .page-profile-menu-item { padding: 16px 24px !important; border-radius: var(--radius-md) !important;
+  .page-profile-menu-item { padding: 12px 20px !important; border-radius: var(--radius-md) !important;
     margin-bottom: 4px !important; transition: all 0.15s ease !important; cursor: pointer !important; }
   .page-profile-menu-item:hover { background: var(--color-bg-surface-hover) !important; }
   .page-profile-section { margin: 20px 0 !important; background: var(--color-bg-elevated) !important;
-    border-radius: var(--radius-lg) !important; border: 1px solid var(--color-border-subtle) !important; overflow: hidden !important; }
+    border-radius: var(--radius-lg) !important; border: 1px solid var(--color-border-subtle) !important; overflow: visible !important; }
   .page-profile-section-header { padding: 16px 24px !important; border-bottom: 1px solid var(--color-border-subtle) !important; }
   .page-profile-section-body { padding: 16px 24px !important; }
   .page-profile-privacy-row { padding: 14px 0 !important; align-items: flex-start !important; }
@@ -384,11 +403,11 @@ html.dark-mode #app, body.dark-mode #app {
   .page-archive-item { padding: 14px 20px !important; margin-bottom: 4px !important; border-radius: var(--radius-md) !important;
     cursor: pointer !important; }
   .page-archive-item:hover:not(:active) { background: var(--color-bg-surface-hover); }
-  .page-archive-new-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(196, 154, 108, 0.3); }
+  .page-archive-new-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: var(--shadow-glow-hover); }
   .page-archive-list { padding: 8px 12px !important; }
 
   /* ---- Chat ---- */
-  .page-chat { max-width: 900px; margin: 0 auto; width: 100%; }
+  .page-chat { max-width: none; width: 100%; margin: 0; }
   .page-chat-messages { max-width: 800px; margin: 0 auto; width: 100%; }
   .page-chat-list { background: var(--color-bg-card) !important; border-radius: var(--radius-lg) !important;
     border: 1px solid var(--color-border-subtle) !important; }
@@ -411,12 +430,6 @@ html.dark-mode #app, body.dark-mode #app {
   .page-persona-empty, .page-character-empty, .page-creator-empty { padding: 60px 0 !important; font-size: 14px !important; }
   .page-persona-content, .page-character-content, .page-creator-content { padding: 0 !important; }
   .page-persona-back, .page-character-back, .page-creator-back { width: 36px !important; height: 36px !important; }
-  .page-character-item { border-radius: var(--radius-md) !important; margin-bottom: var(--spacing-xs) !important;
-    padding: 14px 16px !important; cursor: pointer !important; transition: all 0.15s ease !important; }
-  .page-persona-empty, .page-character-empty, .page-creator-empty { padding: 60px 0 !important; font-size: 14px !important; }
-  .page-persona-content, .page-character-content, .page-creator-content { padding: 0 !important; }
-  .page-persona-back, .page-character-back, .page-creator-back { width: 36px !important; height: 36px !important; }
-
   /* Creator — card type tabs + form */
   .page-creator-card-type-selector { gap: 10px !important; margin-bottom: 20px !important; }
   .page-creator-card-type-option { padding: 14px 18px !important; font-size: 14px !important; border-radius: var(--radius-sm) !important;
@@ -463,12 +476,12 @@ html.dark-mode #app, body.dark-mode #app {
   .game-setup-card { padding: 20px !important; border-radius: var(--radius-md) !important; cursor: pointer !important; }
   .game-setup-card:hover { background: var(--color-bg-surface-hover); }
   .game-setup-grid { grid-template-columns: repeat(3, 1fr) !important; gap: var(--spacing-md) !important; }
-  .game-setup-confirm-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(196, 154, 108, 0.3); }
+  .game-setup-confirm-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: var(--shadow-glow-hover); }
   .game-setup-bottom-btn { padding: 14px 28px !important; font-size: 15px !important; border-radius: var(--radius-sm) !important; }
   .game-setup-footer { padding: 20px !important; }
 
   /* ---- Global hover effects + cursor polish ---- */
-  .page-chat-footer-btn:hover, .game-setup-bottom-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(196, 154, 108, 0.3); }
+  .page-chat-footer-btn:hover, .game-setup-bottom-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: var(--shadow-glow-hover); }
   .market-search-refresh:hover { opacity: 0.7; }
   .page-chat-list-item, .page-chats-item, .page-contacts-item, .page-discover-item,
   .page-archive-item, .game-setup-card, .market-grid-item { cursor: pointer !important; }
@@ -573,7 +586,10 @@ html.dark-mode #app, body.dark-mode #app {
     --color-bg: #0D1117; --color-bg-card: #161B22; --color-bg-elevated: #1C2128; --color-bg-surface: #161B22;
     --color-bg-surface-hover: #1C2128; --color-bg-muted: #21262D; --color-border: #30363D; --color-divider: #21262D;
     --color-border-subtle: #30363D; --color-text-primary: #C9D1D9; --color-text-secondary: #8B949E;
-    --color-text-tertiary: #6E7681; --color-text-placeholder: #484F58; --color-text-inverse: #0D1117;
+    --color-text-tertiary: #6E7681;     --color-text-placeholder: #484F58; --color-icon-muted: #6E7681;
+    --color-icon-action: var(--color-primary); --color-icon-disabled: #484F58;
+    --color-bg-secondary: #1C2128;
+    --color-text-inverse: #0D1117;
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3); --shadow-base: 0 4px 16px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45); --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
     --glass-bg: rgba(22, 27, 34, 0.65); --glass-bg-strong: rgba(28, 33, 40, 0.9);

@@ -466,7 +466,7 @@ export default function ProfilePage() {
         <View className='page-profile-login-section'>
           {!showLoginForm ? (
             <View className='page-profile-login-prompt'>
-              <Icon name='close' size={40} color='#FF9500' />
+              <Icon name='close' size={40} color='var(--color-warning)' />
               <Text className='page-profile-login-prompt-text'>
                 {loginError || '登录后可解锁全部功能'}
               </Text>
@@ -608,7 +608,7 @@ export default function ProfilePage() {
           {/* 隐私模式开启后的额外提示 */}
           {privacyMode && (
             <View className='page-profile-privacy-notice'>
-              <Icon name='close' size={32} color='#FF9500' />
+              <Icon name='close' size={32} color='var(--color-warning)' />
               <View className='page-profile-privacy-notice-content'>
                 <Text className='page-profile-privacy-notice-title'>隐私模式已激活</Text>
                 <Text className='page-profile-privacy-notice-desc'>

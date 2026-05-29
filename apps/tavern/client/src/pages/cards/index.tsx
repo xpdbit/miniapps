@@ -168,7 +168,7 @@ export default function CardsPage() {
             )}
             {showError && (
               <View className='market-error-state'>
-                <Icon name='close' size={48} color='#FF9500' />
+                <Icon name='close' size={48} color='var(--color-warning)' />
                 <Text className='market-error-message'>{syncedStore.error}</Text>
                 <View className='market-error-retry' onClick={handleRefresh}>
                   <Text>点击重试</Text>
@@ -184,11 +184,27 @@ export default function CardsPage() {
 
       {subTab === 'mechanism' && (
         <View className='market-sub-panel-content'>
-          <View
-            className={`market-sub-panel-refresh ${refreshing ? 'market-sub-panel-refresh--spinning' : ''}`}
-            onClick={handleRefresh}
-          >
-            <Icon name='refresh' size={32} color='var(--color-icon-muted)' />
+          <View className='market-search'>
+            <View className='market-search-wrapper'>
+              <Icon name='search' size={40} color='var(--color-icon-muted)' />
+              <Input
+                className='market-search-input'
+                placeholder='搜索卡片...'
+                value={searchQuery}
+                onInput={handleSearchInput}
+              />
+              {searchQuery.length > 0 && (
+                <View className='market-search-clear' onClick={handleClearSearch}>
+                  <Icon name='close' size={28} color='var(--color-icon-muted)' />
+                </View>
+              )}
+              <View
+                className={`market-search-refresh ${refreshing ? 'market-search-refresh--spinning' : ''}`}
+                onClick={handleRefresh}
+              >
+                <Icon name='refresh' size={36} color='var(--color-icon-muted)' />
+              </View>
+            </View>
           </View>
           {loading && <Skeleton type='list' count={4} />}
           {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
@@ -197,7 +213,7 @@ export default function CardsPage() {
           )}
           {showError && (
             <View className='market-error-state'>
-              <Icon name='close' size={48} color='#FF9500' />
+              <Icon name='close' size={48} color='var(--color-warning)' />
               <Text className='market-error-message'>{syncedStore.error}</Text>
               <View className='market-error-retry' onClick={handleRefresh}>
                 <Text>点击重试</Text>
@@ -220,11 +236,27 @@ export default function CardsPage() {
 
       {subTab === 'map' && (
         <View className='market-sub-panel-content'>
-          <View
-            className={`market-sub-panel-refresh ${refreshing ? 'market-sub-panel-refresh--spinning' : ''}`}
-            onClick={handleRefresh}
-          >
-            <Icon name='refresh' size={32} color='var(--color-icon-muted)' />
+          <View className='market-search'>
+            <View className='market-search-wrapper'>
+              <Icon name='search' size={40} color='var(--color-icon-muted)' />
+              <Input
+                className='market-search-input'
+                placeholder='搜索卡片...'
+                value={searchQuery}
+                onInput={handleSearchInput}
+              />
+              {searchQuery.length > 0 && (
+                <View className='market-search-clear' onClick={handleClearSearch}>
+                  <Icon name='close' size={28} color='var(--color-icon-muted)' />
+                </View>
+              )}
+              <View
+                className={`market-search-refresh ${refreshing ? 'market-search-refresh--spinning' : ''}`}
+                onClick={handleRefresh}
+              >
+                <Icon name='refresh' size={36} color='var(--color-icon-muted)' />
+              </View>
+            </View>
           </View>
           {loading && <Skeleton type='list' count={4} />}
           {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
@@ -233,7 +265,7 @@ export default function CardsPage() {
           )}
           {showError && (
             <View className='market-error-state'>
-              <Icon name='close' size={48} color='#FF9500' />
+              <Icon name='close' size={48} color='var(--color-warning)' />
               <Text className='market-error-message'>{syncedStore.error}</Text>
               <View className='market-error-retry' onClick={handleRefresh}>
                 <Text>点击重试</Text>
@@ -256,11 +288,27 @@ export default function CardsPage() {
 
       {subTab === 'background' && (
         <View className='market-sub-panel-content'>
-          <View
-            className={`market-sub-panel-refresh ${refreshing ? 'market-sub-panel-refresh--spinning' : ''}`}
-            onClick={handleRefresh}
-          >
-            <Icon name='refresh' size={32} color='var(--color-icon-muted)' />
+          <View className='market-search'>
+            <View className='market-search-wrapper'>
+              <Icon name='search' size={40} color='var(--color-icon-muted)' />
+              <Input
+                className='market-search-input'
+                placeholder='搜索卡片...'
+                value={searchQuery}
+                onInput={handleSearchInput}
+              />
+              {searchQuery.length > 0 && (
+                <View className='market-search-clear' onClick={handleClearSearch}>
+                  <Icon name='close' size={28} color='var(--color-icon-muted)' />
+                </View>
+              )}
+              <View
+                className={`market-search-refresh ${refreshing ? 'market-search-refresh--spinning' : ''}`}
+                onClick={handleRefresh}
+              >
+                <Icon name='refresh' size={36} color='var(--color-icon-muted)' />
+              </View>
+            </View>
           </View>
           {loading && <Skeleton type='list' count={4} />}
           {!loading && filteredOfficialCards.length > 0 && renderCardGrid(filteredOfficialCards, true)}
@@ -269,7 +317,7 @@ export default function CardsPage() {
           )}
           {showError && (
             <View className='market-error-state'>
-              <Icon name='close' size={48} color='#FF9500' />
+              <Icon name='close' size={48} color='var(--color-warning)' />
               <Text className='market-error-message'>{syncedStore.error}</Text>
               <View className='market-error-retry' onClick={handleRefresh}>
                 <Text>点击重试</Text>
@@ -293,7 +341,7 @@ export default function CardsPage() {
       {subTab === 'create' && (
         <View className='market-create-panel'>
           <Text className='market-create-panel-title'>创建新卡片</Text>
-          <Text className='market-create-panel-hint'>选择你要创建的卡片类型（本地保存）</Text>
+          <Text className='market-create-panel-hint'>选择你要创建的卡片类型</Text>
           <View className='market-create-options'>
             {(['CHARACTER', 'MECHANISM', 'MAP', 'BACKGROUND'] as CardType[]).map(type => (
               <View key={type} className='market-create-option' onClick={() => handleCreateCard(type)}>
@@ -333,16 +381,6 @@ export default function CardsPage() {
       )}
 
       <View className='market-sub-tabs'>
-        {/* 返回按钮 — 回到开始页面 */}
-        <View
-          className='market-sub-tab market-sub-tab--back'
-          onClick={() => Taro.switchTab({ url: '/pages/chat/index' })}
-        >
-          <Icon name='arrow-left' size={40} color='var(--color-icon-muted)' />
-          <Text className='market-sub-tab-label'>返回</Text>
-        </View>
-        {/* 分割线 */}
-        <View className='market-sub-tabs-divider' />
         {SUB_TABS.map(tab => (
           <View
             key={tab.key}

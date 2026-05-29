@@ -47,7 +47,7 @@ const DISCOVER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24
 /* ---- Mode Tab Lists ---- */
 const TAVERN_TAB_LIST = [
   { pagePath: 'pages/cards/index', text: '酒馆', svgIcon: GALLERY_SVG },
-  { pagePath: 'pages/chat/index', text: '开始', svgIcon: CHAT_SVG },
+  { pagePath: 'pages/chat/index', text: '酒馆', svgIcon: CHAT_SVG },
   { pagePath: 'pages/profile/index', text: '我的', svgIcon: USER_SVG },
 ];
 

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Icon } from '@/components'
 import type { IconName } from '@/components/Icon'
 import { useLocalCardsStore } from '@/stores/localCardsStore'
+import { useAuthStore } from '@/stores/authStore'
+import { characterService } from '@/services/characterService'
 import type { CardType } from '@/types/character'
 import { CARD_TYPE_LABELS } from '@/types/character'
 import './index.scss'
@@ -49,6 +51,7 @@ export default function CreatorPage() {
   const editId = params.edit || null
 
   const localStore = useLocalCardsStore()
+  const authStore = useAuthStore()
   const isEdit = !!editId
 
   const [step, setStep] = useState(1)
@@ -98,12 +101,27 @@ export default function CreatorPage() {
         tags: form.tags,
       }
 
-      if (isEdit && editId) {
-        localStore.updateCard(editId, cardData)
-        Taro.showToast({ title: '保存成功', icon: 'success' })
+      if (authStore.isLoggedIn) {
+        // 服务器端保存
+        let res: { code: number; message?: string; data?: unknown }
+        if (isEdit && editId) {
+          res = await characterService.update(editId, cardData)
+        } else {
+          res = await characterService.create(cardData)
+        }
+        if (res.code === 0) {
+          Taro.showToast({ title: isEdit ? '保存成功' : '创建成功', icon: 'success' })
+        } else {
+          throw new Error(res.message || '保存失败')
+        }
       } else {
-        localStore.createCard(cardData)
-        Taro.showToast({ title: '创建成功', icon: 'success' })
+        // 未登录 — 降级到本地存储
+        if (isEdit && editId) {
+          localStore.updateCard(editId, cardData)
+        } else {
+          localStore.createCard(cardData)
+        }
+        Taro.showToast({ title: '未登录，卡片已保存至本地', icon: 'none' })
       }
       setTimeout(() => Taro.navigateBack(), 1500)
     } catch {
@@ -118,8 +136,15 @@ export default function CreatorPage() {
     Taro.showModal({
       title: '确认删除',
       content: '确定要删除这张卡片吗？',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
+          try {
+            if (authStore.isLoggedIn) {
+              await characterService.delete(editId)
+            }
+          } catch {
+            // API 删除失败也继续本地删除
+          }
           localStore.deleteCard(editId)
           Taro.showToast({ title: '已删除', icon: 'success' })
           setTimeout(() => Taro.navigateBack(), 1500)

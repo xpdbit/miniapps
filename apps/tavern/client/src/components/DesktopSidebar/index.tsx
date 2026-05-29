@@ -49,7 +49,7 @@ interface NavItem {
 
 const TAVERN_NAV: NavItem[] = [
   { pagePath: 'pages/cards/index', text: '卡片集', svgIcon: TAVERN_ICON },
-  { pagePath: 'pages/chat/index', text: '开始', svgIcon: CHAT_ICON },
+  { pagePath: 'pages/chat/index', text: '酒馆', svgIcon: CHAT_ICON },
   { pagePath: 'pages/profile/index', text: '我的', svgIcon: USER_ICON },
 ]
 

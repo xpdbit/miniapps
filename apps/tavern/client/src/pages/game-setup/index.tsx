@@ -244,7 +244,7 @@ export default function GameSetupPage() {
         </View>
         <View className='game-setup-body'>
           <View className='game-setup-empty'>
-            <Icon name='close' size={48} color='#FF9500' />
+            <Icon name='close' size={48} color='var(--color-warning)' />
             <Text className='game-setup-empty-title'>隐私模式已开启</Text>
             <Text className='game-setup-empty-desc'>
               群组/多人模式在隐私模式下暂不可用。{'\n'}

@@ -91,7 +91,7 @@ export default function CharacterListPage() {
         )}
         {!loading && error && filtered.length === 0 && (
           <View className='page-character-list-error'>
-            <Icon name='close' size={48} color='#FF9500' />
+            <Icon name='close' size={48} color='var(--color-warning)' />
             <Text className='page-character-list-error-msg'>{error}</Text>
             <View className='page-character-list-error-retry' onClick={handleRefresh}>
               <Text>点击重试</Text>

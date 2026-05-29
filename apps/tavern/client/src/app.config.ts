@@ -34,7 +34,7 @@
       },
       {
         pagePath: 'pages/chat/index',
-        text: '开始',
+        text: '酒馆',
         iconPath: 'assets/icons/chat.png',
         selectedIconPath: 'assets/icons/chat-active.png',
       },

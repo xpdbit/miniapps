@@ -298,7 +298,7 @@ export default function ChatPage() {
         <View className='page-chat-footer'>
           {privacyMode ? (
             <View className='page-chat-privacy-notice'>
-              <Icon name='close' size={32} color='#FF9500' />
+              <Icon name='close' size={32} color='var(--color-warning)' />
               <Text className='page-chat-privacy-notice-text'>
                 隐私模式已开启，群组/多人功能暂不可用
               </Text>
