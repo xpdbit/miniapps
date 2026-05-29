@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { GameWorldState, CharacterState, ScriptEvent, CharacterStateInput } from '@/types/ai-script'
+import type { Scenario } from '@/types/scenario'
 import { applyEvents } from './handlers'
 import { parseEventLog } from './parser'
 import prisma from '@/utils/prisma'
@@ -159,6 +160,47 @@ export class GameStateStore {
   async initCharacters(saveId: string, characters: CharacterStateInput[]): Promise<void> {
     const state = await this.getOrInit(saveId, characters)
     this.cache.set(saveId, state)
+  }
+
+  /**
+   * 从 Scenario 初始化游戏状态
+   */
+  async initFromScenario(
+    saveId: string,
+    scenario: Scenario,
+    characters: CharacterState[],
+  ): Promise<GameWorldState> {
+    const dimensions: Record<string, number> = {}
+    for (const dim of scenario.world.dimensions) {
+      dimensions[dim.key] = scenario.initialState.dimensions[dim.key]
+        ?? Math.floor((dim.range[0] + dim.range[1]) / 2)
+    }
+
+    const state: GameWorldState = {
+      scenarioId: scenario.meta.id,
+      dimensions,
+      world: {
+        time: {
+          hour: scenario.initialState.time.hour,
+          day: scenario.initialState.time.day,
+          season: 'spring',
+        },
+        weather: scenario.initialState.weather,
+      },
+      characters: {},
+    }
+
+    for (const char of characters) {
+      state.characters[char.id] = {
+        ...char,
+        stats: { ...char.stats },
+        inventory: [...char.inventory],
+        flags: { ...char.flags },
+      }
+    }
+
+    this.cache.set(saveId, state)
+    return state
   }
 
   /**
