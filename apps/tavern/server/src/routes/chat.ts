@@ -6,6 +6,8 @@ import { buildPrompt } from '../services/prompt-builder.service'
 import { routeChat, sanitizeAiText } from '../services/ai-proxy.service'
 import * as contextService from '../services/context.service'
 import { parseAiScriptResponse, serializeEventLog, gameStateStore } from '../services/ai-scripts'
+import { scenarioLoader } from '../services/ai-scripts/scenario-loader'
+import type { Scenario } from '../types/scenario'
 import prisma from '../utils/prisma'
 
 const router = Router()
@@ -25,6 +27,7 @@ const sendSchema = z.object({
   // AI Script 游戏模式支持
   saveId: z.string().optional(),
   characterIds: z.array(z.string()).optional(),
+  scenarioId: z.string().optional(),
 })
 
 // POST /api/v1/chat/send - SSE streaming chat
@@ -102,7 +105,53 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
     // AI Script: load game state if in game mode
     const hasGameMode = !!(params.saveId && params.characterIds?.length)
     let gameState = null
-    if (hasGameMode) {
+    let scenario: Scenario | null = null
+
+    if (hasGameMode && params.scenarioId) {
+      // Scenario-driven mode
+      scenario = scenarioLoader.get(params.scenarioId) ?? null
+      if (scenario) {
+        gameState = await gameStateStore.getState(params.saveId!)
+        if (!gameState) {
+          // Lazy init: use default characters
+          const defaultChars: Array<{ id: string; name: string; location: string; mood: number; energy: number; health: number; hunger: number }> = params.characterIds!.map((id) => ({
+            id,
+            name: id,
+            location: '酒馆',
+            mood: 75,
+            energy: 80,
+            health: 90,
+            hunger: 70,
+          }))
+          gameState = await gameStateStore.initFromScenario(
+            params.saveId!,
+            scenario,
+            defaultChars.map(c => ({
+              ...c,
+              stats: {},
+              inventory: [],
+              flags: { role: 'npc' },
+            })),
+          )
+        }
+        // Ensure current character exists
+        if (!gameState.characters[params.characterId]) {
+          gameState.characters[params.characterId] = {
+            id: params.characterId,
+            name: character.name,
+            location: '酒馆',
+            mood: 75,
+            energy: 80,
+            health: 90,
+            hunger: 70,
+            stats: {},
+            inventory: [],
+            flags: { role: 'npc' },
+          }
+        }
+      }
+    } else if (hasGameMode) {
+      // Legacy game mode (without scenario)
       const characters = params.characterIds!.map((id) => ({
         id,
         name: id,
@@ -113,7 +162,6 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
         hunger: 70,
       }))
       gameState = await gameStateStore.getOrInit(params.saveId!, characters)
-      // Ensure the current character exists
       if (gameState && !gameState.characters[params.characterId]) {
         gameState.characters[params.characterId] = {
           id: params.characterId,
@@ -141,6 +189,8 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
       history,
       currentMessage: params.message,
       gameState,
+      scenario,
+      scenarioCharacterId: scenario ? params.characterId : undefined,
     })
 
     await contextService.saveMessage(session.id, 'user', sanitizeAiText(params.message), 0, true)

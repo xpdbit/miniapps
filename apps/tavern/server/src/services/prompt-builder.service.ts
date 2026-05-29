@@ -1,4 +1,5 @@
 import type { GameWorldState } from '@/types/ai-script'
+import type { Scenario } from '@/types/scenario'
 import { getEventTypeDescriptions } from './ai-scripts/registry'
 
 export interface CharacterData {
@@ -102,6 +103,55 @@ function weatherLabel(weather: string): string {
   return labels[weather] ?? weather
 }
 
+/**
+ * Build scenario-driven game context prompt.
+ * Uses Scenario's dimensions, events, and promptTemplate to generate
+ * the full game context section appended to the system prompt.
+ */
+export function buildScenarioPrompt(
+  scenario: Scenario,
+  gameState: GameWorldState,
+  characterId: string,
+): string {
+  const char = gameState.characters[characterId]
+  if (!char) return ''
+
+  const dimPanel = scenario.world.dimensions
+    .map(d => {
+      const val = gameState.dimensions[d.key] ?? 0
+      const pct = Math.round(((val - d.range[0]) / (d.range[1] - d.range[0])) * 100)
+      const bar = pct > 80 ? '🟢' : pct > 40 ? '🟡' : pct > 20 ? '🟠' : '🔴'
+      return `${d.icon ?? ''} ${d.label}: ${bar} ${val}/${d.range[1]}`
+    })
+    .join('\n')
+
+  const eventsList = [...scenario.events, ...scenario.customEvents]
+    .map(e => {
+      const params = Object.entries(e.parameters)
+        .map(([k, v]) => `${k}: ${v.type}${v.enum ? ` (${v.enum.join('|')})` : ''}`)
+        .join(', ')
+      return `- ${e.type} { ${params} }\n  ${e.description}`
+    })
+    .join('\n\n')
+
+  const rulesSummary = [
+    `失败条件：${scenario.rules.loseCondition}`,
+    `胜利条件：${scenario.rules.winCondition}`,
+    scenario.rules.npcBehavior ? `NPC行为：${scenario.rules.npcBehavior}` : '',
+  ].filter(Boolean).join('\n')
+
+  return scenario.promptTemplate.system
+    .replace(/\{character\.name\}/g, char.name)
+    .replace(/\{character\.personality\}/g, (char.flags?.personality as string) ?? '')
+    .replace(/\{character\.location\}/g, char.location)
+    .replace(/\{dimensions_panel\}/g, dimPanel)
+    .replace(/\{day\}/g, String(gameState.world.time.day))
+    .replace(/\{hour\}/g, String(gameState.world.time.hour))
+    .replace(/\{weather\}/g, gameState.world.weather)
+    .replace(/\{rules_summary\}/g, rulesSummary)
+    .replace(/\{events_list\}/g, eventsList)
+}
+
 export function buildPrompt(params: {
   character: CharacterData
   characterId?: string
@@ -109,6 +159,8 @@ export function buildPrompt(params: {
   history: HistoryMessage[]
   currentMessage: string
   gameState?: GameWorldState | null
+  scenario?: Scenario | null
+  scenarioCharacterId?: string
   maxHistoryRounds?: number
   maxTokens?: number
 }): BuiltPrompt {
@@ -129,7 +181,12 @@ export function buildPrompt(params: {
   let systemContent = systemParts.join('\n')
 
   // Append game context if available
-  if (params.gameState) {
+  if (params.scenario && params.gameState && params.scenarioCharacterId) {
+    const scenarioContext = buildScenarioPrompt(params.scenario, params.gameState, params.scenarioCharacterId)
+    if (scenarioContext) {
+      systemContent += '\n' + scenarioContext
+    }
+  } else if (params.gameState) {
     const gameContext = buildGameContextPrompt(params.gameState, params.characterId)
     if (gameContext) {
       systemContent += '\n' + gameContext

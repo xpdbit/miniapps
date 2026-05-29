@@ -3,6 +3,7 @@ import { config } from './config';
 import logger from './utils/logger';
 import { execSync } from 'child_process';
 import { getProviderApiKey } from './services/admin-config.service';
+import { scenarioLoader } from './services/ai-scripts/scenario-loader';
 
 // 使用 createServer() 以启用正确的超时配置（SSE 长连接支持）
 const server = createServer();
@@ -97,6 +98,9 @@ server.on('error', (err: NodeJS.ErrnoException) => {
 server.listen(config.port, async () => {
   serverListening = true;
   logger.info(`服务器运行在端口 ${config.port}`);
+
+  // 加载所有 Scenario 剧本
+  scenarioLoader.loadAll();
 
   // 从 Dashboard Admin API 获取 AI Provider 配置（环境变量作为降级）
   const [dashscopeKey, opencodeKey] = await Promise.all([

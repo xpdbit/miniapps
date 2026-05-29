@@ -4,3 +4,5 @@ export { SCRIPT_REGISTRY, getAllTemplates, getTemplate, isValidEventType, getEve
 export { parseAiScriptResponse, serializeEventLog, parseEventLog } from './parser'
 export { EVENT_HANDLERS, applyEvent, applyEvents } from './handlers'
 export { GameStateStore, gameStateStore } from './game-state-store'
+export { scenarioLoader } from './scenario-loader'
+export { CharacterGenerator } from './character-generator'
