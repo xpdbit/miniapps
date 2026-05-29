@@ -1,4 +1,4 @@
-import { Router, Response } from 'express'
+import { Router, Response, Request } from 'express'
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth'
 import { getUserTier, getAvailableModels } from '../services/tier.service'
 import { discoverModels } from '../services/model-discovery.service'
@@ -19,8 +19,8 @@ router.get('/user/tier', requireAuth, async (req: AuthenticatedRequest, res: Res
   }
 })
 
-// 🆕 GET /api/v1/models/providers — 获取可用 Provider 列表（来自 Dashboard）
-router.get('/models/providers', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+// 🆕 GET /api/v1/models/providers — 获取可用 Provider 列表（公开端点，无需认证）
+router.get('/models/providers', async (_req: Request, res: Response) => {
   try {
     const providers = await getProviders()
     // 只返回前端需要的字段（不暴露 apiKey）

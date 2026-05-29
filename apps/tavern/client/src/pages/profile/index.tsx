@@ -91,13 +91,22 @@ export default function ProfilePage() {
         setModels(res.data)
         setModelsLoaded(true)
       } else if (res.code === 401) {
-        // 未登录，静默跳过
         setModelsLoaded(false)
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '加载模型列表失败'
       console.warn('[profile] loadModels error:', msg)
-      setModelsLoaded(false)
+      // 兜底模型列表（API 不可用时使用）
+      const fallback: AvailableModel[] = [
+        { modelId: 'qwen-turbo', displayName: '通义千问 Turbo', provider: 'tongyi', description: '快速响应', icon: '⚡', quotaCost: 1, minTier: 'FREE', free: true },
+        { modelId: 'qwen-plus', displayName: '通义千问 Plus', provider: 'tongyi', description: '更强能力', icon: '✨', quotaCost: 1, minTier: 'FREE', free: true },
+        { modelId: 'qwen-max', displayName: '通义千问 Max', provider: 'tongyi', description: '最强模型', icon: '🔥', quotaCost: 2, minTier: 'FREE', free: true },
+        { modelId: 'big-pickle', displayName: 'Big Pickle', provider: 'opencode', description: '免费大模型', icon: '🥒', quotaCost: 1, minTier: 'FREE', free: true },
+        { modelId: 'deepseek-chat', displayName: 'DeepSeek Chat', provider: 'deepseek', description: 'DeepSeek V3', icon: '🐋', quotaCost: 1, minTier: 'FREE', free: true },
+        { modelId: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner', provider: 'deepseek', description: 'DeepSeek R1', icon: '🧠', quotaCost: 2, minTier: 'FREE', free: true },
+      ]
+      setModels(fallback)
+      setModelsLoaded(true)
     }
   }, [modelsLoaded, isLoggedIn])
 
