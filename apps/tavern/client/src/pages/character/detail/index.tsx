@@ -519,16 +519,9 @@ export default function CharacterDetailPage() {
     chatCount,
     likeCount,
     favCount,
-  } = character as CharacterCard & { scenario?: string; firstMsg?: string }
+  } = character
 
-  // 合并提示词展示（兼容旧数据 scenario/firstMsg 尚未迁入 prompt）
-  const mergedPrompt = (() => {
-    const parts: string[] = []
-    if (prompt) parts.push(prompt)
-    if (character && 'scenario' in character && character.scenario) parts.push(`\n\n【场景设定】${character.scenario}`)
-    if (character && 'firstMsg' in character && character.firstMsg) parts.push(`\n\n【开场白】${character.firstMsg}`)
-    return parts.join('')
-  })()
+  const mergedPrompt = prompt || ''
 
   return (
     <ScrollView scrollY className='page-character-detail'>

@@ -107,12 +107,19 @@ async function main() {
       where: { name: card.name, cardType: card.cardType, creatorId: systemUser.id },
     })
 
+    // 合并 firstMsg 和 scenario 到 prompt（数据库已删除独立列）
+    const rawPrompt = 'prompt' in card ? (card as { prompt?: string }).prompt ?? '' : ''
+    const rawFirstMsg = 'firstMsg' in card ? (card as { firstMsg?: string }).firstMsg ?? '' : ''
+    const rawScenario = 'scenario' in card ? (card as { scenario?: string }).scenario ?? '' : ''
+    const promptParts: string[] = []
+    if (rawPrompt) promptParts.push(rawPrompt)
+    if (rawScenario) promptParts.push(`【场景设定】${rawScenario}`)
+    if (rawFirstMsg) promptParts.push(`【开场白】${rawFirstMsg}`)
+
     const data: Parameters<typeof prisma.tavernCard.create>[0]['data'] = {
       name: card.name,
       description: card.description,
-      prompt: 'prompt' in card ? (card as { prompt?: string }).prompt ?? null : null,
-      firstMsg: 'firstMsg' in card ? (card as { firstMsg?: string }).firstMsg ?? null : null,
-      scenario: 'scenario' in card ? (card as { scenario?: string }).scenario ?? null : null,
+      prompt: promptParts.join('\n\n') || null,
       tags: card.tags,
       cardType: card.cardType,
       isOfficial: true,

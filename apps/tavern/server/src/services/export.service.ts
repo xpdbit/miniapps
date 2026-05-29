@@ -41,15 +41,35 @@ export async function exportToV2(cardId: string): Promise<V2CharacterData> {
   const card = await prisma.tavernCard.findUnique({ where: { id: cardId } })
   if (!card) throw new Error('NOT_FOUND')
 
+  // 从合并后的 prompt 中解析 scenario 和 first_mes（按迁移时的拼接标签拆分）
+  const promptText = card.prompt || ''
+  let scenario = ''
+  let first_mes = ''
+  let personality = promptText
+
+  const scenarioMatch = promptText.match(/^([\s\S]*?)\n\n【场景设定】([\s\S]*?)(?:\n\n【开场白】|$)/)
+  if (scenarioMatch) {
+    personality = scenarioMatch[1].trim()
+    scenario = scenarioMatch[2].trim()
+    const firstMsgMatch = promptText.match(/【开场白】([\s\S]*)$/)
+    if (firstMsgMatch) first_mes = firstMsgMatch[1].trim()
+  } else {
+    const firstMsgMatch = promptText.match(/【开场白】([\s\S]*)$/)
+    if (firstMsgMatch) {
+      personality = promptText.replace(/\n\n【开场白】[\s\S]*$/, '').trim()
+      first_mes = firstMsgMatch[1].trim()
+    }
+  }
+
   return {
     spec: 'chara_card_v2',
     spec_version: '2.0',
     data: {
       name: card.name,
       description: card.description,
-      personality: card.prompt || '',
-      scenario: card.scenario || '',
-      first_mes: card.firstMsg ?? '',
+      personality,
+      scenario,
+      first_mes,
       mes_example: '',
       creator_notes: '',
       system_prompt: '',
@@ -70,13 +90,16 @@ export async function importFromV2(data: V2CharacterData, userId: string) {
   if (d.creator_notes) promptParts.push(`【备注】${d.creator_notes}`)
   if (d.mes_example) promptParts.push(`【示例对话】\n${d.mes_example}`)
 
+  // 合并 scenario 和 first_mes 到 prompt（旧字段已删除）
+  const parts = [...promptParts]
+  if (d.scenario) parts.push(`【场景设定】${d.scenario}`)
+  if (d.first_mes) parts.push(`【开场白】${d.first_mes}`)
+
   const card = await prisma.tavernCard.create({
     data: {
       name: d.name,
       description: d.description,
-      prompt: promptParts.join('\n\n') || null,
-      scenario: d.scenario || null,
-      firstMsg: d.first_mes,
+      prompt: parts.join('\n\n') || null,
       tags: d.tags || [],
       userUuid: userId,
       status: 'DRAFT',
