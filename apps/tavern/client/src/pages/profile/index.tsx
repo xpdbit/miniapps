@@ -101,6 +101,8 @@ export default function ProfilePage() {
     { modelId: 'glm-4-flash', displayName: 'GLM-4 Flash', provider: 'zhipu', description: '智谱 轻量', icon: '🌐', quotaCost: 2, minTier: 'PAID', free: false },
     { modelId: 'moonshot-v1-8k', displayName: 'Moonshot v1', provider: 'moonshot', description: '月之暗面', icon: '🌙', quotaCost: 2, minTier: 'PAID', free: false },
     { modelId: 'abab6.5s', displayName: 'MiniMax abab6.5s', provider: 'minimax', description: 'MiniMax 模型', icon: '⚙️', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'openrouter/auto', displayName: 'OpenRouter Auto', provider: 'openrouter', description: '智能路由最佳模型', icon: '🔀', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'oneapi/default', displayName: 'One API 默认', provider: 'oneapi', description: '统一 API 网关', icon: '🔌', quotaCost: 2, minTier: 'PAID', free: false },
   ]
 
   const loadModels = useCallback(async () => {
