@@ -83,32 +83,46 @@ export default function ProfilePage() {
     return () => clearTimeout(timer)
   }, [isLoggedIn])
 
+  /** 兜底模型列表 — 覆盖所有主流 Provider，API 不可用或未登录时使用 */
+  const FALLBACK_MODELS: AvailableModel[] = [
+    { modelId: 'qwen-turbo', displayName: '通义千问 Turbo', provider: 'tongyi', description: '快速响应', icon: '⚡', quotaCost: 1, minTier: 'FREE', free: true },
+    { modelId: 'qwen-plus', displayName: '通义千问 Plus', provider: 'tongyi', description: '更强能力', icon: '✨', quotaCost: 1, minTier: 'FREE', free: true },
+    { modelId: 'qwen-max', displayName: '通义千问 Max', provider: 'tongyi', description: '最强模型', icon: '🔥', quotaCost: 2, minTier: 'FREE', free: true },
+    { modelId: 'big-pickle', displayName: 'Big Pickle', provider: 'opencode', description: '免费大模型', icon: '🥒', quotaCost: 1, minTier: 'FREE', free: true },
+    { modelId: 'minimax-m2.5-free', displayName: 'MiniMax M2.5', provider: 'opencode', description: '免费对话', icon: '🆓', quotaCost: 1, minTier: 'FREE', free: true },
+    { modelId: 'deepseek-chat', displayName: 'DeepSeek Chat', provider: 'deepseek', description: 'DeepSeek V3', icon: '🐋', quotaCost: 1, minTier: 'FREE', free: true },
+    { modelId: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner', provider: 'deepseek', description: 'DeepSeek R1', icon: '🧠', quotaCost: 2, minTier: 'FREE', free: true },
+    { modelId: 'gpt-4o-mini', displayName: 'GPT-4o Mini', provider: 'openai', description: 'OpenAI 轻量', icon: '🤖', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'gpt-4o', displayName: 'GPT-4o', provider: 'openai', description: 'OpenAI 旗舰', icon: '🌟', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'claude-3.5-sonnet', displayName: 'Claude 3.5 Sonnet', provider: 'anthropic', description: 'Anthropic 旗舰', icon: '🧪', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'claude-3-haiku', displayName: 'Claude 3 Haiku', provider: 'anthropic', description: 'Anthropic 轻量', icon: '📝', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', provider: 'google', description: 'Google 轻量', icon: '💎', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'gemini-2.5-pro', displayName: 'Gemini 2.5 Pro', provider: 'google', description: 'Google 旗舰', icon: '🔮', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'glm-4-flash', displayName: 'GLM-4 Flash', provider: 'zhipu', description: '智谱 轻量', icon: '🌐', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'moonshot-v1-8k', displayName: 'Moonshot v1', provider: 'moonshot', description: '月之暗面', icon: '🌙', quotaCost: 2, minTier: 'PAID', free: false },
+    { modelId: 'abab6.5s', displayName: 'MiniMax abab6.5s', provider: 'minimax', description: 'MiniMax 模型', icon: '⚙️', quotaCost: 2, minTier: 'PAID', free: false },
+  ]
+
   const loadModels = useCallback(async () => {
-    if (modelsLoaded && isLoggedIn) return
+    if (modelsLoaded) return
     try {
       const res = await httpClient.get<ModelsResponse>('/models')
       if (res.code === 0 && res.data) {
         setModels(res.data)
         setModelsLoaded(true)
       } else if (res.code === 401) {
-        setModelsLoaded(false)
+        // 未登录 → 使用兜底模型
+        console.log('[profile] 未登录，使用本地模型列表')
+        setModels(FALLBACK_MODELS)
+        setModelsLoaded(true)
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '加载模型列表失败'
-      console.warn('[profile] loadModels error:', msg)
-      // 兜底模型列表（API 不可用时使用）
-      const fallback: AvailableModel[] = [
-        { modelId: 'qwen-turbo', displayName: '通义千问 Turbo', provider: 'tongyi', description: '快速响应', icon: '⚡', quotaCost: 1, minTier: 'FREE', free: true },
-        { modelId: 'qwen-plus', displayName: '通义千问 Plus', provider: 'tongyi', description: '更强能力', icon: '✨', quotaCost: 1, minTier: 'FREE', free: true },
-        { modelId: 'qwen-max', displayName: '通义千问 Max', provider: 'tongyi', description: '最强模型', icon: '🔥', quotaCost: 2, minTier: 'FREE', free: true },
-        { modelId: 'big-pickle', displayName: 'Big Pickle', provider: 'opencode', description: '免费大模型', icon: '🥒', quotaCost: 1, minTier: 'FREE', free: true },
-        { modelId: 'deepseek-chat', displayName: 'DeepSeek Chat', provider: 'deepseek', description: 'DeepSeek V3', icon: '🐋', quotaCost: 1, minTier: 'FREE', free: true },
-        { modelId: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner', provider: 'deepseek', description: 'DeepSeek R1', icon: '🧠', quotaCost: 2, minTier: 'FREE', free: true },
-      ]
-      setModels(fallback)
+      console.warn('[profile] loadModels error:', (err as Error).message)
+      // 兜底模型列表（API 不可用时使用，涵盖所有主流 Provider）
+      setModels(FALLBACK_MODELS)
       setModelsLoaded(true)
     }
-  }, [modelsLoaded, isLoggedIn])
+  }, [modelsLoaded])
 
   // 从 API 拉取服务商列表
   useEffect(() => {
@@ -141,12 +155,12 @@ export default function ProfilePage() {
 
   useDidShow(() => {
     Taro.eventCenter.trigger('tabChange', 2)
-    if (isLoggedIn) { loadModels() }
+    loadModels()
   })
 
   // 用户登录状态变化时重新加载模型
   useEffect(() => {
-    if (isLoggedIn) { loadModels() }
+    loadModels()
   }, [isLoggedIn, loadModels])
 
   // 换服务商时清空 API Key
