@@ -27,7 +27,7 @@ export default function ArchivePage() {
   }
 
   const handleNewGame = () => {
-    Taro.navigateTo({ url: '/pages/game-setup/index' })
+    Taro.navigateTo({ url: '/pages/scenario-select/index' })
   }
 
   return (

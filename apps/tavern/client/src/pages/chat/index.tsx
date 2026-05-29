@@ -304,7 +304,7 @@ export default function ChatPage() {
               </Text>
             </View>
           ) : (
-            <View className='page-chat-footer-btn' onClick={() => Taro.navigateTo({ url: '/pages/game-setup/index' })}>
+            <View className='page-chat-footer-btn' onClick={() => Taro.navigateTo({ url: '/pages/scenario-select/index' })}>
               <Text className='page-chat-footer-btn-icon'>+</Text>
               <Text>开始新游戏</Text>
             </View>
