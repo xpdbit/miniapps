@@ -1,9 +1,9 @@
 ﻿const config = {
   pages: [
     'pages/cards/index',
+    'pages/scenario-select/index',
     'pages/chat/index',
     'pages/archive/index',
-    'pages/game-setup/index',
     'pages/character/index',
     'pages/character/detail/index',
     'pages/creator/index',

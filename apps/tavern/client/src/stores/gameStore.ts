@@ -79,6 +79,8 @@ interface GameState {
   activeSaveId: string | null
   gameMode: boolean
   cardsPerRow: number
+  dimensions: Record<string, number>
+  scenarioId: string | null
 
   activeSave: () => GameSave | null
   restoreSaves: () => void
@@ -94,6 +96,9 @@ interface GameState {
   disableGameMode: () => void
   leaveGame: () => void
   setCardsPerRow: (n: number) => void
+  setDimensions: (dimensions: Record<string, number>) => void
+  modifyDimension: (key: string, delta: number) => void
+  setScenarioId: (id: string | null) => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -101,6 +106,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   activeSaveId: null,
   gameMode: false,
   cardsPerRow: loadCardsPerRow(),
+  dimensions: {},
+  scenarioId: null,
 
   activeSave: () => {
     const { saves, activeSaveId } = get()
@@ -233,4 +240,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ cardsPerRow: v })
     storageSet(CARDS_PER_ROW_KEY, v)
   },
+
+  setDimensions: (dimensions) => set({ dimensions }),
+  modifyDimension: (key, delta) => set((state) => ({
+    dimensions: {
+      ...state.dimensions,
+      [key]: Math.max(0, Math.min(100, (state.dimensions[key] ?? 0) + delta)),
+    },
+  })),
+  setScenarioId: (id) => set({ scenarioId: id }),
 }))

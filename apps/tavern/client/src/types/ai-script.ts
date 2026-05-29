@@ -15,6 +15,8 @@ export type EventType =
   | 'inventory.remove'
   | 'ui.notify'
   | 'ui.prompt'
+  | 'dimension.modify'
+  | 'kingdom.event'
 
 export interface ScriptEvent {
   type: EventType
@@ -41,6 +43,8 @@ export interface WorldState {
 }
 
 export interface GameWorldState {
+  scenarioId?: string
+  dimensions: Record<string, number>
   world: WorldState
   characters: Record<string, CharacterState>
 }

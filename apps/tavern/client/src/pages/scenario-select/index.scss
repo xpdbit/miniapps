@@ -1,0 +1,119 @@
+.scenario-select-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 40px;
+}
+
+.page-header {
+  text-align: center;
+  padding: 32px 16px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+
+  .title { font-size: 22px; font-weight: 700; display: block; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; opacity: 0.8; display: block; }
+}
+
+.error-box {
+  margin: 16px;
+  padding: 12px;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: #ff4d4f;
+
+  .retry-btn {
+    margin-top: 8px;
+    padding: 4px 16px;
+    background: #ff4d4f;
+    color: #fff;
+    border-radius: 4px;
+    display: inline-block;
+  }
+}
+
+.loading-text {
+  text-align: center;
+  padding: 48px;
+  color: #999;
+  font-size: 14px;
+}
+
+.scenario-list {
+  padding: 12px;
+}
+
+.scenario-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+
+  .source-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e6f7ff;
+    color: #1677ff;
+
+    &.custom { background: #f6ffed; color: #52c41a; }
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #f0f0f0;
+    color: #666;
+  }
+}
+
+.card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: #666;
+  display: block;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 10px;
+
+  .meta-right {}
+}
+
+.start-btn {
+  background: #1677ff;
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+
+  &.loading {
+    background: #91d5ff;
+  }
+}
