@@ -136,6 +136,23 @@ export const SCRIPT_REGISTRY: ScriptTemplate[] = [
       },
     },
   },
+  {
+    type: 'dimension.modify',
+    description: '修改任意王国属性维度（增加或减少），数值自动 clamp 到范围边界',
+    parameters: {
+      dimension: { type: 'string', description: '属性键名（如 military/wealth/people 等）', required: true },
+      delta: { type: 'number', description: '变化量（-30 到 +30）', required: true },
+    },
+  },
+  {
+    type: 'kingdom.event',
+    description: '触发一个王国层面的重大事件。此事件仅记录不修改属性，属性变化通过配套 dimension.modify 完成',
+    parameters: {
+      name: { type: 'string', description: '事件名称', required: true },
+      severity: { type: 'string', enum: ['minor', 'major', 'crisis'], description: '严重程度', required: true },
+      description: { type: 'string', description: '事件描述' },
+    },
+  },
 ]
 
 /** 获取所有事件模板 */

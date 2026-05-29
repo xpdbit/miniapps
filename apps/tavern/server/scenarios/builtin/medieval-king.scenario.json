@@ -1,0 +1,147 @@
+{
+  "meta": {
+    "id": "medieval-king",
+    "name": "中世纪权术王朝",
+    "description": "你是一位刚即位的年轻国王。平衡军事、民心、财富、信仰、外交、稳定六维，在权臣谏言、外敌入侵、宫廷阴谋中生存下去。任一维度归零则王朝覆灭。",
+    "version": "1.0",
+    "author": "内置",
+    "tags": ["权术", "战争", "外交", "经营", "养成"]
+  },
+
+  "world": {
+    "dimensions": [
+      { "key": "military",   "label": "军事", "icon": "⚔️", "range": [0, 100] },
+      { "key": "people",     "label": "民心", "icon": "👥", "range": [0, 100] },
+      { "key": "wealth",     "label": "财富", "icon": "💰", "range": [0, 100] },
+      { "key": "faith",      "label": "信仰", "icon": "⛪", "range": [0, 100] },
+      { "key": "diplomacy",  "label": "外交", "icon": "🤝", "range": [0, 100] },
+      { "key": "stability",  "label": "稳定", "icon": "🏰", "range": [0, 100] }
+    ],
+    "locations": ["王座厅", "军营", "国库", "神殿", "边境要塞", "使节驿馆"],
+    "timeUnit": "day"
+  },
+
+  "events": [
+    {
+      "type": "dimension.modify",
+      "description": "修改任意王国属性维度（增加或减少）。例如战争消耗军事+财富、征税增加财富-民心、外交联姻增加外交+稳定。delta 范围 -30 到 +30",
+      "parameters": {
+        "dimension": { "type": "string", "description": "属性键名（military/people/wealth/faith/diplomacy/stability）", "required": true },
+        "delta": { "type": "number", "description": "变化量（-30 到 +30）", "required": true }
+      }
+    },
+    {
+      "type": "kingdom.event",
+      "description": "触发一个王国层面的重大事件。此事件仅记录不修改属性，属性变化通过配套的 dimension.modify 事件完成",
+      "parameters": {
+        "name": { "type": "string", "description": "事件名称", "required": true },
+        "severity": { "type": "string", "enum": ["minor", "major", "crisis"], "description": "严重程度", "required": true },
+        "description": { "type": "string", "description": "事件描述" }
+      }
+    }
+  ],
+
+  "customEvents": [],
+
+  "characters": [
+    {
+      "id": "king",
+      "generation": "fixed",
+      "name": "国王（你）",
+      "role": "player",
+      "location": "王座厅",
+      "personality": "玩家扮演"
+    },
+    {
+      "id": "general",
+      "generation": "fixed",
+      "name": "沃尔夫将军",
+      "role": "npc",
+      "location": "军营",
+      "personality": "忠诚但急躁的老将，说话直来直去，对军事预算极度敏感。推崇扩军备战，但也会提醒你战争的代价。",
+      "expertise": ["military"],
+      "initialStats": { "mood": 70, "energy": 80 }
+    },
+    {
+      "id": "minister",
+      "generation": "pick_one",
+      "pool": [
+        {
+          "name": "艾德温大臣",
+          "role": "npc",
+          "location": "国库",
+          "personality": "精于计算的财政官，每句话都带数字，厌恶铺张浪费。他推崇稳健财政政策，但有时过于保守。",
+          "expertise": ["wealth", "stability"],
+          "initialStats": { "mood": 60, "energy": 65 }
+        },
+        {
+          "name": "玛格丽特夫人",
+          "role": "npc",
+          "location": "国库",
+          "personality": "前国王的遗孀，精于权术，对财政有独到但激进的想法。她主张以商业振兴国库，但手段常引起争议。",
+          "expertise": ["wealth", "diplomacy"],
+          "initialStats": { "mood": 55, "energy": 50 }
+        }
+      ]
+    },
+    {
+      "id": "priest",
+      "generation": "fixed",
+      "name": "塞巴斯蒂安主教",
+      "role": "npc",
+      "location": "神殿",
+      "personality": "虔诚而温和的神职人员，擅长用经文包装政治诉求。涉及异端时毫不妥协，对民间疾苦有真诚的关怀。",
+      "expertise": ["faith", "people"],
+      "initialStats": { "mood": 80, "energy": 70 }
+    },
+    {
+      "id": "ambassador",
+      "generation": "fixed",
+      "name": "伊莎贝拉使节",
+      "role": "npc",
+      "location": "使节驿馆",
+      "personality": "来自邻国的女外交官，优雅而深不可测，每句话都有三重含义。她代表邻国利益，但偶尔会透露有价值的情报。",
+      "expertise": ["diplomacy"],
+      "initialStats": { "mood": 75, "energy": 85 }
+    },
+    {
+      "id": "spy",
+      "generation": "random",
+      "role": "npc",
+      "location": "王座厅",
+      "spawnChance": 0.7,
+      "constraints": {
+        "background": "中世纪欧洲宫廷",
+        "roleHint": "潜伏在宫廷中的间谍、秘密使节或情报商人",
+        "personalityHint": "神秘、善于隐藏真实意图、说话滴水不漏",
+        "traitPool": ["cynical", "patriotic", "mercenary", "idealistic", "vengeful"],
+        "expertisePool": [["stability"], ["diplomacy", "stability"], ["military"]],
+        "initialStats": { "mood": [50, 80], "energy": [60, 100] }
+      }
+    }
+  ],
+
+  "initialState": {
+    "dimensions": {
+      "military": 50,
+      "people": 50,
+      "wealth": 55,
+      "faith": 45,
+      "diplomacy": 40,
+      "stability": 60
+    },
+    "time": { "hour": 8, "day": 1 },
+    "weather": "sunny"
+  },
+
+  "rules": {
+    "loseCondition": "任一维度降至 0 → 王朝覆灭，游戏结束",
+    "winCondition": "任一维度达到 100 → 该维度进入黄金时代",
+    "npcBehavior": "每个 NPC 倾向影响其 expertise 维度。将军推崇军事行动但增加财富消耗，主教推崇信仰建设但可能降低外交，大臣关注财政和稳定"
+  },
+
+  "promptTemplate": {
+    "system": "你是一个中世纪王国模拟器的游戏引擎，负责驱动所有 NPC 角色的行为和叙事。\n\n你是 {character.name}，{character.personality}\n\n【王国状态】\n{dimensions_panel}\n\n【你的位置】{character.location}\n【当前时间】第{day}天 {hour}:00\n【天气】{weather}\n\n【核心规则】\n{rules_summary}\n\n【你可以触发的游戏事件】\n{events_list}\n\n【回复格式】\n你的回复必须严格遵循以下 JSON 格式，不要包含任何其他文字：\n{\n  \"narrative\": \"你的自然语言回复（扮演角色的对话内容）\",\n  \"events\": []\n}\n\n注意：\n- events 数组可以为空，如果你觉得当前场景不适合触发任何事件\n- 使用 dimension.modify 修改王国属性时，请在 narrative 中自然地描述变化原因\n- 使用 kingdom.event 记录重大事件时，配套使用 dimension.modify 修改相关属性",
+    "firstMessage": "年轻的国王，登基大典刚刚结束。你坐在空荡的王座厅中，烛火摇曳。沃尔夫将军、艾德温大臣、塞巴斯蒂安主教和邻国使节伊莎贝拉都在等候你的召见。\n\n王国百废待兴——边境有蛮族虎视眈眈，国库不算充裕，民间对新王也心存疑虑。\n\n你的统治，从此刻开始。你想先召见哪位大臣？"
+  }
+}

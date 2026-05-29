@@ -23,6 +23,9 @@ export const EVENT_TYPES = [
   // 交互反馈
   'ui.notify',
   'ui.prompt',
+  // Scenario 维度控制
+  'dimension.modify',
+  'kingdom.event',
 ] as const
 
 export type EventType = (typeof EVENT_TYPES)[number]
@@ -47,6 +50,8 @@ export interface AiScriptResponse {
  * 游戏世界状态
  */
 export interface GameWorldState {
+  scenarioId?: string
+  dimensions: Record<string, number>
   world: WorldState
   characters: Record<string, CharacterState>
 }

@@ -45,6 +45,7 @@ async function rebuildStateFromHistory(
   characters: CharacterStateInput[],
 ): Promise<GameWorldState> {
   const state: GameWorldState = {
+    dimensions: {},
     world: createDefaultWorldState(),
     characters: {},
   }

@@ -132,6 +132,23 @@ export const EVENT_HANDLERS: Record<string, EventHandler> = {
   'ui.prompt': (_state, _payload) => {
     // ui.prompt 透传给客户端处理用户交互
   },
+
+  // ── Scenario 维度控制 ──
+  'dimension.modify': (state, payload) => {
+    const { dimension, delta } = payload as { dimension: string; delta: number }
+    if (typeof dimension !== 'string' || typeof delta !== 'number') return
+    if (typeof state.dimensions[dimension] !== 'number') {
+      state.dimensions[dimension] = 0
+    }
+    state.dimensions[dimension] = Math.max(0, Math.min(100,
+      state.dimensions[dimension] + delta,
+    ))
+  },
+
+  'kingdom.event': (_state, _payload) => {
+    // 仅记录到事件日志，不做状态变更
+    // 属性变化由配套的 dimension.modify 完成
+  },
 }
 
 /**
