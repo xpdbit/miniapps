@@ -7,6 +7,7 @@ import { config } from './config';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
+import { warmupConfigProvider } from './services/config-provider.service';
 
 const app = express();
 

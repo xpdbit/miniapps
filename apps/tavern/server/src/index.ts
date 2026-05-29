@@ -3,6 +3,7 @@ import { config } from './config';
 import logger from './utils/logger';
 import { execSync } from 'child_process';
 import { getProviderApiKey } from './services/admin-config.service';
+import { warmupConfigProvider } from './services/config-provider.service';
 import { scenarioLoader } from './services/ai-scripts/scenario-loader';
 
 // 使用 createServer() 以启用正确的超时配置（SSE 长连接支持）
@@ -101,6 +102,11 @@ server.listen(config.port, async () => {
 
   // 加载所有 Scenario 剧本
   scenarioLoader.loadAll();
+
+  // 🆕 预热 AI Provider 配置缓存（Dashboard → Redis → 内存）
+  warmupConfigProvider().catch(err => {
+    logger.warn('[startup] Config provider 预热失败:', err.message)
+  })
 
   // 从 Dashboard Admin API 获取 AI Provider 配置（环境变量作为降级）
   const [dashscopeKey, opencodeKey] = await Promise.all([

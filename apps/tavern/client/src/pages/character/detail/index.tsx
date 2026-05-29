@@ -2,8 +2,8 @@
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState, useEffect, useCallback } from 'react'
 
-import { marketService } from '@/services/marketService'
-import { Icon, ModelSelector } from '@/components'
+import { cardService } from '@/services/cardService'
+import { Icon } from '@/components'
 import ChatBubble from '@/components/ChatBubble'
 import { useChatStore } from '@/stores/chatStore'
 import { usePrivacyStore } from '@/stores/privacyStore'
@@ -71,7 +71,7 @@ export default function CharacterDetailPage() {
       return
     }
     try {
-      const res = await marketService.detail(id) as { data: CharacterCard }
+      const res = await cardService.detail(id) as { data: CharacterCard }
       if (res.data) {
         setCharacter(res.data)
       } else {
@@ -442,7 +442,9 @@ export default function CharacterDetailPage() {
           </View>
           <View className='page-character-detail-chat-header-info'>
             <Text className='page-character-detail-chat-header-name'>{character.name}</Text>
-            <ModelSelector compact />
+            <Text className='page-character-detail-model-label' style={{ fontSize: '22px', color: 'var(--color-text-muted)', marginLeft: '8px' }}>
+              {useChatStore.getState().selectedModel.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+            </Text>
           </View>
           {directChat && (
             <View className='page-character-detail-chat-header-more' onClick={handleShowDetail}>
@@ -604,12 +606,16 @@ export default function CharacterDetailPage() {
         </View>
       )}
 
-      {/* 第5行：对话测试 */}
       <View className='page-character-detail-chat-test'>
         <View className='page-character-detail-model-row'>
           <Text className='page-character-detail-model-label'>对话模型</Text>
-          <ModelSelector compact />
+          <Text style={{ fontSize: '24px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
+            {useChatStore.getState().selectedModel.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+          </Text>
         </View>
+        <Text style={{ fontSize: '20px', color: 'var(--color-text-muted)', marginBottom: '12px' }}>
+          前往「我的」页面更换
+        </Text>
         {directChat ? (
           <Button className='page-character-detail-chat-btn' onClick={() => setView('chat')}>
             返回聊天

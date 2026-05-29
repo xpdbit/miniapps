@@ -3,6 +3,7 @@ import { requireAuth, AuthenticatedRequest } from '../middleware/auth'
 import { getUserTier, getAvailableModels } from '../services/tier.service'
 import { discoverModels } from '../services/model-discovery.service'
 import { getDecryptedKey } from '../services/key.service'
+import { getProviders } from '../services/config-provider.service'
 import { success } from '../utils/response'
 
 const router = Router()
@@ -14,6 +15,24 @@ router.get('/user/tier', requireAuth, async (req: AuthenticatedRequest, res: Res
     res.json(success(tierInfo))
   } catch (err) {
     console.error('[tier] get user tier error:', err)
+    res.status(500).json({ code: 500, message: '服务器内部错误', data: null })
+  }
+})
+
+// 🆕 GET /api/v1/models/providers — 获取可用 Provider 列表（来自 Dashboard）
+router.get('/models/providers', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const providers = await getProviders()
+    // 只返回前端需要的字段（不暴露 apiKey）
+    const safeList = providers.map(p => ({
+      provider: p.provider,
+      name: p.name,
+      isFree: ['tongyi', 'opencode', 'deepseek'].includes(p.provider),
+      baseUrl: p.baseUrl || '',
+    }))
+    res.json(success(safeList))
+  } catch (err) {
+    console.error('[tier] get providers error:', err)
     res.status(500).json({ code: 500, message: '服务器内部错误', data: null })
   }
 })
