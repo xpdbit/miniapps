@@ -34,10 +34,16 @@ apps/tavern/server/
 | API Key 加密 | `src/utils/crypto.ts` | AES-256-GCM 加密存储 |
 | 认证中间件 | `src/middleware/auth.ts` | JWT 验证 + uuid 用户引用 |
 | AI Script 系统 | `src/services/ai-scripts/` | 事件注册表/解析器/处理器/GameStateStore，详见 `plan/specs/tavern-ai-script-design.md` |
-| AI Script 事件类型 | `src/types/ai-script.ts` | 12 种事件类型 (character.move/stat.modify/world.advance_time 等) |
+| AI Script 事件类型 | `src/types/ai-script.ts` | 14 种事件类型 (character.move/stat.modify/world.advance_time/dimension.modify 等) |
+| Scenario 剧本系统 | `src/types/scenario.ts` | Scenario 类型定义 (meta/world/characters/events/rules/prompt) |
+| ScenarioLoader | `src/services/ai-scripts/scenario-loader.ts` | 从 scenarios/ 目录加载剧本，提供 CRUD + 校验 |
+| CharacterGenerator | `src/services/ai-scripts/character-generator.ts` | 角色生成器 (fixed/pick_one/random 三种策略) |
+| Scenario 剧本文件 | `scenarios/builtin/` + `scenarios/custom/` | 内置/自定义剧本 JSON 文件 |
+| Scenario Prompt 构建 | `src/services/prompt-builder.service.ts` | buildScenarioPrompt() 动态注入剧本上下文 |
 | AI Script 状态运行时 | `src/services/ai-scripts/game-state-store.ts` | 内存 GameWorldState + 事件溯源重建 |
 | Prompt Builder 增强 | `src/services/prompt-builder.service.ts` | buildGameContextPrompt() 注入游戏状态和可触发事件 |
-| AI Script 管理 API | `src/routes/ai-scripts.ts` | GET /registry, GET/PUT /state/:saveId, GET /logs/:saveId |
+| AI Script 管理 API | `src/routes/ai-scripts.ts` | GET /registry, GET/PUT /state/:saveId, GET /logs/:saveId, Scenario CRUD |
+| Scenario 剧本 | `plan/specs/tavern-scenario-system-design.md` | Scenario 弹性剧本系统设计文档 |
 
 ## CONVENTIONS
 同根目录：TypeScript strict，2 空格缩进，LF 换行，UTF-8，`@/*` 路径别名，Prisma ORM，独立 `npm install`。额外：Zod 参数校验，AES-256-GCM 加密 API Key，Helmet + rate-limit 安全中间件，SSE 流式响应，uuid 用户引用（非自增 ID）。
