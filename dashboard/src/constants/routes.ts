@@ -30,6 +30,8 @@ export const ROUTES = {
   TAVERN_USERS: '/tavern/users',
   TAVERN_MODELS: '/tavern/models',
   TAVERN_AI_SCRIPTS: '/tavern/ai-scripts',
+  TAVERN_SCENARIOS: '/tavern/scenarios',
+  TAVERN_SCENARIO_EDIT: '/tavern/scenarios/:id',
   // Game1 路由
   GAME1_DASHBOARD: '/game1/dashboard',
   GAME1_PLAYERS: '/game1/players',

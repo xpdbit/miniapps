@@ -34,6 +34,8 @@ const TavernChats = lazy(() => import('@/pages/Tavern/TavernChats'))
 const TavernKeys = lazy(() => import('@/pages/Tavern/TavernKeys'))
 const TavernUsers = lazy(() => import('@/pages/Tavern/TavernUsers'))
 const TavernAiScripts = lazy(() => import('@/pages/Tavern/TavernAiScripts'))
+const TavernScenarios = lazy(() => import('@/pages/Tavern/TavernScenarios'))
+const TavernScenarioEdit = lazy(() => import('@/pages/Tavern/TavernScenarioEdit'))
 const AiManager = lazy(() => import('@/pages/AiManager'))
 const System = lazy(() => import('@/pages/System'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
@@ -243,6 +245,22 @@ const App = () => {
                 element={
                   <Suspense fallback={<PageLoading />}>
                     <TavernAiScripts />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_SCENARIOS}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernScenarios />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.TAVERN_SCENARIO_EDIT}
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <TavernScenarioEdit />
                   </Suspense>
                 }
               />

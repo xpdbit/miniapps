@@ -32,7 +32,7 @@ async function proxyRequest(
     const adminOps = [
       'dashboard/', 'model', 'sync-', 'pending', 'approve/', 'reject/',
       'ban/', 'logs/', 'chats', 'keys', 'import', 'characters', 'users',
-      'announcements', 'reports', 'ai-scripts',
+      'announcements', 'reports', 'ai-scripts', 'scenarios',
     ]
     const needsAdminPrefix = adminOps.some(op => subPath.startsWith(op))
     const targetPath = needsAdminPrefix ? `admin/${subPath}` : subPath

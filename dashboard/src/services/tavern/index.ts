@@ -290,4 +290,23 @@ export const tavernAdminApi = {
   /** 获取事件日志 */
   getAiScriptLogs: (saveId: string, params?: { limit?: number; offset?: number }) =>
     adminApiClient.get(`/admin/tavern/ai-scripts/logs/${saveId}`, { params }),
+
+  // ── Scenario 管理 ──
+  getScenarios: () =>
+    adminApiClient.get('/admin/tavern/scenarios'),
+
+  getScenario: (id: string) =>
+    adminApiClient.get(`/admin/tavern/scenarios/${id}`),
+
+  createScenario: (data: unknown) =>
+    adminApiClient.post('/admin/tavern/scenarios', data),
+
+  updateScenario: (id: string, data: unknown) =>
+    adminApiClient.put(`/admin/tavern/scenarios/${id}`, data),
+
+  deleteScenario: (id: string) =>
+    adminApiClient.delete(`/admin/tavern/scenarios/${id}`),
+
+  validateScenario: (data: unknown) =>
+    adminApiClient.post('/admin/tavern/scenarios/validate', data),
 }
