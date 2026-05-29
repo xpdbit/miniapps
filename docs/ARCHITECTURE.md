@@ -411,3 +411,56 @@ SSE EventSource 流式返回 (useSSE hook)
 - **Prompt 构建**: 系统提示 + 角色定义 + 示例对话 + 历史消息 + 当前消息
 - **内容审核**: 敏感词过滤 + 人工审核双机制
 - **每日限额**: 用户每日 20 次免费聊天配额
+
+## AI 配置统一化（v2026-05-29）
+
+### 架构
+
+```
+Dashboard（管理员）                Tavern Server                    Tavern Client
+┌──────────────────┐     ┌──────────────────────────────┐    ┌──────────────┐
+│ AiManager 页面    │     │ config-provider.service.ts    │    │ profile 页    │
+│ 11 个 Provider   │────▶│ Dashboard→Redis→内存→Env     │    │ Provider ▼    │
+│ Key/URL/QPS/权重  │     │         │                     │    │ Model ▼       │
+│ GET /public      │     │         ▼                     │    │ API Key [..]  │
+└──────────────────┘     │ rate-limiter.service.ts       │    └──────────────┘
+                         │ Redis 滑动窗口(QPS/H/D)       │
+                         │         │                     │
+                         │         ▼                     │
+                         │ ai-proxy.service.ts           │
+                         │ 动态 Provider 选择（纯路由）    │
+                         │         │                     │
+                         │         ▼                     │
+                         │ crypto.ts                     │
+                         │ PBKDF2+Salt+AES-256-GCM       │
+                         └──────────────────────────────┘
+```
+
+### 新增服务
+
+| 服务 | 文件 | 职责 |
+|------|------|------|
+| **配置桥接** | `config-provider.service.ts` | Dashboard→Redis(5min)→内存→Env 三级缓存降级 |
+| **限流执行** | `rate-limiter.service.ts` | Redis 滑动窗口(QPS/小时/日)，超限自动回退 |
+| **Redis 工具** | `lib/redis.ts` | Tavern 服务端 Redis 连接管理 |
+
+### 降级链路
+
+```
+Dashboard Admin API (GET /public)
+       │ 不可用
+       ▼
+Redis 缓存 (ai:providers, TTL 5min)
+       │ 不可用
+       ▼
+内存缓存 (60s 轮询)
+       │ 为空
+       ▼
+Env 种子 (3 个免费 Provider: tongyi/opencode/deepseek)
+```
+
+### 前端简化
+
+- **个人页**：唯一 AI 配置入口，Provider + Model + Key 三字段表单
+- **其他页面**（角色详情/游戏设置/方案详情）：只读展示当前模型，"前往「我的」更换"
+- **已移除**：ModelSelector 组件、privacyStore、aiClient 硬编码 PROVIDER_CONFIGS、隐私模式开关
