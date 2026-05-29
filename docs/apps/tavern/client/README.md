@@ -908,4 +908,4 @@ npm run generate-icons         # 生成 tabBar 图标
 ---
 
 > **最后更新**: 2026-05-29
-> **修改**: 侧边栏"开始"→"酒馆"、路由同步至 */tavern、移除卡片集返回按钮、Profile 按钮尺寸调整、全宽布局、搜索居中对齐、卡片子标签风格对齐、Creator 服务端保存、下拉菜单溢出修复、硬编码颜色替换为 CSS 变量
+> **修改**: 侧边栏"开始"→"酒馆"、路由同步至 */tavern、移除卡片集返回按钮、Profile 按钮尺寸调整、全宽布局、搜索居中对齐、卡片子标签风格对齐、Creator 服务端保存、下拉菜单溢出修复、硬编码颜色替换为 CSS 变量、desktop-app-content padding 归零、未登录时隐藏 profile-header、Profile menu 按钮样式改进（hover 动效/箭头动画/CSS 变量图标颜色）

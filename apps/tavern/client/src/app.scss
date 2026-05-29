@@ -240,7 +240,7 @@ html.dark-mode #app, body.dark-mode #app {
 
   .desktop-app-content { flex: 1; min-width: 0; display: flex; flex-direction: column;
     max-width: none; margin: 0; overflow-y: auto; scroll-behavior: smooth;
-    padding: 0 var(--spacing-md); }
+    padding: 0; }
 
   /* ALL pages: flex fill + no fixed height */
   .page-market, .page-cards, .page-chat, .page-archive, .game-setup, .page-creator, .page-profile,
@@ -341,9 +341,20 @@ html.dark-mode #app, body.dark-mode #app {
   .page-profile-quota-label { font-size: 12px !important; }
   .page-profile-quota-bar { width: 280px !important; height: 6px !important; }
   .page-profile-menu { margin: 20px 0 !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; }
-  .page-profile-menu-item { padding: 12px 20px !important; border-radius: var(--radius-md) !important;
-    margin-bottom: 4px !important; transition: all 0.15s ease !important; cursor: pointer !important; }
-  .page-profile-menu-item:hover { background: var(--color-bg-surface-hover) !important; }
+  .page-profile-menu { background: var(--color-bg-card) !important; border: 1px solid var(--color-border-subtle) !important;
+    border-radius: var(--radius-lg) !important; overflow: hidden !important; box-shadow: var(--shadow-sm) !important; }
+  .page-profile-menu-item { padding: 16px 20px !important; border-radius: 0 !important;
+    border-bottom: 1px solid var(--color-divider) !important; gap: 14px !important; cursor: pointer !important;
+    transition: background-color 0.15s ease, transform 0.15s ease !important; }
+  .page-profile-menu-item:last-child { border-bottom: none !important; }
+  .page-profile-menu-item:hover { background: var(--color-bg-surface-hover) !important; transform: translateX(2px) !important; }
+  .page-profile-menu-item:active { transform: scale(0.99) !important; }
+  .page-profile-menu-item .icon { width: 22px !important; height: 22px !important; }
+  .page-profile-menu-item-left { display: flex; align-items: center; gap: 12px; }
+  .page-profile-menu-item-label { font-size: 15px !important; font-weight: 500 !important; color: var(--color-text-primary) !important; }
+  .page-profile-menu-item-arrow { font-size: 18px !important; color: var(--color-icon-muted) !important;
+    font-weight: 300 !important; transition: transform 0.15s ease !important; }
+  .page-profile-menu-item:hover .page-profile-menu-item-arrow { transform: translateX(3px) !important; color: var(--color-primary) !important; }
   .page-profile-section { margin: 20px 0 !important; background: var(--color-bg-elevated) !important;
     border-radius: var(--radius-lg) !important; border: 1px solid var(--color-border-subtle) !important; overflow: visible !important; }
   .page-profile-section-header { padding: 16px 24px !important; border-bottom: 1px solid var(--color-border-subtle) !important; }

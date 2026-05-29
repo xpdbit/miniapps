@@ -145,17 +145,12 @@ export default function ProfilePage() {
   // 修复 Taro H5 自定义元素 display:none bug — 必须用 !important 内联样式覆盖
   useEffect(() => {
     if (process.env.TARO_ENV !== 'h5') return
-    // 延迟执行，确保 DOM 已渲染
+    if (!isLoggedIn) return // 未登录时 header 不渲染，无需修复
     const timer = setTimeout(() => {
-      const query = Taro.createSelectorQuery()
-      query.select('.page-profile-header').boundingClientRect()
-      query.exec((res) => {
-        // 触发一次查询确保元素存在后，直接操作 DOM
-        const el = document.querySelector('.page-profile-header') as HTMLElement | null
-        if (el?.style) {
-          el.style.setProperty('display', 'flex', 'important')
-        }
-      })
+      const el = document.querySelector('.page-profile-header') as HTMLElement | null
+      if (el?.style) {
+        el.style.setProperty('display', 'flex', 'important')
+      }
     }, 100)
     return () => clearTimeout(timer)
   }, [isLoggedIn])
@@ -419,7 +414,8 @@ export default function ProfilePage() {
 
   return (
     <View className='page-profile'>
-      {/* 用户信息卡片 */}
+      {/* 用户信息卡片（仅已登录显示） */}
+      {isLoggedIn && (
       <View className='page-profile-header' style={{ display: 'flex' }}>
         <View className='page-profile-avatar'>
           {user?.avatar_url ? (
@@ -460,6 +456,7 @@ export default function ProfilePage() {
           />
         </View>
       </View>
+      )}
 
       {/* 登录入口（仅初始化完成后显示，未登录时展示登录表单）*/}
       {initialized && !isLoggedIn && (
@@ -789,7 +786,7 @@ export default function ProfilePage() {
             onClick={() => handleNavigate(item)}
           >
             <View className='page-profile-menu-item-left'>
-              <Icon name={item.icon as 'user' | 'plus' | 'persona' | 'settings'} size={36} color='#C49A6C' />
+              <Icon name={item.icon as 'user' | 'plus' | 'persona' | 'settings'} size={36} color='var(--color-primary)' />
               <Text className='page-profile-menu-item-label'>{item.label}</Text>
             </View>
             <Text className='page-profile-menu-item-arrow'>›</Text>
