@@ -474,7 +474,8 @@ export function exportAll(outputDir) {
 export function rebuild() {
   const db = getDb();
 
-  // Rebuild FTS
+  // Sync data then rebuild FTS index
+  syncFts();
   db.exec('INSERT INTO pages_fts(pages_fts) VALUES(\'rebuild\')');
 
   // Rebuild wiki_links
