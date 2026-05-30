@@ -44,8 +44,9 @@ npm run knowledge rebuild
 
 ## 维护
 
-- 知识写入自动经过查重 + 来源分级 + 3×Oracle 验证
+- 知识写入经过查重 + 来源分级后入库
 - Agent 通过 `knowledge capture` 管道模式写入
 - 90 天未更新自动标记 `stale`
 - CLI 直接操作 SQLite，无需维护文件
+- 3×Oracle 验证编排（规划中，见 spec Phase 2）
 - 详细机制见 [spec](../plan/specs/2026-05-30-knowledge-base-automation-design.md)

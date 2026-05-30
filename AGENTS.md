@@ -38,11 +38,13 @@
 
 ## 找知识
 
-- `knowledge/` 是长期维护的知识库，优先采用知识库中的信息
-- `knowledge/INDEX.md` 是知识库的快速引导
-- `knowledge/knowledge.db` 是 SQLite 数据源，通过 `npm run knowledge` CLI 查询
-- 搜索知识: `npm run knowledge query <关键词>`
+- `knowledge/knowledge.db` 是 SQLite 知识库，通过 CLI 查询
+- 搜索知识: `npm run knowledge query <关键词>`（FTS5 全文搜索 + LIKE 中文回退）
+- 查看条目: `npm run knowledge get <page-id>`
+- 列出筛选: `npm run knowledge list --domain=<域> --tag=<标签>`
 - 写入知识: 管道 JSON 到 `npm run knowledge capture`
+- 查看过期: `npm run knowledge stale`
+- 引用图谱: `npm run knowledge graph`
 - 详细文档: `docs/tools/knowledge/`
 - 设计 Spec: `plan/specs/2026-05-30-knowledge-base-automation-design.md`
 
