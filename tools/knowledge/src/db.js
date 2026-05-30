@@ -55,11 +55,10 @@ export function initSchema() {
       verified_at TEXT
     );
 
-    -- 全文搜索
+    -- 全文搜索（不用 content=pages，直接存内容保证 sync 可控）
     CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
       title, tags, aliases, content,
-      content=pages,
-      tokenize='unicode61'
+      tokenize='unicode61 tokenchars'
     );
 
     -- 变更历史
@@ -139,7 +138,7 @@ export function upsertPage({
   const pageId = id || makePageId(domain, title);
 
   // Check existing
-  const existing = db.prepare('SELECT content, updated_at FROM pages WHERE id = ?').get(pageId);
+  const existing = db.prepare('SELECT content, updated_at, created_at FROM pages WHERE id = ?').get(pageId);
 
   const prevHash = existing ? hashContent(existing.content) : null;
   const newHash = hashContent(content);
@@ -188,11 +187,13 @@ export function upsertPage({
 
 /**
  * Sync FTS indexes for all pages.
+ * Deletes and repopulates the FTS table from the pages table.
  */
 export function syncFts() {
   const db = getDb();
   db.exec(`
-    INSERT OR REPLACE INTO pages_fts(rowid, title, tags, aliases, content)
+    DELETE FROM pages_fts;
+    INSERT INTO pages_fts(rowid, title, tags, aliases, content)
     SELECT rowid, title, tags, aliases, content FROM pages
     WHERE status != 'rejected';
   `);
@@ -220,7 +221,21 @@ export function extractWikiLinks(sourceId, content) {
 }
 
 /**
- * Search pages using FTS5.
+ * Check if a string contains CJK characters.
+ */
+function hasCJK(text) {
+  return /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(text);
+}
+
+/**
+ * Escape special FTS5 characters in a query string.
+ */
+function escapeFts5(text) {
+  return text.replace(/['"*^()~\-+]/g, ' ').trim();
+}
+
+/**
+ * Search pages using FTS5 with LIKE fallback for CJK queries.
  * Returns array of { id, title, domain, tags, snippet }.
  */
 export function searchPages(query, limit = 10) {
@@ -235,18 +250,54 @@ export function searchPages(query, limit = 10) {
     `).all(limit);
   }
 
-  // Use FTS5 to search
-  const results = db.prepare(`
-    SELECT p.id, p.title, p.domain, p.tags, p.status, p.updated_at,
-           snippet(pages_fts, 1, '<mark>', '</mark>', '...', 32) AS snippet
-    FROM pages_fts
-    JOIN pages p ON pages_fts.rowid = p.rowid
-    WHERE pages_fts MATCH ?
-    ORDER BY rank
-    LIMIT ?
-  `).all(query, limit);
+  const hasChinese = hasCJK(query);
+  const escaped = escapeFts5(query);
 
-  return results;
+  if (hasChinese) {
+    // CJK queries: use LIKE-based search (FTS5 unicode61 tokenchars still
+    // doesn't handle Chinese word segmentation well for substring queries)
+    const likePattern = `%${query}%`;
+    return db.prepare(`
+      SELECT p.id, p.title, p.domain, p.tags, p.status, p.updated_at,
+             NULL AS snippet
+      FROM pages p
+      WHERE p.status != 'rejected'
+        AND (p.title LIKE ? OR p.content LIKE ? OR p.tags LIKE ? OR p.aliases LIKE ?)
+      ORDER BY
+        CASE WHEN p.title LIKE ? THEN 0 ELSE 1 END,
+        p.updated_at DESC
+      LIMIT ?
+    `).all(likePattern, likePattern, likePattern, likePattern, likePattern, limit);
+  }
+
+  // Non-CJK queries: use FTS5
+  try {
+    const results = db.prepare(`
+      SELECT p.id, p.title, p.domain, p.tags, p.status, p.updated_at,
+             snippet(pages_fts, 1, '<mark>', '</mark>', '...', 32) AS snippet
+      FROM pages_fts
+      JOIN pages p ON pages_fts.rowid = p.rowid
+      WHERE pages_fts MATCH ?
+      ORDER BY rank
+      LIMIT ?
+    `).all(escaped, limit);
+
+    return results;
+  } catch {
+    // FTS5 query syntax error — fall back to LIKE
+    const likePattern = `%${query}%`;
+    return db.prepare(`
+      SELECT p.id, p.title, p.domain, p.tags, p.status, p.updated_at,
+             NULL AS snippet
+      FROM pages p
+      WHERE p.status != 'rejected'
+        AND (p.title LIKE ? OR p.content LIKE ?)
+      ORDER BY
+        CASE WHEN p.title LIKE ? THEN 0 ELSE 1 END,
+        p.updated_at DESC
+      LIMIT ?
+    `).all(likePattern, likePattern, likePattern, limit);
+  }
 }
 
 /**
@@ -323,14 +374,30 @@ export function findDuplicate(title, aliases = []) {
   const exact = db.prepare('SELECT id, title, content, tags FROM pages WHERE title = ? OR aliases LIKE ? LIMIT 1')
     .get(title, `%${title}%`);
 
-  // Fuzzy via FTS5
-  const fuzzy = db.prepare(`
-    SELECT p.id, p.title, p.content, p.tags, rank
-    FROM pages_fts JOIN pages p ON pages_fts.rowid = p.rowid
-    WHERE pages_fts MATCH ?
-    ORDER BY rank
-    LIMIT 3
-  `).all(title.replace(/[^\w\u4e00-\u9fff]+/g, ' ').trim());
+  // Fuzzy: use LIKE for CJK, FTS5 for non-CJK
+  const cleanTitle = title.replace(/[^\w\u4e00-\u9fff]+/g, ' ').trim();
+  let fuzzy = [];
+  if (hasCJK(cleanTitle)) {
+    const p = `%${title}%`;
+    fuzzy = db.prepare(`
+      SELECT p.id, p.title, p.content, p.tags, 0.0 AS rank
+      FROM pages p
+      WHERE p.status != 'rejected' AND (p.title LIKE ? OR p.content LIKE ?)
+      LIMIT 3
+    `).all(p, p);
+  } else {
+    try {
+      fuzzy = db.prepare(`
+        SELECT p.id, p.title, p.content, p.tags, rank
+        FROM pages_fts JOIN pages p ON pages_fts.rowid = p.rowid
+        WHERE pages_fts MATCH ?
+        ORDER BY rank
+        LIMIT 3
+      `).all(escapeFts5(cleanTitle));
+    } catch {
+      // FTS5 error, skip fuzzy
+    }
+  }
 
   return { exact, fuzzy };
 }
