@@ -34,11 +34,15 @@ tools/knowledge/
 ## 数据流
 
 ```
-Agent 写入 → 查重 → 来源分级 → 3×Oracle 验证 → SQLite
-                                                      ↓
-Git Hook  → 变更捕获 → 异步验证  → SQLite          FTS5 索引
-                                                      ↓
-定时研究  → librarian 搜索 → 分级 → Oracle 验证 → SQLite  查询
+当前已实现:
+  Agent 写入 → 查重 → 来源分级 → SQLite ← → FTS5 索引
+                                        ↓
+                                    query/get/list
+
+规划中 (Phase 2-3):
+  3×Oracle 验证编排    (等待 agent 工作流集成)
+  Git Hook 变更捕获     (post-merge)
+  CI cron 定时研究      (librarian 主动探索)
 ```
 
 ## 表结构
