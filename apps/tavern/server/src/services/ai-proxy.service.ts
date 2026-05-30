@@ -652,13 +652,15 @@ export async function generateChoices(params: {
   const hasQuota = await checkAndDeductQuota(params.userId)
   if (!hasQuota) throw new Error("QUOTA_EXCEEDED")
   let apiKey: string | undefined
+  let baseUrl = providerConfig.baseUrl
   if (providerConfig.provider !== "tongyi" && providerConfig.provider !== "opencode") {
     const key = await getDecryptedKey(params.userId, providerConfig.provider)
     if (!key) throw new Error("KEY_MISSING")
-    apiKey = key.apiKey
+    apiKey = key.key
+    baseUrl = key.baseUrl || baseUrl
   } else { apiKey = providerConfig.apiKey }
   const response = await axios.post(
-    providerConfig.baseURL + "/chat/completions",
+    (baseUrl || providerConfig.baseUrl) + "/chat/completions",
     { model, messages: [{ role: "user", content: params.choicePrompt }], temperature: 0.7, max_tokens: 300, response_format: { type: "json_object" } },
     { headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey }, timeout: 30000 }
   )

@@ -4,9 +4,11 @@ import { useState, useCallback, useRef } from 'react'
 
 import ChatBubble from '@/components/ChatBubble'
 import { useGameStore } from '@/stores/gameStore'
+import { useChatStore } from '@/stores/chatStore'
 import { usePrivacyStore } from '@/stores/privacyStore'
-import { Icon } from '@/components'
+import { Icon, ChoiceCard } from '@/components'
 import type { GameGroup, GameMessage } from '@/types/game'
+import type { ChoiceOption } from '@/types/chat'
 import { cn } from '@/utils'
 import { API_BASE_URL } from '@/constants'
 import './index.scss'
@@ -50,6 +52,7 @@ async function callAIForCharacter(
   onToken: (token: string) => void,
   signal: { aborted: boolean },
   gameMode?: { saveId: string; characterIds: string[] },
+  onChoice?: (summary: string, choices: Array<{ label: string; description: string }>) => void,
 ): Promise<string> {
   const token = getToken()
   if (!token) throw new Error('未登录')
@@ -73,7 +76,7 @@ async function callAIForCharacter(
           prompt: cardData.prompt,
           scenario: cardData.scenario,
         },
-        ...(gameMode ? { saveId: gameMode.saveId, characterIds: gameMode.characterIds } : {}),
+        ...(gameMode ? { saveId: gameMode.saveId, characterIds: gameMode.characterIds, requestChoice: true } : {}),
       },
       enableChunked: true,
       timeout: 120000,
@@ -105,6 +108,9 @@ async function callAIForCharacter(
             if (json.type === 'error') {
               reject(new Error(json.message || 'AI 响应错误'))
             }
+            if (json.type === 'choice' && json.summary && json.choices) {
+              onChoice?.(json.summary, json.choices)
+            }
           }
         }
       } catch {
@@ -121,6 +127,7 @@ export default function ChatPage() {
   const [activeGroup, setActiveGroup] = useState<GameGroup | null>(null)
   const [input, setInput] = useState('')
   const [aiTyping, setAiTyping] = useState<string | null>(null) // character name or null
+  const [pendingChoices, setPendingChoices] = useState<{ summary: string; choices: ChoiceOption[] } | null>(null)
   const [searchText, setSearchText] = useState('')
   const typingRef = useRef(false)
 
@@ -184,6 +191,7 @@ export default function ChatPage() {
 
     for (const memberId of memberIds) {
       if (abortSignal.aborted) break
+      const isLastMember = memberId === memberIds[memberIds.length - 1]
 
       const cardData = getCardData(memberId)
       if (!cardData) continue
@@ -199,10 +207,12 @@ export default function ChatPage() {
           recentHistory,
           (token) => {
             aiContent += token
-            // Stream tokens to UI via temporary message update
           },
           abortSignal,
           save ? { saveId: save.id, characterIds: memberIds } : undefined,
+          isLastMember ? (summary, choices) => {
+            setPendingChoices({ summary, choices })
+          } : undefined,
         )
       } catch (err) {
         console.warn('[AI Group] failed for', memberId, err)
@@ -249,6 +259,41 @@ export default function ChatPage() {
 
     triggerAIResponses(activeGroup, text, updatedMessages)
   }, [input, activeGroup, addMessage, updateGroupLastMessage, save, triggerAIResponses])
+
+  const handleChoiceSelect = useCallback((choice: ChoiceOption) => {
+    if (!activeGroup) return
+    const choiceText = `${choice.label}：${choice.description}`
+    setPendingChoices(null)
+    const msg: GameMessage = {
+      id: generateId(),
+      senderId: 'player',
+      senderName: '我',
+      content: choiceText,
+      createdAt: Date.now(),
+    }
+    addMessage(activeGroup.id, msg)
+    updateGroupLastMessage(activeGroup.id, choiceText)
+    const activeGroupFull = save?.groups.find(g => g.id === activeGroup.id)
+    const currentMessages = activeGroupFull?._messages || []
+    triggerAIResponses(activeGroup, choiceText, [...currentMessages, msg])
+  }, [activeGroup, addMessage, updateGroupLastMessage, save, triggerAIResponses])
+
+  const handleCustomInput = useCallback((text: string) => {
+    if (!activeGroup) return
+    setPendingChoices(null)
+    const msg: GameMessage = {
+      id: generateId(),
+      senderId: 'player',
+      senderName: '我',
+      content: text,
+      createdAt: Date.now(),
+    }
+    addMessage(activeGroup.id, msg)
+    updateGroupLastMessage(activeGroup.id, text)
+    const activeGroupFull = save?.groups.find(g => g.id === activeGroup.id)
+    const currentMessages = activeGroupFull?._messages || []
+    triggerAIResponses(activeGroup, text, [...currentMessages, msg])
+  }, [activeGroup, addMessage, updateGroupLastMessage, save, triggerAIResponses])
 
   const handleGroupClick = (group: GameGroup) => {
     setActiveGroup(group)
@@ -433,6 +478,17 @@ export default function ChatPage() {
           )}
         </View>
       </ScrollView>
+
+      {pendingChoices && (
+        <View className='page-chat-choices'>
+          <ChoiceCard
+            summary={pendingChoices.summary}
+            choices={pendingChoices.choices}
+            onSelect={handleChoiceSelect}
+            onCustomInput={handleCustomInput}
+          />
+        </View>
+      )}
 
       <View className='page-chat-input'>
         <View className='page-chat-input-voice'>
