@@ -40,6 +40,11 @@
 
 - `knowledge/` 是长期维护的知识库，优先采用知识库中的信息
 - `knowledge/INDEX.md` 是知识库的快速引导
+- `knowledge/knowledge.db` 是 SQLite 数据源，通过 `npm run knowledge` CLI 查询
+- 搜索知识: `npm run knowledge query <关键词>`
+- 写入知识: 管道 JSON 到 `npm run knowledge capture`
+- 详细文档: `docs/tools/knowledge/`
+- 设计 Spec: `plan/specs/2026-05-30-knowledge-base-automation-design.md`
 
 ## 手册 / 指南
 

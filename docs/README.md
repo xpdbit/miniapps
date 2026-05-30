@@ -39,6 +39,8 @@ docs/
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
 | **SuperTask 工具** 🚫 | [tools/supertask/](./tools/supertask/) | **已存档** — 功能整合至 OCE |
 | **OCE 工具** | [tools/oce/](../tools/oce/) | PyQt6 OpenCode 监控与看门狗 |
+| **Knowledge 知识库工具** | [tools/knowledge/](../tools/knowledge/) | SQLite 驱动、AI 自动维护的 Wiki 知识库 |
+| **Local Server 工具** | [tools/local_server/](../tools/local_server/) | 本地开发环境（MySQL + Redis + 服务热重载）|
 | **部署工具** | [tools/deploy/](../tools/deploy/) | Docker Compose + Nginx → ECS |
 | **数据库 Schema** | [database/](./database/) | 4 库独立 Schema 概览 |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |

@@ -1,4 +1,12 @@
 {
+  "private": true,
+  "scripts": {
+    "knowledge": "node tools/knowledge/bin/knowledge.js",
+    "knowledge:init": "node tools/knowledge/bin/knowledge.js rebuild",
+    "knowledge:capture": "node tools/knowledge/bin/knowledge.js capture",
+    "knowledge:stale": "node tools/knowledge/bin/knowledge.js stale",
+    "knowledge:rebuild": "node tools/knowledge/bin/knowledge.js rebuild"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.3"
   }

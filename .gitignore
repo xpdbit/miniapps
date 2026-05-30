@@ -9,6 +9,10 @@ dist-h5/
 dev-dist/
 build/
 
+# Dashboard 构建产物
+dashboard/dist-*
+dashboard/state/compiled*
+
 # 微信开发者工具
 .project.config.json
 .vProject.config.json
@@ -56,12 +60,18 @@ tmp/
 temp/
 *.tmp
 
+# 知识库二进制文件（自动生成）
+knowledge/*.db
+
 # 工具/临时目录
 .sisyphus/
 
 # 本地开发服务器日志
 local_server/logs/
 temp-tsc-test/
+
+# Taro webpack5 持久化缓存
+apps/cache/
 
 # 规划文档
 plan/

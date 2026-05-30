@@ -1,0 +1,13 @@
+{
+  "name": "@miniapps/knowledge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Knowledge base management tool - SQLite powered Wiki for AI Agent",
+  "bin": {
+    "knowledge": "./bin/knowledge.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0"
+  }
+}
