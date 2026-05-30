@@ -153,6 +153,7 @@ export default function GameSetupPage() {
       const save = createSave({
         name: saveName || result.worldSetting.title,
         playerCount: selectedCards.characters.length,
+        userPersonaId: undefined, // TODO: 集成 Persona 选择步骤后替换
         selectedCards: {
           characters: selectedCards.characters.map(c => c.id),
           mechanics: selectedCards.mechanics.map(c => c.id),

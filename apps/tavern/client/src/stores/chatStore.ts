@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import Taro from '@tarojs/taro'
 import { httpClient } from '@/services/httpClient'
-import type { ChatSession, ChatMessage } from '@/types/chat'
+import type { ChatSession, ChatMessage, ChoiceOption } from '@/types/chat'
 
 const MODEL_STORAGE_KEY = 'tavern_selected_model'
 const PROVIDER_STORAGE_KEY = 'tavern_selected_provider'
@@ -25,6 +25,8 @@ interface ChatState {
   selectedProvider: string
   /** 用户从角色详情页点击"开始对话"时暂存的角色 ID */
   pendingCharacterId: string | null
+  /** 游戏模式：AI 生成的待选行动选项 */
+  pendingChoices: { summary: string; choices: ChoiceOption[] } | null
 
   loadSessions: () => Promise<void>
   selectSession: (session: ChatSession) => void
@@ -34,6 +36,7 @@ interface ChatState {
   clearCurrent: () => void
   setModel: (model: string, provider?: string) => void
   setPendingCharacter: (characterId: string | null) => void
+  setPendingChoices: (data: { summary: string; choices: ChoiceOption[] } | null) => void
 }
 
 const saved = loadSavedModel()
@@ -46,6 +49,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   selectedModel: saved.model,
   selectedProvider: saved.provider,
   pendingCharacterId: null,
+  pendingChoices: null,
 
   loadSessions: async () => {
     try {
@@ -90,5 +94,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
   setPendingCharacter: (characterId) => {
     set({ pendingCharacterId: characterId })
+  },
+  setPendingChoices: (data) => {
+    set({ pendingChoices: data })
   },
 }))

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { API_BASE_URL } from '@/constants'
 import { useAuthStore } from '@/stores/authStore'
-import type { ChatMessage, SSEMessage } from '@/types/chat'
+import type { ChatMessage, SSEMessage, ChoiceOption } from '@/types/chat'
 import type { ScriptEvent, GameWorldState } from '@/types/ai-script'
 
 interface UseSSEOptions {
@@ -13,6 +13,8 @@ interface UseSSEOptions {
   onEvents?: (events: ScriptEvent[]) => void
   /** AI Script: 收到状态快照时回调 */
   onState?: (state: GameWorldState) => void
+  /** Game mode: AI 生成行动选项时回调 */
+  onChoice?: (summary: string, choices: ChoiceOption[]) => void
 }
 
 export function useSSE(options?: UseSSEOptions) {
@@ -35,6 +37,14 @@ export function useSSE(options?: UseSSEOptions) {
       firstMsg?: string
       prompt?: string
       scenario?: string
+    }
+    /** 游戏模式上下文 */
+    gameContext?: {
+      saveId: string
+      characterIds: string[]
+      userPersonaId?: string
+      scenarioId?: string
+      requestChoice?: boolean
     }
   }) => {
     const token = useAuthStore.getState().token
@@ -69,6 +79,12 @@ export function useSSE(options?: UseSSEOptions) {
           provider: params.provider || 'tongyi',
           temperature: params.temperature ?? 0.8,
           cardData: params.cardData,
+          // Game mode context
+          saveId: params.gameContext?.saveId,
+          characterIds: params.gameContext?.characterIds,
+          userPersonaId: params.gameContext?.userPersonaId,
+          scenarioId: params.gameContext?.scenarioId,
+          requestChoice: params.gameContext?.requestChoice,
         },
         header: {
           'Content-Type': 'application/json',
@@ -137,6 +153,13 @@ export function useSSE(options?: UseSSEOptions) {
                 const sv = event as SSEMessage & { state?: GameWorldState }
                 if (sv.state) {
                   options?.onState?.(sv.state)
+                }
+                break
+              }
+              case 'choice': {
+                const cv = event as SSEMessage & { summary?: string; choices?: ChoiceOption[] }
+                if (cv.summary && cv.choices) {
+                  options?.onChoice?.(cv.summary, cv.choices)
                 }
                 break
               }

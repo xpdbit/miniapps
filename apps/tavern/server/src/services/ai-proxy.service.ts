@@ -630,3 +630,46 @@ async function callGoogle(
 
   onDone({ tokens: totalTokens })
 }
+
+// ============================================================
+//  Choice generation (non-streaming, for game-mode options)
+// ============================================================
+
+export interface ChoiceResult {
+  summary: string
+  choices: Array<{ label: string; description: string }>
+}
+
+export async function generateChoices(params: {
+  userId: string
+  choicePrompt: string
+  model?: string
+}): Promise<ChoiceResult> {
+  const model = params.model || "qwen-turbo"
+  const providers = await getProvidersForModel(model)
+  if (providers.length === 0) throw new Error("No provider available")
+  const providerConfig = providers[0]!
+  const hasQuota = await checkAndDeductQuota(params.userId)
+  if (!hasQuota) throw new Error("QUOTA_EXCEEDED")
+  let apiKey: string | undefined
+  if (providerConfig.provider !== "tongyi" && providerConfig.provider !== "opencode") {
+    const key = await getDecryptedKey(params.userId, providerConfig.provider)
+    if (!key) throw new Error("KEY_MISSING")
+    apiKey = key.apiKey
+  } else { apiKey = providerConfig.apiKey }
+  const response = await axios.post(
+    providerConfig.baseURL + "/chat/completions",
+    { model, messages: [{ role: "user", content: params.choicePrompt }], temperature: 0.7, max_tokens: 300, response_format: { type: "json_object" } },
+    { headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey }, timeout: 30000 }
+  )
+  const content = response.data?.choices?.[0]?.message?.content
+  if (!content) throw new Error("Empty choice response")
+  try {
+    const cleaned = content.replace(/```(?:json)?\s*|\s*```/g, "").trim()
+    const json = JSON.parse(cleaned)
+    if (!json.summary || !Array.isArray(json.choices) || json.choices.length < 2) throw new Error("Invalid")
+    return { summary: String(json.summary), choices: json.choices.slice(0, 3).map((c: { label: string; description: string }) => ({ label: String(c.label), description: String(c.description) })) }
+  } catch {
+    return { summary: "当前局面", choices: [{ label: "继续", description: "继续观察局势发展" }] }
+  }
+}

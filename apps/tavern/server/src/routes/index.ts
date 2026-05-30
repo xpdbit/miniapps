@@ -1,10 +1,11 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { success } from '../utils/response';
 import authRoutes from './auth';
 import aiRoutes from './ai';
 import exportRoutes from './export';
 import characterRoutes from './characters';
-import chatRoutes from './chat';
+import chatRoutes from './chat'
+import chatChoiceRoutes from './chat-choice';
 import marketRoutes from './market';
 import keyRoutes from './keys';
 import tierRoutes from './tier';
@@ -14,6 +15,7 @@ import personaRoutes from './personas';
 import uploadRoutes from './upload';
 import reportRoutes from './reports';
 import aiScriptRoutes from './ai-scripts';
+import cardSchemeRoutes from './cardSchemes';
 
 const router = Router();
 
@@ -37,8 +39,12 @@ router.use('/v1/characters', characterRoutes);
 // Market routes
 router.use('/v1/market', marketRoutes);
 
+// Card scheme routes
+router.use('/v1/card-schemes', cardSchemeRoutes);
+
 // Chat routes
-router.use('/v1/chat', chatRoutes);
+router.use('/v1/chat', chatRoutes)
+router.use('/v1/chat', chatChoiceRoutes);
 
 // API Key routes
 router.use('/v1/keys', keyRoutes);
@@ -64,7 +70,7 @@ router.use('/v1/reports', reportRoutes);
 // AI Script management routes
 router.use('/v1/ai-scripts', aiScriptRoutes);
 
-// Backward-compatible routes (旧 URL 格式兼容，过渡期后移除)
+// Backward-compatible routes (鏃?URL 鏍煎紡鍏煎锛岃繃娓℃湡鍚庣Щ闄?
 router.use('/api/v1', tierRoutes);
 router.use('/api/v1', exportRoutes);
 router.use('/api/v1/personas', personaRoutes);
@@ -72,7 +78,10 @@ router.use('/api/v1/auth', authRoutes);
 router.use('/api/v1/ai', aiRoutes);
 router.use('/api/v1/characters', characterRoutes);
 router.use('/api/v1/market', marketRoutes);
-router.use('/api/v1/chat', chatRoutes);
+router.use('/api/v1/cards', marketRoutes);
+router.use('/api/v1/card-schemes', cardSchemeRoutes);
+router.use('/api/v1/chat', chatRoutes)
+router.use('/api/v1/chat', chatChoiceRoutes);
 router.use('/api/v1/keys', keyRoutes);
 router.use('/api/v1/admin', adminRoutes);
 router.use('/api/v1/official', officialRoutes);
@@ -81,7 +90,7 @@ router.use('/api/v1/reports', reportRoutes);
 router.use('/api/v1/ai-scripts', aiScriptRoutes);
 
 // Backward-compatible routes: legacy URL pattern (/api/tavern/v1/*)
-// 某些旧版客户端配置将 tavern 和 v1 顺序写反，兼容此模式
+// 鏌愪簺鏃х増瀹㈡埛绔厤缃皢 tavern 鍜?v1 椤哄簭鍐欏弽锛屽吋瀹规妯″紡
 router.use('/api/tavern/v1', tierRoutes);
 router.use('/api/tavern/v1', exportRoutes);
 router.use('/api/tavern/v1/personas', personaRoutes);
@@ -89,7 +98,10 @@ router.use('/api/tavern/v1/auth', authRoutes);
 router.use('/api/tavern/v1/ai', aiRoutes);
 router.use('/api/tavern/v1/characters', characterRoutes);
 router.use('/api/tavern/v1/market', marketRoutes);
-router.use('/api/tavern/v1/chat', chatRoutes);
+router.use('/api/tavern/v1/cards', marketRoutes);
+router.use('/api/tavern/v1/card-schemes', cardSchemeRoutes);
+router.use('/api/tavern/v1/chat', chatRoutes)
+router.use('/api/tavern/v1/chat', chatChoiceRoutes);
 router.use('/api/tavern/v1/keys', keyRoutes);
 router.use('/api/tavern/v1/admin', adminRoutes);
 router.use('/api/tavern/v1/official', officialRoutes);
@@ -113,7 +125,10 @@ router.use('/api/v1/tavern/auth', authRoutes);
 router.use('/api/v1/tavern/ai', aiRoutes);
 router.use('/api/v1/tavern/characters', characterRoutes);
 router.use('/api/v1/tavern/market', marketRoutes);
-router.use('/api/v1/tavern/chat', chatRoutes);
+router.use('/api/v1/tavern/cards', marketRoutes);
+router.use('/api/v1/tavern/card-schemes', cardSchemeRoutes);
+router.use('/api/v1/tavern/chat', chatRoutes)
+router.use('/api/v1/tavern/chat', chatChoiceRoutes);
 router.use('/api/v1/tavern/keys', keyRoutes);
 router.use('/api/v1/tavern/admin', adminRoutes);
 router.use('/api/v1/tavern/official', officialRoutes);

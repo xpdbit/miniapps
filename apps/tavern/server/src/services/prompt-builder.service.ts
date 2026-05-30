@@ -240,3 +240,46 @@ export function buildPrompt(params: {
 
   return { messages, tokenEstimate }
 }
+
+// ============================================================
+//  Choice-generation prompt builder
+// ============================================================
+
+export interface ChoicePromptParams {
+  personaName: string
+  personaDescription?: string | null
+  lastNarrative: string
+  /** 当前世界状态摘要 */
+  worldContext?: string
+}
+
+/**
+ * Build a prompt that instructs the AI to pause the narrative and
+ * generate 2-3 action choices for the player character.
+ */
+export function buildChoicePrompt(params: ChoicePromptParams): string {
+  const personaDesc = params.personaDescription
+    ? `角色设定："${params.personaDescription}"`
+    : ''
+
+  return [
+    '你现在需要暂停叙事，将镜头转向玩家的角色。',
+    '',
+    `玩家角色名称："${params.personaName}"`,
+    personaDesc,
+    '',
+    `最近发生的剧情：${params.lastNarrative.slice(-500)}`,
+    '',
+    params.worldContext ? `当前世界状态：${params.worldContext}` : '',
+    '',
+    '请生成 3 个玩家可以选择的行动方向：',
+    '1. 每个选项包含 label（5-10字简短标题）和 description（15-30字具体描述）',
+    '2. 选项必须代表明显不同的方向（战斗/探索/社交/撤退等），不要都是同一方向的变体',
+    `3. 选项应考虑"${params.personaName}"的角色特点和能力`,
+    '4. 第三个选项偶尔可以是高风险或意外方向',
+    '5. 每个选项都应有有意义的叙事后果',
+    '',
+    '仅返回 JSON 格式（不要 markdown 代码块包裹）：',
+    '{"summary":"当前局面的一句话总结","choices":[{"label":"选项标题","description":"选项描述"},...]}',
+  ].filter(Boolean).join('\n')
+}

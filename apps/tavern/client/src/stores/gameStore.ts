@@ -74,6 +74,20 @@ function persistSaves(saves: GameSave[]) {
   try { storageSet(SAVES_KEY, saves) } catch { /* ignore */ }
 }
 
+/** 存档格式迁移：渐进式升级旧版本数据结构 */
+function migrateSave(save: GameSave): GameSave {
+  const s = { ...save }
+  const version = s.schemaVersion ?? 0
+
+  if (version < 1) {
+    // v0 → v1: 添加 userPersonaId 和 schemaVersion
+    s.schemaVersion = 1
+    s.userPersonaId = s.userPersonaId ?? undefined
+  }
+
+  return s
+}
+
 interface GameState {
   saves: GameSave[]
   activeSaveId: string | null
@@ -116,8 +130,16 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   restoreSaves: () => {
-    const saves = loadSaves()
+    let saves = loadSaves()
+    // 迁移旧格式存档
+    saves = saves.map(migrateSave)
     set({ saves })
+
+    // 迁移后若有变化，持久化
+    const original = loadSaves()
+    if (JSON.stringify(saves) !== JSON.stringify(original)) {
+      persistSaves(saves)
+    }
     try {
       let id = storageGet(ACTIVE_KEY)
       // 兼容 Taro H5 可能返回字符串而非已解析值
@@ -147,7 +169,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   createSave: (data) => {
     const now = Date.now()
-    const save: GameSave = { ...data, id: generateId(), createdAt: now, updatedAt: now }
+    const save: GameSave = {
+      ...data,
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now,
+      schemaVersion: data.schemaVersion ?? 1,
+    }
     const newSaves = [save, ...get().saves]
     set({ saves: newSaves, activeSaveId: save.id })
     persistSaves(newSaves)

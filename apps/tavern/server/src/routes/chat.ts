@@ -2,8 +2,8 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { requireAuth } from '../middleware/auth'
 import type { AuthenticatedRequest } from '../middleware/auth'
-import { buildPrompt } from '../services/prompt-builder.service'
-import { routeChat, sanitizeAiText } from '../services/ai-proxy.service'
+import { buildPrompt, buildChoicePrompt } from '../services/prompt-builder.service'
+import { routeChat, sanitizeAiText, generateChoices } from '../services/ai-proxy.service'
 import * as contextService from '../services/context.service'
 import { parseAiScriptResponse, serializeEventLog, gameStateStore } from '../services/ai-scripts'
 import { scenarioLoader } from '../services/ai-scripts/scenario-loader'
@@ -28,6 +28,10 @@ const sendSchema = z.object({
   saveId: z.string().optional(),
   characterIds: z.array(z.string()).optional(),
   scenarioId: z.string().optional(),
+  // 用户角色化身
+  userPersonaId: z.string().optional(),
+  // 请求 AI 在回复后生成行动选项
+  requestChoice: z.boolean().optional(),
 })
 
 // POST /api/v1/chat/send - SSE streaming chat
@@ -94,6 +98,11 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
     let persona = null
     if (params.personaId) {
       persona = await prisma.tavernPersona.findUnique({ where: { id: params.personaId } })
+    }
+    // Load user's game persona (their character in the world)
+    let userPersona = null
+    if (params.userPersonaId) {
+      userPersona = await prisma.tavernPersona.findUnique({ where: { id: params.userPersonaId } })
     }
 
     let history: Array<{ role: string; content: string }> = []
@@ -261,6 +270,34 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res: Respons
           const updatedState = await gameStateStore.getState(params.saveId!)
           if (updatedState) {
             sendEvent({ type: 'state', state: updatedState })
+          }
+        }
+
+        // Choice generation: if requestChoice, generate action options for the player
+        if (params.requestChoice && hasGameMode) {
+          try {
+            const personaName = userPersona?.name ?? '冒险者'
+            const personaDesc = userPersona?.description ?? null
+            const choicePrompt = buildChoicePrompt({
+              personaName,
+              personaDescription: personaDesc,
+              lastNarrative: fullResponse,
+            })
+            const choiceResult = await generateChoices({
+              userId,
+              choicePrompt,
+              model: params.model,
+            })
+            if (!res.writableEnded) {
+              sendEvent({
+                type: 'choice',
+                summary: choiceResult.summary,
+                choices: choiceResult.choices,
+              })
+            }
+          } catch (choiceErr) {
+            // Choice generation failed — silently continue, client falls back to free input
+            console.warn('[chat] choice generation failed:', choiceErr)
           }
         }
 

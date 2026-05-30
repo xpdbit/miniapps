@@ -4,6 +4,8 @@ export interface GameSave {
   createdAt: number
   updatedAt: number
   playerCount: number
+  schemaVersion?: number           // 数据结构版本号，用于兼容迁移
+  userPersonaId?: string           // 用户在游戏中的角色化身 ID
   selectedCards: {
     characters: string[]
     mechanics: string[]
