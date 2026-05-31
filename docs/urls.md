@@ -84,7 +84,7 @@
 |-----|------|----------|
 | `https://docs.docker.com/get-docker/` | Docker 安装文档 | `apps/ftg/server/scripts/docker-start.sh` |
 | `https://www.docker.com/products/docker-desktop/` | Docker Desktop 下载 | `tools/local_server/dev_console.py` |
-| `https://aka.ms/terminal` | Windows Terminal 下载 | `local_server/dev_console.py` |
+| `https://aka.ms/terminal` | Windows Terminal 下载 | `tools/local_server/dev_console.py` |
 | `https://get.acme.sh` | acme.sh SSL 证书工具 | `tools/deploy/scripts/setup-ssl.sh` |
 | `http://ip-api.com` | IP 地理定位服务（服务端） | `docs/apps/ftg/server/API.md` |
 | `https://apis.map.qq.com/ws/location/v1/ip` | 腾讯地图 IP 定位（微信小程序端） | `apps/ftg/client/src/constants/apiEndpoints.ts` |

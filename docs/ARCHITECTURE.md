@@ -361,14 +361,16 @@ Tavern MiniApp (apps/tavern/client, Taro 4 + React 18)
          ▼
 Tavern Server (apps/tavern/server, Express + TypeScript)
   │
-  ├── routes/          # 15 路由模块 (auth/characters/chat/keys/market/admin/cardSchemes/
-  │                    #           tier/official/ai + personas/export)
-  ├── services/        # 15 服务 (ai-proxy/character/context/card/cardScheme/export/key/
+  ├── routes/          # 16 路由模块 (auth/ai/export/characters/market/cardSchemes/chat/
+  │                    #           chat-choice/keys/tier/admin/official/personas/
+  │                    #           upload/reports/ai-scripts, 挂载于 /api/v1/*)
+  ├── services/        # 16 服务 (ai-proxy/character/context/card/cardScheme/export/key/
   │                    #          moderation/persona/prompt-builder/social/tier/
-  │                    #          model-discovery/model-sync/admin-config/config-provider)
-  └── Prisma           # 14+ 表 (TavernUser/Card/Like/Fav/Persona/ChatSession/ChatMessage/
+  │                    #          model-discovery/model-sync/admin-config/config-provider/
+  │                    #          rate-limiter)
+  └── Prisma           # 13 表 (TavernUser/Card/Like/Fav/Persona/ChatSession/ChatMessage/
                          #         ModerationLog/CardRevision/ApiKey/UserTier/ModelMeta/
-                         #         UserProfile/CardScheme...)
+                         #         UserProfile)
          │
          ▼
 Dashboard Tavern 管理 (通过 tavern-proxy 代理到 tavern-server)

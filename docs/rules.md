@@ -13,7 +13,7 @@
 |------|------|------|
 | `README.md` | 项目概述、技术栈、快速开始 | `apps/ftg/client/README.md` |
 | `API.md` | API 接口参考 | `apps/ftg/server/API.md` |
-| `VISION.md` | 长期演进规划 | (已从仓库移除，旧例见 `tools/opencode-tui-enhance/VISION.md`) |
+| `VISION.md` | 长期演进规划 | `plan/specs/*.md` 或 `.sisyphus/plans/*.md` |
 | `kebab-case.md` | 规格/计划文档 | `2026-05-10-ai-tavern-design.md` |
 
 ### 1.2 保留文件名

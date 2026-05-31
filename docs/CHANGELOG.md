@@ -9,8 +9,8 @@
 
 | 操作 | 详情 |
 |------|------|
-| **Tavern 客户端文档更新** | 页面 12→13（新增 scheme-detail），组件新增 SchemeCard，stores 8→9（新增 schemeStore），services marketService.ts→cardService.ts，新增 aiWorldBuilder.ts |
-| **Tavern 服务端文档更新** | 路由 13→15（新增 cardSchemes 路由），market.service.ts 删除 → card.service.ts + cardScheme.service.ts 替代，services 14→15 |
+| **Tavern 客户端文档更新** | 页面 12→13（新增 scheme-detail），组件新增 SchemeCard，stores 8→9（新增 schemeStore），services marketService.ts→cardService.ts，新增 `utils/aiWorldBuilder.ts` |
+| **Tavern 服务端文档更新** | 路由 13→16（新增 cardSchemes + ai-scripts + upload/reports 等），market.service.ts 删除 → card.service.ts + cardScheme.service.ts 替代，services 14→16 |
 | **Tier 服务护盾机制** | 新增内置免费模型兜底（BUILTIN_FALLBACK_MODELS），当所有活跃模型被过滤时自动降级返回 |
 | **模型管理扩展** | Dashboard TavernModelManager 新增编辑弹窗 + 批量编辑 + 行选择；API 扩展 displayName/icon/description/sortOrder 字段 |
 | **local_server 迁移文档** | docs/tools/local_server/README.md 已从 untracked 纳入跟踪 |
