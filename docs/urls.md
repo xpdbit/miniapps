@@ -83,7 +83,7 @@
 | URL | 用途 | 使用位置 |
 |-----|------|----------|
 | `https://docs.docker.com/get-docker/` | Docker 安装文档 | `apps/ftg/server/scripts/docker-start.sh` |
-| `https://www.docker.com/products/docker-desktop/` | Docker Desktop 下载 | `local_server/dev_console.py` |
+| `https://www.docker.com/products/docker-desktop/` | Docker Desktop 下载 | `tools/local_server/dev_console.py` |
 | `https://aka.ms/terminal` | Windows Terminal 下载 | `local_server/dev_console.py` |
 | `https://get.acme.sh` | acme.sh SSL 证书工具 | `tools/deploy/scripts/setup-ssl.sh` |
 | `http://ip-api.com` | IP 地理定位服务（服务端） | `docs/apps/ftg/server/API.md` |
@@ -259,5 +259,5 @@ npm run build:weapp:prod    # 用 mnapp.top（生产构建）
 
 ---
 
-> 最后更新: 2026-05-28
-> 修改: 全面审计 — 新增 AI Provider 端点、Docker 内部端点、WeChat API、监控栈、本地数据库连接串、Vite 代理目标、CORS 白名单；修正 Tavern 路径（`/api/v1/tavern` 而非 `/api/tavern/v1`）；补充 deploy remote 脚本、SSL SAN、占位符 URL
+> 最后更新: 2026-05-31
+> 修改: 修复 local_server/dev_console.py 引用路径 → tools/local_server/dev_console.py

@@ -15,9 +15,13 @@ docs/
 ├── manual/                  # 操作手册
 ├── ops/                     # 服务器运维 + 部署
 ├── standards/               # 代码约定、反模式、文档规范
+├── superpowers/             # superpowers 计划/规格
+│   ├── plans/
+│   └── specs/
 ├── tools/                   # 开发工具
-│   ├── opencode-tui-enhance/ # 🚫 已迁移至 oce/
-│   └── supertask/           # 🚫 已存档
+│   ├── knowledge/           # SQLite 知识库工具
+│   ├── local_server/        # 本地开发环境（原 local_server/）
+│   └── oce/                 # OpenCode 桌面监控
 ├── ARCHITECTURE.md          # 系统架构
 ├── CHANGELOG.md             # 文档变更日志
 ├── edge.md                  # 文档关联与边界
@@ -35,12 +39,11 @@ docs/
 | **Game1 小程序** | [apps/game1/client/](./apps/game1/client/) | 17 引擎模块、12 页面 |
 | **Game1 后端 API** | [apps/game1/server/](./apps/game1/server/) | 云端存档、PVP、成就、10 路由 |
 | **AI-Tavern 小程序** | [apps/tavern/client/](./apps/tavern/client/) | SSE 流式、角色市场、AI Script 事件驱动、12 页面 |
-| **AI-Tavern 后端 API** | [apps/tavern/server/](./apps/tavern/server/) | 多 AI Provider、SSE、AI Script 引擎、15 路由 |
+| **AI-Tavern 后端 API** | [apps/tavern/server/](./apps/tavern/server/) | 多 AI Provider、SSE、AI Script 引擎、16 路由 |
 | **管理后台** | [dashboard/](./dashboard/) | React 19 + Vite + Ant Design |
-| **SuperTask 工具** 🚫 | [tools/supertask/](./tools/supertask/) | **已存档** — 功能整合至 OCE |
-| **OCE 工具** | [tools/oce/](../tools/oce/) | PyQt6 OpenCode 监控与看门狗 |
+| **OCE 工具** | [tools/oce/](../tools/oce/) | OpenCode 桌面监控与看门狗 |
 | **Knowledge 知识库工具** | [tools/knowledge/](../tools/knowledge/) | SQLite 驱动、AI 自动维护的 Wiki 知识库 |
-| **Local Server 工具** | [tools/local_server/](../tools/local_server/) | 本地开发环境（MySQL + Redis + 服务热重载）|
+| **Local Server 工具** | [tools/local_server/](../tools/local_server/) | 本地开发环境（MySQL + Redis + 服务热重载，原 `local_server/` 迁移）|
 | **部署工具** | [tools/deploy/](../tools/deploy/) | Docker Compose + Nginx → ECS |
 | **数据库 Schema** | [database/](./database/) | 4 库独立 Schema 概览 |
 | **系统架构** | [ARCHITECTURE.md](./ARCHITECTURE.md) | 整体架构与数据流 |
@@ -57,5 +60,5 @@ docs/
 
 ---
 
-> 最后更新: 2026-05-28
-> 修改: 新增 AI Script 系统文档 — 事件注册表/GameStateStore/客户端 Hook/Dashboard 管理页面
+> 最后更新: 2026-05-31
+> 修改: 文档结构同步 — 移除已删除工具引用，新增 local_server/superpowers 子目录；Tavern 路由 15→16；已删除 supertask/opencode-tui-enhance 不再列出

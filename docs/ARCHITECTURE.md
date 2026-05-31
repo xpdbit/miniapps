@@ -1,7 +1,7 @@
 # 系统架构
 
 > **状态**: current
-> **更新**: 2026-05-27
+> **更新**: 2026-05-31
 
 ## 高层面架构（多项目视图）
 
@@ -350,28 +350,30 @@ GameEngine 处理逻辑 (纯 TS，离线友好)
 ```
 Tavern MiniApp (apps/tavern/client, Taro 4 + React 18)
   │
-  ├── pages/           # 12 页面 (market/chat/archive/game-setup/character/detail/creator/
-  │                    #        profile/persona/settings + chats/contacts/discover)
-  ├── components/      # CharacterCard/ChatBubble/ModelSelector/Skeleton
-  ├── stores/          # 8 stores (authStore/chatStore/characterStore/gameStore/
-  │                    #           privacyStore/localCardsStore/syncedCardsStore)
-  ├── services/        # httpClient/aiClient/aiService/characterService/marketService/personaService
+  ├── pages/           # 13 页面 (cards/chat/archive/scheme-detail/game-setup/character/detail/
+  │                    #        creator/profile/persona/settings + chats/contacts/discover)
+  ├── components/      # CharacterCard/ChatBubble/ModelSelector/Skeleton/SchemeCard
+  ├── stores/          # 9 stores (authStore/chatStore/characterStore/gameStore/
+  │                    #           privacyStore/localCardsStore/schemeStore/syncedCardsStore)
+  ├── services/        # httpClient/aiClient/aiService/characterService/cardService/personaService
   └── hooks/           # useSSE (SSE 流式) + useDirectAI (隐私模式直连)
          │
          ▼
 Tavern Server (apps/tavern/server, Express + TypeScript)
   │
-  ├── routes/          # 13 路由模块 (auth/characters/chat/keys/market/admin/builtin/export/
+  ├── routes/          # 15 路由模块 (auth/characters/chat/keys/market/admin/cardSchemes/
   │                    #           tier/official/ai + personas/export)
-  ├── services/        # 14 服务 (ai-proxy/character/context/export/key/market/moderation/
-  │                    #          persona/prompt-builder/social/tier/model-discovery/model-sync)
-  └── Prisma           # 13 表 (TavernUser/Card/Like/Fav/Persona/ChatSession/ChatMessage/
-                         #         ModerationLog/CardRevision/ApiKey/UserTier/ModelMeta/UserProfile)
+  ├── services/        # 15 服务 (ai-proxy/character/context/card/cardScheme/export/key/
+  │                    #          moderation/persona/prompt-builder/social/tier/
+  │                    #          model-discovery/model-sync/admin-config/config-provider)
+  └── Prisma           # 14+ 表 (TavernUser/Card/Like/Fav/Persona/ChatSession/ChatMessage/
+                         #         ModerationLog/CardRevision/ApiKey/UserTier/ModelMeta/
+                         #         UserProfile/CardScheme...)
          │
          ▼
 Dashboard Tavern 管理 (通过 tavern-proxy 代理到 tavern-server)
   │
-  ├── pages/           # Tavern (角色审核/密钥审计/角色导入)
+  ├── pages/           # Tavern (角色审核/密钥审计/角色导入/模型管理/用户管理)
   └── services/        # dashboard/src/services/tavern/
 ```
 
@@ -385,7 +387,8 @@ POST /chat/send → tavern-server → ai-proxy.service
    │                       ├── DashScope (通义千问)
    │                       ├── OpenAI
    │                       ├── DeepSeek
-   │                       └── OpenRouter
+   │                       ├── OpenRouter
+   │                       └── OpenCode Go (免费)
    │
    ▼
 SSE EventSource 流式返回 (useSSE hook)
@@ -397,16 +400,19 @@ SSE EventSource 流式返回 (useSSE hook)
 
 ### 关键特性
 
-- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter/MiniMax/Google/Anthropic/智谱/月之暗面 无缝切换
+- **多 AI Provider**: 支持通义千问/OpenAI/DeepSeek/OpenRouter/MiniMax/Google/Anthropic/智谱/月之暗面/OpenCode Go 无缝切换
 - **模型自动发现**: model-discovery.service 自动探测各 Provider 可用模型列表
-- **用户等级系统**: FREE/PAID/TESTER 三级，等级路由和 API
-- **角色卡市场**: 发布/审核/收藏/点赞/标签搜索完整链路
+- **用户等级系统**: FREE/PAID/TESTER 三级，等级路由和 API，内置免费模型护盾
+- **角色卡市场**: 发布/审核/收藏/点赞/标签搜索完整链路，market.service 重构为 card.service
+- **配卡方案系统**: 官方推荐 + 用户自定义方案，一键开局，支持保存/删除，AI 世界构建
 - **AI 直连代理**: `/api/v1/ai/generate` 代理端点，支持隐私模式直连
 - **双模式 TabBar**: 酒馆模式(酒馆/开始/我的) ↔ 游戏模式(通信/通讯录/发现/我的)
 - **游戏存档系统**: gameStore 管理 localStorage 存档，含世界设定/选卡/群组/消息
 - **隐私模式**: 本地 API Key 缓存，AI 请求绕过服务器中转直连 Provider
 - **暗色模式**: CSS 变量驱动，通过 `<html class="dark-mode">` 切换，Storage 持久化偏好
 - **模型发现**: model-discovery.service 自动探测各 Provider 可用模型列表，Profile 页面支持服务商筛选和模型切换
+- **模型管理 (Dashboard)**: 支持编辑模型元数据（displayName/icon/description/sortOrder）和批量编辑（minTier/minLevel/quotaCost/isActive）
+- **内置免费模型护盾**: 所有活跃模型被过滤时自动降级返回内置免费模型列表，避免前端空屏
 - **API Key 加密**: 用户级 AES-256-GCM 加密存储
 - **Prompt 构建**: 系统提示 + 角色定义 + 示例对话 + 历史消息 + 当前消息
 - **内容审核**: 敏感词过滤 + 人工审核双机制
@@ -462,5 +468,32 @@ Env 种子 (3 个免费 Provider: tongyi/opencode/deepseek)
 ### 前端简化
 
 - **个人页**：唯一 AI 配置入口，Provider + Model + Key 三字段表单
-- **其他页面**（角色详情/游戏设置/方案详情）：只读展示当前模型，"前往「我的」更换"
+- **其他页面**（角色详情/游戏设置/方案详情）：只读展示当前模型，「前往「我的」更换」
 - **已移除**：ModelSelector 组件、privacyStore、aiClient 硬编码 PROVIDER_CONFIGS、隐私模式开关
+- **新增配卡方案页面**：scheme-detail 页面 + schemeStore + SchemeCard 组件
+- **重构卡片服务**：marketService.ts 删除，功能迁移至 cardService.ts
+
+### 模型管理扩展（v2026-05-31）
+
+Dashboard TavernModelManager 新增功能：
+
+| 功能 | 说明 |
+|------|------|
+| **编辑模型** | 弹窗编辑 displayName/icon/description/minTier/minLevel/quotaCost/sortOrder/isActive |
+| **批量编辑** | 多选模型后统一修改 minTier/minLevel/quotaCost/isActive，留空字段不更新 |
+| **行选择** | 新增 rowSelection 支持多选，选中后显示批量编辑按钮 |
+| **操作列** | 每行末尾新增「编辑」按钮 |
+
+后端 `PUT /admin/tavern/models/:modelId` API 扩展字段：`displayName`、`icon`、`description`、`sortOrder`。
+
+### 服务端护盾机制
+
+`tier.service.ts` 新增内置免费模型护盾：
+
+```
+数据库查询活跃模型 → 为空 → 返回 BUILTIN_FALLBACK_MODELS（6个内置免费模型）
+                    → 有数据 → 按等级/级别过滤 → 全部被过滤 → 返回 BUILTIN_FALLBACK_MODELS
+                                                   → 部分通过 → 正常返回
+```
+
+内置免费模型：qwen-turbo、qwen-plus、qwen-max、big-pickle、minimax-m2.5-free 等（通义千问 + OpenCode Go）。

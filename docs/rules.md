@@ -1,7 +1,7 @@
 # 文档编写规则
 
 > **状态**: current（内容已整合至 `docs/standards/` 目录）
-> **更新**: 2026-05-26
+> **更新**: 2026-05-31
 
 > 所有在 `docs/` 目录下新增或修改文档时，必须遵守此规则。
 
@@ -13,7 +13,7 @@
 |------|------|------|
 | `README.md` | 项目概述、技术栈、快速开始 | `apps/ftg/client/README.md` |
 | `API.md` | API 接口参考 | `apps/ftg/server/API.md` |
-| `VISION.md` | 长期演进规划 | `tools/supertask/VISION.md` |
+| `VISION.md` | 长期演进规划 | (已从仓库移除，旧例见 `tools/opencode-tui-enhance/VISION.md`) |
 | `kebab-case.md` | 规格/计划文档 | `2026-05-10-ai-tavern-design.md` |
 
 ### 1.2 保留文件名
@@ -138,5 +138,5 @@
 
 ---
 
-> 最后更新: 2026-05-27
-> 修改: 更新设计方案和计划路径引用（superpowers → plan/.sisyphus）
+> 最后更新: 2026-05-31
+> 修改: VISION.md 示例更新；同步日期戳

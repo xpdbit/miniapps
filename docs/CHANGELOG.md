@@ -1,9 +1,40 @@
 # 文档变更日志
 
 > **状态**: current
-> **更新**: 2026-05-28
+> **更新**: 2026-05-31
 > 
-> ## 2026-05-28 — 系统监控修复：CPU/内存/磁盘指标错误 + 健康探测宕机修复
+> ## 2026-05-31 — 全量文档同步：Tavern 配卡方案系统 + 模型管理扩展 + 工具迁移
+
+### 核心变化
+
+| 操作 | 详情 |
+|------|------|
+| **Tavern 客户端文档更新** | 页面 12→13（新增 scheme-detail），组件新增 SchemeCard，stores 8→9（新增 schemeStore），services marketService.ts→cardService.ts，新增 aiWorldBuilder.ts |
+| **Tavern 服务端文档更新** | 路由 13→15（新增 cardSchemes 路由），market.service.ts 删除 → card.service.ts + cardScheme.service.ts 替代，services 14→15 |
+| **Tier 服务护盾机制** | 新增内置免费模型兜底（BUILTIN_FALLBACK_MODELS），当所有活跃模型被过滤时自动降级返回 |
+| **模型管理扩展** | Dashboard TavernModelManager 新增编辑弹窗 + 批量编辑 + 行选择；API 扩展 displayName/icon/description/sortOrder 字段 |
+| **local_server 迁移文档** | docs/tools/local_server/README.md 已从 untracked 纳入跟踪 |
+| **superpowers 新文档** | docs/superpowers/plans/ + docs/superpowers/specs/ 新增 card-scheme 和 x-knowledge 设计文档 |
+| **已删除工具文档** | docs/tools/opencode-tui-enhance/ 和 docs/tools/supertask/ 已从仓库删除（迁移至 tools/oce/） |
+| **knowledge FTS tokenizer 修复** | `unicode61 tokenchars` → `unicode61`（db.js），同步知识库文档 |
+| **登录限流放宽** | tavern-server auth.ts loginLimiter 10→30 次/15min，兼顾正常登录重试 |
+| **错误日志增强** | config-provider.service.ts 和 admin-config.service.ts 的 catch 日志兼容多种 Error 结构 |
+
+### docs/ 文件同步
+
+| 文件 | 变更 |
+|------|------|
+| `docs/README.md` | 结构树移除 opencode-tui-enhance/supertask，新增 superpowers/local_server 子目录 |
+| `docs/ARCHITECTURE.md` | Tavern 子系统架构图更新；新增配卡方案/模型管理/护盾机制说明 |
+| `docs/dashboard/README.md` | TavernModelManager 编辑/批量编辑功能更新 |
+| `docs/urls.md` | 修复 local_server/dev_console.py 引用路径 |
+| `docs/CHANGELOG.md` | ← 当前条目 |
+| `docs/edge.md` | 日期更新 |
+| `docs/rules.md` | 日期更新 |
+
+---
+
+## 2026-05-28 — 系统监控修复：CPU/内存/磁盘指标错误 + 健康探测宕机修复
 
 ### 核心变化
 
